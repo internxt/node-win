@@ -1,0 +1,6 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <TargetPlatformVersion>10.0.22621.0</TargetPlatformVersion>
+    <!-- Other custom configurations -->
+  </PropertyGroup>
+</Project>
