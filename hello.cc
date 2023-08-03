@@ -1,7 +1,7 @@
 // hello.cc using Node-API
 #include <node_api.h>
-#include "CloudMirror/CloudMirror/stdafx.h"
-#include "CloudMirror/CloudMirror/FileCopierWithProgress.h"
+// #include "CloudMirror/CloudMirror/stdafx.h"
+// #include "CloudMirror/CloudMirror/FileCopierWithProgress.h"
 
 namespace demo {
 
