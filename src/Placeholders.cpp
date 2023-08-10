@@ -1,18 +1,6 @@
 #include "stdafx.h"
 #include "Placeholders.h"
-
-
-extern "C" {
-    void CALLBACK FetchDataCallback_C(
-        _In_ CF_CALLBACK_INFO* callbackInfo,
-        _In_ CF_CALLBACK_PARAMETERS* callbackParameters
-    );
-
-    void CALLBACK FetchPlaceholdersCallback_C(
-        _In_ CF_CALLBACK_INFO* callbackInfo,
-        _In_ CF_CALLBACK_PARAMETERS* callbackParameters
-    );
-}
+#include "Callbacks.h"
 
 HRESULT RegisterSyncRoot(const wchar_t* syncRootPath) {
     CF_SYNC_REGISTRATION registration = {};
