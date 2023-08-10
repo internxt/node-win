@@ -2,15 +2,17 @@
   "targets": [
     {
       "target_name": "addon",
-      # "msbuild_settings": {
-      #   "Props": [ "./CustomConfig.props" ]
-      # },
       'msvs_settings': {
         'VCCLCompilerTool': {
-          'AdditionalOptions': [ '-std:c++17', ],
+          'ExceptionHandling': '1',
+          'AdditionalOptions': [ '-std:c++17', '/EHsc' ],
         },
       },
-      "sources": [ "hello.cc" ]
+      "sources": [ "src/hello.cc", "src/Utilities.cpp", "src/Placeholders.cpp" ],
+      "include_dirs": [ "include" ],
+      "libraries": [
+        "-lCldApi.lib"
+      ],
     }
   ]
 }

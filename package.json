@@ -6,7 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "install": "node-gyp rebuild",
-    "build": "node-gyp configure build"
+    "clean": "node-gyp clean",
+    "build": "node-gyp configure build",
+    "start": "node lib/index.js"
   },
   "author": "",
   "license": "ISC",
