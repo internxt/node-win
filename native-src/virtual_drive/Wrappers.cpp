@@ -1,9 +1,11 @@
 #include "stdafx.h"
 #include <node_api.h>
 #include <sstream>
+#include "Wrappers.h"
 #include "Placeholders.h"
 #include "SyncRoot.h"
 #include "SyncRootWatcher.h"
+#include "Callbacks.h"
 
 napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
 {
@@ -172,16 +174,81 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args) {
     syncRootPath = new WCHAR[pathLength + 1];
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t*>(const_cast<wchar_t*>(syncRootPath)), pathLength + 1, nullptr);
 
-    // InputSyncCallbacks callbacks = {}; // Initialize to empty structure
+    // CALLBACKS
+    InputSyncCallbacks callbacks = {};
 
-    // napi_value fetchDataCallbackJS;
-    // if (napi_get_named_property(env, argv[1], "fetchDataCallback", &fetchDataCallbackJS) == napi_ok) {
-    //     callbacks.fetchDataCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(fetchDataCallbackJS);
-    // }
+    napi_value fetchDataCallbackJS;
+    if (napi_get_named_property(env, argv[1], "fetchDataCallback", &fetchDataCallbackJS) == napi_ok) {
+        callbacks.fetchDataCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(fetchDataCallbackJS);
+    }
 
+    napi_value validateDataCallback;
+    if (napi_get_named_property(env, argv[1], "validateDataCallback", &validateDataCallback) == napi_ok) {
+        callbacks.validateDataCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(validateDataCallback);
+    }
+
+    napi_value cancelFetchDataCallback;
+    if (napi_get_named_property(env, argv[1], "cancelFetchDataCallback", &cancelFetchDataCallback) == napi_ok) {
+        callbacks.cancelFetchDataCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(cancelFetchDataCallback);
+    }
+
+    napi_value fetchPlaceholdersCallback;
+    if (napi_get_named_property(env, argv[1], "fetchPlaceholdersCallback", &fetchPlaceholdersCallback) == napi_ok) {
+        callbacks.fetchPlaceholdersCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(fetchPlaceholdersCallback);
+    }
+
+    napi_value cancelFetchPlaceholdersCallback;
+    if (napi_get_named_property(env, argv[1], "cancelFetchPlaceholdersCallback", &cancelFetchPlaceholdersCallback) == napi_ok) {
+        callbacks.cancelFetchPlaceholdersCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(cancelFetchPlaceholdersCallback);
+    }
+
+    napi_value notifyFileOpenCompletionCallback;
+    if (napi_get_named_property(env, argv[1], "notifyFileOpenCompletionCallback", &notifyFileOpenCompletionCallback) == napi_ok) {
+        callbacks.notifyFileOpenCompletionCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(notifyFileOpenCompletionCallback);
+    }
+
+    napi_value notifyFileCloseCompletionCallback;
+    if (napi_get_named_property(env, argv[1], "notifyFileCloseCompletionCallback", &notifyFileCloseCompletionCallback) == napi_ok) {
+        callbacks.notifyFileCloseCompletionCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(notifyFileCloseCompletionCallback);
+    }
+
+    napi_value notifyDehydrateCallback;
+    if (napi_get_named_property(env, argv[1], "notifyDehydrateCallback", &notifyDehydrateCallback) == napi_ok) {
+        callbacks.notifyDehydrateCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(notifyDehydrateCallback);
+    }
+
+    napi_value notifyDehydrateCompletionCallback;
+    if (napi_get_named_property(env, argv[1], "notifyDehydrateCompletionCallback", &notifyDehydrateCompletionCallback) == napi_ok) {
+        callbacks.notifyDehydrateCompletionCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(notifyDehydrateCompletionCallback);
+    }
+
+    napi_value notifyDeleteCallback;
+    if (napi_get_named_property(env, argv[1], "notifyDeleteCallback", &notifyDeleteCallback) == napi_ok) {
+        callbacks.notifyDeleteCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(notifyDeleteCallback);
+    }
+
+    napi_value notifyDeleteCompletionCallback;
+    if (napi_get_named_property(env, argv[1], "notifyDeleteCompletionCallback", &notifyDeleteCompletionCallback) == napi_ok) {
+        callbacks.notifyDeleteCompletionCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(notifyDeleteCompletionCallback);
+    }
+
+    napi_value notifyRenameCallback;
+    if (napi_get_named_property(env, argv[1], "notifyRenameCallback", &notifyRenameCallback) == napi_ok) {
+        callbacks.notifyRenameCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(notifyRenameCallback);
+    }
+
+    napi_value notifyRenameCompletionCallback;
+    if (napi_get_named_property(env, argv[1], "notifyRenameCompletionCallback", &notifyRenameCompletionCallback) == napi_ok) {
+        callbacks.notifyRenameCompletionCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(notifyRenameCompletionCallback);
+    }
+
+    napi_value noneCallback;
+    if (napi_get_named_property(env, argv[1], "noneCallback", &noneCallback) == napi_ok) {
+        callbacks.noneCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(noneCallback);
+    }
 
     CF_CONNECTION_KEY connectionKey;
-    HRESULT hr = SyncRoot::ConnectSyncRoot(syncRootPath, &connectionKey, {});
+    HRESULT hr = SyncRoot::ConnectSyncRoot(syncRootPath, callbacks, &connectionKey);
 
     delete[] syncRootPath;
 

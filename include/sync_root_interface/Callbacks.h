@@ -1,14 +1,65 @@
-void CALLBACK DeleteDataNotificationCallback (
+
+void CALLBACK ValidateDataCallbackWrapper(
     _In_ CONST CF_CALLBACK_INFO* callbackInfo,
     _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
 );
 
-void CALLBACK FetchDataCallback (
+void CALLBACK CancelFetchDataCallbackWrapper(
     _In_ CONST CF_CALLBACK_INFO* callbackInfo,
     _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
 );
 
-void CALLBACK FetchPlaceholdersCallback (
+void CALLBACK FetchPlaceholdersCallbackWrapper(
+    _In_ CONST CF_CALLBACK_INFO* callbackInfo,
+    _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
+);
+
+void CALLBACK CancelFetchPlaceholdersCallbackWrapper(
+    _In_ CONST CF_CALLBACK_INFO* callbackInfo,
+    _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
+);
+
+void CALLBACK NotifyFileOpenCompletionCallbackWrapper(
+    _In_ CONST CF_CALLBACK_INFO* callbackInfo,
+    _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
+);
+
+void CALLBACK NotifyFileCloseCompletionCallbackWrapper(
+    _In_ CONST CF_CALLBACK_INFO* callbackInfo,
+    _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
+);
+
+void CALLBACK NotifyDehydrateCallbackWrapper(
+    _In_ CONST CF_CALLBACK_INFO* callbackInfo,
+    _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
+);
+
+void CALLBACK NotifyDehydrateCompletionCallbackWrapper(
+    _In_ CONST CF_CALLBACK_INFO* callbackInfo,
+    _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
+);
+
+void CALLBACK NotifyDeleteCallbackWrapper(
+    _In_ CONST CF_CALLBACK_INFO* callbackInfo,
+    _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
+);
+
+void CALLBACK NotifyDeleteCompletionCallbackWrapper(
+    _In_ CONST CF_CALLBACK_INFO* callbackInfo,
+    _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
+);
+
+void CALLBACK NotifyRenameCallbackWrapper(
+    _In_ CONST CF_CALLBACK_INFO* callbackInfo,
+    _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
+);
+
+void CALLBACK NotifyRenameCompletionCallbackWrapper(
+    _In_ CONST CF_CALLBACK_INFO* callbackInfo,
+    _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
+);
+
+void CALLBACK NoneCallbackWrapper(
     _In_ CONST CF_CALLBACK_INFO* callbackInfo,
     _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
 );
@@ -17,6 +68,11 @@ typedef void (CALLBACK *CF_CALLBACK_FUNCTION)(
     _In_ CONST CF_CALLBACK_INFO* callbackInfo,
     _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
 );
+
+struct CallbackContext {
+    napi_env env;
+    InputSyncCallbacks callbacks;
+};
 
 struct SyncCallbacks {
     CF_CALLBACK_FUNCTION fetchDataCallback;                          // CF_CALLBACK_TYPE_FETCH_DATA
@@ -34,3 +90,18 @@ struct SyncCallbacks {
     CF_CALLBACK_FUNCTION notifyRenameCompletionCallback;             // CF_CALLBACK_TYPE_NOTIFY_RENAME_COMPLETION
     CF_CALLBACK_FUNCTION noneCallback;                               // CF_CALLBACK_TYPE_NONE
 };
+
+// void CALLBACK DeleteDataNotificationCallback (
+//     _In_ CONST CF_CALLBACK_INFO* callbackInfo,
+//     _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
+// );
+
+// void CALLBACK FetchDataCallback (
+//     _In_ CONST CF_CALLBACK_INFO* callbackInfo,
+//     _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
+// );
+
+// void CALLBACK FetchPlaceholdersCallback (
+//     _In_ CONST CF_CALLBACK_INFO* callbackInfo,
+//     _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
+// );

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "SyncRoot.h"
 #include "Callbacks.h"
+#include "Wrappers.h"
 
 void AddCustomState(
     _In_ winrt::IVector<winrt::StorageProviderItemPropertyDefinition> &customStates,
@@ -85,12 +86,14 @@ HRESULT SyncRoot::UnregisterSyncRoot()
     }
 }
 
-HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, SyncCallbacks syncCallbacks, CF_CONNECTION_KEY *connectionKey)
+HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallbacks syncCallbacks, CF_CONNECTION_KEY *connectionKey)
 {
     Utilities::AddFolderToSearchIndexer(syncRootPath);
 
+    SyncCallbacks transformedCallbacks = TransformInputCallbacksToSyncCallbacks(env /* esto necesita ser pasado de alguna manera */, syncCallbacks);
+
     CF_CALLBACK_REGISTRATION callbackTable[] = {
-        {CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION, syncCallbacks.notifyDeleteCompletionCallback},
+        {CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION, transformedCallbacks.notifyDeleteCompletionCallback},
         CF_CALLBACK_REGISTRATION_END};
 
     HRESULT hr = CfConnectSyncRoot(
@@ -103,4 +106,17 @@ HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, SyncCallbacks syn
     wprintf(L"Resultado de CfConnectSyncRoot: %ld\n", hr);
 
     return hr;
+}
+
+SyncCallbacks TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCallbacks input) {
+    SyncCallbacks sync;
+    
+    // Almacenar contexto
+    CallbackContext* context = new CallbackContext{env, input};
+    
+    // Asigna tus funciones wrapper:
+    sync.notifyDeleteCompletionCallback = NotifyDeleteCompletionCallbackWrapper;
+    // ... (Haz lo mismo para los otros callbacks cuando los definas)
+
+    return sync;
 }
