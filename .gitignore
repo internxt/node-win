@@ -128,3 +128,38 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+
+*.obj
+**/.vs
+**/Release
+*.exe
+
+# Archivos de salida de node-gyp
+build/
+
+# Logs
+*.log
+
+# Archivos de Runtime
+*.pid
+*.seed
+*.pid.lock
+
+# Directorios de salida del compilador y enlaces
+*.o
+*.a
+*.slo
+*.sl
+*.dylib
+*.so
+*.dll
+*.pdb
+
+# Archivos temporales
+*.swp
+*.swo
+*.swn
+*.bak
+*.tmp
+*~
