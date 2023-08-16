@@ -3,7 +3,6 @@
 #include <iostream>
 #include <fstream>
 
-
 void CALLBACK FetchDataCallbackWrapper(_In_ CONST CF_CALLBACK_INFO* callbackInfo, _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters) {
     CallbackContext* context = static_cast<CallbackContext*>(callbackInfo->CallbackContext);
     if (context->callbacks.fetchDataCallback) {

@@ -1,7 +1,17 @@
 #include "stdafx.h"
 #include "SyncRoot.h"
 #include "Callbacks.h"
-#include "Wrappers.h"
+
+SyncCallbacks TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCallbacks input)
+{
+    SyncCallbacks sync;
+
+    CallbackContext *context = new CallbackContext{env, input};
+
+    sync.notifyDeleteCompletionCallback = NotifyDeleteCompletionCallbackWrapper;
+
+    return sync;
+}
 
 void AddCustomState(
     _In_ winrt::IVector<winrt::StorageProviderItemPropertyDefinition> &customStates,
@@ -18,6 +28,7 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
 {
     try
     {
+        wprintf(L"Register\n");
         auto syncRootID = providerId;
 
         winrt::StorageProviderSyncRootInfo info;
@@ -86,37 +97,39 @@ HRESULT SyncRoot::UnregisterSyncRoot()
     }
 }
 
-HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallbacks syncCallbacks, CF_CONNECTION_KEY *connectionKey)
+HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallbacks syncCallbacks, napi_env env, CF_CONNECTION_KEY *connectionKey)
 {
-    Utilities::AddFolderToSearchIndexer(syncRootPath);
+    try
+    {
 
-    SyncCallbacks transformedCallbacks = TransformInputCallbacksToSyncCallbacks(env /* esto necesita ser pasado de alguna manera */, syncCallbacks);
+        wprintf(L"Connect\n");
+        Utilities::AddFolderToSearchIndexer(syncRootPath);
 
-    CF_CALLBACK_REGISTRATION callbackTable[] = {
-        {CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION, transformedCallbacks.notifyDeleteCompletionCallback},
-        CF_CALLBACK_REGISTRATION_END};
+        SyncCallbacks transformedCallbacks = TransformInputCallbacksToSyncCallbacks(env, syncCallbacks);
 
-    HRESULT hr = CfConnectSyncRoot(
-        syncRootPath,
-        callbackTable,
-        nullptr, // Contexto (opcional)
-        CF_CONNECT_FLAG_REQUIRE_PROCESS_INFO | CF_CONNECT_FLAG_REQUIRE_FULL_FILE_PATH,
-        connectionKey);
+        CF_CALLBACK_REGISTRATION callbackTable[] = {
+            {CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION, transformedCallbacks.notifyDeleteCompletionCallback},
+            CF_CALLBACK_REGISTRATION_END};
 
-    wprintf(L"Resultado de CfConnectSyncRoot: %ld\n", hr);
+        HRESULT hr = CfConnectSyncRoot(
+            syncRootPath,
+            callbackTable,
+            nullptr, // Contexto (opcional)
+            CF_CONNECT_FLAG_REQUIRE_PROCESS_INFO | CF_CONNECT_FLAG_REQUIRE_FULL_FILE_PATH,
+            connectionKey);
 
-    return hr;
-}
+        wprintf(L"Resultado de CfConnectSyncRoot: %ld\n", hr);
 
-SyncCallbacks TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCallbacks input) {
-    SyncCallbacks sync;
-    
-    // Almacenar contexto
-    CallbackContext* context = new CallbackContext{env, input};
-    
-    // Asigna tus funciones wrapper:
-    sync.notifyDeleteCompletionCallback = NotifyDeleteCompletionCallbackWrapper;
-    // ... (Haz lo mismo para los otros callbacks cuando los definas)
-
-    return sync;
+        return hr;
+    }
+    catch (const std::exception &e)
+    {
+        wprintf(L"Excepción capturada: %hs\n", e.what());
+        // Aquí puedes decidir si retornar un código de error específico o mantener el E_FAIL.
+    }
+    catch (...)
+    {
+        wprintf(L"Excepción desconocida capturada\n");
+        // Igualmente, puedes decidir el código de error a retornar.
+    }
 }

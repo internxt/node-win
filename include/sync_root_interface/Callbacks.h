@@ -1,3 +1,6 @@
+#pragma once
+
+#include <node_api.h>
 
 void CALLBACK ValidateDataCallbackWrapper(
     _In_ CONST CF_CALLBACK_INFO* callbackInfo,
@@ -68,6 +71,25 @@ typedef void (CALLBACK *CF_CALLBACK_FUNCTION)(
     _In_ CONST CF_CALLBACK_INFO* callbackInfo,
     _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
 );
+
+typedef void (*NAPI_CALLBACK_FUNCTION)(napi_env);
+
+struct InputSyncCallbacks {
+    NAPI_CALLBACK_FUNCTION fetchDataCallback;
+    NAPI_CALLBACK_FUNCTION validateDataCallback;
+    NAPI_CALLBACK_FUNCTION cancelFetchDataCallback;
+    NAPI_CALLBACK_FUNCTION fetchPlaceholdersCallback;
+    NAPI_CALLBACK_FUNCTION cancelFetchPlaceholdersCallback;
+    NAPI_CALLBACK_FUNCTION notifyFileOpenCompletionCallback;
+    NAPI_CALLBACK_FUNCTION notifyFileCloseCompletionCallback;
+    NAPI_CALLBACK_FUNCTION notifyDehydrateCallback;
+    NAPI_CALLBACK_FUNCTION notifyDehydrateCompletionCallback;
+    NAPI_CALLBACK_FUNCTION notifyDeleteCallback;
+    NAPI_CALLBACK_FUNCTION notifyDeleteCompletionCallback;
+    NAPI_CALLBACK_FUNCTION notifyRenameCallback;
+    NAPI_CALLBACK_FUNCTION notifyRenameCompletionCallback;
+    NAPI_CALLBACK_FUNCTION noneCallback;
+};
 
 struct CallbackContext {
     napi_env env;

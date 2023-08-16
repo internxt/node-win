@@ -10,7 +10,11 @@ drive.registerSyncRoot(
     "{12345678-1234-1234-1234-123456789012}",
 );
 
-drive.connectSyncRoot(config.syncRootPath);
+drive.connectSyncRoot(config.syncRootPath, {
+    notifyDeleteCompletionCallback: () => {
+        console.log("notifyDeleteCompletionCallback");
+    }
+});
 
 const combinedAttributes = drive.PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_READONLY;
 

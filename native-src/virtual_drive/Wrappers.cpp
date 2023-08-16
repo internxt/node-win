@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include <node_api.h>
 #include <sstream>
-#include "Wrappers.h"
 #include "Placeholders.h"
 #include "SyncRoot.h"
 #include "SyncRootWatcher.h"
@@ -105,12 +104,16 @@ napi_value RegisterSyncRootWrapper(napi_env env, napi_callback_info args) {
     size_t argc = 4;
     napi_value argv[4];
 
+    wprintf(L"Inicio de ConnectSyncRootWrapper1\n");
+
     napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
 
     if (argc < 4) {
         napi_throw_error(env, nullptr, "4 arguments are required for RegisterSyncRoot");
         return nullptr;
     }
+
+    wprintf(L"Inicio de ConnectSyncRootWrapper2\n");
 
     LPCWSTR syncRootPath;
     size_t syncRootPathLength;
@@ -146,10 +149,12 @@ napi_value RegisterSyncRootWrapper(napi_env env, napi_callback_info args) {
         return nullptr;
     }
 
+    wprintf(L"Inicio de ConnectSyncRootWrapper3\n");
     
 
     HRESULT result = SyncRoot::RegisterSyncRoot(syncRootPath, providerName, providerVersion, providerId);
 
+    wprintf(L"Inicio de ConnectSyncRootWrapper4\n");
     delete[] providerIdStr;
 
     napi_value napiResult;
@@ -248,7 +253,7 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args) {
     }
 
     CF_CONNECTION_KEY connectionKey;
-    HRESULT hr = SyncRoot::ConnectSyncRoot(syncRootPath, callbacks, &connectionKey);
+    HRESULT hr = SyncRoot::ConnectSyncRoot(syncRootPath, callbacks, env, &connectionKey);
 
     delete[] syncRootPath;
 

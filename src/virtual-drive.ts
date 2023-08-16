@@ -8,6 +8,24 @@ interface Addon {
     watchAndWait(path: string): any;
 }
 
+type NapiCallbackFunction = (...args: any[]) => any;
+
+type InputSyncCallbacks = {
+    fetchDataCallback?: NapiCallbackFunction;
+    validateDataCallback?: NapiCallbackFunction;
+    cancelFetchDataCallback?: NapiCallbackFunction;
+    fetchPlaceholdersCallback?: NapiCallbackFunction;
+    cancelFetchPlaceholdersCallback?: NapiCallbackFunction;
+    notifyFileOpenCompletionCallback?: NapiCallbackFunction;
+    notifyFileCloseCompletionCallback?: NapiCallbackFunction;
+    notifyDehydrateCallback?: NapiCallbackFunction;
+    notifyDehydrateCompletionCallback?: NapiCallbackFunction;
+    notifyDeleteCallback?: NapiCallbackFunction;
+    notifyDeleteCompletionCallback?: NapiCallbackFunction;
+    notifyRenameCallback?: NapiCallbackFunction;
+    notifyRenameCompletionCallback?: NapiCallbackFunction;
+    noneCallback?: NapiCallbackFunction;
+}
 class VirtualDrive {
     PLACEHOLDER_ATTRIBUTES: { [key: string]: number };
 
@@ -23,8 +41,8 @@ class VirtualDrive {
         return BigInt(jsTime) * 10000n + 116444736000000000n;
     }
 
-    connectSyncRoot(path: string): any {
-        return addon.connectSyncRoot(path);
+    async connectSyncRoot(path: string, callbacks: InputSyncCallbacks): Promise<any> {
+        return await addon.connectSyncRoot(path, callbacks);
     }
 
     createPlaceholderFile(fileName: string, fileId: string, fileSize: number, fileAttributes: number, creationTime: number, lastWriteTime: number, lastAccessTime: number, path: string): any {
@@ -45,8 +63,8 @@ class VirtualDrive {
         );
     }
 
-    registerSyncRoot(path: string, providerName: string, providerVersion: string, providerId: string): any {
-        return addon.registerSyncRoot(path, providerName, providerVersion, providerId);
+    async registerSyncRoot(path: string, providerName: string, providerVersion: string, providerId: string): Promise<any> {
+        return await addon.registerSyncRoot(path, providerName, providerVersion, providerId);
     }
 
     unregisterSyncRoot(path: string): any {
