@@ -31,6 +31,13 @@ void Utilities::ApplyCustomStateToPlaceholderFile(LPCWSTR path, LPCWSTR filename
 
 void Utilities::AddFolderToSearchIndexer(_In_ PCWSTR folder)
 {
+    HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    if (FAILED(hr))
+    {
+        wprintf(L"Failed to initialize COM library. Error code = %08x\n", hr);
+        return; 
+    }
+    
     std::wstring url(L"file:///");
     url.append(folder);
 

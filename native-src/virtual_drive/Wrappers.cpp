@@ -1,5 +1,4 @@
 #include "stdafx.h"
-#include <node_api.h>
 #include <sstream>
 #include "Placeholders.h"
 #include "SyncRoot.h"
@@ -104,16 +103,12 @@ napi_value RegisterSyncRootWrapper(napi_env env, napi_callback_info args) {
     size_t argc = 4;
     napi_value argv[4];
 
-    wprintf(L"Inicio de ConnectSyncRootWrapper1\n");
-
     napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
 
     if (argc < 4) {
         napi_throw_error(env, nullptr, "4 arguments are required for RegisterSyncRoot");
         return nullptr;
     }
-
-    wprintf(L"Inicio de ConnectSyncRootWrapper2\n");
 
     LPCWSTR syncRootPath;
     size_t syncRootPathLength;
@@ -147,14 +142,11 @@ napi_value RegisterSyncRootWrapper(napi_env env, napi_callback_info args) {
         delete[] providerVersion;
         delete[] providerIdStr;
         return nullptr;
-    }
-
-    wprintf(L"Inicio de ConnectSyncRootWrapper3\n");
-    
+    }    
 
     HRESULT result = SyncRoot::RegisterSyncRoot(syncRootPath, providerName, providerVersion, providerId);
 
-    wprintf(L"Inicio de ConnectSyncRootWrapper4\n");
+
     delete[] providerIdStr;
 
     napi_value napiResult;
@@ -163,16 +155,18 @@ napi_value RegisterSyncRootWrapper(napi_env env, napi_callback_info args) {
 }
 
 napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args) {
-    size_t argc = 1;
-    napi_value argv[1];
+    try {
+    wprintf(L"Inicio de ConnectSyncRootWrapper1\n");
+    size_t argc = 2;
+    napi_value argv[2];
 
     napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
 
-    if (argc < 1) {
-        napi_throw_error(env, nullptr, "Se requiere la ruta del sync root para ConnectSyncRoot");
+    if (argc < 2) {
+        napi_throw_error(env, nullptr, "Se requieren más argumentos para ConnectSyncRoot");
         return nullptr;
     }
-
+    wprintf(L"Inicio de ConnectSyncRootWrapper2\n");
     LPCWSTR syncRootPath;
     size_t pathLength;
     napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
@@ -182,80 +176,32 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args) {
     // CALLBACKS
     InputSyncCallbacks callbacks = {};
 
-    napi_value fetchDataCallbackJS;
-    if (napi_get_named_property(env, argv[1], "fetchDataCallback", &fetchDataCallbackJS) == napi_ok) {
-        callbacks.fetchDataCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(fetchDataCallbackJS);
-    }
-
-    napi_value validateDataCallback;
-    if (napi_get_named_property(env, argv[1], "validateDataCallback", &validateDataCallback) == napi_ok) {
-        callbacks.validateDataCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(validateDataCallback);
-    }
-
-    napi_value cancelFetchDataCallback;
-    if (napi_get_named_property(env, argv[1], "cancelFetchDataCallback", &cancelFetchDataCallback) == napi_ok) {
-        callbacks.cancelFetchDataCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(cancelFetchDataCallback);
-    }
-
-    napi_value fetchPlaceholdersCallback;
-    if (napi_get_named_property(env, argv[1], "fetchPlaceholdersCallback", &fetchPlaceholdersCallback) == napi_ok) {
-        callbacks.fetchPlaceholdersCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(fetchPlaceholdersCallback);
-    }
-
-    napi_value cancelFetchPlaceholdersCallback;
-    if (napi_get_named_property(env, argv[1], "cancelFetchPlaceholdersCallback", &cancelFetchPlaceholdersCallback) == napi_ok) {
-        callbacks.cancelFetchPlaceholdersCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(cancelFetchPlaceholdersCallback);
-    }
-
-    napi_value notifyFileOpenCompletionCallback;
-    if (napi_get_named_property(env, argv[1], "notifyFileOpenCompletionCallback", &notifyFileOpenCompletionCallback) == napi_ok) {
-        callbacks.notifyFileOpenCompletionCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(notifyFileOpenCompletionCallback);
-    }
-
-    napi_value notifyFileCloseCompletionCallback;
-    if (napi_get_named_property(env, argv[1], "notifyFileCloseCompletionCallback", &notifyFileCloseCompletionCallback) == napi_ok) {
-        callbacks.notifyFileCloseCompletionCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(notifyFileCloseCompletionCallback);
-    }
-
-    napi_value notifyDehydrateCallback;
-    if (napi_get_named_property(env, argv[1], "notifyDehydrateCallback", &notifyDehydrateCallback) == napi_ok) {
-        callbacks.notifyDehydrateCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(notifyDehydrateCallback);
-    }
-
-    napi_value notifyDehydrateCompletionCallback;
-    if (napi_get_named_property(env, argv[1], "notifyDehydrateCompletionCallback", &notifyDehydrateCompletionCallback) == napi_ok) {
-        callbacks.notifyDehydrateCompletionCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(notifyDehydrateCompletionCallback);
-    }
-
-    napi_value notifyDeleteCallback;
-    if (napi_get_named_property(env, argv[1], "notifyDeleteCallback", &notifyDeleteCallback) == napi_ok) {
-        callbacks.notifyDeleteCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(notifyDeleteCallback);
-    }
+    wprintf(L"argv[1] value: %p\n", argv[1]);
 
     napi_value notifyDeleteCompletionCallback;
+
+    napi_async_context async_context;
+
     if (napi_get_named_property(env, argv[1], "notifyDeleteCompletionCallback", &notifyDeleteCompletionCallback) == napi_ok) {
-        callbacks.notifyDeleteCompletionCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(notifyDeleteCompletionCallback);
+        //print the value
+        wprintf(L"notifyDeleteCompletionCallbackFFF: %p\n", notifyDeleteCompletionCallback);
+        napi_create_reference(env, notifyDeleteCompletionCallback, 1, &callbacks.notifyDeleteCompletionCallbackRef);
     }
 
-    napi_value notifyRenameCallback;
-    if (napi_get_named_property(env, argv[1], "notifyRenameCallback", &notifyRenameCallback) == napi_ok) {
-        callbacks.notifyRenameCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(notifyRenameCallback);
-    }
+    // napi_valuetype valueType;
+    // napi_typeof(env, notifyDeleteCompletionCallback, &valueType);
+    // if (valueType != napi_function) {
+    //     napi_throw_type_error(env, nullptr, "notifyDeleteCompletionCallback should be a function");
+    //     return nullptr;
+    // }
 
-    napi_value notifyRenameCompletionCallback;
-    if (napi_get_named_property(env, argv[1], "notifyRenameCompletionCallback", &notifyRenameCompletionCallback) == napi_ok) {
-        callbacks.notifyRenameCompletionCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(notifyRenameCompletionCallback);
-    }
-
-    napi_value noneCallback;
-    if (napi_get_named_property(env, argv[1], "noneCallback", &noneCallback) == napi_ok) {
-        callbacks.noneCallback = reinterpret_cast<NAPI_CALLBACK_FUNCTION>(noneCallback);
-    }
-
+    wprintf(L"Inicio de ConnectSyncRootWrapper3\n");
     CF_CONNECTION_KEY connectionKey;
     HRESULT hr = SyncRoot::ConnectSyncRoot(syncRootPath, callbacks, env, &connectionKey);
 
     delete[] syncRootPath;
+
+    wprintf(L"Inicio de ConnectSyncRootWrapper4\n");
 
     if (FAILED(hr)) {
         napi_throw_error(env, nullptr, "ConnectSyncRoot failed");
@@ -265,6 +211,8 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args) {
     napi_value resultObj, hrValue, connectionKeyValue;
 
     napi_create_object(env, &resultObj);
+
+    wprintf(L"Inicio de ConnectSyncRootWrapper4\n");
     
     napi_create_int32(env, static_cast<int32_t>(hr), &hrValue);
     napi_set_named_property(env, resultObj, "hr", hrValue);
@@ -278,6 +226,11 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args) {
     napi_set_named_property(env, resultObj, "connectionKey", connectionKeyValue);
 
     return resultObj;
+    }
+    catch (...) {
+        napi_throw_error(env, nullptr, "An unknown error occurred in ConnectSyncRootWrapper");
+        return nullptr;
+    }
 }
 
 napi_value WatchAndWaitWrapper(napi_env env, napi_callback_info args) {

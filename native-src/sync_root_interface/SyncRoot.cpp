@@ -2,11 +2,29 @@
 #include "SyncRoot.h"
 #include "Callbacks.h"
 
-SyncCallbacks TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCallbacks input)
-{
+void CompleteAsyncWork(napi_env env, napi_status status, void* data) {
+    CallbackContext* context = static_cast<CallbackContext*>(data);
+    napi_delete_async_work(env, context->work);
+    // Otro código de finalización...
+}
+
+
+
+SyncCallbacks TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCallbacks input) {
     SyncCallbacks sync;
 
     CallbackContext *context = new CallbackContext{env, input};
+
+    // Crear un nombre de recurso para el trabajo asíncrono
+    napi_value resource_name;
+    napi_create_string_utf8(env, "CloudStorage", NAPI_AUTO_LENGTH, &resource_name);
+
+    // Crear el trabajo asíncrono (aunque no lo estés encolando todavía)
+    napi_create_async_work(env, NULL, resource_name, ExecuteAsyncWork, CompleteAsyncWork, context, &context->work);
+    // Observa que pasamos 'context' como el parámetro de datos a las funciones de trabajo.
+    // Esto es para que puedas acceder a 'context' dentro de ExecuteAsyncWork y CompleteAsyncWork.
+
+    GlobalContextContainer::SetContext(context);
 
     sync.notifyDeleteCompletionCallback = NotifyDeleteCompletionCallbackWrapper;
 
@@ -119,6 +137,14 @@ HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallback
             connectionKey);
 
         wprintf(L"Resultado de CfConnectSyncRoot: %ld\n", hr);
+
+        CallbackContext* context = GlobalContextContainer::GetContext();
+
+        if (context) {
+            napi_delete_async_work(env, context->work);
+            GlobalContextContainer::ClearContext();
+            delete context;
+        }
 
         return hr;
     }

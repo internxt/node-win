@@ -72,28 +72,28 @@ typedef void (CALLBACK *CF_CALLBACK_FUNCTION)(
     _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
 );
 
-typedef void (*NAPI_CALLBACK_FUNCTION)(napi_env);
-
 struct InputSyncCallbacks {
-    NAPI_CALLBACK_FUNCTION fetchDataCallback;
-    NAPI_CALLBACK_FUNCTION validateDataCallback;
-    NAPI_CALLBACK_FUNCTION cancelFetchDataCallback;
-    NAPI_CALLBACK_FUNCTION fetchPlaceholdersCallback;
-    NAPI_CALLBACK_FUNCTION cancelFetchPlaceholdersCallback;
-    NAPI_CALLBACK_FUNCTION notifyFileOpenCompletionCallback;
-    NAPI_CALLBACK_FUNCTION notifyFileCloseCompletionCallback;
-    NAPI_CALLBACK_FUNCTION notifyDehydrateCallback;
-    NAPI_CALLBACK_FUNCTION notifyDehydrateCompletionCallback;
-    NAPI_CALLBACK_FUNCTION notifyDeleteCallback;
-    NAPI_CALLBACK_FUNCTION notifyDeleteCompletionCallback;
-    NAPI_CALLBACK_FUNCTION notifyRenameCallback;
-    NAPI_CALLBACK_FUNCTION notifyRenameCompletionCallback;
-    NAPI_CALLBACK_FUNCTION noneCallback;
+    napi_ref fetchDataCallbackRef;
+    napi_ref validateDataCallbackRef;
+    napi_ref cancelFetchDataCallbackRef;
+    napi_ref fetchPlaceholdersCallbackRef;
+    napi_ref cancelFetchPlaceholdersCallbackRef;
+    napi_ref notifyFileOpenCompletionCallbackRef;
+    napi_ref notifyFileCloseCompletionCallbackRef;
+    napi_ref notifyDehydrateCallbackRef;
+    napi_ref notifyDehydrateCompletionCallbackRef;
+    napi_ref notifyDeleteCallbackRef;
+    napi_ref notifyDeleteCompletionCallbackRef;
+    napi_ref notifyRenameCallbackRef;
+    napi_ref notifyRenameCompletionCallbackRef;
+    napi_ref noneCallbackRef;
 };
 
 struct CallbackContext {
     napi_env env;
     InputSyncCallbacks callbacks;
+    napi_async_context async_context;
+    napi_ref async_resource_ref;
 };
 
 struct SyncCallbacks {
@@ -112,6 +112,35 @@ struct SyncCallbacks {
     CF_CALLBACK_FUNCTION notifyRenameCompletionCallback;             // CF_CALLBACK_TYPE_NOTIFY_RENAME_COMPLETION
     CF_CALLBACK_FUNCTION noneCallback;                               // CF_CALLBACK_TYPE_NONE
 };
+
+class GlobalContextContainer {
+private:
+    static CallbackContext* currentContext;
+
+public:
+    static void SetContext(CallbackContext* context) {
+        currentContext = context;
+    }
+
+    static CallbackContext* GetContext() {
+        return currentContext;
+    }
+
+    static void ClearContext() {
+        if (currentContext) {
+            if (currentContext->env && currentContext->async_resource_ref) {
+                napi_delete_reference(currentContext->env, currentContext->async_resource_ref);
+            }
+            if (currentContext->env && currentContext->async_context) {
+                napi_async_destroy(currentContext->env, currentContext->async_context);
+            }
+
+            delete currentContext;
+            currentContext = nullptr;
+        }
+    }
+};
+
 
 // void CALLBACK DeleteDataNotificationCallback (
 //     _In_ CONST CF_CALLBACK_INFO* callbackInfo,
