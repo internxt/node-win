@@ -12,8 +12,8 @@
         "start": "node lib/index.js",
         "config": "python gyp.config.py",
         "build": "node-gyp clean && node-gyp configure build && tsc",
-        "start:example:register": "ts-node ./path/to/register/example.ts",
-        "start:example:unregister": "ts-node ./path/to/unregister/example.ts"
+        "start:example:register": "node ./dist/examples/register.js",
+        "start:example:unregister": "node ./dist/examples/unregister.js"
     },
     "author": "",
     "license": "ISC",
