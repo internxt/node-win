@@ -18,16 +18,13 @@ void CALLBACK NotifyDeleteCompletionCallbackWrapper(_In_ CONST CF_CALLBACK_INFO*
     wprintf(L"NotifyDeleteCompletionCallbackWrapper 1\n");
     wprintf(L"Value of callback: %p\n", context->callbacks.notifyDeleteCompletionCallbackRef);
 
-    if (context->callbacks.notifyDeleteCompletionCallbackRef) { // <--- Notar que cambiamos a "Ref" aquí para comprobar si la referencia está establecida.
-        wprintf(L"NotifyDeleteCompletionCallbackWrapper 2\n");
+    // Encolar el trabajo asíncrono.
+    napi_queue_async_work(context->env, context->work);
+}
 
-        napi_value callbackFn;
-        napi_get_reference_value(context->env, context->callbacks.notifyDeleteCompletionCallbackRef, &callbackFn);
-
-        napi_value global;
-        napi_get_global(context->env, &global);
-        
-        napi_value result;
-        napi_make_callback(context->env, nullptr, global, callbackFn, 0, nullptr, &result);
-    }
+void CALLBACK DeleteDataNotificationCallback (
+    _In_ CONST CF_CALLBACK_INFO* callbackInfo,
+    _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
+) {
+    MessageBoxW(NULL, L"Delete Data Notification Callback triggered!", L"Callback Activated", MB_OK);
 }

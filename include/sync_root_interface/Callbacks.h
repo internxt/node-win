@@ -94,6 +94,7 @@ struct CallbackContext {
     InputSyncCallbacks callbacks;
     napi_async_context async_context;
     napi_ref async_resource_ref;
+    napi_async_work work; 
 };
 
 struct SyncCallbacks {
@@ -142,10 +143,10 @@ public:
 };
 
 
-// void CALLBACK DeleteDataNotificationCallback (
-//     _In_ CONST CF_CALLBACK_INFO* callbackInfo,
-//     _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
-// );
+void CALLBACK DeleteDataNotificationCallback (
+    _In_ CONST CF_CALLBACK_INFO* callbackInfo,
+    _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
+);
 
 // void CALLBACK FetchDataCallback (
 //     _In_ CONST CF_CALLBACK_INFO* callbackInfo,

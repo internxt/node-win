@@ -2,27 +2,54 @@
 #include "SyncRoot.h"
 #include "Callbacks.h"
 
-void CompleteAsyncWork(napi_env env, napi_status status, void* data) {
-    CallbackContext* context = static_cast<CallbackContext*>(data);
-    napi_delete_async_work(env, context->work);
-    // Otro código de finalización...
+void ExecuteAsyncWork(napi_env env, void* data) {
+    wprintf(L"ExecuteAsyncWork iniciado\n");
+    CallbackContext* context = (CallbackContext*)data;
+    // Realizar operaciones costosas aquí.
+    // NO llames a ninguna función de la API de Node.js desde aquí.
 }
 
+void CompleteAsyncWork(napi_env env, napi_status status, void* data) {
+    wprintf(L"CompleteAsyncWork iniciado\n");
+    CallbackContext* context = (CallbackContext*)data;
 
+    // Si hubo un error en `ExecuteAsyncWork`, el parámetro `status` no será `napi_ok`.
+    if (status != napi_ok) {
+        // Manejar error aquí.
+    }
+
+    // Si necesitas invocar un callback de JavaScript o realizar otras operaciones que requieran la API de Node.js, hazlo aquí.
+    if (context->callbacks.notifyDeleteCompletionCallbackRef) {
+        napi_value callbackFn;
+        napi_status status = napi_get_reference_value(env, context->callbacks.notifyDeleteCompletionCallbackRef, &callbackFn);
+    
+        if (status != napi_ok) {
+            wprintf(L"Error al obtener el valor de referencia del callback\n");
+            return;
+        }
+    
+        napi_value global;
+        napi_get_global(env, &global);
+        
+        napi_value result;
+        napi_make_callback(env, nullptr, global, callbackFn, 0, nullptr, &result);
+    }
+
+    // Limpiar el trabajo asíncrono y cualquier otra limpieza necesaria.
+    napi_delete_async_work(env, context->work);
+    // GlobalContextContainer::ClearContext();
+    // delete context;
+}
 
 SyncCallbacks TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCallbacks input) {
     SyncCallbacks sync;
 
     CallbackContext *context = new CallbackContext{env, input};
 
-    // Crear un nombre de recurso para el trabajo asíncrono
     napi_value resource_name;
     napi_create_string_utf8(env, "CloudStorage", NAPI_AUTO_LENGTH, &resource_name);
 
-    // Crear el trabajo asíncrono (aunque no lo estés encolando todavía)
     napi_create_async_work(env, NULL, resource_name, ExecuteAsyncWork, CompleteAsyncWork, context, &context->work);
-    // Observa que pasamos 'context' como el parámetro de datos a las funciones de trabajo.
-    // Esto es para que puedas acceder a 'context' dentro de ExecuteAsyncWork y CompleteAsyncWork.
 
     GlobalContextContainer::SetContext(context);
 
@@ -46,7 +73,6 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
 {
     try
     {
-        wprintf(L"Register\n");
         auto syncRootID = providerId;
 
         winrt::StorageProviderSyncRootInfo info;
@@ -119,14 +145,12 @@ HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallback
 {
     try
     {
-
-        wprintf(L"Connect\n");
         Utilities::AddFolderToSearchIndexer(syncRootPath);
 
-        SyncCallbacks transformedCallbacks = TransformInputCallbacksToSyncCallbacks(env, syncCallbacks);
+        // SyncCallbacks transformedCallbacks = TransformInputCallbacksToSyncCallbacks(env, syncCallbacks);
 
         CF_CALLBACK_REGISTRATION callbackTable[] = {
-            {CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION, transformedCallbacks.notifyDeleteCompletionCallback},
+            {CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION, DeleteDataNotificationCallback},
             CF_CALLBACK_REGISTRATION_END};
 
         HRESULT hr = CfConnectSyncRoot(
@@ -136,16 +160,9 @@ HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallback
             CF_CONNECT_FLAG_REQUIRE_PROCESS_INFO | CF_CONNECT_FLAG_REQUIRE_FULL_FILE_PATH,
             connectionKey);
 
-        wprintf(L"Resultado de CfConnectSyncRoot: %ld\n", hr);
-
         CallbackContext* context = GlobalContextContainer::GetContext();
 
-        if (context) {
-            napi_delete_async_work(env, context->work);
-            GlobalContextContainer::ClearContext();
-            delete context;
-        }
-
+        wprintf(L"Connect Finished\n\n");
         return hr;
     }
     catch (const std::exception &e)

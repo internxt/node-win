@@ -156,7 +156,6 @@ napi_value RegisterSyncRootWrapper(napi_env env, napi_callback_info args) {
 
 napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args) {
     try {
-    wprintf(L"Inicio de ConnectSyncRootWrapper1\n");
     size_t argc = 2;
     napi_value argv[2];
 
@@ -166,7 +165,6 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args) {
         napi_throw_error(env, nullptr, "Se requieren más argumentos para ConnectSyncRoot");
         return nullptr;
     }
-    wprintf(L"Inicio de ConnectSyncRootWrapper2\n");
     LPCWSTR syncRootPath;
     size_t pathLength;
     napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
@@ -176,32 +174,19 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args) {
     // CALLBACKS
     InputSyncCallbacks callbacks = {};
 
-    wprintf(L"argv[1] value: %p\n", argv[1]);
-
     napi_value notifyDeleteCompletionCallback;
 
     napi_async_context async_context;
 
     if (napi_get_named_property(env, argv[1], "notifyDeleteCompletionCallback", &notifyDeleteCompletionCallback) == napi_ok) {
         //print the value
-        wprintf(L"notifyDeleteCompletionCallbackFFF: %p\n", notifyDeleteCompletionCallback);
         napi_create_reference(env, notifyDeleteCompletionCallback, 1, &callbacks.notifyDeleteCompletionCallbackRef);
     }
 
-    // napi_valuetype valueType;
-    // napi_typeof(env, notifyDeleteCompletionCallback, &valueType);
-    // if (valueType != napi_function) {
-    //     napi_throw_type_error(env, nullptr, "notifyDeleteCompletionCallback should be a function");
-    //     return nullptr;
-    // }
-
-    wprintf(L"Inicio de ConnectSyncRootWrapper3\n");
     CF_CONNECTION_KEY connectionKey;
     HRESULT hr = SyncRoot::ConnectSyncRoot(syncRootPath, callbacks, env, &connectionKey);
 
     delete[] syncRootPath;
-
-    wprintf(L"Inicio de ConnectSyncRootWrapper4\n");
 
     if (FAILED(hr)) {
         napi_throw_error(env, nullptr, "ConnectSyncRoot failed");
@@ -211,8 +196,6 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args) {
     napi_value resultObj, hrValue, connectionKeyValue;
 
     napi_create_object(env, &resultObj);
-
-    wprintf(L"Inicio de ConnectSyncRootWrapper4\n");
     
     napi_create_int32(env, static_cast<int32_t>(hr), &hrValue);
     napi_set_named_property(env, resultObj, "hr", hrValue);
@@ -255,4 +238,79 @@ napi_value WatchAndWaitWrapper(napi_env env, napi_callback_info args) {
     delete[] syncRootPath;
 
     return nullptr;
+}
+
+napi_value CreateEntryWrapper(napi_env env, napi_callback_info args)
+{
+    size_t argc = 9;
+    napi_value argv[9];
+
+    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
+
+    if (argc < 9)
+    {
+        napi_throw_error(env, nullptr, "Insufficient arguments passed to CreateEntryWrapper");
+        return nullptr;
+    }
+
+    LPCWSTR itemName;
+    size_t itemNameLength;
+    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &itemNameLength);
+    itemName = new WCHAR[itemNameLength + 1];
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(itemName)), itemNameLength + 1, nullptr);
+
+    LPCWSTR itemIdentity;
+    size_t itemIdentityLength;
+    napi_get_value_string_utf16(env, argv[1], nullptr, 0, &itemIdentityLength);
+    itemIdentity = new WCHAR[itemIdentityLength + 1];
+    napi_get_value_string_utf16(env, argv[1], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(itemIdentity)), itemIdentityLength + 1, nullptr);
+
+    bool isDirectory;
+    napi_get_value_bool(env, argv[2], &isDirectory);
+
+    uint32_t itemSize;
+    napi_get_value_uint32(env, argv[3], &itemSize);
+
+    DWORD itemIdentityLengthDword = static_cast<DWORD>(itemIdentityLength);
+
+    uint32_t itemAttributes;
+    napi_get_value_uint32(env, argv[4], &itemAttributes);
+
+    FILETIME creationTime, lastWriteTime, lastAccessTime;
+
+    // Aquí se debe obtener los valores de FILETIME de los argumentos. Para simplificar, estoy usando valores ficticios.
+    creationTime.dwLowDateTime = 12345678;
+    creationTime.dwHighDateTime = 87654321;
+
+    lastWriteTime.dwLowDateTime = 98765432;
+    lastWriteTime.dwHighDateTime = 23456789;
+
+    lastAccessTime.dwLowDateTime = 34567890;
+    lastAccessTime.dwHighDateTime = 78901234;
+
+    LPCWSTR destPath;
+    size_t destPathLength;
+    napi_get_value_string_utf16(env, argv[8], nullptr, 0, &destPathLength);
+    destPath = new WCHAR[destPathLength + 1];
+    napi_get_value_string_utf16(env, argv[8], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(destPath)), destPathLength + 1, nullptr);
+
+    Placeholders::CreateEntry(
+        itemName,
+        itemIdentity,
+        isDirectory,
+        itemSize,
+        itemIdentityLengthDword,
+        itemAttributes,
+        creationTime,
+        lastWriteTime,
+        lastAccessTime,
+        destPath);
+
+    delete[] itemName;
+    delete[] itemIdentity;
+    delete[] destPath;
+
+    napi_value result;
+    napi_get_boolean(env, true, &result);
+    return result;
 }
