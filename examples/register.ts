@@ -18,7 +18,7 @@ drive.connectSyncRoot( {
 drive.createItemByPath(`/folder1/folder2/file1.txt`, '1');
 drive.createItemByPath(`/folder1/folder2/file2.txt`, '2');
 
-drive.createItemByPath(`/folder2/subfolder1/fileC.txt`, 'C');
+drive.createItemByPath(`/folder2/subfolder1/fileC.txt`, 'id-C');
 drive.createItemByPath(`/folder2/subfolder1/fileD.txt`, 'D');
 drive.createItemByPath(`/folder2/subfolder2/fileE.txt`, 'E');
 
