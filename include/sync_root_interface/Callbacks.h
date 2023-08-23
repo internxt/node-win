@@ -97,6 +97,12 @@ struct CallbackContext {
     napi_async_work work; 
 };
 
+
+struct SCallbackContext {
+    napi_env env;
+    napi_ref callbackRef;
+};
+
 struct SyncCallbacks {
     CF_CALLBACK_FUNCTION fetchDataCallback;                          // CF_CALLBACK_TYPE_FETCH_DATA
     CF_CALLBACK_FUNCTION validateDataCallback;                       // CF_CALLBACK_TYPE_VALIDATE_DATA
@@ -142,10 +148,16 @@ public:
     }
 };
 
-
 void CALLBACK DeleteDataNotificationCallback (
     _In_ CONST CF_CALLBACK_INFO* callbackInfo,
     _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
+);
+
+void DeleteDataNotificationCallbackThreadSafe(
+    napi_env env, 
+    napi_value js_cb, 
+    void* context, 
+    void* data
 );
 
 // void CALLBACK FetchDataCallback (

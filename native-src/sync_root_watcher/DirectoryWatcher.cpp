@@ -43,7 +43,7 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             _notify.get(),
             c_bufferSize,
             TRUE,
-            FILE_NOTIFY_CHANGE_ATTRIBUTES,
+            FILE_NOTIFY_CHANGE_ATTRIBUTES | FILE_NOTIFY_CHANGE_FILE_NAME,
             &returned,
             &_overlapped,
             nullptr));
@@ -63,6 +63,11 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
         FILE_NOTIFY_INFORMATION* next = _notify.get();
         while (next != nullptr)
         {
+
+            if (next->Action == FILE_ACTION_REMOVED) // Comprobar si el archivo fue eliminado
+            {
+                wprintf(L"File was removed\n");
+            }
             std::wstring fullPath(_path);
             fullPath.append(L"\\");
             fullPath.append(std::wstring_view(next->FileName, next->FileNameLength / sizeof(wchar_t)));

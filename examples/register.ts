@@ -9,13 +9,15 @@ drive.registerSyncRoot(
     "{12345678-1234-1234-1234-123456789012}",
 );
 
+function onDeleteCompletionCallback() {
+    console.log("Delete completion callback triggered.");
+}
+
 drive.connectSyncRoot( {
-    notifyDeleteCompletionCallback: () => {
-        console.log("This is a callback");
-    }
+    notifyDeleteCompletionCallback: onDeleteCompletionCallback
 });
 
-drive.createItemByPath(`/folder1/folder2/file1.txt`, '1');
+drive.createItemByPath(`/A (5th copy).pdfs`, '1');
 drive.createItemByPath(`/folder1/folder2/file2.txt`, '2');
 
 drive.createItemByPath(`/folder2/subfolder1/fileC.txt`, 'id-C');
@@ -39,6 +41,9 @@ drive.createItemByPath(`/folder6/subX/fileP.txt`, 'P');
 drive.createItemByPath(`/folder6/subY/fileQ.txt`, 'Q');
 drive.createItemByPath(`/folder6/subZ/fileR.txt`, 'R');
 
+// while(true) {
+//     // do nothing
+// }
 
 // const combinedFileAttributes = drive.PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_READONLY;
 // const combinenFolderAttributes = drive.PLACEHOLDER_ATTRIBUTES.FOLDER_ATTRIBUTE_READONLY;
@@ -102,4 +107,4 @@ drive.createItemByPath(`/folder6/subZ/fileR.txt`, 'R');
 // );
 
 
-// drive.watchAndWait(config.syncRootPath);
+drive.watchAndWait(config.syncRootPath);

@@ -145,12 +145,14 @@ HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallback
 {
     try
     {
+
+        wprintf(L"Connect\n");
         Utilities::AddFolderToSearchIndexer(syncRootPath);
 
-        // SyncCallbacks transformedCallbacks = TransformInputCallbacksToSyncCallbacks(env, syncCallbacks);
+        SyncCallbacks transformedCallbacks = TransformInputCallbacksToSyncCallbacks(env, syncCallbacks);
 
         CF_CALLBACK_REGISTRATION callbackTable[] = {
-            {CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION, DeleteDataNotificationCallback},
+            {CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION, transformedCallbacks.notifyDeleteCompletionCallback},
             CF_CALLBACK_REGISTRATION_END};
 
         HRESULT hr = CfConnectSyncRoot(
@@ -160,9 +162,10 @@ HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallback
             CF_CONNECT_FLAG_REQUIRE_PROCESS_INFO | CF_CONNECT_FLAG_REQUIRE_FULL_FILE_PATH,
             connectionKey);
 
+        wprintf(L"Resultado de CfConnectSyncRoot: %ld\n", hr);
+
         CallbackContext* context = GlobalContextContainer::GetContext();
 
-        wprintf(L"Connect Finished\n\n");
         return hr;
     }
     catch (const std::exception &e)
