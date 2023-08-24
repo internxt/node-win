@@ -1,14 +1,30 @@
 {
-  "name": "cloud",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "install": "node-gyp rebuild",
-    "build": "node-gyp configure build"
-  },
-  "author": "",
-  "license": "ISC",
-  "gypfile": true
+    "name": "virtual-drive",
+    "version": "1.0.0",
+    "description": "",
+    "main": "dist/index.ts",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "install": "node-gyp rebuild",
+        "clean": "node-gyp clean",
+        "build:gyp": "node-gyp configure build",
+        "build:ts": "tsc",
+        "start": "node lib/index.js",
+        "config": "python gyp.config.py",
+        "build": "node-gyp clean && node-gyp configure build && tsc",
+        "start:example:register": "node ./dist/examples/register.js",
+        "start:example:unregister": "node ./dist/examples/unregister.js"
+    },
+    "author": "",
+    "license": "ISC",
+    "gypfile": true,
+    "devDependencies": {
+        "@types/node": "^20.5.0",
+        "node-gyp": "^9.4.0",
+        "typescript": "^5.1.6"
+    },
+    "dependencies": {
+        "tsconfig-paths": "^4.2.0"
+    }
 }
