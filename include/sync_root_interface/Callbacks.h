@@ -91,6 +91,7 @@ struct InputSyncCallbacks {
 
 struct CallbackContext {
     napi_env env;
+    std::wstring fileIdentityStr;
     InputSyncCallbacks callbacks;
     napi_async_context async_context;
     napi_ref async_resource_ref;

@@ -32,8 +32,9 @@ void CALLBACK NotifyDeleteCompletionCallbackWrapper(_In_ CONST CF_CALLBACK_INFO*
     const wchar_t* wchar_ptr = static_cast<const wchar_t*>(fileIdentity);
     std::wstring fileIdentityStr(wchar_ptr, fileIdentityLength / sizeof(wchar_t));
 
+    context->fileIdentityStr = fileIdentityStr;
     // Imprimimos la cadena.
-    wprintf(L"File Identity: %s\n", fileIdentityStr.c_str());
+    // wprintf(L"File Identity: %s\n", fileIdentityStr.c_str());
 
     napi_queue_async_work(context->env, context->work);
 }

@@ -9,7 +9,8 @@ drive.registerSyncRoot(
     "{12345678-1234-1234-1234-123456789012}",
 );
 
-function onDeleteCompletionCallback() {
+function onDeleteCompletionCallback(fileId: string) {
+    console.log("File ID: " + fileId)
     console.log("Delete completion callback triggered.");
 }
 

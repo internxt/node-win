@@ -18,17 +18,22 @@ void CompleteAsyncWork(napi_env env, napi_status status, void* data) {
     if (context->callbacks.notifyDeleteCompletionCallbackRef) {
         napi_value callbackFn;
         napi_status status = napi_get_reference_value(env, context->callbacks.notifyDeleteCompletionCallbackRef, &callbackFn);
-    
+        
         if (status != napi_ok) {
             wprintf(L"Error al obtener el valor de referencia del callback\n");
             return;
         }
-    
+
+        std::string utf8Str(context->fileIdentityStr.begin(), context->fileIdentityStr.end());
+
         napi_value global;
         napi_get_global(env, &global);
+
+        napi_value arg;
+        napi_create_string_utf8(env, utf8Str.c_str(), NAPI_AUTO_LENGTH, &arg);
         
         napi_value result;
-        napi_make_callback(env, nullptr, global, callbackFn, 0, nullptr, &result);
+        napi_make_callback(env, nullptr, global, callbackFn, 1, &arg, &result);
     }
 
     // Limpiar el trabajo asíncrono y cualquier otra limpieza necesaria.
@@ -40,7 +45,7 @@ void CompleteAsyncWork(napi_env env, napi_status status, void* data) {
 SyncCallbacks TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCallbacks input) {
     SyncCallbacks sync;
 
-    CallbackContext *context = new CallbackContext{env, input};
+    CallbackContext *context = new CallbackContext{env, L"", input};
 
     napi_value resource_name;
     napi_create_string_utf8(env, "CloudStorage", NAPI_AUTO_LENGTH, &resource_name);
