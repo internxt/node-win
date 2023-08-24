@@ -9,6 +9,7 @@
         "install": "node-gyp rebuild",
         "clean": "node-gyp clean",
         "build:gyp": "node-gyp configure build",
+        "build:ts": "tsc",
         "start": "node lib/index.js",
         "config": "python gyp.config.py",
         "build": "node-gyp clean && node-gyp configure build && tsc",
