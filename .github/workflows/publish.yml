@@ -3,38 +3,32 @@ on:
   release:
     types: [created]
   workflow_dispatch:
-
-jobs:
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v2
-      - run: yarn build:gyp
-      - uses: actions/upload-artifact@v2
-        with:
-          name: windows-binaries
-          path: build/Release
-
-  build:
-    needs: build-windows
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/download-artifact@v2
-        with:
-          name: windows-binaries
-          path: build/Release
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '16.x'
-          registry-url: 'https://npm.pkg.github.com'
-      - run: yarn
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: yarn build:tsc
-      - run: yarn publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
+  jobs:
+    build-windows:
+      runs-on: windows-latest
+      steps:
+        - uses: actions/checkout@v2
+        - run: yarn build:gyp 
+        - uses: actions/upload-artifact@v2
+          with:
+            name: windows-binaries
+            path: build/Release
+  
+    publish:
+      needs: build-windows
+      runs-on: windows-latest
+      steps:
+        - uses: actions/checkout@v2
+        - uses: actions/download-artifact@v2
+          with:
+            name: windows-binaries
+            path: build/Release
+        - uses: actions/setup-node@v2
+          with:
+            node-version: '16.x'
+            registry-url: 'https://npm.pkg.github.com'
+        - run: yarn
+        - run: yarn publish
+          env:
+            NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
