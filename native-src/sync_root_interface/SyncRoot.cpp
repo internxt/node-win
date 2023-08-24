@@ -7,7 +7,6 @@ void ExecuteAsyncWork(napi_env env, void* data) {
 }
 
 void CompleteAsyncWork(napi_env env, napi_status status, void* data) {
-    wprintf(L"CompleteAsyncWork\n");
     CallbackContext* context = (CallbackContext*)data;
 
     // Si hubo un error en `ExecuteAsyncWork`, el parámetro `status` no será `napi_ok`.

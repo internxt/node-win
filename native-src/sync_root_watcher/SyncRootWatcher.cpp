@@ -43,10 +43,6 @@ void SyncRootWatcher::WatchAndWait(const wchar_t *syncRootPath)
                 break;
             }
         }
-        // catch (const std::exception& e)
-        // {
-        //     wprintf(L"CloudProviderSyncRootWatcher watcher failed. Error: %s\n", e.what());
-        // }
         catch (...)
         {
             wprintf(L"CloudProviderSyncRootWatcher watcher failed. Unknown error.\n");
@@ -87,28 +83,21 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<std::wstring>& change
         }
     }
 
-    wprintf(L"Syncing complete\n");
-
     try {
 
         auto elapsed = GetTickCount64() - start;
-        wprintf(L"SyncRootWatcher::OnSyncRootFileChanges() elapsed: %llu\n", elapsed);
         if (elapsed < 3000)
         {
-            wprintf(L"SyncRootWatcher::OnSyncRootFileChanges() durmiendo por %llu\n", 3000 - elapsed);
             Sleep(static_cast<DWORD>(3000 - elapsed));
         }
+
     } catch (...) {
         wprintf(L"Error al dormir el hilo.\n");
         throw;
     }
 
-    wprintf(L"SyncRootWatcher::OnSyncRootFileChanges() llamando a s_statusChanged 1.\n");
-
     s_state = winrt::StorageProviderState::InSync;
-    wprintf(L"SyncRootWatcher::OnSyncRootFileChanges() llamando a s_statusChanged 2.\n");
     s_statusChanged(nullptr, nullptr);
-    wprintf(L"SyncRootWatcher::OnSyncRootFileChanges() finalizado.\n");
 }
 
 void SyncRootWatcher::InitDirectoryWatcher(const wchar_t *syncRootPath)

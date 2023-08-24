@@ -17,7 +17,7 @@ drive.connectSyncRoot( {
     notifyDeleteCompletionCallback: onDeleteCompletionCallback
 });
 
-drive.createItemByPath(`/A (5th copy).pdfs`, '1');
-drive.createItemByPath(`/folder1/folder2/file2.txt`, '2');
+drive.createItemByPath(`/A (5th copy).pdfs`, '280ab650-acef-4438-8bbc-29863810b24a');
+drive.createItemByPath(`/folder1/file2.txt`, 'fa8217c9-2dd6-4641-9180-8206e60368a6');
 
 drive.watchAndWait(config.syncRootPath);

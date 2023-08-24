@@ -24,11 +24,15 @@ napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
     fileName = new WCHAR[fileNameLength + 1];
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(fileName)), fileNameLength + 1, nullptr);
 
-    LPCWSTR fileIdentity;
     size_t fileIdentityLength;
     napi_get_value_string_utf16(env, argv[1], nullptr, 0, &fileIdentityLength);
-    fileIdentity = new WCHAR[fileIdentityLength + 1];
-    napi_get_value_string_utf16(env, argv[1], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(fileIdentity)), fileIdentityLength + 1, nullptr);
+    wchar_t* fileIdentity = new wchar_t[fileIdentityLength + 1];
+    napi_get_value_string_utf16(env, argv[1], reinterpret_cast<char16_t *>(fileIdentity), fileIdentityLength + 1, nullptr);
+    
+    if (fileIdentityLength > CF_PLACEHOLDER_MAX_FILE_IDENTITY_LENGTH) {
+        napi_throw_error(env, nullptr, "File identity is too long");
+        return nullptr;
+    }
 
     uint32_t fileSize;
     napi_get_value_uint32(env, argv[2], &fileSize);

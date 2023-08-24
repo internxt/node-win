@@ -20,8 +20,11 @@ void Placeholders::CreateOne(
 
         std::wstring fullDestPath = std::wstring(destPath) + L'\\'; // fileName;
 
-        cloudEntry.FileIdentity = fileIdentity;
-        cloudEntry.FileIdentityLength = fileIdentityLength;
+
+        std::wstring relativeName(fileIdentity);
+        
+        cloudEntry.FileIdentity = relativeName.c_str();
+        cloudEntry.FileIdentityLength = static_cast<DWORD>((relativeName.size() + 1) * sizeof(WCHAR));
 
         cloudEntry.RelativeFileName = fileName;
         cloudEntry.Flags = CF_PLACEHOLDER_CREATE_FLAG_MARK_IN_SYNC;
