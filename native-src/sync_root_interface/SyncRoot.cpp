@@ -3,14 +3,11 @@
 #include "Callbacks.h"
 
 void ExecuteAsyncWork(napi_env env, void* data) {
-    wprintf(L"ExecuteAsyncWork iniciado\n");
     CallbackContext* context = (CallbackContext*)data;
-    // Realizar operaciones costosas aquí.
-    // NO llames a ninguna función de la API de Node.js desde aquí.
 }
 
 void CompleteAsyncWork(napi_env env, napi_status status, void* data) {
-    wprintf(L"CompleteAsyncWork iniciado\n");
+    wprintf(L"CompleteAsyncWork\n");
     CallbackContext* context = (CallbackContext*)data;
 
     // Si hubo un error en `ExecuteAsyncWork`, el parámetro `status` no será `napi_ok`.
@@ -36,7 +33,7 @@ void CompleteAsyncWork(napi_env env, napi_status status, void* data) {
     }
 
     // Limpiar el trabajo asíncrono y cualquier otra limpieza necesaria.
-    napi_delete_async_work(env, context->work);
+    // napi_delete_async_work(env, context->work);
     // GlobalContextContainer::ClearContext();
     // delete context;
 }
@@ -145,8 +142,6 @@ HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallback
 {
     try
     {
-
-        wprintf(L"Connect\n");
         Utilities::AddFolderToSearchIndexer(syncRootPath);
 
         SyncCallbacks transformedCallbacks = TransformInputCallbacksToSyncCallbacks(env, syncCallbacks);
@@ -161,8 +156,6 @@ HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallback
             nullptr, // Contexto (opcional)
             CF_CONNECT_FLAG_REQUIRE_PROCESS_INFO | CF_CONNECT_FLAG_REQUIRE_FULL_FILE_PATH,
             connectionKey);
-
-        wprintf(L"Resultado de CfConnectSyncRoot: %ld\n", hr);
 
         CallbackContext* context = GlobalContextContainer::GetContext();
 

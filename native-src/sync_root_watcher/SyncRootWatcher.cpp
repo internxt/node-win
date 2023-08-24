@@ -15,10 +15,13 @@ winrt::event<winrt::EventHandler<winrt::IInspectable>> SyncRootWatcher::s_status
 
 void SyncRootWatcher::WatchAndWait(const wchar_t *syncRootPath)
 {
-    //  Main loop - wait for Ctrl+C or our named event to be signaled
     SetConsoleCtrlHandler(Stop, TRUE);
-    InitDirectoryWatcher(syncRootPath);
+    InitDirectoryWatcher(syncRootPath);;
 
+    if (syncRootPath == nullptr) {
+        wprintf(L"syncRootPath es nulo.\n");
+        throw std::invalid_argument("syncRootPath no puede ser nulo");
+    }
     while (true)
     {
         try
@@ -40,9 +43,13 @@ void SyncRootWatcher::WatchAndWait(const wchar_t *syncRootPath)
                 break;
             }
         }
+        // catch (const std::exception& e)
+        // {
+        //     wprintf(L"CloudProviderSyncRootWatcher watcher failed. Error: %s\n", e.what());
+        // }
         catch (...)
         {
-            wprintf(L"CloudProviderSyncRootWatcher watcher failed.\n");
+            wprintf(L"CloudProviderSyncRootWatcher watcher failed. Unknown error.\n");
             throw;
         }
     }
@@ -80,20 +87,32 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<std::wstring>& change
         }
     }
 
-    // For demonstration purposes, spend at least 3 seconds in the Syncing state.
-    auto elapsed = GetTickCount64() - start;
-    if (elapsed < 3000)
-    {
-        Sleep(static_cast<DWORD>(3000 - elapsed));
+    wprintf(L"Syncing complete\n");
+
+    try {
+
+        auto elapsed = GetTickCount64() - start;
+        wprintf(L"SyncRootWatcher::OnSyncRootFileChanges() elapsed: %llu\n", elapsed);
+        if (elapsed < 3000)
+        {
+            wprintf(L"SyncRootWatcher::OnSyncRootFileChanges() durmiendo por %llu\n", 3000 - elapsed);
+            Sleep(static_cast<DWORD>(3000 - elapsed));
+        }
+    } catch (...) {
+        wprintf(L"Error al dormir el hilo.\n");
+        throw;
     }
 
+    wprintf(L"SyncRootWatcher::OnSyncRootFileChanges() llamando a s_statusChanged 1.\n");
+
     s_state = winrt::StorageProviderState::InSync;
+    wprintf(L"SyncRootWatcher::OnSyncRootFileChanges() llamando a s_statusChanged 2.\n");
     s_statusChanged(nullptr, nullptr);
+    wprintf(L"SyncRootWatcher::OnSyncRootFileChanges() finalizado.\n");
 }
 
 void SyncRootWatcher::InitDirectoryWatcher(const wchar_t *syncRootPath)
 {
-    // Set up a Directory Watcher on the client side to handle user's changing things there
     try
     {
         s_directoryWatcher.Initialize(syncRootPath, OnSyncRootFileChanges);

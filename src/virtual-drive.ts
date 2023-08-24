@@ -2,6 +2,7 @@ const addon = require('../../build/Release/addon.node');
 import path from 'path';
 import fs from 'fs';
 import { deleteAllSubfolders } from './utils';
+import { Worker } from 'worker_threads';
 
 interface Addon {
     connectSyncRoot(path: string): any;
@@ -32,6 +33,7 @@ type InputSyncCallbacks = {
 class VirtualDrive {
     PLACEHOLDER_ATTRIBUTES: { [key: string]: number };
     syncRootPath: string;
+    workerPath: string
 
     constructor(syncRootPath: string) {
 
@@ -42,6 +44,8 @@ class VirtualDrive {
         };
 
         this.syncRootPath = syncRootPath;
+
+        this.workerPath = path.join(__dirname, './watch-worker.js');
     }
 
     convertToWindowsTime(jsTime: number): bigint {
@@ -113,13 +117,27 @@ class VirtualDrive {
         return result;
     }
 
-    watchAndWait(path: string): any {
-        return addon.watchAndWait(path);
-    }
+    watchAndWait(path: string): void {
+        const worker = new Worker(this.workerPath, { workerData: { path } });
+    
+        worker.on('message', (message) => {
+          console.log('Mensaje desde el worker:', message);
+        });
+    
+        worker.on('error', (err) => {
+          console.error('Error en el worker:', err);
+        });
+    
+        worker.on('exit', (code) => {
+            console.log(`Worker stopped with code ${code}`);
+          if (code !== 0) {
+            console.error(`Worker se detuvo con el código ${code}`);
+          }
+        });
+      }
     
     createItemByPath(relativePath: string, fileId: string) {
         const fullPath = path.join(this.syncRootPath, relativePath);
-        console.log(`fullDestPath: ${fullPath}`);
     
         if (relativePath.endsWith('/')) { // Es un directorio
             const splitPath = relativePath.split('/').filter(p => p);
@@ -154,7 +172,6 @@ class VirtualDrive {
                 fs.mkdirSync(directoryPath, { recursive: true });
             }
     
-            console.log(`Creating placeholder for ${path.basename(fullPath)}`);
             try {
                 this.createPlaceholderFile(
                     path.basename(fullPath),

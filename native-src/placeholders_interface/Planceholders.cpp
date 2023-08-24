@@ -33,9 +33,6 @@ void Placeholders::CreateOne(
         cloudEntry.FsMetadata.BasicInfo.LastAccessTime = Utilities::FileTimeToLargeInteger(lastAccessTime);
         cloudEntry.FsMetadata.BasicInfo.ChangeTime = Utilities::FileTimeToLargeInteger(lastWriteTime);
 
-        wprintf(L"Creating placeholder for %s\n", fileName);
-        wprintf(L"fullDestPath: %s\n", fullDestPath.c_str());
-
         try
         {
             winrt::check_hresult(CfCreatePlaceholders(fullDestPath.c_str(), &cloudEntry, 1, CF_CREATE_FLAG_NONE, NULL));
@@ -50,13 +47,6 @@ void Placeholders::CreateOne(
         prop.Value(L"Value1");
         prop.IconResource(L"shell32.dll,-44");
 
-        // wprintf(L"\ndestPath: %s\n", destPath);
-        // wprintf(L"fileName: %s\n", fileName);
-
-        // wprintf(L"Applying custom state for %s\n", fileName);
-        // Utilities::ApplyCustomStateToPlaceholderFile(destPath, fileName, prop);
-
-        wprintf(L"Finish creatiing placeholder\n\n");
     }
     catch (...)
     {
@@ -66,10 +56,10 @@ void Placeholders::CreateOne(
 
 void Placeholders::CreateEntry(
     _In_ PCWSTR itemName,
-    _In_ PCWSTR itemIdentity,  // No usaremos itemIdentity para crear archivos o carpetas normales
+    _In_ PCWSTR itemIdentity,
     bool isDirectory,
-    uint32_t itemSize,  // No se necesita para la creación de archivos o carpetas
-    DWORD itemIdentityLength,  // No se necesita para la creación de archivos o carpetas
+    uint32_t itemSize,
+    DWORD itemIdentityLength,
     uint32_t itemAttributes,
     FILETIME creationTime,
     FILETIME lastWriteTime,
@@ -82,13 +72,10 @@ void Placeholders::CreateEntry(
     {
         if (isDirectory)
         {
-            // if (!PathFileExistsW(fullDestPath.c_str()))
-            // {
                 if (!CreateDirectoryW(fullDestPath.c_str(), NULL))
                 {
                     throw winrt::hresult_error(HRESULT_FROM_WIN32(GetLastError()));
                 }
-            // }
         }
         else
         {
@@ -98,7 +85,6 @@ void Placeholders::CreateEntry(
                 throw winrt::hresult_error(HRESULT_FROM_WIN32(GetLastError()));
             }
 
-            // Configurar los tiempos del archivo si es necesario
             SetFileTime(hFile, &creationTime, &lastAccessTime, &lastWriteTime);
             
             CloseHandle(hFile);
@@ -111,83 +97,3 @@ void Placeholders::CreateEntry(
         wprintf(L"Error while creating %s: %s\n", isDirectory ? L"directory" : L"file", error.message().c_str());
     }
 }
-
-// void Placeholders::CreateEntry(
-//     _In_ PCWSTR itemName,
-//     _In_ PCWSTR itemIdentity,
-//     bool isDirectory,
-//     uint32_t itemSize,
-//     DWORD itemIdentityLength,
-//     uint32_t itemAttributes,
-//     FILETIME creationTime,
-//     FILETIME lastWriteTime,
-//     FILETIME lastAccessTime,
-//     _In_ PCWSTR destPath)
-// {
-//     try
-//     {
-//         CF_PLACEHOLDER_CREATE_INFO cloudEntry = {};
-
-//         std::wstring fullDestPath = std::wstring(destPath);
-//         if (fullDestPath.back() != L'\\')
-//         {
-//             fullDestPath.push_back(L'\\');
-//         }
-
-//         // cloudEntry.FileIdentity = itemIdentity;
-//         // cloudEntry.FileIdentityLength = itemIdentityLength;
-//         // cloudEntry.RelativeFileName = itemName;
-//         // cloudEntry.Flags = CF_PLACEHOLDER_CREATE_FLAG_MARK_IN_SYNC;
-
-//         // if (isDirectory) {
-//         //     cloudEntry.FsMetadata.FileSize.QuadPart = 0;
-//         //     cloudEntry.FsMetadata.BasicInfo.FileAttributes |= FILE_ATTRIBUTE_DIRECTORY;
-//         //     cloudEntry.Flags |= CF_PLACEHOLDER_CREATE_FLAG_DISABLE_ON_DEMAND_POPULATION;
-//         // } else {
-//         //     cloudEntry.FsMetadata.FileSize.QuadPart = itemSize;
-//         // }
-
-//         // cloudEntry.FsMetadata.BasicInfo.FileAttributes = itemAttributes;
-//         // cloudEntry.FsMetadata.BasicInfo.CreationTime = Utilities::FileTimeToLargeInteger(creationTime);
-//         // cloudEntry.FsMetadata.BasicInfo.LastWriteTime = Utilities::FileTimeToLargeInteger(lastWriteTime);
-//         // cloudEntry.FsMetadata.BasicInfo.LastAccessTime = Utilities::FileTimeToLargeInteger(lastAccessTime);
-//         // cloudEntry.FsMetadata.BasicInfo.ChangeTime = Utilities::FileTimeToLargeInteger(lastWriteTime);
-//         cloudEntry = {}; 
-//         cloudEntry.FileIdentity = L"TestIdentity";
-//         cloudEntry.FileIdentityLength = wcslen(L"TestIdentity") * sizeof(wchar_t);
-//         cloudEntry.RelativeFileName = L"TestFolder";
-//         cloudEntry.Flags = CF_PLACEHOLDER_CREATE_FLAG_NONE;
-//         cloudEntry.FsMetadata.FileSize.QuadPart = 0;
-//         cloudEntry.FsMetadata.BasicInfo.FileAttributes = FILE_ATTRIBUTE_DIRECTORY;
-
-//         wprintf(L"Creating placeholder for %s\n", itemName);
-        
-//         // Print cloudEntry details for debugging
-//         wprintf(L"fullDestPath: %s\n", fullDestPath.c_str());
-//         wprintf(L"FileIdentity: %s\n", cloudEntry.FileIdentity);
-//         wprintf(L"FileIdentityLength: %d\n", cloudEntry.FileIdentityLength);
-//         wprintf(L"RelativeFileName: %s\n", cloudEntry.RelativeFileName);
-//         wprintf(L"Flags: %d\n", cloudEntry.Flags);
-//         wprintf(L"FileSize: %lld\n", cloudEntry.FsMetadata.FileSize.QuadPart);
-//         wprintf(L"FileAttributes: %d\n", cloudEntry.FsMetadata.BasicInfo.FileAttributes);
-//         wprintf(L"CreationTime: %lld\n", cloudEntry.FsMetadata.BasicInfo.CreationTime.QuadPart);
-//         wprintf(L"LastWriteTime: %lld\n", cloudEntry.FsMetadata.BasicInfo.LastWriteTime.QuadPart);
-//         wprintf(L"LastAccessTime: %lld\n", cloudEntry.FsMetadata.BasicInfo.LastAccessTime.QuadPart);
-//         wprintf(L"ChangeTime: %lld\n", cloudEntry.FsMetadata.BasicInfo.ChangeTime.QuadPart);
-        
-//         try
-//         {
-//             winrt::check_hresult(CfCreatePlaceholders(fullDestPath.c_str(), &cloudEntry, 1, CF_CREATE_FLAG_NONE, NULL));
-//         }
-//         catch (const winrt::hresult_error &error)
-//         {
-//             wprintf(L"Error al crear placeholder: %s\n", error.message().c_str());
-//             throw error;
-//         }
-
-//     }
-//     catch (...)
-//     {
-//         wprintf(L"Failed to create or customize placeholder with %08x\n", static_cast<HRESULT>(winrt::to_hresult()));
-//     }
-// }

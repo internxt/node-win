@@ -154,74 +154,9 @@ napi_value RegisterSyncRootWrapper(napi_env env, napi_callback_info args) {
     return napiResult;
 }
 
-// napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args) {
-//     try {
-//     size_t argc = 2;
-//     napi_value argv[2];
-
-//     napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
-
-//     if (argc < 2) {
-//         napi_throw_error(env, nullptr, "Se requieren más argumentos para ConnectSyncRoot");
-//         return nullptr;
-//     }
-//     LPCWSTR syncRootPath;
-//     size_t pathLength;
-//     napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
-//     syncRootPath = new WCHAR[pathLength + 1];
-//     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t*>(const_cast<wchar_t*>(syncRootPath)), pathLength + 1, nullptr);
-
-//     // CALLBACKS
-//     InputSyncCallbacks callbacks = {};
-
-//     napi_value notifyDeleteCompletionCallback;
-
-//     napi_value resource_name;
-//     napi_create_string_utf8(env, "ConnectSyncRootWrapper", NAPI_AUTO_LENGTH, &resource_name);
-//     napi_async_context async_context;
-//     napi_async_init(env, NULL, resource_name, &async_context);
-
-//     if (napi_get_named_property(env, argv[1], "notifyDeleteCompletionCallback", &notifyDeleteCompletionCallback) == napi_ok) {
-//         //print the value
-//         napi_create_reference(env, notifyDeleteCompletionCallback, 1, &callbacks.notifyDeleteCompletionCallbackRef);
-//     }
-
-//     CF_CONNECTION_KEY connectionKey;
-//     HRESULT hr = SyncRoot::ConnectSyncRoot(syncRootPath, callbacks, env, &connectionKey);
-
-//     delete[] syncRootPath;
-
-//     if (FAILED(hr)) {
-//         napi_throw_error(env, nullptr, "ConnectSyncRoot failed");
-//         return nullptr;
-//     }
-    
-//     napi_value resultObj, hrValue, connectionKeyValue;
-
-//     napi_create_object(env, &resultObj);
-    
-//     napi_create_int32(env, static_cast<int32_t>(hr), &hrValue);
-//     napi_set_named_property(env, resultObj, "hr", hrValue);
-    
-//     std::wstringstream ss;
-//     ss << connectionKey.Internal;
-
-//     std::wstring connectionKeyString = ss.str();
-//     napi_create_string_utf16(env, reinterpret_cast<const char16_t*>(connectionKeyString.c_str()), connectionKeyString.length(), &connectionKeyValue);
-        
-//     napi_set_named_property(env, resultObj, "connectionKey", connectionKeyValue);
-
-//     return resultObj;
-//     }
-//     catch (...) {
-//         napi_throw_error(env, nullptr, "An unknown error occurred in ConnectSyncRootWrapper");
-//         return nullptr;
-//     }
-// }
-
 napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args) {
     try {
-    wprintf(L"Inicio de ConnectSyncRootWrapper1\n");
+
     size_t argc = 2;
     napi_value argv[2];
 
@@ -231,7 +166,7 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args) {
         napi_throw_error(env, nullptr, "Se requieren más argumentos para ConnectSyncRoot");
         return nullptr;
     }
-    wprintf(L"Inicio de ConnectSyncRootWrapper2\n");
+
     LPCWSTR syncRootPath;
     size_t pathLength;
     napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
@@ -241,25 +176,21 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args) {
     // CALLBACKS
     InputSyncCallbacks callbacks = {};
 
-    wprintf(L"argv[1] value: %p\n", argv[1]);
-
     napi_value notifyDeleteCompletionCallback;
 
     napi_async_context async_context;
 
     if (napi_get_named_property(env, argv[1], "notifyDeleteCompletionCallback", &notifyDeleteCompletionCallback) == napi_ok) {
-        //print the value
-        wprintf(L"notifyDeleteCompletionCallbackFFF: %p\n", notifyDeleteCompletionCallback);
         napi_create_reference(env, notifyDeleteCompletionCallback, 1, &callbacks.notifyDeleteCompletionCallbackRef);
     }
 
-    wprintf(L"Inicio de ConnectSyncRootWrapper3\n");
+
     CF_CONNECTION_KEY connectionKey;
     HRESULT hr = SyncRoot::ConnectSyncRoot(syncRootPath, callbacks, env, &connectionKey);
 
     delete[] syncRootPath;
 
-    wprintf(L"Inicio de ConnectSyncRootWrapper4\n");
+
 
     if (FAILED(hr)) {
         napi_throw_error(env, nullptr, "ConnectSyncRoot failed");
@@ -270,7 +201,7 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args) {
 
     napi_create_object(env, &resultObj);
 
-    wprintf(L"Inicio de ConnectSyncRootWrapper4\n");
+
     
     napi_create_int32(env, static_cast<int32_t>(hr), &hrValue);
     napi_set_named_property(env, resultObj, "hr", hrValue);
