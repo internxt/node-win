@@ -181,6 +181,7 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args) {
     InputSyncCallbacks callbacks = {};
 
     napi_value notifyDeleteCompletionCallback;
+    napi_value notifyRenameCallback;
 
     napi_async_context async_context;
 
@@ -188,6 +189,9 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args) {
         napi_create_reference(env, notifyDeleteCompletionCallback, 1, &callbacks.notifyDeleteCompletionCallbackRef);
     }
 
+    if (napi_get_named_property(env, argv[1], "notifyRenameCallback", &notifyRenameCallback) == napi_ok) {
+        napi_create_reference(env, notifyRenameCallback, 1, &callbacks.notifyRenameCallbackRef);
+    }
 
     CF_CONNECTION_KEY connectionKey;
     HRESULT hr = SyncRoot::ConnectSyncRoot(syncRootPath, callbacks, env, &connectionKey);
@@ -225,7 +229,6 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args) {
         return nullptr;
     }
 }
-
 
 napi_value WatchAndWaitWrapper(napi_env env, napi_callback_info args) {
     size_t argc = 1;

@@ -6,25 +6,26 @@ void ExecuteAsyncWork(napi_env env, void* data) {
     CallbackContext* context = (CallbackContext*)data;
 }
 
-void CompleteAsyncWork(napi_env env, napi_status status, void* data) {
+void CompleteDeleteCallbackAsyncWork(napi_env env, napi_status status, void* data) {
     CallbackContext* context = (CallbackContext*)data;
-
-    // Si hubo un error en `ExecuteAsyncWork`, el parámetro `status` no será `napi_ok`.
+    wprintf(L"CompleteAsyncWork\n");
     if (status != napi_ok) {
         // Manejar error aquí.
     }
 
-    // Si necesitas invocar un callback de JavaScript o realizar otras operaciones que requieran la API de Node.js, hazlo aquí.
     if (context->callbacks.notifyDeleteCompletionCallbackRef) {
         napi_value callbackFn;
         napi_status status = napi_get_reference_value(env, context->callbacks.notifyDeleteCompletionCallbackRef, &callbackFn);
         
         if (status != napi_ok) {
-            wprintf(L"Error al obtener el valor de referencia del callback\n");
+            wprintf(L"Error in obtaining the callback reference value.\n");
             return;
         }
 
-        std::string utf8Str(context->fileIdentityStr.begin(), context->fileIdentityStr.end());
+        std::string utf8Str(
+            context->callbackArgs.notifyDeleteCompletionArgs.fileIdentity.begin(),
+            context->callbackArgs.notifyDeleteCompletionArgs.fileIdentity.end()
+        );
 
         napi_value global;
         napi_get_global(env, &global);
@@ -35,26 +36,56 @@ void CompleteAsyncWork(napi_env env, napi_status status, void* data) {
         napi_value result;
         napi_make_callback(env, nullptr, global, callbackFn, 1, &arg, &result);
     }
+}
 
-    // Limpiar el trabajo asíncrono y cualquier otra limpieza necesaria.
-    // napi_delete_async_work(env, context->work);
-    // GlobalContextContainer::ClearContext();
-    // delete context;
+void CompleteRenameCallbackAsyncWork(napi_env env, napi_status status, void* data) {
+    CallbackContext* context = (CallbackContext*)data;
+    wprintf(L"CompleteAsyncWork\n");
+    if (status != napi_ok) {
+        // Manejar error aquí.
+    }
+
+    if (context->callbacks.notifyRenameCallbackRef) {
+        napi_value callbackFn;
+        napi_status status = napi_get_reference_value(env, context->callbacks.notifyRenameCallbackRef, &callbackFn);
+
+        if (status != napi_ok) {
+            wprintf(L"Error in obtaining the callback reference value.\n");
+            return;
+        }
+        
+        napi_value global;
+        napi_get_global(env, &global);
+
+        napi_value arg;
+        napi_create_string_utf8(env, "Hola", NAPI_AUTO_LENGTH, &arg);
+
+        napi_value result;
+        napi_make_callback(env, nullptr, global, callbackFn, 0, nullptr, &result);
+    }
 }
 
 SyncCallbacks TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCallbacks input) {
     SyncCallbacks sync;
 
-    CallbackContext *context = new CallbackContext{env, L"", input};
+    wprintf(L"TransformInputCallbacksToSyncCallbacks\n");
+    CallbackContext *context = new CallbackContext{env, {}, input};
 
-    napi_value resource_name;
-    napi_create_string_utf8(env, "CloudStorage", NAPI_AUTO_LENGTH, &resource_name);
+    //DeleteCompletion
+    napi_value deleteCallback;
+    napi_create_string_utf8(env, "DeleteCallback", NAPI_AUTO_LENGTH, &deleteCallback);
+    napi_create_async_work(env, NULL, deleteCallback, ExecuteAsyncWork, CompleteDeleteCallbackAsyncWork, context, &context->callbacksWorks.notifyDeleteCompletionCallbackWork);
 
-    napi_create_async_work(env, NULL, resource_name, ExecuteAsyncWork, CompleteAsyncWork, context, &context->work);
+    //Remame Completion
+    napi_value renameCallback;
+    napi_create_string_utf8(env, "DeleteCallback", NAPI_AUTO_LENGTH, &renameCallback);
+    napi_create_async_work(env, NULL, renameCallback, ExecuteAsyncWork, CompleteRenameCallbackAsyncWork, context, &context->callbacksWorks.notifyDeleteCompletionCallbackWork);
+
 
     GlobalContextContainer::SetContext(context);
 
     sync.notifyDeleteCompletionCallback = NotifyDeleteCompletionCallbackWrapper;
+    sync.notifyRenameCallback = NotifyRenameCallbackWrapper;
 
     return sync;
 }
@@ -114,15 +145,12 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
 
         winrt::StorageProviderSyncRootManager::Register(info);
 
-        // Give the cache some time to invalidate
         Sleep(1000);
 
         return S_OK;
     }
     catch (...)
     {
-        // winrt::to_hresult() will eat the exception if it is a result of winrt::check_hresult,
-        // otherwise the exception will get rethrown and this method will crash out as it should
         wprintf(L"Could not register the sync root, hr %08x\n", static_cast<HRESULT>(winrt::to_hresult()));
     }
 }
@@ -152,14 +180,17 @@ HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallback
 
         CF_CALLBACK_REGISTRATION callbackTable[] = {
             {CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION, transformedCallbacks.notifyDeleteCompletionCallback},
-            CF_CALLBACK_REGISTRATION_END};
+            {CF_CALLBACK_TYPE_NOTIFY_RENAME_COMPLETION, transformedCallbacks.notifyRenameCallback},
+            CF_CALLBACK_REGISTRATION_END
+        };
 
         HRESULT hr = CfConnectSyncRoot(
             syncRootPath,
             callbackTable,
             nullptr, // Contexto (opcional)
             CF_CONNECT_FLAG_REQUIRE_PROCESS_INFO | CF_CONNECT_FLAG_REQUIRE_FULL_FILE_PATH,
-            connectionKey);
+            connectionKey
+        );
 
         CallbackContext* context = GlobalContextContainer::GetContext();
 

@@ -14,8 +14,13 @@ function onDeleteCompletionCallback(fileId: string) {
     console.log("Delete completion callback triggered.");
 }
 
+function onRenameCallback() {
+    console.log("Rename callback triggered.");
+}
+
 drive.connectSyncRoot( {
-    notifyDeleteCompletionCallback: onDeleteCompletionCallback
+    notifyDeleteCompletionCallback: onDeleteCompletionCallback,
+    notifyRenameCallback: onRenameCallback
 });
 
 drive.createItemByPath(`/A (5th copy).pdfs`, '280ab650-acef-4438-8bbc-29863810b24a');
