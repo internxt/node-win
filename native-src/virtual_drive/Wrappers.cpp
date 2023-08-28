@@ -259,7 +259,8 @@ napi_value WatchAndWaitWrapper(napi_env env, napi_callback_info args) {
     syncRootPath = new WCHAR[pathLength + 1];
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t*>(const_cast<wchar_t*>(syncRootPath)), pathLength + 1, nullptr);
 
-    SyncRootWatcher::WatchAndWait(syncRootPath);
+    SyncRootWatcher watcher;
+    watcher.WatchAndWait(syncRootPath);
 
     delete[] syncRootPath;
 

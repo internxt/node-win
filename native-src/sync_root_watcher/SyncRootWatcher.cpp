@@ -15,6 +15,12 @@ winrt::event<winrt::EventHandler<winrt::IInspectable>> SyncRootWatcher::s_status
 
 void SyncRootWatcher::WatchAndWait(const wchar_t *syncRootPath)
 {
+    std::thread watcherThread([this, syncRootPath] { WatcherTask(syncRootPath); });
+    watcherThread.detach();
+}
+
+void SyncRootWatcher::WatcherTask(const wchar_t *syncRootPath)
+{
     SetConsoleCtrlHandler(Stop, TRUE);
     InitDirectoryWatcher(syncRootPath);;
 
