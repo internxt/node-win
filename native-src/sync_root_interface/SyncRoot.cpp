@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include "SyncRoot.h"
 #include "Callbacks.h"
+#include <iostream>
+
+static napi_threadsafe_function global_tsfn = nullptr;
 
 void ExecuteAsyncWork(napi_env env, void* data) {
     CallbackContext* context = (CallbackContext*)data;
@@ -65,6 +68,45 @@ void CompleteRenameCallbackAsyncWork(napi_env env, napi_status status, void* dat
     }
 }
 
+void CALLBACK NotifyRenameCompletionCallbackWrapper(
+    _In_ CONST CF_CALLBACK_INFO* callbackInfo,
+    _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
+) {
+    if (global_tsfn == nullptr) {
+        // Manejar error aquí.
+        return;
+    }
+
+    CallbackContext* context = GlobalContextContainer::GetContext();
+    if (context == nullptr) {
+        wprintf(L"Context is null. Aborting.\n");
+        return;
+    }
+
+    // Aquí puedes utilizar callbackInfo y callbackParameters como lo necesites.
+
+    std::wstring fileIdentity; // Puedes asignar un valor a fileIdentity aquí, si es necesario.
+    context->callbackArgs.notifyDeleteCompletionArgs.fileIdentity = fileIdentity;
+
+    napi_status status = napi_call_threadsafe_function(global_tsfn, nullptr, napi_tsfn_nonblocking);
+    if (status != napi_ok) {
+        // Manejar error aquí.
+    }
+}
+
+void SetupGlobalTsfn(napi_threadsafe_function tsfn) {
+    global_tsfn = tsfn;
+}
+
+void emptyThreadFinalize(napi_env env, void* finalize_data, void* finalize_hint) {
+    // No hacer nada
+}
+
+void emptyJsCall(napi_env env, napi_value js_callback, void* context, void* data) {
+    // No hacer nada
+}
+
+
 SyncCallbacks TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCallbacks input) {
     SyncCallbacks sync;
 
@@ -78,14 +120,57 @@ SyncCallbacks TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCall
 
     //Remame Completion
     napi_value renameCallback;
-    napi_create_string_utf8(env, "DeleteCallback", NAPI_AUTO_LENGTH, &renameCallback);
-    napi_create_async_work(env, NULL, renameCallback, ExecuteAsyncWork, CompleteRenameCallbackAsyncWork, context, &context->callbacksWorks.notifyDeleteCompletionCallbackWork);
+    napi_create_string_utf8(env, "RenameCallback", NAPI_AUTO_LENGTH, &renameCallback);
+    napi_create_async_work(env, NULL, renameCallback, ExecuteAsyncWork, CompleteRenameCallbackAsyncWork, context, &context->callbacksWorks.notifyRenameCompletionCallbackWork);
 
 
     GlobalContextContainer::SetContext(context);
 
+    napi_threadsafe_function threadsafe_function;
+    napi_value jsFunction;
+    napi_status status_ref = napi_get_reference_value(env, input.notifyRenameCallbackRef, &jsFunction);
+
+    napi_valuetype valuetype;
+    napi_status type_status = napi_typeof(env, jsFunction, &valuetype);
+
+    if (type_status != napi_ok || valuetype != napi_function) {
+        fprintf(stderr, "jsFunction is not a function.\n");
+        abort();
+    }
+
+    napi_status status = napi_create_threadsafe_function(
+        env,
+        jsFunction,
+        NULL,
+        NULL,
+        0,
+        1,
+        NULL,
+        emptyThreadFinalize,
+        NULL,
+        emptyJsCall,
+        &threadsafe_function
+    );
+
+    if (status != napi_ok) {
+        const napi_extended_error_info* errorInfo = NULL;
+        napi_get_last_error_info(env, &errorInfo);
+        fprintf(stderr, "Failed to create threadsafe function: %s\n", errorInfo->error_message);
+        fprintf(stderr, "N-API Status Code: %d\n", errorInfo->error_code);
+        fprintf(stderr, "Engine-specific error code: %u\n", errorInfo->engine_error_code);
+        // No imprima `engine_reserved` a menos que esté seguro de lo que contiene,
+        // ya que podría ser un puntero a una ubicación desconocida
+        abort(); // Esto finalizará el programa
+    }
+
+
+    // validate if status is ok
+
+
+    SetupGlobalTsfn(threadsafe_function);
+
     sync.notifyDeleteCompletionCallback = NotifyDeleteCompletionCallbackWrapper;
-    sync.notifyRenameCallback = NotifyRenameCallbackWrapper;
+    sync.notifyRenameCallback = NotifyRenameCompletionCallbackWrapper;
 
     return sync;
 }

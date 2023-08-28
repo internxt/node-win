@@ -8,6 +8,7 @@ void CALLBACK NotifyRenameCallbackWrapper(
 ) {
     CallbackContext* context = GlobalContextContainer::GetContext();
 
+    wprintf(L"this 2");
     if (context == nullptr) {
         wprintf(L"Context is null. Aborting.\n");
         return;
@@ -24,5 +25,5 @@ void CALLBACK NotifyRenameCallbackWrapper(
 
     // context->callbackArgs.notifyDeleteCompletionArgs.fileIdentity = fileIdentityStr;
 
-    napi_queue_async_work(context->env, context->callbacksWorks.notifyRenameCallbackWork);
+    napi_queue_async_work(context->env, context->callbacksWorks.notifyRenameCompletionCallbackWork);
 }

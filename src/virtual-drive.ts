@@ -137,6 +137,10 @@ class VirtualDrive {
           }
         });
       }
+
+    watchAndWait2(path: string): void {
+        addon.watchAndWait(path);
+    }
     
     createItemByPath(relativePath: string, fileId: string) {
         const fullPath = path.join(this.syncRootPath, relativePath);

@@ -12,13 +12,15 @@ void DirectoryWatcher::Initialize(
 
     _callback = callback;
 
-    _dir.attach(CreateFileW(path,
+    _dir.attach(
+        CreateFileW(path,
         FILE_LIST_DIRECTORY,
         FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
         nullptr,
         OPEN_EXISTING,
         FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED,
-        nullptr));
+        nullptr)
+    );
     if (_dir.get() == INVALID_HANDLE_VALUE)
     {
         throw winrt::hresult_error(HRESULT_FROM_WIN32(GetLastError()));
@@ -43,7 +45,7 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             _notify.get(),
             c_bufferSize,
             TRUE,
-            FILE_NOTIFY_CHANGE_ATTRIBUTES | FILE_NOTIFY_CHANGE_FILE_NAME,
+            FILE_NOTIFY_CHANGE_ATTRIBUTES,
             &returned,
             &_overlapped,
             nullptr));
@@ -63,64 +65,6 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
         FILE_NOTIFY_INFORMATION* next = _notify.get();
         while (next != nullptr)
         {
-
-    //         if (next->Action == FILE_ACTION_REMOVED)
-    //         {
-    //             wprintf(L"File was removed\n");
-    //             wprintf(L"_path: %s\n", _path.c_str());
-    //             std::wstring fullPath(_path);
-    //             fullPath.append(L"\\");
-    //             fullPath.append(std::wstring_view(next->FileName, next->FileNameLength / sizeof(wchar_t)));
-
-    //             wprintf(L"fullPath: %s\n", fullPath.c_str());
-    // // Abrir el archivo para obtener el handle
-    //             HANDLE fileHandle = CreateFileW(
-    //                 fullPath.c_str(),
-    //                 READ_ATTRIBUTES, // Sólo necesitas READ_ATTRIBUTES
-    //                 FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-    //                 nullptr,
-    //                 OPEN_EXISTING,
-    //                 FILE_ATTRIBUTE_NORMAL,
-    //                 nullptr);
-
-    //             wprintf(L"Handle del archivo: %p\n", fileHandle);
-
-
-    //             if (fileHandle == INVALID_HANDLE_VALUE) {
-    //                 DWORD dwError = GetLastError();
-    //                 wprintf(L"Error al abrir el archivo: %u\n", dwError);
-    //             }
-    //             if (fileHandle != INVALID_HANDLE_VALUE) {
-    //                 CF_PLACEHOLDER_BASIC_INFO placeholderInfo;
-    //                 DWORD returnedLength;
-
-    //                 HRESULT hr = CfGetPlaceholderInfo(
-    //                     fileHandle,
-    //                     CF_PLACEHOLDER_INFO_BASIC, // O CF_PLACEHOLDER_INFO_STANDARD, según necesites
-    //                     &placeholderInfo,
-    //                     sizeof(placeholderInfo),
-    //                     &returnedLength);
-
-    //                 if (SUCCEEDED(hr)) {
-    //                     wprintf(L"ID del placeholder: %llu\n", placeholderInfo.FileId); // Imprimir el ID
-    //                 } else {
-    //                     // Manejar error, por ejemplo:
-    //                     wprintf(L"Error al obtener la información del placeholder: 0x%x\n", hr);
-    //                 }
-
-    //                 CloseHandle(fileHandle); // No olvides cerrar el handle
-    //             } else {
-    //                 // Manejar error al abrir el archivo
-    //                 // Continuar con tu lógica actual
-    //                 std::wstring fullPath(_path);
-    //                 fullPath.append(L"\\");
-    //                 fullPath.append(std::wstring_view(next->FileName, next->FileNameLength / sizeof(wchar_t)));
-    //                 result.push_back(fullPath);
-    //             }
-
-    //         }
-            //==============================================================================
-
             std::wstring fullPath(_path);
             fullPath.append(L"\\");
             fullPath.append(std::wstring_view(next->FileName, next->FileNameLength / sizeof(wchar_t)));

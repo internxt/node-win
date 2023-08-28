@@ -183,14 +183,26 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args) {
     napi_value notifyDeleteCompletionCallback;
     napi_value notifyRenameCallback;
 
-    napi_async_context async_context;
-
     if (napi_get_named_property(env, argv[1], "notifyDeleteCompletionCallback", &notifyDeleteCompletionCallback) == napi_ok) {
         napi_create_reference(env, notifyDeleteCompletionCallback, 1, &callbacks.notifyDeleteCompletionCallbackRef);
     }
 
+    napi_valuetype valuetype;
+    napi_status type_status = napi_typeof(env, notifyDeleteCompletionCallback, &valuetype);
+    if (type_status != napi_ok || valuetype != napi_function) {
+        napi_throw_error(env, nullptr, "notifyDeleteCompletionCallback should be a function.");
+        return nullptr;
+    }
+
     if (napi_get_named_property(env, argv[1], "notifyRenameCallback", &notifyRenameCallback) == napi_ok) {
         napi_create_reference(env, notifyRenameCallback, 1, &callbacks.notifyRenameCallbackRef);
+    }
+
+    napi_valuetype valuetype_rename;
+    napi_status type_status_rename = napi_typeof(env, notifyRenameCallback, &valuetype_rename);
+    if (type_status_rename != napi_ok || valuetype_rename != napi_function) {
+        napi_throw_error(env, nullptr, "notifyRenameCallback should be a function.");
+        return nullptr;
     }
 
     CF_CONNECTION_KEY connectionKey;
