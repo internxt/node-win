@@ -152,16 +152,16 @@ SyncCallbacks TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCall
         &threadsafe_function
     );
 
-    if (status != napi_ok) {
-        const napi_extended_error_info* errorInfo = NULL;
-        napi_get_last_error_info(env, &errorInfo);
-        fprintf(stderr, "Failed to create threadsafe function: %s\n", errorInfo->error_message);
-        fprintf(stderr, "N-API Status Code: %d\n", errorInfo->error_code);
-        fprintf(stderr, "Engine-specific error code: %u\n", errorInfo->engine_error_code);
-        // No imprima `engine_reserved` a menos que esté seguro de lo que contiene,
-        // ya que podría ser un puntero a una ubicación desconocida
-        abort(); // Esto finalizará el programa
-    }
+    // if (status != napi_ok) {
+    //     const napi_extended_error_info* errorInfo = NULL;
+    //     napi_get_last_error_info(env, &errorInfo);
+    //     fprintf(stderr, "Failed to create threadsafe function: %s\n", errorInfo->error_message);
+    //     fprintf(stderr, "N-API Status Code: %d\n", errorInfo->error_code);
+    //     fprintf(stderr, "Engine-specific error code: %u\n", errorInfo->engine_error_code);
+    //     // No imprima `engine_reserved` a menos que esté seguro de lo que contiene,
+    //     // ya que podría ser un puntero a una ubicación desconocida
+    //     abort(); // Esto finalizará el programa
+    // }
 
 
     // validate if status is ok
@@ -170,7 +170,7 @@ SyncCallbacks TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCall
     SetupGlobalTsfn(threadsafe_function);
 
     sync.notifyDeleteCompletionCallback = NotifyDeleteCompletionCallbackWrapper;
-    sync.notifyRenameCallback = NotifyRenameCompletionCallbackWrapper;
+    sync.notifyRenameCallback = NotifyRenameCallbackWrapper;
 
     return sync;
 }
