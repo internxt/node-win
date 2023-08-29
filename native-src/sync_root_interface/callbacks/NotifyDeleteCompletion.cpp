@@ -23,7 +23,28 @@ void CALLBACK NotifyDeleteCompletionCallbackWrapper(_In_ CONST CF_CALLBACK_INFO*
     context->callbackArgs.notifyDeleteCompletionArgs.fileIdentity = fileIdentityStr;
 
     napi_queue_async_work(context->env, context->callbacksWorks.notifyDeleteCompletionCallbackWork);
-    
+
+    CF_OPERATION_PARAMETERS opParams = {0};
+    opParams.AckDelete.CompletionStatus = STATUS_SUCCESS;
+    opParams.ParamSize = sizeof(CF_OPERATION_PARAMETERS);
+
+    CF_OPERATION_INFO opInfo = {0};
+    opInfo.StructSize = sizeof(CF_OPERATION_INFO);
+    opInfo.Type = CF_OPERATION_TYPE_ACK_DELETE;
+    opInfo.ConnectionKey = callbackInfo->ConnectionKey;
+    opInfo.TransferKey = callbackInfo->TransferKey;
+
+    HRESULT hr = CfExecute(
+        &opInfo,
+        &opParams
+    );
+
+    if (FAILED(hr))
+    {
+        wprintf(L"Error in CfExecute().\n");
+        wprintf(L"Error in CfExecute(), HRESULT: %lx\n", hr);
+    }
+
     // napi_env env = context->env;
     // napi_handle_scope scope; // <-- Declare a handle scope variable
     // napi_open_handle_scope(env, &scope); // <-- Open a handle scope

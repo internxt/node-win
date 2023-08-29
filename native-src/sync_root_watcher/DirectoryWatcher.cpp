@@ -45,7 +45,7 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             _notify.get(),
             c_bufferSize,
             TRUE,
-            FILE_NOTIFY_CHANGE_ATTRIBUTES,
+            FILE_NOTIFY_CHANGE_ATTRIBUTES | FILE_NOTIFY_CHANGE_FILE_NAME,
             &returned,
             &_overlapped,
             nullptr));
