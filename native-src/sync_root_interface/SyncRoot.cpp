@@ -69,6 +69,11 @@ void CompleteRenameCallbackAsyncWork(napi_env env, napi_status status, void* dat
     }
 }
 
+struct ThreadSafeFunctionArgs {
+        std::wstring targetPathArg;
+        std::wstring fileIdentityArg;
+    };
+
 void CALLBACK NotifyRenameCompletionCallbackWrapper(
     _In_ CONST CF_CALLBACK_INFO* callbackInfo,
     _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
@@ -79,26 +84,32 @@ void CALLBACK NotifyRenameCompletionCallbackWrapper(
         return;
     }
 
-    wprintf(L"NotifyRenameCompletionCallbackWrapper 2\n");
     CallbackContext* context = GlobalContextContainer::GetContext();
     if (context == nullptr) {
         wprintf(L"Context is null. Aborting.\n");
         return;
     }
 
-    wprintf(L"NotifyRenameCompletionCallbackWrapper 3\n");
-    std::wstring fileIdentity;
-    context->callbackArgs.notifyDeleteCompletionArgs.fileIdentity = fileIdentity;
+    LPCVOID fileIdentity = callbackInfo->FileIdentity;
+    DWORD fileIdentityLength = callbackInfo->FileIdentityLength;
 
-    wprintf(L"NotifyRenameCompletionCallbackWrapper 4\n");
-    napi_status status = napi_call_threadsafe_function(global_tsfn, nullptr, napi_tsfn_blocking);
+    const wchar_t* wchar_ptr = static_cast<const wchar_t*>(fileIdentity);
+    std::wstring fileIdentityStr(wchar_ptr, fileIdentityLength / sizeof(wchar_t));
+
+    PCWSTR targetPathArg = callbackParameters->Rename.TargetPath;
+
+    //std::wstring* fileIdentityArg = new std::wstring(fileIdentityStr);
+
+    //===================
+    ThreadSafeFunctionArgs* args = new ThreadSafeFunctionArgs();
+    args->targetPathArg = std::wstring(targetPathArg);  // Suponiendo que targetPathArg es un PCWSTR
+    args->fileIdentityArg = fileIdentityStr;
+
+    napi_status status = napi_call_threadsafe_function(global_tsfn, args, napi_tsfn_blocking);
     if (status != napi_ok) {
         // Manejar error aquí.
         wprintf(L"Callback called unsuccessfully.\n");
-    } else {
-        wprintf(L"Callback called successfully.\n");
-    }
-
+    };
     CF_OPERATION_PARAMETERS opParams = {0};
     opParams.AckDelete.CompletionStatus = STATUS_SUCCESS;
     opParams.ParamSize = sizeof(CF_OPERATION_PARAMETERS);
@@ -125,28 +136,23 @@ void CALLBACK NotifyDeleteCallbackWrapper(
     _In_ CONST CF_CALLBACK_INFO* callbackInfo,
     _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
 ) {
-    wprintf(L"NotifyDeleteCallbackWrapper 1\n");
     if (global_tsfn_delete == nullptr) {
         // Manejar error aquí.
         return;
     }
 
-    wprintf(L"NotifyDeleteCallbackWrapper 2\n");
     CallbackContext* context = GlobalContextContainer::GetContext();
     if (context == nullptr) {
         wprintf(L"Context is null. Aborting.\n");
         return;
     }
 
-    wprintf(L"NotifyDeleteCallbackWrapper 3\n");
     LPCVOID fileIdentity = callbackInfo->FileIdentity;
     DWORD fileIdentityLength = callbackInfo->FileIdentityLength;
 
     const wchar_t* wchar_ptr = static_cast<const wchar_t*>(fileIdentity);
     std::wstring fileIdentityStr(wchar_ptr, fileIdentityLength / sizeof(wchar_t));
-    wprintf(L"fileIdentityStr: %s\n", fileIdentityStr.c_str());
 
-    wprintf(L"NotifyDeleteCallbackWrapper 4\n");
     //static_cast<void*>(&fileIdentity)
     std::wstring* dataToSend = new std::wstring(fileIdentityStr);
 
@@ -209,6 +215,34 @@ void js_thread_cb(napi_env env, napi_value js_callback, void* context, void* dat
     delete receivedData;
 }
 
+void js_thread_cb_rename(napi_env env, napi_value js_callback, void* context, void* data) {
+  ThreadSafeFunctionArgs* args = static_cast<ThreadSafeFunctionArgs*>(data);
+
+  // Convierte los wstrings a u16strings
+  std::u16string u16_targetPath(args->targetPathArg.begin(), args->targetPathArg.end());
+  std::u16string u16_fileIdentity(args->fileIdentityArg.begin(), args->fileIdentityArg.end());
+
+  // Convierte los u16strings a napi_value (probablemente cadenas de JS)
+  napi_value js_targetPathArg, js_fileIdentityArg;
+
+  //print js_targetPathArg and js_fileIdentityArg
+  wprintf(L"js_targetPathArg: %s\n", u16_targetPath.c_str());
+  wprintf(L"js_fileIdentityArg: %s\n", u16_fileIdentity.c_str());
+  
+  napi_create_string_utf16(env, u16_targetPath.c_str(), u16_targetPath.size(), &js_targetPathArg);
+  napi_create_string_utf16(env, u16_fileIdentity.c_str(), u16_fileIdentity.size(), &js_fileIdentityArg);
+
+  napi_value args_to_js_callback[2];
+  args_to_js_callback[0] = js_targetPathArg;
+  args_to_js_callback[1] = js_fileIdentityArg;
+
+  napi_value undefined, result;
+  napi_get_undefined(env, &undefined);
+  napi_call_function(env, undefined, js_callback, 2, args_to_js_callback, &result);
+
+  delete args;
+}
+
 
 SyncCallbacks TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCallbacks input) {
     SyncCallbacks sync;
@@ -254,7 +288,7 @@ SyncCallbacks TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCall
         NULL,
         NULL,
         NULL,
-        NULL,
+        js_thread_cb_rename,
         &threadsafe_function
     );
 
