@@ -78,7 +78,6 @@ void CALLBACK NotifyRenameCompletionCallbackWrapper(
     _In_ CONST CF_CALLBACK_INFO* callbackInfo,
     _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
 ) {
-    wprintf(L"NotifyRenameCompletionCallbackWrapper 1\n");
     if (global_tsfn == nullptr) {
         // Manejar error aquí.
         return;
@@ -98,9 +97,6 @@ void CALLBACK NotifyRenameCompletionCallbackWrapper(
 
     PCWSTR targetPathArg = callbackParameters->Rename.TargetPath;
 
-    //std::wstring* fileIdentityArg = new std::wstring(fileIdentityStr);
-
-    //===================
     ThreadSafeFunctionArgs* args = new ThreadSafeFunctionArgs();
     args->targetPathArg = std::wstring(targetPathArg);  // Suponiendo que targetPathArg es un PCWSTR
     args->fileIdentityArg = fileIdentityStr;

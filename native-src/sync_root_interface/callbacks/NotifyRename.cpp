@@ -20,10 +20,5 @@ void CALLBACK NotifyRenameCallbackWrapper(
     wprintf(L"NotifyRenameCallbackWrapper: %s\n", fileIdentity);
     wprintf(L"NotifyRenameCallbackWrapper: %d\n", fileIdentityLength);
 
-    // const wchar_t* wchar_ptr = static_cast<const wchar_t*>(fileIdentity);
-    // std::wstring fileIdentityStr(wchar_ptr, fileIdentityLength / sizeof(wchar_t));
-
-    // context->callbackArgs.notifyDeleteCompletionArgs.fileIdentity = fileIdentityStr;
-
     napi_queue_async_work(context->env, context->callbacksWorks.notifyRenameCompletionCallbackWork);
 }

@@ -8,7 +8,6 @@ public:
     void WatchAndWait(const wchar_t *syncRootPath);
     static BOOL WINAPI Stop(DWORD reason);
 
-    // These methods allow the StatusUISource to report on sync status.
     static auto StatusChanged(winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable> const& handler)
     {
         return s_statusChanged.add(handler);
