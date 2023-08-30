@@ -14,11 +14,16 @@ function onDeleteCompletionCallback(fileId: string) {
     console.log("Delete completion callback triggered.");
 }
 
+function onRenameCallback() {
+    console.log("Rename callback triggered.");
+}
+
 drive.connectSyncRoot( {
-    notifyDeleteCompletionCallback: onDeleteCompletionCallback
+    notifyDeleteCompletionCallback: onDeleteCompletionCallback,
+    notifyRenameCallback: onRenameCallback
 });
 
 drive.createItemByPath(`/A (5th copy).pdfs`, '280ab650-acef-4438-8bbc-29863810b24a');
 drive.createItemByPath(`/folder1/file2.txt`, 'fa8217c9-2dd6-4641-9180-8206e60368a6');
 
-drive.watchAndWait(config.syncRootPath);
+drive.watchAndWait2(config.syncRootPath);

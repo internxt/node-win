@@ -1,8 +1,10 @@
-const addon = require('../../build/Release/addon.node');
 import path from 'path';
 import fs from 'fs';
 import { deleteAllSubfolders } from './utils';
 import { Worker } from 'worker_threads';
+
+const addonPath = path.join(__dirname, '../../build/Release/addon.node');
+const addon = require(addonPath);
 
 interface Addon {
     connectSyncRoot(path: string): any;
@@ -135,6 +137,10 @@ class VirtualDrive {
           }
         });
       }
+
+    watchAndWait2(path: string): void {
+        addon.watchAndWait(path);
+    }
     
     createItemByPath(relativePath: string, fileId: string) {
         const fullPath = path.join(this.syncRootPath, relativePath);

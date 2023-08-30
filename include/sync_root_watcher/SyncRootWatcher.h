@@ -5,7 +5,7 @@
 class SyncRootWatcher
 {
 public:
-    static void WatchAndWait(const wchar_t *syncRootPath);
+    void WatchAndWait(const wchar_t *syncRootPath);
     static BOOL WINAPI Stop(DWORD reason);
 
     // These methods allow the StatusUISource to report on sync status.
@@ -22,6 +22,7 @@ public:
     static auto State() { return s_state; }
 
 private:
+    static void WatcherTask(const wchar_t *syncRootPath);
     static void InitDirectoryWatcher(const wchar_t *syncRootPath);
     static void OnSyncRootFileChanges(_In_ std::list<std::wstring>& changes);
 
