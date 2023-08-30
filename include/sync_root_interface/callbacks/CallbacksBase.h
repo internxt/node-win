@@ -3,9 +3,6 @@
 #include <node_api.h>
 #include <iostream>
 
-#include "NotifyDeleteCompletion.h"
-#include "NotifyRename.h"
-
 struct InputSyncCallbacks {
     napi_ref fetchDataCallbackRef;
     napi_ref validateDataCallbackRef;
@@ -63,8 +60,8 @@ struct CallbacksWorks {
 };
 
 struct CallbackArgs {
-    NotifyDeleteCompletionArgs notifyDeleteCompletionArgs;
-    NotifyRenameArgs notifyRenameArgs;
+    //NotifyDeleteCompletionArgs notifyDeleteCompletionArgs;
+    //NotifyRenameArgs notifyRenameArgs;
 };
 
 struct CallbackContext {

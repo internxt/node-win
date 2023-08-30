@@ -6,69 +6,6 @@
 static napi_threadsafe_function global_tsfn = nullptr;
 static napi_threadsafe_function global_tsfn_delete = nullptr;
 
-void ExecuteAsyncWork(napi_env env, void* data) {
-    CallbackContext* context = (CallbackContext*)data;
-}
-
-void CompleteDeleteCallbackAsyncWork(napi_env env, napi_status status, void* data) {
-    CallbackContext* context = (CallbackContext*)data;
-    wprintf(L"CompleteAsyncWork\n");
-    if (status != napi_ok) {
-        // Manejar error aquí.
-    }
-
-    if (context->callbacks.notifyDeleteCompletionCallbackRef) {
-        napi_value callbackFn;
-        napi_status status = napi_get_reference_value(env, context->callbacks.notifyDeleteCompletionCallbackRef, &callbackFn);
-        
-        if (status != napi_ok) {
-            wprintf(L"Error in obtaining the callback reference value.\n");
-            return;
-        }
-
-        std::string utf8Str(
-            context->callbackArgs.notifyDeleteCompletionArgs.fileIdentity.begin(),
-            context->callbackArgs.notifyDeleteCompletionArgs.fileIdentity.end()
-        );
-
-        napi_value global;
-        napi_get_global(env, &global);
-
-        napi_value arg;
-        napi_create_string_utf8(env, utf8Str.c_str(), NAPI_AUTO_LENGTH, &arg);
-        
-        napi_value result;
-        napi_make_callback(env, nullptr, global, callbackFn, 1, &arg, &result);
-    }
-}
-
-void CompleteRenameCallbackAsyncWork(napi_env env, napi_status status, void* data) {
-    CallbackContext* context = (CallbackContext*)data;
-    wprintf(L"CompleteAsyncWork\n");
-    if (status != napi_ok) {
-        // Manejar error aquí.
-    }
-
-    if (context->callbacks.notifyRenameCallbackRef) {
-        napi_value callbackFn;
-        napi_status status = napi_get_reference_value(env, context->callbacks.notifyRenameCallbackRef, &callbackFn);
-
-        if (status != napi_ok) {
-            wprintf(L"Error in obtaining the callback reference value.\n");
-            return;
-        }
-        
-        napi_value global;
-        napi_get_global(env, &global);
-
-        napi_value arg;
-        napi_create_string_utf8(env, "Hola", NAPI_AUTO_LENGTH, &arg);
-
-        napi_value result;
-        napi_make_callback(env, nullptr, global, callbackFn, 0, nullptr, &result);
-    }
-}
-
 struct ThreadSafeFunctionArgs {
         std::wstring targetPathArg;
         std::wstring fileIdentityArg;
@@ -83,11 +20,11 @@ void CALLBACK NotifyRenameCompletionCallbackWrapper(
         return;
     }
 
-    CallbackContext* context = GlobalContextContainer::GetContext();
-    if (context == nullptr) {
-        wprintf(L"Context is null. Aborting.\n");
-        return;
-    }
+    // CallbackContext* context = GlobalContextContainer::GetContext();
+    // if (context == nullptr) {
+    //     wprintf(L"Context is null. Aborting.\n");
+    //     return;
+    // }
 
     LPCVOID fileIdentity = callbackInfo->FileIdentity;
     DWORD fileIdentityLength = callbackInfo->FileIdentityLength;
@@ -137,11 +74,11 @@ void CALLBACK NotifyDeleteCallbackWrapper(
         return;
     }
 
-    CallbackContext* context = GlobalContextContainer::GetContext();
-    if (context == nullptr) {
-        wprintf(L"Context is null. Aborting.\n");
-        return;
-    }
+    // CallbackContext* context = GlobalContextContainer::GetContext();
+    // if (context == nullptr) {
+    //     wprintf(L"Context is null. Aborting.\n");
+    //     return;
+    // }
 
     LPCVOID fileIdentity = callbackInfo->FileIdentity;
     DWORD fileIdentityLength = callbackInfo->FileIdentityLength;
@@ -245,19 +182,6 @@ SyncCallbacks TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCall
 
     wprintf(L"TransformInputCallbacksToSyncCallbacks\n");
     CallbackContext *context = new CallbackContext{env, {}, input};
-
-    //DeleteCompletion
-    napi_value deleteCallback;
-    napi_create_string_utf8(env, "DeleteCallback", NAPI_AUTO_LENGTH, &deleteCallback);
-    napi_create_async_work(env, NULL, deleteCallback, ExecuteAsyncWork, CompleteDeleteCallbackAsyncWork, context, &context->callbacksWorks.notifyDeleteCompletionCallbackWork);
-
-    //Remame Completion
-    napi_value renameCallback;
-    napi_create_string_utf8(env, "RenameCallback", NAPI_AUTO_LENGTH, &renameCallback);
-    napi_create_async_work(env, NULL, renameCallback, ExecuteAsyncWork, CompleteRenameCallbackAsyncWork, context, &context->callbacksWorks.notifyRenameCompletionCallbackWork);
-
-
-    GlobalContextContainer::SetContext(context);
 
     // Create a threadsafe function for rename callback
     napi_threadsafe_function threadsafe_function;
@@ -453,8 +377,6 @@ HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallback
             CF_CONNECT_FLAG_REQUIRE_PROCESS_INFO | CF_CONNECT_FLAG_REQUIRE_FULL_FILE_PATH,
             connectionKey
         );
-
-        CallbackContext* context = GlobalContextContainer::GetContext();
 
         return hr;
     }
