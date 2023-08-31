@@ -6,7 +6,7 @@
 static napi_threadsafe_function global_tsfn = nullptr;
 static napi_threadsafe_function global_tsfn_delete = nullptr;
 
-struct ThreadSafeFunctionArgs {
+struct NotifyDeleteArgs {
         std::wstring targetPathArg;
         std::wstring fileIdentityArg;
     };
@@ -34,7 +34,7 @@ void CALLBACK NotifyRenameCompletionCallbackWrapper(
 
     PCWSTR targetPathArg = callbackParameters->Rename.TargetPath;
 
-    ThreadSafeFunctionArgs* args = new ThreadSafeFunctionArgs();
+    NotifyDeleteArgs* args = new NotifyDeleteArgs();
     args->targetPathArg = std::wstring(targetPathArg);  // Suponiendo que targetPathArg es un PCWSTR
     args->fileIdentityArg = fileIdentityStr;
 
@@ -148,8 +148,8 @@ void js_thread_cb(napi_env env, napi_value js_callback, void* context, void* dat
     delete receivedData;
 }
 
-void js_thread_cb_rename(napi_env env, napi_value js_callback, void* context, void* data) {
-  ThreadSafeFunctionArgs* args = static_cast<ThreadSafeFunctionArgs*>(data);
+void NotifyDeleteCall(napi_env env, napi_value js_callback, void* context, void* data) {
+  NotifyDeleteArgs* args = static_cast<NotifyDeleteArgs*>(data);
 
   // Convierte los wstrings a u16strings
   std::u16string u16_targetPath(args->targetPathArg.begin(), args->targetPathArg.end());
@@ -208,7 +208,7 @@ SyncCallbacks TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCall
         NULL,
         NULL,
         NULL,
-        js_thread_cb_rename,
+        NotifyDeleteCall,
         &threadsafe_function
     );
 
@@ -218,9 +218,7 @@ SyncCallbacks TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCall
         fprintf(stderr, "Failed to create threadsafe function: %s\n", errorInfo->error_message);
         fprintf(stderr, "N-API Status Code: %d\n", errorInfo->error_code);
         fprintf(stderr, "Engine-specific error code: %u\n", errorInfo->engine_error_code);
-        // No imprima `engine_reserved` a menos que esté seguro de lo que contiene,
-        // ya que podría ser un puntero a una ubicación desconocida
-        abort(); // Esto finalizará el programa
+        abort();
     }
 
     // Create a threadsafe function for delete callback
