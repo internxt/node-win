@@ -1,14 +1,18 @@
 #pragma once
 
-#include <CallbacksBase.h>
 #include <CallbacksContext.h>
 
 class CallbackHandler
 {
     public:
-        static void RegisterThreadSafeCallbacks(napi_env env, InputSyncCallbacks input);
+        static void RegisterThreadSafeCallbacks(CallbackContext* context);
 };
 
-void RegisterThreadSafeCalback(napi_env env, InputSyncCallbacks input);
-void RegisterThreadSafeNotifyDeleteCallback(napi_env env, InputSyncCallbacks input);
-void RegisterThreadSafeNotifyRenameCallback(napi_env env, InputSyncCallbacks input);
+// thread safe register callbacks
+void RegisterThreadSafeNotifyDeleteCallback(const std::string& resource_name, CallbackContext* context);
+
+// secure calls
+void NotifyDeleteCall(napi_env env, napi_value js_callback, void* context, void* data);
+
+// callback wrappers
+void CALLBACK NotifyDeleteCallbackWrapper(_In_ CONST CF_CALLBACK_INFO* callbackInfo, _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters);

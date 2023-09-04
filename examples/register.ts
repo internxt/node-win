@@ -19,7 +19,7 @@ function onRenameCallback() {
 }
 
 drive.connectSyncRoot( {
-    notifyDeleteCompletionCallback: onDeleteCompletionCallback,
+    notifyDeleteCallback: onDeleteCompletionCallback,
     notifyRenameCallback: onRenameCallback
 });
 

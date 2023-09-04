@@ -1,67 +1,45 @@
 #include <Callbacks.h>
 
-void RegisterThreadSafeNotifyDeleteCallback(napi_env env, InputSyncCallbacks input) {
-    napi_threadsafe_function threadsafe_function;
-    napi_value callback;
-    napi_status status_ref = napi_get_reference_value(env, input.notify_rename_callback_ref, &callback);
+void CALLBACK NotifyDeleteCallbackWrapper(
+    _In_ CONST CF_CALLBACK_INFO* callbackInfo,
+    _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
+) {
+    CallbackContext* context = GlobalCallbackContextContainer::GetContext();
 
-    napi_valuetype valuetype;
-    napi_status type_status = napi_typeof(env, callback, &valuetype);
+    LPCVOID fileIdentity = callbackInfo->FileIdentity;
+    DWORD fileIdentityLength = callbackInfo->FileIdentityLength;
 
-    if (type_status != napi_ok || valuetype != napi_function) {
-        fprintf(stderr, "Thecallback is not a function.\n");
-        abort();
+    const wchar_t* wchar_ptr = static_cast<const wchar_t*>(fileIdentity);
+    std::wstring fileIdentityStr(wchar_ptr, fileIdentityLength / sizeof(wchar_t));
+
+    std::wstring* dataToSend = new std::wstring(fileIdentityStr);
+
+    napi_status status = napi_call_threadsafe_function(context->threadsafe_callbacks.notify_delete_threadsafe_callback, dataToSend, napi_tsfn_blocking);
+    
+    wprintf(L"status: %d\n", status);
+    
+    if (status != napi_ok) {
+        wprintf(L"Callback called unsuccessfully.\n");
     }
 
-    napi_value resource_name;
-    napi_create_string_utf8(env, "asyncWork", NAPI_AUTO_LENGTH, &resource_name);
-    napi_status status = napi_create_threadsafe_function(
-        env,
-        callback,
-        NULL,
-        resource_name,
-        0,
-        1,
-        NULL,
-        NULL,
-        NULL,
-        NotifyDeleteCall,
-        &threadsafe_function
+    CF_OPERATION_PARAMETERS opParams = {0};
+    opParams.AckDelete.CompletionStatus = STATUS_SUCCESS;
+    opParams.ParamSize = sizeof(CF_OPERATION_PARAMETERS);
+
+    CF_OPERATION_INFO opInfo = {0};
+    opInfo.StructSize = sizeof(CF_OPERATION_INFO);
+    opInfo.Type = CF_OPERATION_TYPE_ACK_DELETE;
+    opInfo.ConnectionKey = callbackInfo->ConnectionKey;
+    opInfo.TransferKey = callbackInfo->TransferKey;
+
+    HRESULT hr = CfExecute(
+        &opInfo,
+        &opParams
     );
 
-    if (status != napi_ok) {
-        const napi_extended_error_info* errorInfo = NULL;
-        napi_get_last_error_info(env, &errorInfo);
-        fprintf(stderr, "Failed to create threadsafe function: %s\n", errorInfo->error_message);
-        fprintf(stderr, "N-API Status Code: %d\n", errorInfo->error_code);
-        fprintf(stderr, "Engine-specific error code: %u\n", errorInfo->engine_error_code);
-        abort();
+    if (FAILED(hr))
+    {
+        wprintf(L"Error in CfExecute().\n");
+        wprintf(L"Error in CfExecute(), HRESULT: %lx\n", hr);
     }
-}
-
-struct NotifyDeleteArgs {
-    std::wstring targetPathArg;
-    std::wstring fileIdentityArg;
-};
-
-void NotifyDeleteCall(napi_env env, napi_value js_callback, void* context, void* data) {
-  NotifyDeleteArgs* args = static_cast<NotifyDeleteArgs*>(data);
-
-  std::u16string u16_targetPath(args->targetPathArg.begin(), args->targetPathArg.end());
-  std::u16string u16_fileIdentity(args->fileIdentityArg.begin(), args->fileIdentityArg.end());
-
-  napi_value js_targetPathArg, js_fileIdentityArg;
-  
-  napi_create_string_utf16(env, u16_targetPath.c_str(), u16_targetPath.size(), &js_targetPathArg);
-  napi_create_string_utf16(env, u16_fileIdentity.c_str(), u16_fileIdentity.size(), &js_fileIdentityArg);
-
-  napi_value args_to_js_callback[2];
-  args_to_js_callback[0] = js_targetPathArg;
-  args_to_js_callback[1] = js_fileIdentityArg;
-
-  napi_value undefined, result;
-  napi_get_undefined(env, &undefined);
-  napi_call_function(env, undefined, js_callback, 2, args_to_js_callback, &result);
-
-  delete args;
 }
