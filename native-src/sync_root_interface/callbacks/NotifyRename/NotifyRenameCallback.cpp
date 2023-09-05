@@ -18,10 +18,6 @@ void notify_rename_call(napi_env env, napi_value js_callback, void* context, voi
 
     // Convierte los u16strings a napi_value (probablemente cadenas de JS)
     napi_value js_targetPathArg, js_fileIdentityArg;
-
-    //print js_targetPathArg and js_fileIdentityArg
-    wprintf(L"js_targetPathArg: %s\n", u16_targetPath.c_str());
-    wprintf(L"js_fileIdentityArg: %s\n", u16_fileIdentity.c_str());
     
     napi_create_string_utf16(env, u16_targetPath.c_str(), u16_targetPath.size(), &js_targetPathArg);
     napi_create_string_utf16(env, u16_fileIdentity.c_str(), u16_fileIdentity.size(), &js_fileIdentityArg);
@@ -41,7 +37,7 @@ void setup_global_tsfn_rename(napi_threadsafe_function tsfn) {
     g_notify_rename_threadsafe_callback = tsfn;
 }
 
-void register_threadsasfe_notify_rename_callback(const std::string& resource_name, napi_env env, InputSyncCallbacks input) {
+void register_threadsafe_notify_rename_callback(const std::string& resource_name, napi_env env, InputSyncCallbacks input) {
     std::u16string converted_resource_name = std::u16string(resource_name.begin(), resource_name.end());
 
     napi_value resource_name_value;
@@ -82,9 +78,10 @@ void register_threadsasfe_notify_rename_callback(const std::string& resource_nam
         abort();
     }
 
+    setup_global_tsfn_rename(notify_rename_threadsafe_callback);
 }
 
-void CALLBACK notify_rename_completion_callback_wrapper(
+void CALLBACK notify_rename_callback_wrapper(
     _In_ CONST CF_CALLBACK_INFO* callbackInfo,
     _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
 ) {

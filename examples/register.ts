@@ -14,8 +14,10 @@ function onDeleteCompletionCallback(fileId: string) {
     console.log("Delete completion callback triggered.");
 }
 
-function onRenameCallback() {
+function onRenameCallback(newName: string, fileId: string) {
     console.log("Rename callback triggered.");
+    console.log("File ID: " + fileId)
+    console.log("New name: " + newName)
 }
 
 drive.connectSyncRoot( {
