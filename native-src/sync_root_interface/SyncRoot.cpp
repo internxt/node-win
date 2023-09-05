@@ -3,17 +3,8 @@
 #include "Callbacks.h"
 #include <iostream>
 
-CallbackContext* GlobalCallbackContextContainer::currentContext = nullptr;
-
 void TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCallbacks input) {
-    CallbackContext *context = new CallbackContext;
-    context->env = env;
-    context->callbacks = input;
-    context->threadsafe_callbacks = {};
-
-    CallbackHandler::RegisterThreadSafeCallbacks(context);
-
-    GlobalCallbackContextContainer::SetContext(context);
+    register_threadsafe_callbacks(env, input);
 }
 
 void AddCustomState(
@@ -105,7 +96,7 @@ HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallback
         TransformInputCallbacksToSyncCallbacks(env, syncCallbacks);
 
         CF_CALLBACK_REGISTRATION callbackTable[] = {
-            {CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION, NotifyDeleteCallbackWrapper},
+            {CF_CALLBACK_TYPE_NOTIFY_DELETE, notify_delete_callback_wrapper},
             // {CF_CALLBACK_TYPE_NOTIFY_RENAME, transformedCallbacks.notifyRenameCallback},
             CF_CALLBACK_REGISTRATION_END
         };
