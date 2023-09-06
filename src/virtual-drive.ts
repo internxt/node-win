@@ -47,7 +47,7 @@ class VirtualDrive {
 
         this.syncRootPath = syncRootPath;
 
-        this.workerPath = path.join(__dirname, './watch-worker.js');
+        this.workerPath = path.join(__dirname, './watch-worker.js'); //TO DELETE
     }
 
     convertToWindowsTime(jsTime: number): bigint {
@@ -119,7 +119,7 @@ class VirtualDrive {
         return result;
     }
 
-    watchAndWait(path: string): void {
+    watchAndWait(path: string): void { // TO DELETE
         const worker = new Worker(this.workerPath, { workerData: { path } });
     
         worker.on('message', (message) => {

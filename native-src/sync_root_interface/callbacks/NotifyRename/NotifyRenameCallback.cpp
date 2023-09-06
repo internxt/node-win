@@ -3,6 +3,9 @@
 
 napi_threadsafe_function g_notify_rename_threadsafe_callback = nullptr;
 
+inline std::mutex mtx;
+inline std::condition_variable cv;
+inline bool ready = false;
 
 struct NotifyRenameArgs {
     std::wstring targetPathArg;
@@ -28,7 +31,25 @@ void notify_rename_call(napi_env env, napi_value js_callback, void* context, voi
 
     napi_value undefined, result;
     napi_get_undefined(env, &undefined);
-    napi_call_function(env, undefined, js_callback, 2, args_to_js_callback, &result);
+
+    napi_status status = napi_call_function(env, undefined, js_callback, 2, args_to_js_callback, &result);
+    if (status != napi_ok) {
+        fprintf(stderr, "Failed to call JS function.\n");
+        return;
+    }
+
+    bool js_result = false;
+    status = napi_get_value_bool(env, result, &js_result);
+    if (status != napi_ok) {
+        fprintf(stderr, "Failed to convert napi_value to bool.\n");
+        return;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        ready = js_result;
+    }
+    cv.notify_one();
 
     delete args;
 }
@@ -103,8 +124,13 @@ void CALLBACK notify_rename_callback_wrapper(
         wprintf(L"Callback called unsuccessfully.\n");
     };
 
+    {
+        std::unique_lock<std::mutex> lock(mtx);
+        cv.wait(lock, [] { return ready; });
+    }
+
     CF_OPERATION_PARAMETERS opParams = {0};
-    opParams.AckDelete.CompletionStatus = STATUS_SUCCESS;
+    opParams.AckRename.CompletionStatus = ready ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
     opParams.ParamSize = sizeof(CF_OPERATION_PARAMETERS);
 
     CF_OPERATION_INFO opInfo = {0};
@@ -117,6 +143,11 @@ void CALLBACK notify_rename_callback_wrapper(
         &opInfo,
         &opParams
     );
+
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        ready = false;  // Reset ready
+    }
 
     if (FAILED(hr))
     {

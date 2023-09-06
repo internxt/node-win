@@ -1,7 +1,18 @@
 #include <Callbacks.h>
 #include <string>
+#include <condition_variable>
+#include <mutex>
 
 napi_threadsafe_function g_notify_delete_threadsafe_callback = nullptr;
+
+inline std::mutex mtx;
+inline std::condition_variable cv;
+inline bool ready = false;
+
+void setup_global_tsfn_delete(napi_threadsafe_function tsfn) {
+    g_notify_delete_threadsafe_callback = tsfn;
+}
+
 struct NotifyDeleteArgs {
     std::wstring targetPathArg;
     std::wstring fileIdentityArg;
@@ -15,13 +26,28 @@ void notify_delete_call(napi_env env, napi_value js_callback, void* context, voi
     napi_value undefined;
     napi_get_undefined(env, &undefined);
     napi_value result;
-    napi_call_function(env, undefined, js_callback, 1, &js_string, &result);
+
+    napi_status status = napi_call_function(env, undefined, js_callback, 1, &js_string, &result);
+    if (status != napi_ok) {
+        fprintf(stderr, "Failed to call JS function.\n");
+        return;
+    }
+
+
+    bool js_result = false;  // Variable para almacenar el resultado booleano
+    status = napi_get_value_bool(env, result, &js_result);  // Obtiene el valor booleano desde el objeto napi_value
+    if (status != napi_ok) {
+        fprintf(stderr, "Failed to convert napi_value to bool.\n");
+        return;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        ready = js_result;
+    }
+    cv.notify_one();
 
     delete receivedData;
-}
-
-void setup_global_tsfn_delete(napi_threadsafe_function tsfn) {
-    g_notify_delete_threadsafe_callback = tsfn;
 }
 
 void register_threadsafe_notify_delete_callback(const std::string& resource_name, napi_env env, InputSyncCallbacks input) {
@@ -84,8 +110,14 @@ void CALLBACK notify_delete_callback_wrapper(
         wprintf(L"Callback called unsuccessfully.\n");
     }
 
+    {
+        std::unique_lock<std::mutex> lock(mtx);
+        cv.wait(lock, [] { return ready; });
+    }
+
     CF_OPERATION_PARAMETERS opParams = {0};
-    opParams.AckDelete.CompletionStatus = STATUS_SUCCESS;
+    wprintf(L"Setting up opParams.\n%s\n", ready ? L"true" : L"false");
+    opParams.AckDelete.CompletionStatus = ready ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
     opParams.ParamSize = sizeof(CF_OPERATION_PARAMETERS);
 
     CF_OPERATION_INFO opInfo = {0};
@@ -98,6 +130,11 @@ void CALLBACK notify_delete_callback_wrapper(
         &opInfo,
         &opParams
     );
+
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        ready = false;  // Reset ready
+    }
 
     if (FAILED(hr))
     {

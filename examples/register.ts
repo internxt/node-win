@@ -12,15 +12,17 @@ drive.registerSyncRoot(
 function onDeleteCompletionCallback(fileId: string) {
     console.log("File ID: " + fileId)
     console.log("Delete completion callback triggered.");
+    return true;
 }
 
 function onRenameCallback(newName: string, fileId: string) {
     console.log("Rename callback triggered.");
     console.log("File ID: " + fileId)
     console.log("New name: " + newName)
+    return true;
 }
 
-drive.connectSyncRoot( {
+drive.connectSyncRoot({
     notifyDeleteCallback: onDeleteCompletionCallback,
     notifyRenameCallback: onRenameCallback
 });
