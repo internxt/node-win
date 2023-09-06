@@ -48,6 +48,14 @@ class VirtualDrive {
         this.syncRootPath = syncRootPath;
 
         this.workerPath = path.join(__dirname, './watch-worker.js'); //TO DELETE
+
+        this.createSyncRootFolder();
+    }
+    
+    createSyncRootFolder() {
+        if (!fs.existsSync(this.syncRootPath)) {
+            fs.mkdirSync(this.syncRootPath, { recursive: true });
+        }
     }
 
     convertToWindowsTime(jsTime: number): bigint {
@@ -109,6 +117,14 @@ class VirtualDrive {
         )
     }
 
+    private isValidFolderPath(path: string) {
+        return path.startsWith('/') && path.endsWith('/') && !path.includes('.');
+    }
+    
+    private isValidFilePath(path: string) {
+        return path.includes('.');
+    }    
+    
     async registerSyncRoot(providerName: string, providerVersion: string, providerId: string): Promise<any> {
         return await addon.registerSyncRoot(this.syncRootPath, providerName, providerVersion, providerId);
     }
@@ -144,15 +160,13 @@ class VirtualDrive {
     
     createItemByPath(relativePath: string, fileId: string) {
         const fullPath = path.join(this.syncRootPath, relativePath);
-    
-        if (relativePath.endsWith('/')) { // Es un directorio
-            const splitPath = relativePath.split('/').filter(p => p);
-            let currentPath = this.syncRootPath;
-    
+        const splitPath = relativePath.split('/').filter(p => p);
+        const directoryPath = path.resolve(this.syncRootPath);
+        let currentPath = directoryPath;
+        if (this.isValidFolderPath(relativePath)) { // Es un directorio
+            
             for (const dir of splitPath) {
-                currentPath = path.join(currentPath, dir);
-    
-                if (!fs.existsSync(currentPath)) {
+                if (fs.existsSync(currentPath)) {
                     try {
                         this.createPlaceholderDirectory(
                             dir,
@@ -163,22 +177,37 @@ class VirtualDrive {
                             Date.now(),
                             Date.now(),
                             Date.now(),
-                            currentPath
+                            currentPath,
                         );
                     } catch (error) {
                         //@ts-ignore
                         console.error(`Error while creating directory: ${error.message}`);
                     }
                 }
+                currentPath = path.join(currentPath, dir);
             }
-        } else { // Es un archivo
-            const directoryPath = path.dirname(fullPath);
-    
-            if (!fs.existsSync(directoryPath)) {
-                fs.mkdirSync(directoryPath, { recursive: true });
-            }
-    
+        } else if(this.isValidFilePath(relativePath)) { // Es un archivo
+            
             try {
+                
+                for (let i = 0; i < splitPath.length - 1; i++) { // everything except last element
+                    const dir = splitPath[i];
+                    if (fs.existsSync(currentPath)) {
+                        this.createPlaceholderDirectory(
+                            dir,
+                            fileId,
+                            true,
+                            0,
+                            this.PLACEHOLDER_ATTRIBUTES.FOLDER_ATTRIBUTE_READONLY,
+                            Date.now(),
+                            Date.now(),
+                            Date.now(),
+                            currentPath,
+                        );
+                    }
+                    currentPath = path.join(currentPath, dir);
+                }
+                // last element is the file                
                 this.createPlaceholderFile(
                     path.basename(fullPath),
                     fileId,
@@ -187,12 +216,14 @@ class VirtualDrive {
                     Date.now(),
                     Date.now(),
                     Date.now(),
-                    directoryPath
-                );
+                    currentPath
+                );                
             } catch (error) {
                 //@ts-ignore
                 console.error(`Error al crear placeholder: ${error.message}`);
             }
+        } else {
+            console.error("Invalid path");
         }
     }
     
