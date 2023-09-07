@@ -62,6 +62,8 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
         }
 
         std::list<std::wstring> result;
+        std::list<std::wstring> addedFiles;
+        std::list<std::wstring> removedFiles;
         FILE_NOTIFY_INFORMATION* next = _notify.get();
         while (next != nullptr)
         {
@@ -69,6 +71,15 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             fullPath.append(L"\\");
             fullPath.append(std::wstring_view(next->FileName, next->FileNameLength / sizeof(wchar_t)));
             result.push_back(fullPath);
+
+            if (next->Action == FILE_ACTION_ADDED)
+            {
+                addedFiles.push_back(fullPath);
+            }
+            else if (next->Action == FILE_ACTION_REMOVED)
+            {
+                removedFiles.push_back(fullPath);
+            }
 
             if (next->NextEntryOffset)
             {
@@ -78,6 +89,16 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             {
                 next = nullptr;
             }
+        }
+        // print removed files
+        for (auto path : removedFiles)
+        {
+            wprintf(L"Removed: %s\n", path.c_str());
+        }
+        // print added files
+        for (auto path : addedFiles)
+        {
+            wprintf(L"Added: %s\n", path.c_str());
         }
         _callback(result);
     }

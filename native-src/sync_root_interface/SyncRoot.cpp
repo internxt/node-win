@@ -96,8 +96,8 @@ HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallback
         TransformInputCallbacksToSyncCallbacks(env, syncCallbacks);
 
         CF_CALLBACK_REGISTRATION callbackTable[] = {
-            {CF_CALLBACK_TYPE_NOTIFY_DELETE, notify_delete_callback_wrapper},
-            {CF_CALLBACK_TYPE_NOTIFY_RENAME, notify_rename_callback_wrapper},
+            {CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION, notify_delete_callback_wrapper},
+            {CF_CALLBACK_TYPE_NOTIFY_RENAME_COMPLETION, notify_rename_callback_wrapper},
             CF_CALLBACK_REGISTRATION_END
         };
 
