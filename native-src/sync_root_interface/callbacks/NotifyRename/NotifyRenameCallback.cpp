@@ -73,15 +73,6 @@ void notify_rename_call(napi_env env, napi_value js_callback, void* context, voi
 
     fprintf(stderr, "JS function called successfully.\n");
 
-    {
-        std::unique_lock<std::mutex> lock(mtx);
-        while (!ready) {
-            wprintf(L"Waiting for response.\n");
-            cv.wait(lock);
-        }
-        fprintf(stderr, "Callback triggered.\n");
-    }
-
     delete args;
 }
 
@@ -156,7 +147,16 @@ void CALLBACK notify_rename_callback_wrapper(
     };
 
     CF_OPERATION_PARAMETERS opParams = {0};
-    wprintf(L"====================================== About to call response callback ======================================.\n");
+    
+    {
+        std::unique_lock<std::mutex> lock(mtx);
+        while (!ready) {
+            wprintf(L"Waiting for response.\n");
+            cv.wait(lock);
+        }
+        fprintf(stderr, "Callback triggered.\n");
+    }
+    
     opParams.AckRename.CompletionStatus = callbackResult  ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
     opParams.ParamSize = sizeof(CF_OPERATION_PARAMETERS);
 
