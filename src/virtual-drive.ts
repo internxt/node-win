@@ -158,7 +158,7 @@ class VirtualDrive {
         addon.watchAndWait(path);
     }
     
-    createItemByPath(relativePath: string, fileId: string) {
+    createItemByPath(relativePath: string, itemId: string, size: number = 0) {
         const fullPath = path.join(this.syncRootPath, relativePath);
         const splitPath = relativePath.split('/').filter(p => p);
         const directoryPath = path.resolve(this.syncRootPath);
@@ -170,9 +170,9 @@ class VirtualDrive {
                     try {
                         this.createPlaceholderDirectory(
                             dir,
-                            fileId,
+                            itemId,
                             true,
-                            0,
+                            size,
                             this.PLACEHOLDER_ATTRIBUTES.FOLDER_ATTRIBUTE_READONLY,
                             Date.now(),
                             Date.now(),
@@ -195,7 +195,7 @@ class VirtualDrive {
                     if (fs.existsSync(currentPath)) {
                         this.createPlaceholderDirectory(
                             dir,
-                            fileId,
+                            itemId,
                             true,
                             0,
                             this.PLACEHOLDER_ATTRIBUTES.FOLDER_ATTRIBUTE_READONLY,
@@ -210,8 +210,8 @@ class VirtualDrive {
                 // last element is the file                
                 this.createPlaceholderFile(
                     path.basename(fullPath),
-                    fileId,
-                    0,
+                    itemId,
+                    size,
                     this.PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_READONLY,
                     Date.now(),
                     Date.now(),
