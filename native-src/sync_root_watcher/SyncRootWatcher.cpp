@@ -13,16 +13,16 @@ bool SyncRootWatcher::s_shutdownWatcher;
 winrt::StorageProviderState SyncRootWatcher::s_state;
 winrt::event<winrt::EventHandler<winrt::IInspectable>> SyncRootWatcher::s_statusChanged;
 
-void SyncRootWatcher::WatchAndWait(const wchar_t *syncRootPath)
+void SyncRootWatcher::WatchAndWait(const wchar_t *syncRootPath, napi_env env, InputSyncCallbacksThreadsafe input)
 {
-    std::thread watcherThread([this, syncRootPath] { WatcherTask(syncRootPath); });
+    std::thread watcherThread([this, syncRootPath, env, input] { WatcherTask(syncRootPath, env , input); });
     watcherThread.detach();
 }
 
-void SyncRootWatcher::WatcherTask(const wchar_t *syncRootPath)
+void SyncRootWatcher::WatcherTask(const wchar_t *syncRootPath, napi_env env, InputSyncCallbacksThreadsafe input)
 {
     SetConsoleCtrlHandler(Stop, TRUE);
-    InitDirectoryWatcher(syncRootPath);;
+    InitDirectoryWatcher(syncRootPath, env, input);;
 
     if (syncRootPath == nullptr) {
         wprintf(L"syncRootPath es nulo.\n");
@@ -106,11 +106,11 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<std::wstring>& change
     s_statusChanged(nullptr, nullptr);
 }
 
-void SyncRootWatcher::InitDirectoryWatcher(const wchar_t *syncRootPath)
+void SyncRootWatcher::InitDirectoryWatcher(const wchar_t *syncRootPath, napi_env env, InputSyncCallbacksThreadsafe input)
 {
     try
     {
-        s_directoryWatcher.Initialize(syncRootPath, OnSyncRootFileChanges);
+        s_directoryWatcher.Initialize(syncRootPath, OnSyncRootFileChanges, env , input);
     }
     catch (...)
     {

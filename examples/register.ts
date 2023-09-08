@@ -1,20 +1,15 @@
 import VirtualDrive from '../src/virtual-drive';
 import * as config from './config.json';
+import * as fs from 'fs';
 
 const drive = new VirtualDrive(config.syncRootPath);
-
-drive.registerSyncRoot(
-    config.driveName,
-    config.driveVersion,
-    "{12345678-1234-1234-1234-123456789012}",
-);
 
 async function onDeleteCallback(fileId: string, callback: (response: boolean) => void) {
     console.log("File ID: " + fileId);
     const a = await (new Promise<boolean>((resolve, reject) => {
         try {
             setTimeout(() => {
-                resolve(true);
+                resolve(false);
             }, 10)
         } catch (err) {
             reject(err);
@@ -40,7 +35,7 @@ async function onRenameCallback(newName: string, fileId: string): Promise<boolea
         try {
 
             setTimeout(() => {
-                resolve(true);
+                resolve(false);
             }, 1000)
         } catch (err) {
             reject(err);
@@ -58,12 +53,36 @@ function onRenameCallbackWithCallback(newName: string, fileId: string, responseC
     });
 }
 
-drive.connectSyncRoot({
-    notifyDeleteCallback: onDeleteCallbackWithCallback,
-    notifyRenameCallback: onRenameCallbackWithCallback,
-});
+drive.registerSyncRoot(
+    config.driveName,
+    config.driveVersion,
+    "{12345678-1234-1234-1234-123456789012}",
+    {
+        notifyDeleteCallback: onDeleteCallbackWithCallback,
+        notifyRenameCallback: onRenameCallbackWithCallback,
+        notifyFileAddedCallback: async (filePath: string) => {
+
+            try {
+                const newFilePath = filePath.replace(config.syncRootPath, '');
+                await new Promise(resolve => setTimeout(() => {
+                    resolve(undefined);
+                }, 1000));
+
+                fs.unlinkSync(filePath);
+
+                console.log("Creating placeholder at: " + newFilePath)
+                drive.createItemByPath(newFilePath, '280ab650-acef-4438-8bbc-29863810b24a', 10); 
+                drive.createItemByPath(newFilePath, '280ab651-acef-4438-8bbc-29863810b24a', 10); 
+            } catch (error) {
+                console.error(error);
+            }
+        },
+    }
+)
+
+drive.connectSyncRoot();
 
 drive.createItemByPath(`/A (5th copy).pdfs`, '280ab650-acef-4438-8bbc-29863810b24a');
 drive.createItemByPath(`/folder1/file2.txt`, 'fa8217c9-2dd6-4641-9180-8206e60368a6');
 
-drive.watchAndWait2(config.syncRootPath);
+drive.watchAndWait(config.syncRootPath);
