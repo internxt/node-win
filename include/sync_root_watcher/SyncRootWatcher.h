@@ -1,11 +1,12 @@
 #pragma once
 
 #include "DirectoryWatcher.h"
+#include <node_api.h>
 
 class SyncRootWatcher
 {
 public:
-    void WatchAndWait(const wchar_t *syncRootPath);
+    void WatchAndWait(const wchar_t *syncRootPath, napi_env env, InputSyncCallbacksThreadsafe input);
     static BOOL WINAPI Stop(DWORD reason);
 
     static auto StatusChanged(winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable> const& handler)
@@ -21,8 +22,8 @@ public:
     static auto State() { return s_state; }
 
 private:
-    static void WatcherTask(const wchar_t *syncRootPath);
-    static void InitDirectoryWatcher(const wchar_t *syncRootPath);
+    static void WatcherTask(const wchar_t *syncRootPath, napi_env env, InputSyncCallbacksThreadsafe input);
+    static void InitDirectoryWatcher(const wchar_t *syncRootPath, napi_env env, InputSyncCallbacksThreadsafe input);
     static void OnSyncRootFileChanges(_In_ std::list<std::wstring>& changes);
 
     static DirectoryWatcher s_directoryWatcher;
