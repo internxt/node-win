@@ -32,10 +32,16 @@ type InputSyncCallbacks = {
     notifyRenameCompletionCallback?: NapiCallbackFunction;
     noneCallback?: NapiCallbackFunction;
 }
+
+type ExtraCallbacks = {
+    notifyFileAddedCallback?: NapiCallbackFunction;
+}
+
+type Callbacks = InputSyncCallbacks & ExtraCallbacks;
 class VirtualDrive {
     PLACEHOLDER_ATTRIBUTES: { [key: string]: number };
     syncRootPath: string;
-    workerPath: string
+    callbacks?: Callbacks;
 
     constructor(syncRootPath: string) {
 
@@ -46,12 +52,61 @@ class VirtualDrive {
         };
 
         this.syncRootPath = syncRootPath;
-
-        this.workerPath = path.join(__dirname, './watch-worker.js'); //TO DELETE
-
         this.createSyncRootFolder();
     }
-    
+
+    getInputSyncCallbacks(): InputSyncCallbacks {
+        if (this.callbacks === undefined) {
+            throw new Error('Callbacks are not defined');
+        }
+        
+        const inputSyncCallbackKeys: (keyof InputSyncCallbacks)[] = [
+            'fetchDataCallback',
+            'validateDataCallback',
+            'cancelFetchDataCallback',
+            'fetchPlaceholdersCallback',
+            'cancelFetchPlaceholdersCallback',
+            'notifyFileOpenCompletionCallback',
+            'notifyFileCloseCompletionCallback',
+            'notifyDehydrateCallback',
+            'notifyDehydrateCompletionCallback',
+            'notifyDeleteCallback',
+            'notifyDeleteCompletionCallback',
+            'notifyRenameCallback',
+            'notifyRenameCompletionCallback',
+            'noneCallback'
+        ];
+
+        const result: InputSyncCallbacks = {};
+
+        for (const key of inputSyncCallbackKeys) {
+            if (this.callbacks[key] !== undefined) {
+                result[key] = this.callbacks[key];
+            }
+        }
+
+        return result;
+    }
+
+    getExtraCallbacks(): ExtraCallbacks {
+        const extraCallbackKeys: (keyof ExtraCallbacks)[] = [
+            'notifyFileAddedCallback'
+        ];
+
+        const result: ExtraCallbacks = {};
+        if (this.callbacks === undefined) {
+            throw new Error('Callbacks are not defined');
+        }
+        
+        for (const key of extraCallbackKeys) {
+            if (this.callbacks[key] !== undefined) {
+                result[key] = this.callbacks[key];
+            }
+        }
+
+        return result;
+    }
+
     createSyncRootFolder() {
         if (!fs.existsSync(this.syncRootPath)) {
             fs.mkdirSync(this.syncRootPath, { recursive: true });
@@ -62,8 +117,11 @@ class VirtualDrive {
         return BigInt(jsTime) * 10000n + 116444736000000000n;
     }
 
-    async connectSyncRoot(callbacks: InputSyncCallbacks): Promise<any> {
-        return await addon.connectSyncRoot(this.syncRootPath, callbacks);
+    async connectSyncRoot(): Promise<any> {
+        if (this.callbacks === undefined) {
+            throw new Error('Callbacks are not defined');
+        }
+        return await addon.connectSyncRoot(this.syncRootPath, this.getInputSyncCallbacks());
     }
 
     createPlaceholderFile(
@@ -125,37 +183,27 @@ class VirtualDrive {
         return path.includes('.');
     }    
     
-    async registerSyncRoot(providerName: string, providerVersion: string, providerId: string): Promise<any> {
+    async registerSyncRoot(providerName: string, providerVersion: string, providerId: string, callbacks: Callbacks): Promise<any> {
+        this.callbacks = callbacks;
         return await addon.registerSyncRoot(this.syncRootPath, providerName, providerVersion, providerId);
     }
 
     unregisterSyncRoot(): any {
         const result = addon.unregisterSyncRoot(this.syncRootPath);
-        deleteAllSubfolders(this.syncRootPath);
         return result;
     }
 
-    watchAndWait(path: string): void { // TO DELETE
-        const worker = new Worker(this.workerPath, { workerData: { path } });
-    
-        worker.on('message', (message) => {
-          console.log('Mensaje desde el worker:', message);
-        });
-    
-        worker.on('error', (err) => {
-          console.error('Error en el worker:', err);
-        });
-    
-        worker.on('exit', (code) => {
-            console.log(`Worker stopped with code ${code}`);
-          if (code !== 0) {
-            console.error(`Worker se detuvo con el código ${code}`);
-          }
-        });
-      }
+    static unregisterSyncRoot(syncRootPath: string): any {
+        const result = addon.unregisterSyncRoot(syncRootPath);
+        return result;
+    }
 
-    watchAndWait2(path: string): void {
-        addon.watchAndWait(path);
+    watchAndWait(path: string): void {
+        if (this.callbacks === undefined) {
+            throw new Error('Callbacks are not defined');
+        }
+        
+        addon.watchAndWait(path, this.getExtraCallbacks());
     }
     
     createItemByPath(relativePath: string, itemId: string, size: number = 0) {

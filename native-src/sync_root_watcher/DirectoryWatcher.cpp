@@ -5,12 +5,18 @@ const size_t c_bufferSize = sizeof(FILE_NOTIFY_INFORMATION) * 100;
 
 void DirectoryWatcher::Initialize(
     _In_ PCWSTR path,
-    _In_ std::function<void(std::list<std::wstring>&)> callback)
+    _In_ std::function<void(std::list<std::wstring>&)> callback,
+    napi_env env,
+    InputSyncCallbacksThreadsafe input)
 {
     _path = path;
     _notify.reset(reinterpret_cast<FILE_NOTIFY_INFORMATION*>(new char[c_bufferSize]));
 
     _callback = callback;
+
+    _env = env;
+
+    _input = input;
 
     _dir.attach(
         CreateFileW(path,
@@ -26,6 +32,8 @@ void DirectoryWatcher::Initialize(
         throw winrt::hresult_error(HRESULT_FROM_WIN32(GetLastError()));
     }
 }
+
+
 
 winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesAsync()
 {
@@ -62,6 +70,8 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
         }
 
         std::list<std::wstring> result;
+        std::list<std::wstring> addedFiles;
+        std::list<std::wstring> removedFiles;
         FILE_NOTIFY_INFORMATION* next = _notify.get();
         while (next != nullptr)
         {
@@ -70,6 +80,15 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             fullPath.append(std::wstring_view(next->FileName, next->FileNameLength / sizeof(wchar_t)));
             result.push_back(fullPath);
 
+            if (next->Action == FILE_ACTION_ADDED)
+            {
+                addedFiles.push_back(fullPath);
+            }
+            else if (next->Action == FILE_ACTION_REMOVED)
+            {
+                removedFiles.push_back(fullPath);
+            }
+
             if (next->NextEntryOffset)
             {
                 next = reinterpret_cast<FILE_NOTIFY_INFORMATION*>(reinterpret_cast<char*>(next) + next->NextEntryOffset);
@@ -77,6 +96,19 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             else
             {
                 next = nullptr;
+            }
+        }
+        for (auto path : removedFiles)
+        {
+            wprintf(L"Removed: %s\n", path.c_str());
+        }
+        for (auto path : addedFiles) {
+            wprintf(L"Added: %s\n", path.c_str());
+            std::wstring *dataToSend = new std::wstring(path);
+            napi_status status = napi_call_threadsafe_function(_input.notify_file_added_threadsafe_callback, dataToSend, napi_tsfn_blocking);
+
+            if (status != napi_ok) {
+                napi_throw_error(_env, NULL, "Unable to call notify_file_added_threadsafe_callback");
             }
         }
         _callback(result);
