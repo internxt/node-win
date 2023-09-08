@@ -2,6 +2,7 @@
 #include "Placeholders.h"
 #include <winrt/base.h>
 #include <shlwapi.h>
+#pragma comment(lib, "shlwapi.lib")
 
 void Placeholders::CreateOne(
     _In_ PCWSTR fileName,
@@ -20,9 +21,8 @@ void Placeholders::CreateOne(
 
         std::wstring fullDestPath = std::wstring(destPath) + L'\\';
 
-
         std::wstring relativeName(fileIdentity);
-        
+
         cloudEntry.FileIdentity = relativeName.c_str();
         cloudEntry.FileIdentityLength = static_cast<DWORD>((relativeName.size() + 1) * sizeof(WCHAR));
 
@@ -49,7 +49,6 @@ void Placeholders::CreateOne(
         prop.Id(1);
         prop.Value(L"Value1");
         prop.IconResource(L"shell32.dll,-44");
-
     }
     catch (...)
     {
@@ -70,27 +69,37 @@ void Placeholders::CreateEntry(
     _In_ PCWSTR destPath)
 {
     std::wstring fullDestPath = std::wstring(destPath) + L"\\" + std::wstring(itemName);
-    
+    CF_PLACEHOLDER_CREATE_INFO cloudEntry = {};
+    std::wstring relativeName(itemIdentity);
+    cloudEntry.FileIdentity = relativeName.c_str();
+    cloudEntry.FileIdentityLength = static_cast<DWORD>((relativeName.size() + 1) * sizeof(WCHAR));
+    cloudEntry.RelativeFileName = itemName;
+    cloudEntry.Flags = CF_PLACEHOLDER_CREATE_FLAG_DISABLE_ON_DEMAND_POPULATION;
+    cloudEntry.FsMetadata.FileSize.QuadPart = 0;
+    cloudEntry.FsMetadata.BasicInfo.FileAttributes = FILE_ATTRIBUTE_DIRECTORY;
+    cloudEntry.FsMetadata.BasicInfo.CreationTime = Utilities::FileTimeToLargeInteger(creationTime);
+    cloudEntry.FsMetadata.BasicInfo.LastWriteTime = Utilities::FileTimeToLargeInteger(lastWriteTime);
+    cloudEntry.FsMetadata.BasicInfo.LastAccessTime = Utilities::FileTimeToLargeInteger(lastAccessTime);
+    cloudEntry.FsMetadata.BasicInfo.ChangeTime = Utilities::FileTimeToLargeInteger(lastWriteTime);
+
     try
     {
         if (isDirectory)
         {
-                if (!CreateDirectoryW(fullDestPath.c_str(), NULL))
-                {
-                    throw winrt::hresult_error(HRESULT_FROM_WIN32(GetLastError()));
-                }
-        }
-        else
-        {
-            HANDLE hFile = CreateFileW(fullDestPath.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, itemAttributes, NULL);
-            if (hFile == INVALID_HANDLE_VALUE)
+            cloudEntry.FsMetadata.FileSize.QuadPart = 0;
+            wprintf(L"create placeholder folder: \n");
+            PathRemoveFileSpecW(&fullDestPath[0]);
+            wprintf(L"Full destination path: %ls\n", fullDestPath.c_str());
+            HRESULT hr = CfCreatePlaceholders(fullDestPath.c_str(), &cloudEntry, 1, CF_CREATE_FLAG_NONE, NULL);
+            if (FAILED(hr))
             {
-                throw winrt::hresult_error(HRESULT_FROM_WIN32(GetLastError()));
+                wprintf(L"Failed to create placeholder directory with HRESULT 0x%08x\n", hr);
+                throw winrt::hresult_error(hr);
             }
-
-            SetFileTime(hFile, &creationTime, &lastAccessTime, &lastWriteTime);
-            
-            CloseHandle(hFile);
+            else
+            {
+                wprintf(L"Successfully created placeholder directory\n");
+            }
         }
 
         wprintf(L"Successfully created %s at %s\n", isDirectory ? L"directory" : L"file", fullDestPath.c_str());

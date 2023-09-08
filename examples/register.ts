@@ -9,7 +9,7 @@ async function onDeleteCallback(fileId: string, callback: (response: boolean) =>
     const a = await (new Promise<boolean>((resolve, reject) => {
         try {
             setTimeout(() => {
-                resolve(false);
+                resolve(true);
             }, 10)
         } catch (err) {
             reject(err);
@@ -35,7 +35,7 @@ async function onRenameCallback(newName: string, fileId: string): Promise<boolea
         try {
 
             setTimeout(() => {
-                resolve(false);
+                resolve(true);
             }, 1000)
         } catch (err) {
             reject(err);
@@ -63,7 +63,8 @@ drive.registerSyncRoot(
         notifyFileAddedCallback: async (filePath: string) => {
 
             try {
-                const newFilePath = filePath.replace(config.syncRootPath, '');
+                console.log("File added: " + filePath);
+                const newFilePath = filePath.replace(config.syncRootPath, '').replace(/\\/g, '/'); //IMPORTANTE CAMBIAR LOS SLASHES
                 await new Promise(resolve => setTimeout(() => {
                     resolve(undefined);
                 }, 1000));
@@ -71,7 +72,7 @@ drive.registerSyncRoot(
                 fs.unlinkSync(filePath);
 
                 console.log("Creating placeholder at: " + newFilePath)
-                drive.createItemByPath(newFilePath, '280ab650-acef-4438-8bbc-29863810b24a', 10); 
+                drive.createItemByPath(newFilePath.replace('\\','/'), '280ab650-acef-4438-8bbc-29863810b24a', 10); 
                 drive.createItemByPath(newFilePath, '280ab651-acef-4438-8bbc-29863810b24a', 10); 
             } catch (error) {
                 console.error(error);
@@ -82,7 +83,10 @@ drive.registerSyncRoot(
 
 drive.connectSyncRoot();
 
-drive.createItemByPath(`/A (5th copy).pdfs`, '280ab650-acef-4438-8bbc-29863810b24a');
-drive.createItemByPath(`/folder1/file2.txt`, 'fa8217c9-2dd6-4641-9180-8206e60368a6');
+drive.createItemByPath(`/A (5th copy).pdfs`, '280ab650-acef-4438-8bbc-29863810b24a', 1000);
+drive.createItemByPath(`/file1.txt`, 'fa8217c9-2dd6-4641-9180-8206e60368a6', 1000);
+drive.createItemByPath(`/only-folder/`, 'fa8217c9-2dd6-4641-9180-8206e60368123', 1000);
+drive.createItemByPath(`/folderWithFolder/folder2/`, 'fa8217c9-2dd6-4641-9180-8206e6036845', 1000);
+drive.createItemByPath(`/folderWithFile/file2.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036216', 1000);
 
 drive.watchAndWait(config.syncRootPath);
