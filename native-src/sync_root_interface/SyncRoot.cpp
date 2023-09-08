@@ -43,7 +43,7 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
         info.ShowSiblingsAsGroup(false);
         info.HardlinkPolicy(winrt::StorageProviderHardlinkPolicy::None);
 
-        winrt::Uri uri(L"http://cloudmirror.example.com/recyclebin");
+        winrt::Uri uri(L"https://drive.internxt.com/app/trash");
         info.RecycleBinUri(uri);
 
         // Context
