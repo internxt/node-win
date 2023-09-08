@@ -28,20 +28,16 @@ napi_value response_callback_fn(napi_env env, napi_callback_info info) {
     bool response;
     napi_get_value_bool(env, argv[0], &response);
 
-    wprintf(L"Response: %d");
     std::lock_guard<std::mutex> lock(mtx);
     ready = true;
     callbackResult = response;
     cv.notify_one();
-
-    wprintf(L"Response callback called.\n");
 
     return nullptr;
 }
 
 
 void notify_rename_call(napi_env env, napi_value js_callback, void* context, void* data) {
-    fprintf(stderr, "Entered function.\n");
     NotifyRenameArgs* args = static_cast<NotifyRenameArgs*>(data);
     napi_status status;
 
@@ -67,11 +63,8 @@ void notify_rename_call(napi_env env, napi_value js_callback, void* context, voi
 
     { std::lock_guard<std::mutex> lock(mtx); ready = false; }
 
-    fprintf(stderr, "About to call JS function.\n");
     status = napi_call_function(env, undefined, js_callback, 3, args_to_js_callback, &result);
     if (status != napi_ok) { fprintf(stderr, "Failed to call JS function.\n"); return; }
-
-    fprintf(stderr, "JS function called successfully.\n");
 
     delete args;
 }
@@ -151,10 +144,8 @@ void CALLBACK notify_rename_callback_wrapper(
     {
         std::unique_lock<std::mutex> lock(mtx);
         while (!ready) {
-            wprintf(L"Waiting for response.\n");
             cv.wait(lock);
         }
-        fprintf(stderr, "Callback triggered.\n");
     }
     
     opParams.AckRename.CompletionStatus = callbackResult  ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;

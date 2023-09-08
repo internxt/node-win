@@ -8,6 +8,7 @@ napi_threadsafe_function g_notify_delete_threadsafe_callback = nullptr;
 inline std::mutex mtx;
 inline std::condition_variable cv;
 inline bool ready = false;
+inline bool callbackResult = false; 
 
 void setup_global_tsfn_delete(napi_threadsafe_function tsfn) {
     g_notify_delete_threadsafe_callback = tsfn;
@@ -18,21 +19,47 @@ struct NotifyDeleteArgs {
     std::wstring fileIdentityArg;
 };
 
+napi_value response_callback_fn_delete(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value argv[1];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    
+    if (argc < 1) {
+        // Manejar error
+        return nullptr;
+    }
+
+    bool response;
+    napi_get_value_bool(env, argv[0], &response);
+
+    std::lock_guard<std::mutex> lock(mtx);
+    ready = true;
+    callbackResult = response;
+    cv.notify_one();
+
+    return nullptr;
+}
+
 void notify_delete_call(napi_env env, napi_value js_callback, void* context, void* data) {
     std::wstring* receivedData = static_cast<std::wstring*>(data);
     napi_value js_string;
     napi_create_string_utf16(env, reinterpret_cast<const char16_t*>(receivedData->c_str()), receivedData->size(), &js_string);
 
+    // Crear la función C++ como un valor de N-API para pasar a JS
+    napi_value js_response_callback_fn;
+    napi_create_function(env, "responseCallback", NAPI_AUTO_LENGTH, response_callback_fn_delete, nullptr, &js_response_callback_fn);
+
+    napi_value args_to_js_callback[2] = {js_string, js_response_callback_fn};
+
     napi_value undefined;
     napi_get_undefined(env, &undefined);
     napi_value result;
 
-    napi_status status = napi_call_function(env, undefined, js_callback, 1, &js_string, &result);
+    napi_status status = napi_call_function(env, undefined, js_callback, 2, args_to_js_callback, &result);
     if (status != napi_ok) {
         fprintf(stderr, "Failed to call JS function.\n");
         return;
     }
-
 
     bool js_result = false;  // Variable para almacenar el resultado booleano
     status = napi_get_value_bool(env, result, &js_result);  // Obtiene el valor booleano desde el objeto napi_value
@@ -50,8 +77,39 @@ void notify_delete_call(napi_env env, napi_value js_callback, void* context, voi
     delete receivedData;
 }
 
-void register_threadsafe_notify_delete_callback(const std::string& resource_name, napi_env env, InputSyncCallbacks input) {
+// void notify_delete_call(napi_env env, napi_value js_callback, void* context, void* data) {
+//     std::wstring* receivedData = static_cast<std::wstring*>(data);
+//     napi_value js_string;
+//     napi_create_string_utf16(env, reinterpret_cast<const char16_t*>(receivedData->c_str()), receivedData->size(), &js_string);
 
+//     napi_value undefined;
+//     napi_get_undefined(env, &undefined);
+//     napi_value result;
+
+//     napi_status status = napi_call_function(env, undefined, js_callback, 1, &js_string, &result);
+//     if (status != napi_ok) {
+//         fprintf(stderr, "Failed to call JS function.\n");
+//         return;
+//     }
+
+
+//     bool js_result = false;  // Variable para almacenar el resultado booleano
+//     status = napi_get_value_bool(env, result, &js_result);  // Obtiene el valor booleano desde el objeto napi_value
+//     if (status != napi_ok) {
+//         fprintf(stderr, "Failed to convert napi_value to bool.\n");
+//         return;
+//     }
+
+//     {
+//         std::lock_guard<std::mutex> lock(mtx);
+//         ready = js_result;
+//     }
+//     cv.notify_one();
+
+//     delete receivedData;
+// }
+
+void register_threadsafe_notify_delete_callback(const std::string& resource_name, napi_env env, InputSyncCallbacks input) {
     std::u16string converted_resource_name = std::u16string(resource_name.begin(), resource_name.end());
 
     napi_value resource_name_value;
@@ -110,14 +168,16 @@ void CALLBACK notify_delete_callback_wrapper(
         wprintf(L"Callback called unsuccessfully.\n");
     }
 
+    CF_OPERATION_PARAMETERS opParams = {0};
+    
     {
         std::unique_lock<std::mutex> lock(mtx);
-        cv.wait(lock, [] { return ready; });
+        while (!ready) {
+            cv.wait(lock);
+        }
     }
 
-    CF_OPERATION_PARAMETERS opParams = {0};
-    wprintf(L"Setting up opParams.\n%s\n", ready ? L"true" : L"false");
-    opParams.AckDelete.CompletionStatus = ready ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
+    opParams.AckDelete.CompletionStatus = callbackResult  ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
     opParams.ParamSize = sizeof(CF_OPERATION_PARAMETERS);
 
     CF_OPERATION_INFO opInfo = {0};
