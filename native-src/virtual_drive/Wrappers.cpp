@@ -5,34 +5,17 @@
 #include "SyncRootWatcher.h"
 #include "Callbacks.h"
 
-// void notify_file_added_call(napi_env env, napi_value js_callback, void* context, void* data) {
-//     wprintf(L"notify_file_added_call\n");
-
-//     const char* receivedData = static_cast<const char*>(data);
-
-//     napi_value undefined;
-//     napi_get_undefined(env, &undefined);
-//     napi_value result;
-//     napi_call_function(env, undefined, js_callback, 0, nullptr, &result);
-
-//     delete receivedData;
-// }
-
 void notify_file_added_call(napi_env env, napi_value js_callback, void* context, void* data) {
-    // Convertir el argumento data a std::wstring
     std::wstring* receivedData = static_cast<std::wstring*>(data);
 
-    // Crear un objeto napi_value para la cadena
     napi_value js_string;
     napi_create_string_utf16(env, reinterpret_cast<const char16_t*>(receivedData->c_str()), receivedData->size(), &js_string);
 
-    // Pasar el objeto js_string como argumento al llamar al callback
     napi_value undefined;
     napi_get_undefined(env, &undefined);
     napi_value result;
     napi_call_function(env, undefined, js_callback, 1, &js_string, &result);
 
-    // Liberar la memoria asignada para receivedData
     delete receivedData;
 }
 
@@ -301,7 +284,6 @@ napi_value WatchAndWaitWrapper(napi_env env, napi_callback_info args) {
     }
 
 
-    //==============================
     napi_value resource_name_value;
 
     std::string resource_name = "notify_file_added_callback";

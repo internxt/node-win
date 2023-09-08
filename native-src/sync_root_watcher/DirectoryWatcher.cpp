@@ -98,16 +98,12 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
                 next = nullptr;
             }
         }
-        // print removed files
         for (auto path : removedFiles)
         {
             wprintf(L"Removed: %s\n", path.c_str());
         }
-        // print added files
         for (auto path : addedFiles) {
             wprintf(L"Added: %s\n", path.c_str());
-            
-            // Convertir el wstring a un puntero y pasarlo como argumento al threadsafe function
             std::wstring *dataToSend = new std::wstring(path);
             napi_status status = napi_call_threadsafe_function(_input.notify_file_added_threadsafe_callback, dataToSend, napi_tsfn_blocking);
 

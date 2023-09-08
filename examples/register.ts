@@ -45,7 +45,7 @@ drive.registerSyncRoot(
 
 drive.connectSyncRoot();
 
-drive.createItemByPath(`/A (5th copy).pdfs`, '280ab650-acef-4438-8bbc-29863810b24a', 10); /*path, itemId, itemSize(bytes)*/
-drive.createItemByPath(`/folder1/file2.txt`, 'fa8217c9-2dd6-4641-9180-8206e60368a6', 12); /*path, itemId, itemSize(bytes)*/
+drive.createItemByPath(`/A (5th copy).pdfs`, '280ab650-acef-4438-8bbc-29863810b24a', 10);
+drive.createItemByPath(`/folder1/file2.txt`, 'fa8217c9-2dd6-4641-9180-8206e60368a6', 12);
 
 drive.watchAndWait(config.syncRootPath);
