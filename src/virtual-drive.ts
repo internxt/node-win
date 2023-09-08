@@ -190,11 +190,13 @@ class VirtualDrive {
 
     unregisterSyncRoot(): any {
         const result = addon.unregisterSyncRoot(this.syncRootPath);
+        deleteAllSubfolders(this.syncRootPath);
         return result;
     }
 
     static unregisterSyncRoot(syncRootPath: string): any {
         const result = addon.unregisterSyncRoot(syncRootPath);
+        deleteAllSubfolders(syncRootPath);
         return result;
     }
 
