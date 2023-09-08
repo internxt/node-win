@@ -22,23 +22,21 @@ drive.registerSyncRoot(
     {
         notifyDeleteCallback: onDeleteCompletionCallback,
         notifyRenameCallback: onRenameCallback,
-        notifyFileAddedCallback: (filePath: string) => {
-            console.log("File added callback triggered.");
-            console.log("File path: " + filePath)
+        notifyFileAddedCallback: async (filePath: string) => {
             
             try {
                 const newFilePath = filePath.replace(config.syncRootPath, '');
-    
+                
+                // agrega un delay con un await de 1s
+                await new Promise(resolve => setTimeout(() => {
+                    resolve(undefined);
+                }, 1000));
+
                 fs.unlinkSync(filePath);
-    
-                console.log("Creating placeholder at: " + newFilePath)
-                drive.createItemByPath(newFilePath, '280ab650-acef-4438-8bbc-29863810b24a', 10); 
+                drive.createItemByPath(newFilePath, '280ab651-acef-4438-8bbc-29863810b24a', 10); 
             } catch (error) {
                 console.error(error);
             }
-
-
-
         },
     }
 );
