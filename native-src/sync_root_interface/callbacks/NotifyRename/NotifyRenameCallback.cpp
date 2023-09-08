@@ -6,50 +6,65 @@ napi_threadsafe_function g_notify_rename_threadsafe_callback = nullptr;
 inline std::mutex mtx;
 inline std::condition_variable cv;
 inline bool ready = false;
+inline bool callbackResult = false;
+
+napi_ref g_async_complete_ref = nullptr;
 
 struct NotifyRenameArgs {
     std::wstring targetPathArg;
     std::wstring fileIdentityArg;
 };
 
+napi_value response_callback_fn(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value argv[1];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    
+    if (argc < 1) {
+        // Manejar error
+        return nullptr;
+    }
+
+    bool response;
+    napi_get_value_bool(env, argv[0], &response);
+
+    std::lock_guard<std::mutex> lock(mtx);
+    ready = true;
+    callbackResult = response;
+    cv.notify_one();
+
+    return nullptr;
+}
+
+
 void notify_rename_call(napi_env env, napi_value js_callback, void* context, void* data) {
     NotifyRenameArgs* args = static_cast<NotifyRenameArgs*>(data);
+    napi_status status;
 
-    // Convierte los wstrings a u16strings
     std::u16string u16_targetPath(args->targetPathArg.begin(), args->targetPathArg.end());
     std::u16string u16_fileIdentity(args->fileIdentityArg.begin(), args->fileIdentityArg.end());
 
-    // Convierte los u16strings a napi_value (probablemente cadenas de JS)
-    napi_value js_targetPathArg, js_fileIdentityArg;
-    
-    napi_create_string_utf16(env, u16_targetPath.c_str(), u16_targetPath.size(), &js_targetPathArg);
-    napi_create_string_utf16(env, u16_fileIdentity.c_str(), u16_fileIdentity.size(), &js_fileIdentityArg);
+    napi_value js_targetPathArg, js_fileIdentityArg, undefined, result;
 
-    napi_value args_to_js_callback[2];
-    args_to_js_callback[0] = js_targetPathArg;
-    args_to_js_callback[1] = js_fileIdentityArg;
+    status = napi_create_string_utf16(env, u16_targetPath.c_str(), u16_targetPath.size(), &js_targetPathArg);
+    if (status != napi_ok) { fprintf(stderr, "Failed to create targetPath string.\n"); return; }
 
-    napi_value undefined, result;
-    napi_get_undefined(env, &undefined);
+    status = napi_create_string_utf16(env, u16_fileIdentity.c_str(), u16_fileIdentity.size(), &js_fileIdentityArg);
+    if (status != napi_ok) { fprintf(stderr, "Failed to create fileIdentity string.\n"); return; }
 
-    napi_status status = napi_call_function(env, undefined, js_callback, 2, args_to_js_callback, &result);
-    if (status != napi_ok) {
-        fprintf(stderr, "Failed to call JS function.\n");
-        return;
-    }
+    // Crear la función C++ como un valor de N-API para pasar a JS
+    napi_value js_response_callback_fn;
+    napi_create_function(env, "responseCallback", NAPI_AUTO_LENGTH, response_callback_fn, nullptr, &js_response_callback_fn);
 
-    bool js_result = false;
-    status = napi_get_value_bool(env, result, &js_result);
-    if (status != napi_ok) {
-        fprintf(stderr, "Failed to convert napi_value to bool.\n");
-        return;
-    }
+    napi_value args_to_js_callback[3] = {js_targetPathArg, js_fileIdentityArg, js_response_callback_fn};
 
-    {
-        std::lock_guard<std::mutex> lock(mtx);
-        ready = js_result;
-    }
-    cv.notify_one();
+    status = napi_get_undefined(env, &undefined);
+    if (status != napi_ok) { fprintf(stderr, "Failed to get undefined value.\n"); return; }
+
+    { std::lock_guard<std::mutex> lock(mtx); ready = false; }
+
+    status = napi_call_function(env, undefined, js_callback, 3, args_to_js_callback, &result);
+    if (status != napi_ok) { fprintf(stderr, "Failed to call JS function.\n"); return; }
 
     delete args;
 }
@@ -124,13 +139,16 @@ void CALLBACK notify_rename_callback_wrapper(
         wprintf(L"Callback called unsuccessfully.\n");
     };
 
+    CF_OPERATION_PARAMETERS opParams = {0};
+    
     {
         std::unique_lock<std::mutex> lock(mtx);
-        cv.wait(lock, [] { return ready; });
+        while (!ready) {
+            cv.wait(lock);
+        }
     }
-
-    CF_OPERATION_PARAMETERS opParams = {0};
-    opParams.AckRename.CompletionStatus = ready ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
+    
+    opParams.AckRename.CompletionStatus = callbackResult  ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
     opParams.ParamSize = sizeof(CF_OPERATION_PARAMETERS);
 
     CF_OPERATION_INFO opInfo = {0};
