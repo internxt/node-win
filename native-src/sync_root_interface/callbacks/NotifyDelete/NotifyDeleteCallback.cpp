@@ -60,18 +60,7 @@ void notify_delete_call(napi_env env, napi_value js_callback, void* context, voi
         fprintf(stderr, "Failed to call JS function.\n");
         return;
     }
-
-    bool js_result = false;  // Variable para almacenar el resultado booleano
-    status = napi_get_value_bool(env, result, &js_result);  // Obtiene el valor booleano desde el objeto napi_value
-    if (status != napi_ok) {
-        fprintf(stderr, "Failed to convert napi_value to bool.\n");
-        return;
-    }
-
-    {
-        std::lock_guard<std::mutex> lock(mtx);
-        ready = js_result;
-    }
+    
     cv.notify_one();
 
     delete receivedData;
