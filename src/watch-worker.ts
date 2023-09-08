@@ -1,3 +1,4 @@
+//TO DELETE
 const { parentPort, workerData } = require('worker_threads');
 const pathModule = require('path');
 const addonPath = pathModule.join(__dirname, '../../build/Release/addon.node');

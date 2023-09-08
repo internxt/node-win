@@ -9,18 +9,58 @@ drive.registerSyncRoot(
     "{12345678-1234-1234-1234-123456789012}",
 );
 
-function onDeleteCompletionCallback(fileId: string) {
-    console.log("File ID: " + fileId)
-    console.log("Delete completion callback triggered.");
+async function onDeleteCallback(fileId: string, callback: (response: boolean) => void) {
+    console.log("File ID: " + fileId);
+    const a = await (new Promise<boolean>((resolve, reject) => {
+        try {
+            setTimeout(() => {
+                resolve(true);
+            }, 10)
+        } catch (err) {
+            reject(err);
+        }
+    }));
+
+    return a;
 }
 
-function onRenameCallback() {
-    console.log("Rename callback triggered.");
+function onDeleteCallbackWithCallback(fileId: string, callback: (response: boolean) => void) {
+    onDeleteCallback(fileId, callback).then((response) => {
+        callback(response);
+    }).catch((err) => {
+        callback(false);
+    });
 }
 
-drive.connectSyncRoot( {
-    notifyDeleteCompletionCallback: onDeleteCompletionCallback,
-    notifyRenameCallback: onRenameCallback
+async function onRenameCallback(newName: string, fileId: string): Promise<boolean> {
+    console.log("File ID: " + fileId);
+    console.log("New name: " + newName);
+
+    const a = await (new Promise<boolean>((resolve, reject) => {
+        try {
+
+            setTimeout(() => {
+                resolve(true);
+            }, 1000)
+        } catch (err) {
+            reject(err);
+        }
+    }));
+
+    return a;
+}
+
+function onRenameCallbackWithCallback(newName: string, fileId: string, responseCallback: (response: boolean) => void) {
+    onRenameCallback(newName, fileId).then((response) => {
+        responseCallback(response);
+    }).catch((err) => {
+        responseCallback(false);
+    });
+}
+
+drive.connectSyncRoot({
+    notifyDeleteCallback: onDeleteCallbackWithCallback,
+    notifyRenameCallback: onRenameCallbackWithCallback,
 });
 
 drive.createItemByPath(`/A (5th copy).pdfs`, '280ab650-acef-4438-8bbc-29863810b24a');

@@ -18,7 +18,7 @@ void Placeholders::CreateOne(
     {
         CF_PLACEHOLDER_CREATE_INFO cloudEntry = {};
 
-        std::wstring fullDestPath = std::wstring(destPath) + L'\\'; // fileName;
+        std::wstring fullDestPath = std::wstring(destPath) + L'\\';
 
 
         std::wstring relativeName(fileIdentity);
@@ -29,7 +29,7 @@ void Placeholders::CreateOne(
         cloudEntry.RelativeFileName = fileName;
         cloudEntry.Flags = CF_PLACEHOLDER_CREATE_FLAG_MARK_IN_SYNC;
 
-        cloudEntry.FsMetadata.FileSize.QuadPart = fileSize; // Set the appropriate file size
+        cloudEntry.FsMetadata.FileSize.QuadPart = fileSize;
         cloudEntry.FsMetadata.BasicInfo.FileAttributes = fileAttributes;
         cloudEntry.FsMetadata.BasicInfo.CreationTime = Utilities::FileTimeToLargeInteger(creationTime);
         cloudEntry.FsMetadata.BasicInfo.LastWriteTime = Utilities::FileTimeToLargeInteger(lastWriteTime);
