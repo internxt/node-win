@@ -9,7 +9,7 @@ async function onDeleteCallback(fileId: string, callback: (response: boolean) =>
     const a = await (new Promise<boolean>((resolve, reject) => {
         try {
             setTimeout(() => {
-                resolve(true);
+                resolve(false);
             }, 10)
         } catch (err) {
             reject(err);
@@ -35,7 +35,7 @@ async function onRenameCallback(newName: string, fileId: string): Promise<boolea
         try {
 
             setTimeout(() => {
-                resolve(true);
+                resolve(false);
             }, 1000)
         } catch (err) {
             reject(err);
@@ -59,7 +59,24 @@ drive.registerSyncRoot(
     "{12345678-1234-1234-1234-123456789012}",
     {
         notifyDeleteCallback: onDeleteCallbackWithCallback,
-        notifyRenameCallback: onRenameCallbackWithCallback
+        notifyRenameCallback: onRenameCallbackWithCallback,
+        notifyFileAddedCallback: async (filePath: string) => {
+
+            try {
+                const newFilePath = filePath.replace(config.syncRootPath, '');
+                await new Promise(resolve => setTimeout(() => {
+                    resolve(undefined);
+                }, 1000));
+
+                fs.unlinkSync(filePath);
+
+                console.log("Creating placeholder at: " + newFilePath)
+                drive.createItemByPath(newFilePath, '280ab650-acef-4438-8bbc-29863810b24a', 10); 
+                drive.createItemByPath(newFilePath, '280ab651-acef-4438-8bbc-29863810b24a', 10); 
+            } catch (error) {
+                console.error(error);
+            }
+        },
     }
 )
 
