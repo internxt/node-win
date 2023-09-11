@@ -3,7 +3,8 @@
 #include "Callbacks.h"
 #include <iostream>
 
-void TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCallbacks input) {
+void TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCallbacks input)
+{
     register_threadsafe_callbacks(env, input);
 }
 
@@ -98,16 +99,16 @@ HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallback
         CF_CALLBACK_REGISTRATION callbackTable[] = {
             {CF_CALLBACK_TYPE_NOTIFY_DELETE, notify_delete_callback_wrapper},
             {CF_CALLBACK_TYPE_NOTIFY_RENAME, notify_rename_callback_wrapper},
-            CF_CALLBACK_REGISTRATION_END
-        };
+            {CF_CALLBACK_TYPE_FETCH_PLACEHOLDERS, fetch_placeholders_callback_wrapper},
+            {CF_CALLBACK_TYPE_FETCH_DATA, fetch_data_callback_wrapper},
+            CF_CALLBACK_REGISTRATION_END};
 
         HRESULT hr = CfConnectSyncRoot(
             syncRootPath,
             callbackTable,
             nullptr, // Contexto (opcional)
             CF_CONNECT_FLAG_REQUIRE_PROCESS_INFO | CF_CONNECT_FLAG_REQUIRE_FULL_FILE_PATH,
-            connectionKey
-        );
+            connectionKey);
 
         return hr;
     }
