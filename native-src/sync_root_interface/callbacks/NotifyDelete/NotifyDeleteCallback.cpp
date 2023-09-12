@@ -158,7 +158,7 @@ void CALLBACK notify_delete_callback_wrapper(
 
     std::wstring *dataToSend = new std::wstring(fileIdentityStr);
 
-    napi_status status = napi_call_threadsafe_function(g_notify_delete_threadsafe_callback, dataToSend, d);
+    napi_status status = napi_call_threadsafe_function(g_notify_delete_threadsafe_callback, dataToSend, napi_tsfn_blocking);
 
     if (status != napi_ok)
     {

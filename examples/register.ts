@@ -78,6 +78,11 @@ drive.registerSyncRoot(
                 console.error(error);
             }
         },
+        fetchDataCallback: async (fileId: string, callback: (data : boolean) => void ) => {
+            console.log("File ID: " + fileId);
+            callback(true);
+            return true;
+        }
     }
 )
 
