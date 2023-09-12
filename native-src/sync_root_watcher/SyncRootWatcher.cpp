@@ -1,6 +1,10 @@
 #include "stdafx.h"
 #include "SyncRootWatcher.h"
 #include "DirectoryWatcher.h"
+#include "iostream"
+#include <string>
+#include <locale>
+#include <codecvt>
 
 namespace winrt
 {
@@ -13,13 +17,13 @@ bool SyncRootWatcher::s_shutdownWatcher;
 winrt::StorageProviderState SyncRootWatcher::s_state;
 winrt::event<winrt::EventHandler<winrt::IInspectable>> SyncRootWatcher::s_statusChanged;
 
-void SyncRootWatcher::WatchAndWait(const wchar_t *syncRootPath, napi_env env, InputSyncCallbacksThreadsafe input)
+void SyncRootWatcher::WatchAndWait(const wchar_t *syncRootPath, napi_env env, InputSyncCallbacksThreadsafe input, CF_CONNECTION_KEY connectionKey)
 {
-    std::thread watcherThread([this, syncRootPath, env, input] { WatcherTask(syncRootPath, env , input); });
+    std::thread watcherThread([this, syncRootPath, env, input, connectionKey] { WatcherTask(syncRootPath, env , input, connectionKey); });
     watcherThread.detach();
 }
 
-void SyncRootWatcher::WatcherTask(const wchar_t *syncRootPath, napi_env env, InputSyncCallbacksThreadsafe input)
+void SyncRootWatcher::WatcherTask(const wchar_t *syncRootPath, napi_env env, InputSyncCallbacksThreadsafe input, CF_CONNECTION_KEY connectionKey)
 {
     SetConsoleCtrlHandler(Stop, TRUE);
     InitDirectoryWatcher(syncRootPath, env, input);;
@@ -40,6 +44,23 @@ void SyncRootWatcher::WatcherTask(const wchar_t *syncRootPath, napi_env env, Inp
 
                 if (s_shutdownWatcher)
                 {
+                    wprintf(L"Connection key PREVIOUS: %d\n", connectionKey);
+                    HRESULT hr = CfDisconnectSyncRoot(connectionKey);
+                    if (FAILED(hr))
+                    {
+                            LPVOID errMsg;
+                            FormatMessageW(
+                                FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+                                NULL,
+                                hr,
+                                0, // idioma predeterminado
+                                (LPWSTR)&errMsg,
+                                0,
+                                NULL
+                            );
+                            wprintf(L"Error al desconectar el sync root: %s\n", (wchar_t*)errMsg);
+                            LocalFree(errMsg);
+                    }
                     s_directoryWatcher.Cancel();
                 }
             }

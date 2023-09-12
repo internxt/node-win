@@ -3,6 +3,8 @@
 #include "Callbacks.h"
 #include <iostream>
 
+CF_CONNECTION_KEY g_connecton_key;
+
 void TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCallbacks input) {
     register_threadsafe_callbacks(env, input);
 }
@@ -76,6 +78,9 @@ HRESULT SyncRoot::UnregisterSyncRoot()
 {
     try
     {
+        // print g_connection_key
+        wprintf(L"Connection key: %d\n", g_connecton_key);
+        CfDisconnectSyncRoot(g_connecton_key);
         winrt::StorageProviderSyncRootManager::Unregister(L"syncRootID");
         return S_OK;
     }
@@ -109,6 +114,15 @@ HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallback
             connectionKey
         );
 
+        wprintf(L"Connection key INPUT: %d\n", *connectionKey);
+
+        g_connecton_key = *connectionKey;
+        HRESULT hra = CfDisconnectSyncRoot(g_connecton_key);
+        // print hra
+        wprintf(L"Connection key DISCONNECT: %d\n", hra);
+        if (FAILED(hra)) {
+            wprintf(L"Error al desconectar el sync root: %08x\n", hra);
+        }
         return hr;
     }
     catch (const std::exception &e)

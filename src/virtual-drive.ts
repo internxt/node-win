@@ -200,12 +200,12 @@ class VirtualDrive {
         return result;
     }
 
-    watchAndWait(path: string): void {
+    watchAndWait(): void {
         if (this.callbacks === undefined) {
             throw new Error('Callbacks are not defined');
         }
         
-        addon.watchAndWait(path, this.getExtraCallbacks());
+        addon.watchAndWait(this.syncRootPath, this.getExtraCallbacks());
     }
     
     createItemByPath(relativePath: string, itemId: string, size: number = 0) {

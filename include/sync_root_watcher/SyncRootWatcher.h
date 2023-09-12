@@ -6,7 +6,7 @@
 class SyncRootWatcher
 {
 public:
-    void WatchAndWait(const wchar_t *syncRootPath, napi_env env, InputSyncCallbacksThreadsafe input);
+    void WatchAndWait(const wchar_t *syncRootPath, napi_env env, InputSyncCallbacksThreadsafe input, CF_CONNECTION_KEY connectionKey);
     static BOOL WINAPI Stop(DWORD reason);
 
     static auto StatusChanged(winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable> const& handler)
@@ -22,7 +22,7 @@ public:
     static auto State() { return s_state; }
 
 private:
-    static void WatcherTask(const wchar_t *syncRootPath, napi_env env, InputSyncCallbacksThreadsafe input);
+    static void WatcherTask(const wchar_t *syncRootPath, napi_env env, InputSyncCallbacksThreadsafe input, CF_CONNECTION_KEY connectionKey);
     static void InitDirectoryWatcher(const wchar_t *syncRootPath, napi_env env, InputSyncCallbacksThreadsafe input);
     static void OnSyncRootFileChanges(_In_ std::list<std::wstring>& changes);
 
@@ -30,5 +30,6 @@ private:
     static bool s_shutdownWatcher;
     static winrt::Windows::Storage::Provider::StorageProviderState s_state;
     static winrt::event<winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>> s_statusChanged;
+    std::atomic<bool> shouldCancel{false};
 };
 

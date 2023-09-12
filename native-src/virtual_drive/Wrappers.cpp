@@ -220,9 +220,7 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args) {
         return nullptr;
     }
 
-    CF_CONNECTION_KEY connectionKey;
     HRESULT hr = SyncRoot::ConnectSyncRoot(syncRootPath, callbacks, env, &connectionKey);
-
     delete[] syncRootPath;
 
 
@@ -240,14 +238,6 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args) {
     
     napi_create_int32(env, static_cast<int32_t>(hr), &hrValue);
     napi_set_named_property(env, resultObj, "hr", hrValue);
-    
-    std::wstringstream ss;
-    ss << connectionKey.Internal;
-
-    std::wstring connectionKeyString = ss.str();
-    napi_create_string_utf16(env, reinterpret_cast<const char16_t*>(connectionKeyString.c_str()), connectionKeyString.length(), &connectionKeyValue);
-        
-    napi_set_named_property(env, resultObj, "connectionKey", connectionKeyValue);
 
     return resultObj;
     }

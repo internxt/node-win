@@ -123,6 +123,7 @@ void DirectoryWatcher::Cancel()
     while (_readTask && (_readTask.Status() == winrt::AsyncStatus::Started) &&
         !CancelIoEx(_dir.get(), &_overlapped))
     {
+        wprintf(L"CancelIoEx failed with %d\n", GetLastError());
         // Raced against the thread loop. Try again.
         Sleep(10);
     }
