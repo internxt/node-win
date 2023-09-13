@@ -117,10 +117,6 @@ class VirtualDrive {
         return BigInt(jsTime) * 10000n + 116444736000000000n;
     }
 
-    setThumbnail(path: string, thumbnailPath: string) {
-        addon.setThumbnail(path, thumbnailPath);
-    }
-
     async connectSyncRoot(): Promise<any> {
         if (this.callbacks === undefined) {
             throw new Error('Callbacks are not defined');
@@ -212,7 +208,7 @@ class VirtualDrive {
         addon.watchAndWait(path, this.getExtraCallbacks());
     }
     
-    createItemByPath(relativePath: string, itemId: string, size: number = 0, thumbnailPath?: string) {
+    createItemByPath(relativePath: string, itemId: string, size: number = 0) {
         const fullPath = path.join(this.syncRootPath, relativePath);
         const splitPath = relativePath.split('/').filter(p => p);
         const directoryPath = path.resolve(this.syncRootPath);
@@ -278,10 +274,6 @@ class VirtualDrive {
             }
         } else {
             console.error("Invalid path");
-        }
-
-        if (thumbnailPath !== undefined) {
-            this.setThumbnail(path.normalize(fullPath), path.normalize(thumbnailPath));
         }
     }
     

@@ -14,25 +14,24 @@
         }
       },
       "sources": [
-        "native-src/main.cpp",
-        "native-src/sync_root_interface/SyncRoot.cpp",
-        "native-src/virtual_drive/Wrappers.cpp",
         "native-src/sync_root_interface/Utilities.cpp",
-        "native-src/placeholders_interface/Planceholders.cpp",
-        "native-src/sync_root_watcher/DirectoryWatcher.cpp",
-        "native-src/sync_root_interface/callbacks/Callbacks.cpp",
-        "native-src/placeholders_interface/Thumbnail.cpp",
-        "native-src/sync_root_watcher/SyncRootWatcher.cpp",
         "native-src/sync_root_interface/callbacks/NotifyRename/NotifyRenameCallback.cpp",
-        "native-src/sync_root_interface/callbacks/NotifyDelete/NotifyDeleteCallback.cpp"
+        "native-src/sync_root_watcher/SyncRootWatcher.cpp",
+        "native-src/placeholders_interface/Planceholders.cpp",
+        "native-src/sync_root_interface/callbacks/NotifyDelete/NotifyDeleteCallback.cpp",
+        "native-src/sync_root_interface/SyncRoot.cpp",
+        "native-src/sync_root_watcher/DirectoryWatcher.cpp",
+        "native-src/main.cpp",
+        "native-src/sync_root_interface/callbacks/Callbacks.cpp",
+        "native-src/virtual_drive/Wrappers.cpp"
       ],
       "include_dirs": [
-        "include/virtual_drive",
         "include/sync_root_watcher",
-        "include/sync_root_interface",
         "include/placeholders_interface",
+        "include/virtual_drive",
         "include/sync_root_interface/callbacks",
-        "include"
+        "include",
+        "include/sync_root_interface"
       ],
       "libraries": [
         "-lCldApi.lib"

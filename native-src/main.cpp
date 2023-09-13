@@ -4,9 +4,9 @@
 napi_value init(napi_env env, napi_value exports) {
   // Watcher
   napi_property_descriptor watchAndWaitDesc = {
-    "watchAndWait",
+    "watchAndWait",             // nombre de la función en JS
     nullptr,
-    WatchAndWaitWrapper,
+    WatchAndWaitWrapper,       // nombre de tu función en C++
     nullptr,
     nullptr,
     nullptr,
@@ -89,24 +89,6 @@ napi_value init(napi_env env, napi_value exports) {
   napi_status defineConnectSyncRootStatus = napi_define_properties(env, exports, 1, &connectSyncRootDesc);
   if (defineConnectSyncRootStatus != napi_ok) {
       napi_throw_error(env, nullptr, "Failed to define ConnectSyncRoot function");
-      return nullptr;
-  }
-
-  //SetThumbnailWrapper
-  napi_property_descriptor setThumbnailDesc = {
-    "setThumbnail",
-    nullptr,
-    SetThumbnailWrapper,
-    nullptr,
-    nullptr,
-    nullptr,
-    napi_default,
-    nullptr
-  };
-
-  napi_status defineSetThumbnailStatus = napi_define_properties(env, exports, 1, &setThumbnailDesc);
-  if (defineSetThumbnailStatus != napi_ok) {
-      napi_throw_error(env, nullptr, "Failed to define SetThumbnail function");
       return nullptr;
   }
 
