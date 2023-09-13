@@ -84,7 +84,7 @@ drive.registerSyncRoot(
 drive.connectSyncRoot();
 
 drive.createItemByPath(`/A (5th copy).pdfs`, '280ab650-acef-4438-8bbc-29863810b24a', 1000);
-drive.createItemByPath(`/file1.txt`, 'fa8217c9-2dd6-4641-9180-8206e60368a6', 1000);
+drive.createItemByPath(`/file1.txt`, 'fa8217c9-2dd6-4641-9180-8206e60368a6', 1000, 'C:/Users/gcarl/Desktop/maxresdefault.jpg');
 drive.createItemByPath(`/only-folder/`, 'fa8217c9-2dd6-4641-9180-8206e60368123', 1000);
 drive.createItemByPath(`/folderWithFolder/folder2/`, 'fa8217c9-2dd6-4641-9180-8206e6036845', 1000);
 drive.createItemByPath(`/folderWithFile/file2.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036216', 1000);

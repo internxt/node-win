@@ -4,6 +4,7 @@
 #include "SyncRoot.h"
 #include "SyncRootWatcher.h"
 #include "Callbacks.h"
+#include "Thumbnail.h"
 
 void notify_file_added_call(napi_env env, napi_value js_callback, void* context, void* data) {
     std::wstring* receivedData = static_cast<std::wstring*>(data);
@@ -324,6 +325,39 @@ napi_value WatchAndWaitWrapper(napi_env env, napi_callback_info args) {
     watcher.WatchAndWait(syncRootPath, env, inputThreadsafe);
 
     delete[] syncRootPath;
+
+    return nullptr;
+}
+
+napi_value SetThumbnailWrapper(napi_env env, napi_callback_info args) {
+    size_t argc = 2;
+    napi_value argv[2];
+
+    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
+
+    if (argc < 2) {
+        napi_throw_error(env, nullptr, "Se requieren más argumentos para SetThumbnail");
+        return nullptr;
+    }
+
+    LPCWSTR filePath;
+    size_t pathLength;
+    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
+    filePath = new WCHAR[pathLength + 1];
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t*>(const_cast<wchar_t*>(filePath)), pathLength + 1, nullptr);
+
+    LPCWSTR thumbnailPath;
+    size_t thumbnailPathLength;
+    napi_get_value_string_utf16(env, argv[1], nullptr, 0, &thumbnailPathLength);
+    thumbnailPath = new WCHAR[thumbnailPathLength + 1];
+    napi_get_value_string_utf16(env, argv[1], reinterpret_cast<char16_t*>(const_cast<wchar_t*>(thumbnailPath)), thumbnailPathLength + 1, nullptr);
+
+    wprintf(L"filePath: %s\n", filePath);
+    wprintf(L"thumbnailPath: %s\n", thumbnailPath);
+    SetThumbnail(filePath, thumbnailPath);
+
+    delete[] filePath;
+    delete[] thumbnailPath;
 
     return nullptr;
 }
