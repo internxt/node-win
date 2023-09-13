@@ -46,6 +46,37 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     return nullptr;
 }
 
+void HydrateOrDehydrateFile(const std::wstring &filePath)
+{
+    DWORD attrib = GetFileAttributesW(filePath.c_str());
+    if (attrib == INVALID_FILE_ATTRIBUTES)
+    {
+        // Handle the case where the file attribute cannot be obtained.
+        return;
+    }
+    winrt::handle placeholder(CreateFileW(filePath.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
+    if (!placeholder)
+    {
+        // Handle the case where the file cannot be opened.
+        return;
+    }
+    LARGE_INTEGER offset = {};
+    LARGE_INTEGER length;
+    length.QuadPart = MAXLONGLONG;
+    wprintf(L"Hydrating file %s\n", filePath.c_str());
+    HRESULT hr = CfHydratePlaceholder(placeholder.get(), offset, length, CF_HYDRATE_FLAG_NONE, NULL);
+    if (SUCCEEDED(hr))
+    {
+        // Placeholder file has been hydrated successfully
+        wprintf(L"Placeholder file has been hydrated successfully.\n");
+    }
+    else
+    {
+        // Placeholder file hydration failed
+        // Handle the error
+    }
+}
+
 void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
 {
     wprintf(L"notify_fetch_data_call called\n");
@@ -121,13 +152,12 @@ void CALLBACK fetch_data_callback_wrapper(
     _In_ CONST CF_CALLBACK_PARAMETERS *callbackParameters)
 {
     wprintf(L"Callback fetch_data_callback_wrapper called\n");
-
     // get callbackinfo
     wprintf(L"fileId = %s\n", callbackInfo->FileIdentity);
-    wprintf(L"fileIdLength = %d\n", callbackInfo->FileIdentityLength);
-    wprintf(L"connectionKey = %d\n", callbackInfo->ConnectionKey);
-    wprintf(L"transferKey = %d\n", callbackInfo->TransferKey);
-    wprintf(L"normalized path = %d\n", callbackInfo->NormalizedPath);
+
+    std::wstring fullClientPath(callbackInfo->VolumeDosName);
+    fullClientPath.append(callbackInfo->NormalizedPath);
+    wprintf(L"Full path: %s\n", fullClientPath.c_str());
 
     LPCVOID fileIdentity = callbackInfo->FileIdentity;
     DWORD fileIdentityLength = callbackInfo->FileIdentityLength;
@@ -146,8 +176,6 @@ void CALLBACK fetch_data_callback_wrapper(
         wprintf(L"Callback called unsuccessfully.\n");
     };
 
-    CF_OPERATION_PARAMETERS opParams = {0};
-
     {
         std::unique_lock<std::mutex> lock(mtx);
         while (!ready)
@@ -156,26 +184,16 @@ void CALLBACK fetch_data_callback_wrapper(
         }
     }
 
-    opParams.AckData.CompletionStatus = STATUS_SUCCESS; // callbackResult ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
-
-    CF_OPERATION_INFO opInfo = {0};
-    opInfo.StructSize = sizeof(CF_OPERATION_INFO);
-    opInfo.Type = CF_OPERATION_TYPE_ACK_DATA; // todo: check if this is the correct type
-    opInfo.ConnectionKey = callbackInfo->ConnectionKey;
-    opInfo.TransferKey = callbackInfo->TransferKey;
-
-    HRESULT hr = CfExecute(&opInfo, &opParams);
-
-    if (FAILED(hr))
+    if (callbackResult)
     {
-        wprintf(L"Error in CfExecute().\n");
-        wprintf(L"Error in CfExecute(), HRESULT: %lx\n", hr);
+        wprintf(L"File %s has been hydrated.\n", fileIdentityStr.c_str());
+        HydrateOrDehydrateFile(L"C:\\Users\\User\\Desktop\\carpeta\\file1.txt");
+    }
+    else
+    {
+        wprintf(L"File %s has been dehydrated.\n", fileIdentityStr.c_str());
     }
 
     std::lock_guard<std::mutex> lock(mtx);
     ready = false; // Reset ready
-
-    // delete args;
-    // todo: function to fetch data
-    // todo: call napi_call_threadsafe_function
 }
