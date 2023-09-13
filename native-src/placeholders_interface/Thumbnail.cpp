@@ -8,6 +8,7 @@ bool FileExists(LPCWSTR fileName) {
 }
 
 void SetThumbnail(LPCWSTR filePath, LPCWSTR thumbnailPath) {
+    wprintf(L"Setting thumbnail for %s\n", filePath);
     LPCWSTR filePath_ = L"C:\\Users\\gcarl\\Desktop\\carpeta\\file1.txt";
     if (!FileExists(filePath_)) {
         std::wcout << L"El archivo " << filePath_ << L" no existe." << std::endl;
