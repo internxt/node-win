@@ -80,7 +80,8 @@ drive.registerSyncRoot(
         },
         fetchDataCallback: async (fileId: string, callback: (data : boolean) => void ) => {
             console.log("File ID: " + fileId);
-            callback(true);
+            // funcion asincrona para obtener los datos del archivo
+            callback(true); // en vez de true se deberia devolver los datos del archivo
             return true;
         }
     }

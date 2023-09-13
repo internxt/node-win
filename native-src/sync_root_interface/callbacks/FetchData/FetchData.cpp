@@ -2,6 +2,7 @@
 #include <string>
 #include <condition_variable>
 #include <mutex>
+#include <FileCopierWithProgress.h>
 
 napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
@@ -46,35 +47,10 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     return nullptr;
 }
 
-void HydrateOrDehydrateFile(const std::wstring &filePath)
+void HydrateFile(const std::wstring &filePath, _In_ CONST CF_CALLBACK_INFO *lpCallbackInfo,
+                 _In_ CONST CF_CALLBACK_PARAMETERS *lpCallbackParameters)
 {
-    DWORD attrib = GetFileAttributesW(filePath.c_str());
-    if (attrib == INVALID_FILE_ATTRIBUTES)
-    {
-        // Handle the case where the file attribute cannot be obtained.
-        return;
-    }
-    winrt::handle placeholder(CreateFileW(filePath.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
-    if (!placeholder)
-    {
-        // Handle the case where the file cannot be opened.
-        return;
-    }
-    LARGE_INTEGER offset = {};
-    LARGE_INTEGER length;
-    length.QuadPart = MAXLONGLONG;
-    wprintf(L"Hydrating file %s\n", filePath.c_str());
-    HRESULT hr = CfHydratePlaceholder(placeholder.get(), offset, length, CF_HYDRATE_FLAG_NONE, NULL);
-    if (SUCCEEDED(hr))
-    {
-        // Placeholder file has been hydrated successfully
-        wprintf(L"Placeholder file has been hydrated successfully.\n");
-    }
-    else
-    {
-        // Placeholder file hydration failed
-        // Handle the error
-    }
+    FileCopierWithProgress::CopyFromServerToClient(lpCallbackInfo, lpCallbackParameters, L"C:\\Users\\User\\Desktop\\carpeta\\");
 }
 
 void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
@@ -187,7 +163,7 @@ void CALLBACK fetch_data_callback_wrapper(
     if (callbackResult)
     {
         wprintf(L"File %s has been hydrated.\n", fileIdentityStr.c_str());
-        HydrateOrDehydrateFile(L"C:\\Users\\User\\Desktop\\carpeta\\file1.txt");
+        HydrateFile(fullClientPath, callbackInfo, callbackParameters);
     }
     else
     {
