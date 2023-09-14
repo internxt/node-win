@@ -1,10 +1,46 @@
 #include "Thumbnail.h"
 #include <iostream>
+#include <stdafx.h>
 
 bool FileExists(LPCWSTR fileName) {
     DWORD fileAttr = GetFileAttributesW(fileName);
     return (fileAttr != INVALID_FILE_ATTRIBUTES &&
             !(fileAttr & FILE_ATTRIBUTE_DIRECTORY));
+}
+
+winrt::Windows::Storage::Streams::IRandomAccessStream GetImageStream(const std::wstring& imagePath) {
+    try {
+        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::Storage::StorageFile> getFileOperation = 
+            winrt::Windows::Storage::StorageFile::GetFileFromPathAsync(imagePath);
+
+        winrt::Windows::Storage::StorageFile storageFile = getFileOperation.get();
+
+        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::Storage::Streams::IRandomAccessStream> getStreamOperation = 
+            storageFile.OpenAsync(winrt::Windows::Storage::FileAccessMode::Read);
+
+        winrt::Windows::Storage::Streams::IRandomAccessStream stream = getStreamOperation.get();
+        return stream;
+
+    } catch (winrt::hresult_error const& ex) {
+        std::wcerr << L"Se produjo un error: " << ex.message().c_str() << std::endl;
+        throw;
+    }
+}
+
+void SetThumbnailBase(winrt::Windows::Storage::StorageFile const& file) {
+    try {
+        winrt::Windows::Storage::FileProperties::StorageItemContentProperties properties = file.Properties();
+        winrt::Windows::Storage::Streams::IRandomAccessStream imageStream = GetImageStream();
+
+        // Usa el stream de la imagen como thumbnail
+        winrt::Windows::Storage::FileProperties::ThumbnailMode thumbnailMode = winrt::Windows::Storage::FileProperties::ThumbnailMode::SingleItem;
+        winrt::Windows::Foundation::IAsyncAction thumbnailSetAction = properties.SetThumbnailAsync(thumbnailMode, imageStream);
+
+        thumbnailSetAction.get();  // Espera a que la operación asíncrona se complete
+    } catch (...) {
+        // Manejo de errores
+        std::wcout << L"Se produjo un error al establecer el thumbnail." << std::endl;
+    }
 }
 
 void SetThumbnail(LPCWSTR filePath, LPCWSTR thumbnailPath) {
