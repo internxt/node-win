@@ -5,11 +5,12 @@
 #include "SyncRootWatcher.h"
 #include "Callbacks.h"
 
-void notify_file_added_call(napi_env env, napi_value js_callback, void* context, void* data) {
-    std::wstring* receivedData = static_cast<std::wstring*>(data);
+void notify_file_added_call(napi_env env, napi_value js_callback, void *context, void *data)
+{
+    std::wstring *receivedData = static_cast<std::wstring *>(data);
 
     napi_value js_string;
-    napi_create_string_utf16(env, reinterpret_cast<const char16_t*>(receivedData->c_str()), receivedData->size(), &js_string);
+    napi_create_string_utf16(env, reinterpret_cast<const char16_t *>(receivedData->c_str()), receivedData->size(), &js_string);
 
     napi_value undefined;
     napi_get_undefined(env, &undefined);
@@ -18,7 +19,6 @@ void notify_file_added_call(napi_env env, napi_value js_callback, void* context,
 
     delete receivedData;
 }
-
 
 napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
 {
@@ -41,10 +41,11 @@ napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
 
     size_t fileIdentityLength;
     napi_get_value_string_utf16(env, argv[1], nullptr, 0, &fileIdentityLength);
-    wchar_t* fileIdentity = new wchar_t[fileIdentityLength + 1];
+    wchar_t *fileIdentity = new wchar_t[fileIdentityLength + 1];
     napi_get_value_string_utf16(env, argv[1], reinterpret_cast<char16_t *>(fileIdentity), fileIdentityLength + 1, nullptr);
-    
-    if (fileIdentityLength > CF_PLACEHOLDER_MAX_FILE_IDENTITY_LENGTH) {
+
+    if (fileIdentityLength > CF_PLACEHOLDER_MAX_FILE_IDENTITY_LENGTH)
+    {
         napi_throw_error(env, nullptr, "File identity is too long");
         return nullptr;
     }
@@ -92,13 +93,15 @@ napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
     return result;
 }
 
-napi_value UnregisterSyncRootWrapper(napi_env env, napi_callback_info args) {
+napi_value UnregisterSyncRootWrapper(napi_env env, napi_callback_info args)
+{
     size_t argc = 1;
     napi_value argv[1];
 
     napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
 
-    if (argc < 1) {
+    if (argc < 1)
+    {
         napi_throw_error(env, nullptr, "The sync root path is required for UnregisterSyncRoot");
         return nullptr;
     }
@@ -107,7 +110,7 @@ napi_value UnregisterSyncRootWrapper(napi_env env, napi_callback_info args) {
     size_t pathLength;
     napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
     syncRootPath = new WCHAR[pathLength + 1];
-    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t*>(const_cast<wchar_t*>(syncRootPath)), pathLength + 1, nullptr);
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(syncRootPath)), pathLength + 1, nullptr);
 
     HRESULT result = SyncRoot::UnregisterSyncRoot();
 
@@ -118,13 +121,15 @@ napi_value UnregisterSyncRootWrapper(napi_env env, napi_callback_info args) {
     return napiResult;
 }
 
-napi_value RegisterSyncRootWrapper(napi_env env, napi_callback_info args) {
+napi_value RegisterSyncRootWrapper(napi_env env, napi_callback_info args)
+{
     size_t argc = 4;
     napi_value argv[4];
 
     napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
 
-    if (argc < 4) {
+    if (argc < 4)
+    {
         napi_throw_error(env, nullptr, "4 arguments are required for RegisterSyncRoot");
         return nullptr;
     }
@@ -133,38 +138,38 @@ napi_value RegisterSyncRootWrapper(napi_env env, napi_callback_info args) {
     size_t syncRootPathLength;
     napi_get_value_string_utf16(env, argv[0], nullptr, 0, &syncRootPathLength);
     syncRootPath = new WCHAR[syncRootPathLength + 1];
-    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t*>(const_cast<wchar_t*>(syncRootPath)), syncRootPathLength + 1, nullptr);
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(syncRootPath)), syncRootPathLength + 1, nullptr);
 
     LPCWSTR providerName;
     size_t providerNameLength;
     napi_get_value_string_utf16(env, argv[1], nullptr, 0, &providerNameLength);
     providerName = new WCHAR[providerNameLength + 1];
-    napi_get_value_string_utf16(env, argv[1], reinterpret_cast<char16_t*>(const_cast<wchar_t*>(providerName)), providerNameLength + 1, nullptr);
+    napi_get_value_string_utf16(env, argv[1], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(providerName)), providerNameLength + 1, nullptr);
 
     LPCWSTR providerVersion;
     size_t providerVersionLength;
     napi_get_value_string_utf16(env, argv[2], nullptr, 0, &providerVersionLength);
     providerVersion = new WCHAR[providerVersionLength + 1];
-    napi_get_value_string_utf16(env, argv[2], reinterpret_cast<char16_t*>(const_cast<wchar_t*>(providerVersion)), providerVersionLength + 1, nullptr);
+    napi_get_value_string_utf16(env, argv[2], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(providerVersion)), providerVersionLength + 1, nullptr);
 
     GUID providerId;
     LPCWSTR providerIdStr;
     size_t providerIdStrLength;
     napi_get_value_string_utf16(env, argv[3], nullptr, 0, &providerIdStrLength);
     providerIdStr = new WCHAR[providerIdStrLength + 1];
-    napi_get_value_string_utf16(env, argv[3], reinterpret_cast<char16_t*>(const_cast<wchar_t*>(providerIdStr)), providerIdStrLength + 1, nullptr);
+    napi_get_value_string_utf16(env, argv[3], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(providerIdStr)), providerIdStrLength + 1, nullptr);
 
-    if (FAILED(CLSIDFromString(providerIdStr, &providerId))) {
+    if (FAILED(CLSIDFromString(providerIdStr, &providerId)))
+    {
         napi_throw_error(env, nullptr, "Invalid GUID format");
         delete[] syncRootPath;
         delete[] providerName;
         delete[] providerVersion;
         delete[] providerIdStr;
         return nullptr;
-    }    
+    }
 
     HRESULT result = SyncRoot::RegisterSyncRoot(syncRootPath, providerName, providerVersion, providerId);
-
 
     delete[] providerIdStr;
 
@@ -173,97 +178,104 @@ napi_value RegisterSyncRootWrapper(napi_env env, napi_callback_info args) {
     return napiResult;
 }
 
-napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args) {
-    try {
+napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args)
+{
+    try
+    {
 
-    size_t argc = 2;
-    napi_value argv[2];
+        size_t argc = 2;
+        napi_value argv[2];
 
-    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
+        napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
 
-    if (argc < 2) {
-        napi_throw_error(env, nullptr, "Se requieren más argumentos para ConnectSyncRoot");
-        return nullptr;
+        if (argc < 2)
+        {
+            napi_throw_error(env, nullptr, "Se requieren más argumentos para ConnectSyncRoot");
+            return nullptr;
+        }
+
+        LPCWSTR syncRootPath;
+        size_t pathLength;
+        napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
+        syncRootPath = new WCHAR[pathLength + 1];
+        napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(syncRootPath)), pathLength + 1, nullptr);
+
+        // CALLBACKS
+        InputSyncCallbacks callbacks = {};
+
+        napi_value notifyDeleteCompletionCallback;
+        napi_value notifyRenameCallback;
+
+        if (napi_get_named_property(env, argv[1], "notifyDeleteCallback", &notifyDeleteCompletionCallback) == napi_ok)
+        {
+            napi_create_reference(env, notifyDeleteCompletionCallback, 1, &callbacks.notify_delete_callback_ref);
+        }
+
+        napi_valuetype valuetype;
+        napi_status type_status = napi_typeof(env, notifyDeleteCompletionCallback, &valuetype);
+        if (type_status != napi_ok || valuetype != napi_function)
+        {
+            napi_throw_error(env, nullptr, "notifyDeleteCallback should be a function.");
+            return nullptr;
+        }
+
+        if (napi_get_named_property(env, argv[1], "notifyRenameCallback", &notifyRenameCallback) == napi_ok)
+        {
+            napi_create_reference(env, notifyRenameCallback, 1, &callbacks.notify_rename_callback_ref);
+        }
+
+        napi_valuetype valuetype_rename;
+        napi_status type_status_rename = napi_typeof(env, notifyRenameCallback, &valuetype_rename);
+        if (type_status_rename != napi_ok || valuetype_rename != napi_function)
+        {
+            napi_throw_error(env, nullptr, "notifyRenameCallback should be a function.");
+            return nullptr;
+        }
+
+        CF_CONNECTION_KEY connectionKey;
+        HRESULT hr = SyncRoot::ConnectSyncRoot(syncRootPath, callbacks, env, &connectionKey);
+
+        delete[] syncRootPath;
+
+        if (FAILED(hr))
+        {
+            napi_throw_error(env, nullptr, "ConnectSyncRoot failed");
+            return nullptr;
+        }
+
+        napi_value resultObj, hrValue, connectionKeyValue;
+
+        napi_create_object(env, &resultObj);
+
+        napi_create_int32(env, static_cast<int32_t>(hr), &hrValue);
+        napi_set_named_property(env, resultObj, "hr", hrValue);
+
+        std::wstringstream ss;
+        ss << connectionKey.Internal;
+
+        std::wstring connectionKeyString = ss.str();
+        napi_create_string_utf16(env, reinterpret_cast<const char16_t *>(connectionKeyString.c_str()), connectionKeyString.length(), &connectionKeyValue);
+
+        napi_set_named_property(env, resultObj, "connectionKey", connectionKeyValue);
+
+        return resultObj;
     }
-
-    LPCWSTR syncRootPath;
-    size_t pathLength;
-    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
-    syncRootPath = new WCHAR[pathLength + 1];
-    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t*>(const_cast<wchar_t*>(syncRootPath)), pathLength + 1, nullptr);
-
-    // CALLBACKS
-    InputSyncCallbacks callbacks = {};
-
-    napi_value notifyDeleteCompletionCallback;
-    napi_value notifyRenameCallback;
-
-    if (napi_get_named_property(env, argv[1], "notifyDeleteCallback", &notifyDeleteCompletionCallback) == napi_ok) {
-        napi_create_reference(env, notifyDeleteCompletionCallback, 1, &callbacks.notify_delete_callback_ref);
-    }
-
-    napi_valuetype valuetype;
-    napi_status type_status = napi_typeof(env, notifyDeleteCompletionCallback, &valuetype);
-    if (type_status != napi_ok || valuetype != napi_function) {
-        napi_throw_error(env, nullptr, "notifyDeleteCallback should be a function.");
-        return nullptr;
-    }
-
-    if (napi_get_named_property(env, argv[1], "notifyRenameCallback", &notifyRenameCallback) == napi_ok) {
-        napi_create_reference(env, notifyRenameCallback, 1, &callbacks.notify_rename_callback_ref);
-    }
-
-    napi_valuetype valuetype_rename;
-    napi_status type_status_rename = napi_typeof(env, notifyRenameCallback, &valuetype_rename);
-    if (type_status_rename != napi_ok || valuetype_rename != napi_function) {
-        napi_throw_error(env, nullptr, "notifyRenameCallback should be a function.");
-        return nullptr;
-    }
-
-    CF_CONNECTION_KEY connectionKey;
-    HRESULT hr = SyncRoot::ConnectSyncRoot(syncRootPath, callbacks, env, &connectionKey);
-
-    delete[] syncRootPath;
-
-
-
-    if (FAILED(hr)) {
-        napi_throw_error(env, nullptr, "ConnectSyncRoot failed");
-        return nullptr;
-    }
-    
-    napi_value resultObj, hrValue, connectionKeyValue;
-
-    napi_create_object(env, &resultObj);
-
-
-    
-    napi_create_int32(env, static_cast<int32_t>(hr), &hrValue);
-    napi_set_named_property(env, resultObj, "hr", hrValue);
-    
-    std::wstringstream ss;
-    ss << connectionKey.Internal;
-
-    std::wstring connectionKeyString = ss.str();
-    napi_create_string_utf16(env, reinterpret_cast<const char16_t*>(connectionKeyString.c_str()), connectionKeyString.length(), &connectionKeyValue);
-        
-    napi_set_named_property(env, resultObj, "connectionKey", connectionKeyValue);
-
-    return resultObj;
-    }
-    catch (...) {
+    catch (...)
+    {
         napi_throw_error(env, nullptr, "An unknown error occurred in ConnectSyncRootWrapper");
         return nullptr;
     }
 }
 
-napi_value WatchAndWaitWrapper(napi_env env, napi_callback_info args) {
+napi_value WatchAndWaitWrapper(napi_env env, napi_callback_info args)
+{
     size_t argc = 2;
     napi_value argv[2];
 
     napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
 
-    if (argc < 2) {
+    if (argc < 2)
+    {
         napi_throw_error(env, nullptr, "Se requieren más argumentos para WatchAndWait");
         return nullptr;
     }
@@ -272,17 +284,18 @@ napi_value WatchAndWaitWrapper(napi_env env, napi_callback_info args) {
 
     napi_value notifyFileAddedCallback;
 
-    if(napi_get_named_property(env, argv[1], "notifyFileAddedCallback", &notifyFileAddedCallback) == napi_ok) {
+    if (napi_get_named_property(env, argv[1], "notifyFileAddedCallback", &notifyFileAddedCallback) == napi_ok)
+    {
         napi_create_reference(env, notifyFileAddedCallback, 1, &input.notify_file_added_callback_ref);
     }
 
     napi_valuetype valuetype;
     napi_status type_status = napi_typeof(env, notifyFileAddedCallback, &valuetype);
-    if (type_status != napi_ok || valuetype != napi_function) {
+    if (type_status != napi_ok || valuetype != napi_function)
+    {
         napi_throw_error(env, nullptr, "notifyFileAddedCallback should be a function.");
         return nullptr;
     }
-
 
     napi_value resource_name_value;
 
@@ -293,7 +306,7 @@ napi_value WatchAndWaitWrapper(napi_env env, napi_callback_info args) {
 
     napi_value notify_file_added_callback_value;
     napi_status status_ref = napi_get_reference_value(env, input.notify_file_added_callback_ref, &notify_file_added_callback_value);
-        
+
     napi_threadsafe_function notify_file_added_threadsafe_callback;
 
     napi_status status_threadsafe = napi_create_threadsafe_function(
@@ -307,9 +320,7 @@ napi_value WatchAndWaitWrapper(napi_env env, napi_callback_info args) {
         NULL,
         NULL,
         notify_file_added_call,
-        &notify_file_added_threadsafe_callback
-    );
-
+        &notify_file_added_threadsafe_callback);
 
     InputSyncCallbacksThreadsafe inputThreadsafe = {};
     inputThreadsafe.notify_file_added_threadsafe_callback = notify_file_added_threadsafe_callback;
@@ -318,7 +329,7 @@ napi_value WatchAndWaitWrapper(napi_env env, napi_callback_info args) {
     size_t pathLength;
     napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
     syncRootPath = new WCHAR[pathLength + 1];
-    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t*>(const_cast<wchar_t*>(syncRootPath)), pathLength + 1, nullptr);
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(syncRootPath)), pathLength + 1, nullptr);
 
     SyncRootWatcher watcher;
     watcher.WatchAndWait(syncRootPath, env, inputThreadsafe);
@@ -401,4 +412,33 @@ napi_value CreateEntryWrapper(napi_env env, napi_callback_info args)
     napi_value result;
     napi_get_boolean(env, true, &result);
     return result;
+}
+
+// disconection wrapper
+napi_value DisconnectSyncRootWrapper(napi_env env, napi_callback_info args)
+{
+    size_t argc = 1;
+    napi_value argv[1];
+
+    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
+
+    if (argc < 1)
+    {
+        napi_throw_error(env, nullptr, "The sync root path is required for DisconnectSyncRoot");
+        return nullptr;
+    }
+
+    LPCWSTR syncRootPath;
+    size_t pathLength;
+    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
+    syncRootPath = new WCHAR[pathLength + 1];
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(syncRootPath)), pathLength + 1, nullptr);
+
+    HRESULT result = SyncRoot::DisconnectSyncRoot();
+    wprintf(L"DisconnectSyncRootWrapper: %08x\n", static_cast<HRESULT>(result));
+    delete[] syncRootPath;
+
+    napi_value napiResult;
+    napi_create_int32(env, static_cast<int32_t>(result), &napiResult);
+    return napiResult;
 }

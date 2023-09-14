@@ -3,7 +3,11 @@
 #include "Callbacks.h"
 #include <iostream>
 
-void TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCallbacks input) {
+// variable to disconect
+CF_CONNECTION_KEY gloablConnectionKey;
+
+void TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCallbacks input)
+{
     register_threadsafe_callbacks(env, input);
 }
 
@@ -98,17 +102,36 @@ HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallback
         CF_CALLBACK_REGISTRATION callbackTable[] = {
             {CF_CALLBACK_TYPE_NOTIFY_DELETE, notify_delete_callback_wrapper},
             {CF_CALLBACK_TYPE_NOTIFY_RENAME, notify_rename_callback_wrapper},
-            CF_CALLBACK_REGISTRATION_END
-        };
+            CF_CALLBACK_REGISTRATION_END};
 
         HRESULT hr = CfConnectSyncRoot(
             syncRootPath,
             callbackTable,
             nullptr, // Contexto (opcional)
             CF_CONNECT_FLAG_REQUIRE_PROCESS_INFO | CF_CONNECT_FLAG_REQUIRE_FULL_FILE_PATH,
-            connectionKey
-        );
+            connectionKey);
+        wprintf(L"Connection key: %llu\n", *connectionKey);
+        gloablConnectionKey = *connectionKey;
+        return hr;
+    }
+    catch (const std::exception &e)
+    {
+        wprintf(L"Excepción capturada: %hs\n", e.what());
+        // Aquí puedes decidir si retornar un código de error específico o mantener el E_FAIL.
+    }
+    catch (...)
+    {
+        wprintf(L"Excepción desconocida capturada\n");
+        // Igualmente, puedes decidir el código de error a retornar.
+    }
+}
 
+// disconection sync root
+HRESULT SyncRoot::DisconnectSyncRoot()
+{
+    try
+    {
+        HRESULT hr = CfDisconnectSyncRoot(gloablConnectionKey);
         return hr;
     }
     catch (const std::exception &e)
