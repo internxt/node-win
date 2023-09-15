@@ -50,7 +50,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 void HydrateFile(const std::wstring &filePath, _In_ CONST CF_CALLBACK_INFO *lpCallbackInfo,
                  _In_ CONST CF_CALLBACK_PARAMETERS *lpCallbackParameters)
 {
-    FileCopierWithProgress::CopyFromServerToClient(lpCallbackInfo, lpCallbackParameters, L"C:\\Users\\User\\Desktop\\carpeta\\");
+    FileCopierWithProgress::CopyFromServerToClient(lpCallbackInfo, lpCallbackParameters, L"C:\\Users\\User\\Desktop\\fakeserver");
 }
 
 void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)

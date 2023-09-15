@@ -34,7 +34,8 @@
         "include/sync_root_interface"
       ],
       "libraries": [
-        "-lCldApi.lib"
+        "-lCldApi.lib",
+        "-lPropsys.lib"
       ]
     }
   ]

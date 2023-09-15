@@ -1,34 +1,26 @@
 #include "stdafx.h"
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <windows.h>
 #include "FileCopierWithProgress.h"
 #include "Utilities.h"
 
-#define CHUNKSIZE 409600
+#define CHUNKSIZE 4096
+// Arbitrary delay per chunk, again, so you can actually see the progress bar
+// move
 #define CHUNKDELAYMS 250
+
 #define FIELD_SIZE(type, field) (sizeof(((type *)0)->field))
 #define CF_SIZE_OF_OP_PARAM(field)                      \
         (FIELD_OFFSET(CF_OPERATION_PARAMETERS, field) + \
          FIELD_SIZE(CF_OPERATION_PARAMETERS, field))
 
-LPCSTR ConverToLPCSTR(const wchar_t *wstr)
-{
-        static char str[256];
-        WideCharToMultiByte(CP_ACP, 0, wstr, -1, str, 256, NULL, NULL);
-        return str;
-}
-
-// converToLPCWSTR
-LPCWSTR ConverToLPCWSTR(const wchar_t *str)
-{
-        static wchar_t wstr[256];
-        MultiByteToWideChar(CP_ACP, 0, str, -1, wstr, 256);
-        return wstr;
-}
-
 struct READ_COMPLETION_CONTEXT
 {
         OVERLAPPED Overlapped;
         CF_CALLBACK_INFO CallbackInfo;
-        wchar_t FullPath[MAX_PATH];
+        TCHAR FullPath[MAX_PATH];
         HANDLE Handle;
         CHAR PriorityHint;
         LARGE_INTEGER StartOffset;
@@ -46,6 +38,7 @@ void FileCopierWithProgress::CopyFromServerToClient(
 {
         try
         {
+                CreateFileTemp(reinterpret_cast<wchar_t const *>(lpCallbackInfo->FileIdentity));
                 CopyFromServerToClientWorker(
                     lpCallbackInfo,
                     lpCallbackInfo->ProcessInfo,
@@ -59,9 +52,6 @@ void FileCopierWithProgress::CopyFromServerToClient(
         }
         catch (...)
         {
-                wprintf(L"[%04x:%04x] - Error transferData t\n",
-                        GetCurrentProcessId(),
-                        GetCurrentThreadId());
                 TransferData(
                     lpCallbackInfo->ConnectionKey,
                     lpCallbackInfo->TransferKey,
@@ -82,83 +72,40 @@ void FileCopierWithProgress::TransferData(
 {
         CF_OPERATION_INFO opInfo = {0};
         CF_OPERATION_PARAMETERS opParams = {0};
-
+        wprintf(L"[%04x:%04x] - TransferData\n", GetCurrentProcessId(), GetCurrentThreadId());
+        wprintf(L"0");
         opInfo.StructSize = sizeof(opInfo);
+        wprintf(L"1");
         opInfo.Type = CF_OPERATION_TYPE_TRANSFER_DATA;
+        wprintf(L"2");
         opInfo.ConnectionKey = connectionKey;
+        wprintf(L"3");
         opInfo.TransferKey = transferKey;
-        opParams.ParamSize = 48;                                 // CF_SIZE_OF_OP_PARAM(TransferData);
-        opParams.TransferData.CompletionStatus = STATUS_SUCCESS; // completionStatus;
-        opParams.TransferData.Buffer = NULL;                     // transferData;
-        opParams.TransferData.Offset = {0};                      // startingOffset;
-        opParams.TransferData.Length = {0};                      // length;
+        wprintf(L"4");
+        opParams.ParamSize = CF_SIZE_OF_OP_PARAM(TransferData);
+        wprintf(L"5");
+        opParams.TransferData.CompletionStatus = completionStatus;
+        wprintf(L"6");
+        opParams.TransferData.Buffer = transferData;
+        wprintf(L"7");
+        opParams.TransferData.Offset = startingOffset;
+        wprintf(L"8");
+        opParams.TransferData.Length = length;
+        wprintf(L"9");
 
-        // print before
-        wprintf(L"[%04x:%04x] - opInfo.StructSize is %d\n",
-                GetCurrentProcessId(),
-                GetCurrentThreadId(),
-                opInfo.StructSize);
-        wprintf(L"[%04x:%04x] - opInfo.Type is %d\n",
-                GetCurrentProcessId(),
-                GetCurrentThreadId(),
-                opInfo.Type);
-        wprintf(L"[%04x:%04x] - opInfo.ConnectionKey is %d\n",
-                GetCurrentProcessId(),
-                GetCurrentThreadId(),
-                opInfo.ConnectionKey);
-        wprintf(L"[%04x:%04x] - opInfo.TransferKey is %d\n",
-                GetCurrentProcessId(),
-                GetCurrentThreadId(),
-                opInfo.TransferKey);
-        wprintf(L"[%04x:%04x] - opParams.ParamSize is %d\n",
-                GetCurrentProcessId(),
-                GetCurrentThreadId(),
-                opParams.ParamSize);
-        wprintf(L"[%04x:%04x] - opParams.TransferData.CompletionStatus is %d\n",
-                GetCurrentProcessId(),
-                GetCurrentThreadId(),
-                opParams.TransferData.CompletionStatus);
-        wprintf(L"[%04x:%04x] - opParams.TransferData.Buffer is %s\n",
-                GetCurrentProcessId(),
-                GetCurrentThreadId(),
-                opParams.TransferData.Buffer);
-        wprintf(L"[%04x:%04x] - opParams.TransferData.Offset is %d\n",
-                GetCurrentProcessId(),
-                GetCurrentThreadId(),
-                opParams.TransferData.Offset);
-        wprintf(L"[%04x:%04x] - opParams.TransferData.Length is %d\n",
+        wprintf(L"[%04x:%04x] - TransferData: - %d - %s - %s - %s - %s - %s - %s \n", GetCurrentProcessId(), GetCurrentThreadId(),
+                opParams.TransferData.CompletionStatus,
+                opParams.TransferData.Buffer,
+                opParams.TransferData.Offset,
+                opParams.TransferData.Length,
+                opParams.TransferData.Flags);
 
-                GetCurrentProcessId(),
-                GetCurrentThreadId(),
-                opParams.TransferData.Length);
-        // print after
-        // winrt::check_hresult(CfExecute(&opInfo, &opParams));
-        // catch error of CfExecute
         HRESULT hr = CfExecute(&opInfo, &opParams);
         if (FAILED(hr))
         {
-                wprintf(L"[%04x:%04x] - Failed to execute transfer data, hr %x\n",
-                        GetCurrentProcessId(),
-                        GetCurrentThreadId(),
-                        hr);
+                wprintf(L"Error in CfExecute().\n");
+                wprintf(L"Error in CfExecute(), HRESULT: %lx\n", hr);
         }
-        else
-        {
-                wprintf(L"[%04x:%04x] - Transfer data executed\n",
-                        GetCurrentProcessId(),
-                        GetCurrentThreadId());
-        }
-}
-
-LPCWSTR TCharToWChar(const TCHAR *tcharString)
-{
-#ifdef UNICODE
-        return tcharString;
-#else
-        static WCHAR wcharString[MAX_PATH];
-        MultiByteToWideChar(CP_ACP, 0, tcharString, -1, wcharString, MAX_PATH);
-        return wcharString;
-#endif
 }
 
 void WINAPI FileCopierWithProgress::OverlappedCompletionRoutine(
@@ -171,7 +118,7 @@ void WINAPI FileCopierWithProgress::OverlappedCompletionRoutine(
 
         // There is the possibility that this code will need to be retried, see end of loop
         auto keepProcessing{false};
-        wprintf(L"[%04x:%04x] - OverlappedCompletionRoutine called ");
+
         do
         {
                 // Determine how many bytes have been "downloaded"
@@ -206,7 +153,7 @@ void WINAPI FileCopierWithProgress::OverlappedCompletionRoutine(
                 LONGLONG completed = readContext->StartOffset.QuadPart + readContext->BufferSize;
 
                 // Update the transfer progress
-                Utilities::ApplyTransferStateToFile(readContext->FullPath, readContext->CallbackInfo, total, completed);
+                Utilities::ApplyTransferStateToFile((LPCWSTR)readContext->FullPath, readContext->CallbackInfo, total, completed);
 
                 // Slow it down so we can see it happening
                 Sleep(CHUNKDELAYMS);
@@ -221,11 +168,7 @@ void WINAPI FileCopierWithProgress::OverlappedCompletionRoutine(
                         readContext->StartOffset.HighPart,
                         readContext->StartOffset.LowPart,
                         numberOfBytesTransfered);
-                wprintf(L"[%04x:%04x] - TransferData called inside of OverlappedCompletionRoutine");
-                wprintf(L"[%04x:%04x] - readContext->Buffer is %s\n",
-                        GetCurrentProcessId(),
-                        GetCurrentThreadId(),
-                        readContext->Buffer);
+
                 // This helper function tells the Cloud File API about the transfer,
                 // which will copy the data to the local syncroot
                 TransferData(
@@ -235,7 +178,7 @@ void WINAPI FileCopierWithProgress::OverlappedCompletionRoutine(
                     readContext->StartOffset,
                     Utilities::LongLongToLargeInteger(numberOfBytesTransfered),
                     errorCode);
-
+                wprintf(L"[%04x:%04x] - Pass CfExecute\n");
                 // Move the values in the read context to the next chunk
                 readContext->StartOffset.QuadPart += numberOfBytesTransfered;
                 readContext->RemainingLength.QuadPart -= numberOfBytesTransfered;
@@ -243,6 +186,7 @@ void WINAPI FileCopierWithProgress::OverlappedCompletionRoutine(
                 // See if there is anything left to read
                 if (readContext->RemainingLength.QuadPart > 0)
                 {
+                        wprintf(L"[%04x:%04x] - Pass readContext->RemainingLength.QuadPart > 0\n");
                         // Cap it at chunksize
                         DWORD bytesToRead = (DWORD)(min(readContext->RemainingLength.QuadPart, readContext->BufferSize));
 
@@ -258,7 +202,12 @@ void WINAPI FileCopierWithProgress::OverlappedCompletionRoutine(
                                 readContext->Overlapped.OffsetHigh,
                                 readContext->Overlapped.Offset,
                                 bytesToRead);
-                        wprintf(L"[%04x:%04x] - ReadFileEx called inside of OverlappedCompletionRoutine");
+
+                        // In the event of ReadFileEx succeeding, the while loop
+                        // will complete, this chunk is done, and whenever the OS
+                        // has completed this new ReadFileEx again, then this entire
+                        // method will be called again with the new chunk.
+                        // In that case, the handle and buffer need to remain intact
                         if (!ReadFileEx(
                                 readContext->Handle,
                                 readContext->Buffer,
@@ -266,7 +215,9 @@ void WINAPI FileCopierWithProgress::OverlappedCompletionRoutine(
                                 &readContext->Overlapped,
                                 OverlappedCompletionRoutine))
                         {
-                                wprintf(L"[%04x:%04x] - ReadFileEx false");
+                                // In the event the ReadFileEx failed,
+                                // we want to loop through again to try and
+                                // process this again
                                 errorCode = GetLastError();
                                 numberOfBytesTransfered = 0;
 
@@ -275,12 +226,19 @@ void WINAPI FileCopierWithProgress::OverlappedCompletionRoutine(
                 }
                 else
                 {
+                        wprintf(L"[%04x:%04x] - Free the buffer we are done\n");
+                        // Close the read file handle and free the buffer,
+                        // because we are done.
                         CloseHandle(readContext->Handle);
                         HeapFree(GetProcessHeap(), 0, readContext);
                 }
         } while (keepProcessing);
 }
 
+// In a nutshell, it copies a file from the "server" to the
+// "client" using the overlapped trickery of Windows to
+// chunkatize the copy. This way you don't have to allocate
+// a huge buffer.
 void FileCopierWithProgress::CopyFromServerToClientWorker(
     _In_ CONST CF_CALLBACK_INFO *callbackInfo,
     _In_opt_ CONST CF_PROCESS_INFO *processInfo,
@@ -292,15 +250,17 @@ void FileCopierWithProgress::CopyFromServerToClientWorker(
     _In_ UCHAR priorityHint,
     _In_ LPCWSTR serverFolder)
 {
-        READ_COMPLETION_CONTEXT *readCompletionContext;
-        DWORD chunkBufferSize;
+        HANDLE serverFileHandle;
+
+        std::wstring fullServerPath(serverFolder);
+        fullServerPath.append(L"\\");
+        fullServerPath.append(reinterpret_cast<wchar_t const *>(callbackInfo->FileIdentity));
+        fullServerPath.append(L".txt");
         std::wstring fullClientPath(callbackInfo->VolumeDosName);
         fullClientPath.append(callbackInfo->NormalizedPath);
 
-        wprintf(L"[%04x:%04x] - Full client path is %s\n",
-                GetCurrentProcessId(),
-                GetCurrentThreadId(),
-                fullClientPath.c_str());
+        READ_COMPLETION_CONTEXT *readCompletionContext;
+        DWORD chunkBufferSize;
 
         wprintf(L"[%04x:%04x] - Received data request from %s for %s%s, priority %d, offset %08x`%08x length %08x`%08x\n",
                 GetCurrentProcessId(),
@@ -314,54 +274,26 @@ void FileCopierWithProgress::CopyFromServerToClientWorker(
                 requiredLength.HighPart,
                 requiredLength.LowPart);
 
-        LPCWSTR serverPath = ConverToLPCWSTR(fullClientPath.c_str());
-        HANDLE serverFileHandle =
+        serverFileHandle =
             CreateFileW(
-                serverPath,
+                fullServerPath.c_str(),
                 GENERIC_READ,
                 FILE_SHARE_READ | FILE_SHARE_DELETE,
                 NULL,
                 OPEN_EXISTING,
                 FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
-                NULL); // no template file
+                NULL);
 
         if (serverFileHandle == INVALID_HANDLE_VALUE)
         {
-                wprintf(L"[%04x:%04x] - Failed to open %s, error %d\n",
+                HRESULT hr = NTSTATUS_FROM_WIN32(GetLastError());
+
+                wprintf(L"[%04x:%04x] - Failed to open %s for read, hr %x\n",
                         GetCurrentProcessId(),
                         GetCurrentThreadId(),
-                        fullClientPath.c_str(),
-                        GetLastError());
-                throw std::exception("Failed to open file");
-        }
-        else
-        {
-                wprintf(L"[%04x:%04x] - Opened %s\n",
-                        GetCurrentProcessId(),
-                        GetCurrentThreadId(),
-                        fullClientPath.c_str());
-        }
-
-        // Allocate the buffer used in the overlapped read.
-        chunkBufferSize = (ULONG)min(requiredLength.QuadPart, CHUNKSIZE);
-
-        readCompletionContext = (READ_COMPLETION_CONTEXT *)
-            HeapAlloc(
-                GetProcessHeap(),
-                0,
-                chunkBufferSize + FIELD_OFFSET(READ_COMPLETION_CONTEXT, Buffer));
-
-        if (readCompletionContext == NULL)
-        {
-                HRESULT hr = E_OUTOFMEMORY;
-
-                wprintf(L"[%04x:%04x] - Failed to allocate read buffer for %s, hr %x\n",
-                        GetCurrentProcessId(),
-                        GetCurrentThreadId(),
-                        fullClientPath.c_str(),
+                        fullServerPath.c_str(),
                         hr);
 
-                CloseHandle(serverFileHandle);
                 winrt::check_hresult(hr);
         }
 
@@ -381,16 +313,17 @@ void FileCopierWithProgress::CopyFromServerToClientWorker(
                 wprintf(L"[%04x:%04x] - Failed to allocate read buffer for %s, hr %x\n",
                         GetCurrentProcessId(),
                         GetCurrentThreadId(),
-                        fullClientPath.c_str(),
+                        fullServerPath.c_str(),
                         hr);
 
                 CloseHandle(serverFileHandle);
                 winrt::check_hresult(hr);
         }
 
-        // Tell the read completion context where to copy the chunk(s)
+        // Tell the read completion context where to copy the chunk(s)   // TODO:
         wcsncpy_s(
-            readCompletionContext->FullPath,
+            (wchar_t *)readCompletionContext->FullPath,
+            _countof(readCompletionContext->FullPath), // Tamaño máximo del búfer de destino
             fullClientPath.data(),
             wcslen(fullClientPath.data()));
 
@@ -412,4 +345,47 @@ void FileCopierWithProgress::CopyFromServerToClientWorker(
                 requiredFileOffset.HighPart,
                 requiredFileOffset.LowPart,
                 chunkBufferSize);
+
+        // Initiate the read for the first chunk. When this async operation
+        // completes (failure or success), it will call the OverlappedCompletionRoutine
+        // above with that chunk. That OverlappedCompletionRoutine is responsible for
+        // subsequent ReadFileEx calls to read subsequent chunks. This is only for the
+        // first one
+        if (!ReadFileEx(
+                serverFileHandle,
+                readCompletionContext->Buffer,
+                chunkBufferSize,
+                &readCompletionContext->Overlapped,
+                OverlappedCompletionRoutine))
+        {
+                HRESULT hr = NTSTATUS_FROM_WIN32(GetLastError());
+                wprintf(L"[%04x:%04x] - Failed to perform async read for %s, Status %x\n",
+                        GetCurrentProcessId(),
+                        GetCurrentThreadId(),
+                        fullServerPath.c_str(),
+                        hr);
+
+                CloseHandle(serverFileHandle);
+                HeapFree(GetProcessHeap(), 0, readCompletionContext);
+
+                winrt::check_hresult(hr);
+        }
+}
+
+void FileCopierWithProgress::CreateFileTemp(std::wstring fileIdentity)
+{
+        std::wstring serverFolder = L"C:\\Users\\User\\Desktop\\fakeserver";         // Ruta de la carpeta del servidor
+        std::wstring fullServerPath = serverFolder + L"\\" + fileIdentity + L".txt"; // Ruta completa del archivo
+        wprintf(L"Ruta completa del archivo: %s\n", fullServerPath.c_str());
+        std::wofstream file(fullServerPath);
+        if (file.is_open())
+        {
+                file << "Contenido del archivo" << std::endl;
+                file.close();
+                wprintf(L"Archivo creado correctamente.\n");
+        }
+        else
+        {
+                wprintf(L"Error al crear el archivo.\n");
+        }
 }
