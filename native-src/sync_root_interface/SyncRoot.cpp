@@ -2,6 +2,7 @@
 #include "SyncRoot.h"
 #include "Callbacks.h"
 #include <iostream>
+#include <ShellService.h>
 
 void TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCallbacks input) {
     register_threadsafe_callbacks(env, input);
@@ -92,6 +93,7 @@ HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallback
     try
     {
         Utilities::AddFolderToSearchIndexer(syncRootPath);
+        ShellServices::InitAndStartServiceTask();
 
         TransformInputCallbacksToSyncCallbacks(env, syncCallbacks);
 

@@ -2,68 +2,88 @@
 #include <iostream>
 #include <stdafx.h>
 
+#include <windows.h>
+#include <shellapi.h>
+#include <shlobj.h>
+#include <propkey.h>
+#include <propvarutil.h>
+
 bool FileExists(LPCWSTR fileName) {
     DWORD fileAttr = GetFileAttributesW(fileName);
     return (fileAttr != INVALID_FILE_ATTRIBUTES &&
             !(fileAttr & FILE_ATTRIBUTE_DIRECTORY));
 }
 
-winrt::Windows::Storage::Streams::IRandomAccessStream GetImageStream(const std::wstring& imagePath) {
-    try {
-        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::Storage::StorageFile> getFileOperation = 
-            winrt::Windows::Storage::StorageFile::GetFileFromPathAsync(imagePath);
+void SetThumbnail(const std::wstring& filePath, const std::wstring& thumbnailPath) {
+    // HRESULT hr;
+    // IShellItem2* pShellItem = nullptr;
+    // IPropertyStore* pPropertyStore = nullptr;
 
-        winrt::Windows::Storage::StorageFile storageFile = getFileOperation.get();
+    // const std::wstring& filePath2 = L"C:\\Users\\gcarl\\Desktop\\a.png";
 
-        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::Storage::Streams::IRandomAccessStream> getStreamOperation = 
-            storageFile.OpenAsync(winrt::Windows::Storage::FileAccessMode::Read);
+    // if ( !FileExists(filePath2.c_str()) ) {
+    //     std::wcerr << L"El archivo no existe: " << filePath2 << std::endl;
+    //     return;
+    // }
 
-        winrt::Windows::Storage::Streams::IRandomAccessStream stream = getStreamOperation.get();
-        return stream;
+    // if ( !FileExists(thumbnailPath.c_str()) ) {
+    //     std::wcerr << L"El archivo no existe: " << thumbnailPath << std::endl;
+    //     return;
+    // }
 
-    } catch (winrt::hresult_error const& ex) {
-        std::wcerr << L"Se produjo un error: " << ex.message().c_str() << std::endl;
-        throw;
-    }
-}
+    // //print filePath and thumbnailPath
+    // std::wcout << L"filePath: " << filePath << std::endl;
+    // std::wcout << L"thumbnailPath: " << thumbnailPath << std::endl;
 
-void SetThumbnailBase(winrt::Windows::Storage::StorageFile const& file) {
-    try {
-        winrt::Windows::Storage::FileProperties::StorageItemContentProperties properties = file.Properties();
-        winrt::Windows::Storage::Streams::IRandomAccessStream imageStream = GetImageStream();
+    // // Crear un objeto IShellItem desde una ruta de archivo
+    // hr = SHCreateItemFromParsingName(filePath.c_str(), nullptr, IID_PPV_ARGS(&pShellItem));
+    // //print hr
+    // std::wcout << L"hr: " << std::hex << hr << std::endl;
+    // if (FAILED(hr)) {
+    //     std::wcerr << L"Error al crear el objeto IShellItem: " << std::hex << hr << std::endl;
+    //     return;
+    // }
 
-        // Usa el stream de la imagen como thumbnail
-        winrt::Windows::Storage::FileProperties::ThumbnailMode thumbnailMode = winrt::Windows::Storage::FileProperties::ThumbnailMode::SingleItem;
-        winrt::Windows::Foundation::IAsyncAction thumbnailSetAction = properties.SetThumbnailAsync(thumbnailMode, imageStream);
+    // // Obtener el IPropertyStore para el archivo
+    // hr = pShellItem->GetPropertyStore(GETPROPERTYSTOREFLAGS::GPS_READWRITE, IID_PPV_ARGS(&pPropertyStore));
+    // if (FAILED(hr)) {
+    //     LPVOID errorMsg;
+    //     FormatMessageW(
+    //         FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+    //         NULL,
+    //         hr,
+    //         0, // Default language
+    //         (LPWSTR)&errorMsg,
+    //         0,
+    //         NULL
+    //     );
+    //     std::wcerr << L"Error al obtener el IPropertyStore: " << (LPWSTR)errorMsg << std::endl;
+    //     LocalFree(errorMsg);
+    //     pShellItem->Release();
+    //     wprintf(L"Error al obtener el IPropertyStore: %x\n", hr);
+    //     return;
+    // }
 
-        thumbnailSetAction.get();  // Espera a que la operación asíncrona se complete
-    } catch (...) {
-        // Manejo de errores
-        std::wcout << L"Se produjo un error al establecer el thumbnail." << std::endl;
-    }
-}
+    // PROPVARIANT propvar;
+    // hr = InitPropVariantFromString(thumbnailPath.c_str(), &propvar);
+    // if (SUCCEEDED(hr)) {
+    //     // Establecer la propiedad PKEY_ThumbnailStream
+    //     hr = pPropertyStore->SetValue(PKEY_ThumbnailStream, propvar);
+    //     PropVariantClear(&propvar);
+    //     if (SUCCEEDED(hr)) {
+    //         hr = pPropertyStore->Commit();
+    //         if (FAILED(hr)) {
+    //             std::wcerr << L"Error al confirmar los cambios: " << std::hex << hr << std::endl;
+    //         } else {
+    //             std::wcout << L"Miniatura establecida con éxito." << std::endl;
+    //         }
+    //     } else {
+    //         std::wcerr << L"Error al establecer el valor de la propiedad: " << std::hex << hr << std::endl;
+    //     }
+    // } else {
+    //     std::wcerr << L"Error al inicializar PROPVARIANT: " << std::hex << hr << std::endl;
+    // }
 
-void SetThumbnail(LPCWSTR filePath, LPCWSTR thumbnailPath) {
-    wprintf(L"Setting thumbnail for %s\n", filePath);
-    LPCWSTR filePath_ = L"C:\\Users\\gcarl\\Desktop\\carpeta\\file1.txt";
-    if (!FileExists(filePath_)) {
-        std::wcout << L"El archivo " << filePath_ << L" no existe." << std::endl;
-        return;
-    }
-
-    Microsoft::WRL::ComPtr<IPropertyStore> propertyStore;
-    
-    HRESULT hr = SHGetPropertyStoreFromParsingName(filePath_, nullptr, GPS_READWRITE, IID_PPV_ARGS(&propertyStore));
-    if (SUCCEEDED(hr)) {
-        PROPVARIANT propVariant;
-        hr = InitPropVariantFromBoolean(TRUE, &propVariant);
-        if (SUCCEEDED(hr)) {
-            hr = propertyStore->SetValue(PKEY_ThumbnailStream, propVariant);
-            PropVariantClear(&propVariant);
-        } else {
-            wprintf(L"Failed to initialize PROPVARIANT: %d\n", hr);
-        }
-    } else {
-        wprintf(L"Failed to get property store from parsing name: %d\n", hr);
-    }
+    // pPropertyStore->Release();
+    // pShellItem->Release();
 }

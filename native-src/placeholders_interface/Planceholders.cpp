@@ -17,6 +17,19 @@ void Placeholders::CreateOne(
 {
     try
     {
+
+        const TCHAR *path = _T("C:\\Users\\gcarl\\Desktop\\a.png");
+        DWORD attributes = GetFileAttributes(path);
+
+        if (attributes == INVALID_FILE_ATTRIBUTES)
+        {
+            wprintf(L"Error al obtener los atributos del archivo: %d\n", GetLastError());
+            return;
+        }
+
+        printf("File attributes: %d\n", attributes);
+
+
         CF_PLACEHOLDER_CREATE_INFO cloudEntry = {};
 
         std::wstring fullDestPath = std::wstring(destPath) + L'\\';
@@ -30,7 +43,7 @@ void Placeholders::CreateOne(
         cloudEntry.Flags = CF_PLACEHOLDER_CREATE_FLAG_MARK_IN_SYNC;
 
         cloudEntry.FsMetadata.FileSize.QuadPart = fileSize;
-        cloudEntry.FsMetadata.BasicInfo.FileAttributes = fileAttributes;
+        cloudEntry.FsMetadata.BasicInfo.FileAttributes = attributes;
         cloudEntry.FsMetadata.BasicInfo.CreationTime = Utilities::FileTimeToLargeInteger(creationTime);
         cloudEntry.FsMetadata.BasicInfo.LastWriteTime = Utilities::FileTimeToLargeInteger(lastWriteTime);
         cloudEntry.FsMetadata.BasicInfo.LastAccessTime = Utilities::FileTimeToLargeInteger(lastAccessTime);
@@ -87,7 +100,6 @@ void Placeholders::CreateEntry(
         if (isDirectory)
         {
             cloudEntry.FsMetadata.FileSize.QuadPart = 0;
-            wprintf(L"create placeholder folder: \n");
             PathRemoveFileSpecW(&fullDestPath[0]);
             wprintf(L"Full destination path: %ls\n", fullDestPath.c_str());
             HRESULT hr = CfCreatePlaceholders(fullDestPath.c_str(), &cloudEntry, 1, CF_CREATE_FLAG_NONE, NULL);

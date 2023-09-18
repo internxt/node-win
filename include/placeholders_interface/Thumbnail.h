@@ -6,5 +6,6 @@
 #include <Shellapi.h>
 #include <wrl/client.h>
 #include <Shobjidl_core.h>
+#include <string>
 
-void SetThumbnail(LPCWSTR filePath, LPCWSTR thumbnailPath);
+void SetThumbnail(const std::wstring& filePath, const std::wstring& thumbnailPath);
