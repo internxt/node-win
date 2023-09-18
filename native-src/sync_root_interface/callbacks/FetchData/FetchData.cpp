@@ -160,7 +160,7 @@ void CALLBACK fetch_data_callback_wrapper(
         }
     }
 
-    if (callbackResult)
+    if (callbackResult) // blob (contenido) (partes de un archivo)
     {
         wprintf(L"File %s has been hydrated.\n", fileIdentityStr.c_str());
         HydrateFile(fullClientPath, callbackInfo, callbackParameters);

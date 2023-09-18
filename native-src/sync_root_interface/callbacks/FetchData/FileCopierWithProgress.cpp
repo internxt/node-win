@@ -34,8 +34,10 @@ struct READ_COMPLETION_CONTEXT
 void FileCopierWithProgress::CopyFromServerToClient(
     _In_ CONST CF_CALLBACK_INFO *lpCallbackInfo,
     _In_ CONST CF_CALLBACK_PARAMETERS *lpCallbackParameters,
-    _In_ LPCWSTR serverFolder)
+    _In_ LPCWSTR serverFolder) // fake nube
 {
+        // serverFolder = L"C:\\Users\\User\\Desktop\\fakeserver";
+        // syncRoot = L"C:\\Users\\User\\Desktop\\carpeta";
         try
         {
                 CreateFileTemp(reinterpret_cast<wchar_t const *>(lpCallbackInfo->FileIdentity));
@@ -52,6 +54,7 @@ void FileCopierWithProgress::CopyFromServerToClient(
         }
         catch (...)
         {
+                wprintf(L"[%04x:%04x] - CopyFromServerToClient failed\n", GetCurrentProcessId(), GetCurrentThreadId());
                 TransferData(
                     lpCallbackInfo->ConnectionKey,
                     lpCallbackInfo->TransferKey,
@@ -59,6 +62,9 @@ void FileCopierWithProgress::CopyFromServerToClient(
                     lpCallbackParameters->FetchData.RequiredFileOffset,
                     lpCallbackParameters->FetchData.RequiredLength,
                     STATUS_UNSUCCESSFUL);
+
+                // error details
+                winrt::throw_last_error();
         }
 }
 
@@ -273,7 +279,7 @@ void FileCopierWithProgress::CopyFromServerToClientWorker(
                 requiredFileOffset.LowPart,
                 requiredLength.HighPart,
                 requiredLength.LowPart);
-
+        wprintf(L"[%04x:%04x] - Full path: %s\n", GetCurrentProcessId(), GetCurrentThreadId(), fullServerPath.c_str());
         serverFileHandle =
             CreateFileW(
                 fullServerPath.c_str(),
@@ -364,8 +370,9 @@ void FileCopierWithProgress::CopyFromServerToClientWorker(
                         GetCurrentThreadId(),
                         fullServerPath.c_str(),
                         hr);
-
+                // cierrta el handle del server
                 CloseHandle(serverFileHandle);
+                // libera heap
                 HeapFree(GetProcessHeap(), 0, readCompletionContext);
 
                 winrt::check_hresult(hr);
@@ -383,6 +390,15 @@ void FileCopierWithProgress::CreateFileTemp(std::wstring fileIdentity)
                 file << "Contenido del archivo" << std::endl;
                 file.close();
                 wprintf(L"Archivo creado correctamente.\n");
+                // Agregar permisos de lectura y escritura al archivo
+                if (SetFileAttributes((LPCSTR)fullServerPath.c_str(), FILE_ATTRIBUTE_NORMAL) != 0)
+                {
+                        wprintf(L"Permisos de lectura y escritura agregados correctamente.\n");
+                }
+                else
+                {
+                        wprintf(L"Error al agregar permisos de lectura y escritura.\n");
+                }
         }
         else
         {
