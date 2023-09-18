@@ -3,6 +3,9 @@
 #include <condition_variable>
 #include <mutex>
 #include <FileCopierWithProgress.h>
+#include <fstream>
+#include <vector>
+#include <utility> // para std::pai
 
 napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
@@ -10,11 +13,69 @@ inline std::mutex mtx;
 inline std::condition_variable cv;
 inline bool ready = false;
 inline bool callbackResult = false;
+inline std::wstring fullServerFilePath;
+
+#define CF_SIZE_OF_OP_PARAM(field)                  \
+    (FIELD_OFFSET(CF_OPERATION_PARAMETERS, field) + \
+     FIELD_SIZE(CF_OPERATION_PARAMETERS, field))
 
 struct FetchDataArgs
 {
     std::wstring fileIdentityArg;
 };
+
+std::pair<std::vector<char>, size_t> readFileToBuffer(const std::wstring &filePath)
+{
+    // Abre el archivo en modo binario y mueve el puntero al final
+    std::ifstream file(filePath, std::ios::binary | std::ios::ate);
+
+    if (!file.is_open())
+    {
+        // Manejar el error
+        throw std::runtime_error("Could not open file");
+    }
+
+    // Obtén el tamaño del archivo
+    std::streamsize size = file.tellg();
+
+    // Mueve el puntero al inicio del archivo
+    file.seekg(0, std::ios::beg);
+
+    // Crea un vector para almacenar el contenido del archivo
+    std::vector<char> buffer(size);
+
+    // Lee el archivo al buffer
+    if (!file.read(buffer.data(), size))
+    {
+        // Manejar el error
+        throw std::runtime_error("Could not read file");
+    }
+
+    return {buffer, static_cast<size_t>(size)};
+}
+
+bool createFileFromBuffer(const std::string &filePath, const std::vector<char> &buffer)
+{
+    std::ofstream outputFile(filePath, std::ios::binary);
+    if (!outputFile)
+    {
+        std::cerr << "No se pudo crear el archivo." << std::endl;
+        return false;
+    }
+
+    // Escribir el contenido del búfer en el archivo
+    outputFile.write(buffer.data(), buffer.size());
+
+    if (!outputFile)
+    {
+        std::cerr << "Error al escribir en el archivo." << std::endl;
+        return false;
+    }
+
+    outputFile.close();
+    std::cout << "Archivo creado exitosamente." << std::endl;
+    return true;
+}
 
 void setup_global_tsfn_fetch_data(napi_threadsafe_function tsfn)
 {
@@ -25,32 +86,110 @@ void setup_global_tsfn_fetch_data(napi_threadsafe_function tsfn)
 // response callback fn
 napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info)
 {
-    size_t argc = 1;
-    napi_value argv[1];
+    size_t argc = 2;
+    napi_value argv[2];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
 
-    if (argc < 1)
+    if (argc < 2)
     {
         // Manejar error
+        wprintf(L"This function must receive at least two arguments");
+        return nullptr;
+    }
+
+    napi_valuetype valueType;
+
+    // Verificar el primer argumento: debería ser un booleano
+    napi_typeof(env, argv[0], &valueType);
+    if (valueType != napi_boolean)
+    {
+        wprintf(L"First argument should be boolean\n");
         return nullptr;
     }
 
     bool response;
     napi_get_value_bool(env, argv[0], &response);
 
+    // Verificar el segundo argumento: debería ser una cadena
+    napi_typeof(env, argv[1], &valueType);
+    if (valueType != napi_string)
+    {
+        wprintf(L"Second argument should be string\n");
+        return nullptr;
+    }
+
     std::lock_guard<std::mutex> lock(mtx);
     ready = true;
     callbackResult = response;
     wprintf(L"response_callback_fn_fetch_data called\n");
+
+    size_t response_len;
+    napi_get_value_string_utf16(env, argv[1], nullptr, 0, &response_len);
+
+    std::wstring response_wstr(response_len, L'\0');
+
+    napi_get_value_string_utf16(env, argv[1], (char16_t *)response_wstr.data(), response_len + 1, &response_len);
+
+    wprintf(L"input path: %s .\n", response_wstr);
+
+    fullServerFilePath = response_wstr;
+
     cv.notify_one();
 
     return nullptr;
 }
 
-void HydrateFile(const std::wstring &filePath, _In_ CONST CF_CALLBACK_INFO *lpCallbackInfo,
-                 _In_ CONST CF_CALLBACK_PARAMETERS *lpCallbackParameters)
+void HydrateFile(_In_ CONST CF_CALLBACK_INFO *lpCallbackInfo,
+                 _In_ CONST CF_CALLBACK_PARAMETERS *lpCallbackParameters, const std::wstring &syncRootPath, const std::wstring &fakeServerFilePath)
 {
-    FileCopierWithProgress::CopyFromServerToClient(lpCallbackInfo, lpCallbackParameters, L"C:\\Users\\User\\Desktop\\fakeserver");
+    // FileCopierWithProgress::CopyFromServerToClient(lpCallbackInfo, lpCallbackParameters, L"C:\\Users\\User\\Desktop\\fakeserver");
+    wprintf(L"HydrateFile called\n");
+    wprintf(L"fullServerPath: %s .\n", fakeServerFilePath.c_str());
+    wprintf(L"fullClientPath: %s .\n", syncRootPath.c_str());
+
+    // leer archivo
+    auto [buffer, size] = readFileToBuffer(fakeServerFilePath); // path fake server file
+    wprintf(L"size: %d .\n", size);
+    wprintf(L"buffer: %s .\n", buffer.data());
+
+    // crear archivo en escritorio desde el buffer
+    createFileFromBuffer("C:\\Users\\User\\Desktop\\nuevoarchivo.txt", buffer);
+
+    CF_OPERATION_INFO opInfo = {0};
+    CF_OPERATION_PARAMETERS opParams = {0};
+
+    opInfo.StructSize = sizeof(opInfo);
+    opInfo.Type = CF_OPERATION_TYPE_TRANSFER_DATA;
+    opInfo.ConnectionKey = lpCallbackInfo->ConnectionKey;
+    opInfo.TransferKey = lpCallbackInfo->TransferKey;
+    opInfo.CorrelationVector = lpCallbackInfo->CorrelationVector;
+    opInfo.RequestKey = lpCallbackInfo->RequestKey;
+    // opInfo.SyncStatus =
+
+    opParams.ParamSize = CF_SIZE_OF_OP_PARAM(TransferData);
+    opParams.TransferData.Flags = CF_OPERATION_TRANSFER_DATA_FLAG_NONE;
+    opParams.TransferData.CompletionStatus = STATUS_SUCCESS;
+    opParams.TransferData.Buffer = (LPCVOID)buffer.data();
+    // LARGE_INTEGER largeIntoffset;
+    // largeIntoffset.QuadPart = static_cast<LONGLONG>(0);
+    // opParams.TransferData.Offset = largeIntoffset; // lpCallbackParameters->FetchData.RequiredFileOffset;
+
+    LARGE_INTEGER largeInt;
+    largeInt.QuadPart = static_cast<LONGLONG>(size);
+    opParams.TransferData.Length = largeInt;
+    // opParams.TransferData.Length = (LARGE_INTEGER)sizeof(buffer);
+    // imprimir opinfo y opparams
+    wprintf(L" detils opInfo and opParams: %s - %s - %s - %s - %s .\n", opInfo.StructSize);
+
+    HRESULT hr = CfExecute(&opInfo, &opParams);
+
+    if (FAILED(hr))
+    {
+        wprintf(L"Failed to execute CF_OPERATION_TYPE_TRANSFER_DATA\n");
+        // error details
+        wprintf(L"hr: %d .\n", hr);
+        return;
+    }
 }
 
 void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
@@ -160,10 +299,9 @@ void CALLBACK fetch_data_callback_wrapper(
         }
     }
 
-    if (callbackResult) // blob (contenido) (partes de un archivo)
+    if (callbackResult)
     {
-        wprintf(L"File %s has been hydrated.\n", fileIdentityStr.c_str());
-        HydrateFile(fullClientPath, callbackInfo, callbackParameters);
+        HydrateFile(callbackInfo, callbackParameters, fullClientPath, fullServerFilePath);
     }
     else
     {

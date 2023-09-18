@@ -391,7 +391,7 @@ void FileCopierWithProgress::CreateFileTemp(std::wstring fileIdentity)
                 file.close();
                 wprintf(L"Archivo creado correctamente.\n");
                 // Agregar permisos de lectura y escritura al archivo
-                if (SetFileAttributes((LPCSTR)fullServerPath.c_str(), FILE_ATTRIBUTE_NORMAL) != 0)
+                if (SetFileAttributesW((LPCWSTR)fullServerPath.c_str(), FILE_ATTRIBUTE_NORMAL) != 0)
                 {
                         wprintf(L"Permisos de lectura y escritura agregados correctamente.\n");
                 }

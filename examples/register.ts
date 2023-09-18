@@ -78,12 +78,9 @@ drive.registerSyncRoot(
                 console.error(error);
             }
         },
-        fetchDataCallback: async (fileId: string, callback: (data : boolean) => void ) => {
+        fetchDataCallback: async (fileId: string, callback: (data : boolean, path: string) => void ) => {
             console.log("File ID: " + fileId);
-            // funcion asincrona para obtener los datos del archivo
-            // blob (contenido del archivo) 
-            callback(true); // en vez de true se deberia devolver los datos del archivo
-            return true;
+            callback(true,"C:\\Users\\User\\Desktop\\fakeserver\\fakefile.txt");
         }
     }
 )
@@ -92,6 +89,7 @@ drive.connectSyncRoot();
 
 drive.createItemByPath(`/A (5th copy).pdfs`, '280ab650-acef-4438-8bbc-29863810b24a', 1000);
 drive.createItemByPath(`/file1.txt`, 'fa8217c9-2dd6-4641-9180-8206e60368a6', 1000);
+drive.createItemByPath(`/fakefile.txt`, 'fa8217c9-2dd6-4641-9180-8206e60368a8', 26);
 drive.createItemByPath(`/only-folder/`, 'fa8217c9-2dd6-4641-9180-8206e60368123', 1000);
 drive.createItemByPath(`/folderWithFolder/folder2/`, 'fa8217c9-2dd6-4641-9180-8206e6036845', 1000);
 drive.createItemByPath(`/folderWithFile/file2.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036216', 1000);
