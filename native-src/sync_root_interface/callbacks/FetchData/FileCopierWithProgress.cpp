@@ -40,7 +40,7 @@ void FileCopierWithProgress::CopyFromServerToClient(
         // syncRoot = L"C:\\Users\\User\\Desktop\\carpeta";
         try
         {
-                CreateFileTemp(reinterpret_cast<wchar_t const *>(lpCallbackInfo->FileIdentity));
+                // CreateFileTemp(reinterpret_cast<wchar_t const *>(lpCallbackInfo->FileIdentity));
                 CopyFromServerToClientWorker(
                     lpCallbackInfo,
                     lpCallbackInfo->ProcessInfo,
@@ -99,12 +99,12 @@ void FileCopierWithProgress::TransferData(
         opParams.TransferData.Length = length;
         wprintf(L"9");
 
-        wprintf(L"[%04x:%04x] - TransferData: - %d - %s - %s - %s - %s - %s - %s \n", GetCurrentProcessId(), GetCurrentThreadId(),
-                opParams.TransferData.CompletionStatus,
-                opParams.TransferData.Buffer,
-                opParams.TransferData.Offset,
-                opParams.TransferData.Length,
-                opParams.TransferData.Flags);
+        // wprintf(L"[%04x:%04x] - TransferData: - %d - %s - %s - %s - %s - %s - %s \n", GetCurrentProcessId(), GetCurrentThreadId(),
+        //         opParams.TransferData.CompletionStatus,
+        //         opParams.TransferData.Buffer,
+        //         opParams.TransferData.Offset,
+        //         opParams.TransferData.Length,
+        //         opParams.TransferData.Flags);
 
         HRESULT hr = CfExecute(&opInfo, &opParams);
         if (FAILED(hr))
@@ -259,11 +259,15 @@ void FileCopierWithProgress::CopyFromServerToClientWorker(
         HANDLE serverFileHandle;
 
         std::wstring fullServerPath(serverFolder);
-        fullServerPath.append(L"\\");
-        fullServerPath.append(reinterpret_cast<wchar_t const *>(callbackInfo->FileIdentity));
-        fullServerPath.append(L".txt");
+        // fullServerPath.append(L"\\");
+        // fullServerPath.append(reinterpret_cast<wchar_t const *>(callbackInfo->FileIdentity));
+        //fullServerPath.append(L".txt");
         std::wstring fullClientPath(callbackInfo->VolumeDosName);
         fullClientPath.append(callbackInfo->NormalizedPath);
+
+        // print fullServerPath and fullClientPath
+        wprintf(L"[%04x:%04x] - fullServerPath: %s\n", GetCurrentProcessId(), GetCurrentThreadId(), fullServerPath.c_str());
+        wprintf(L"[%04x:%04x] - fullClientPath: %s\n", GetCurrentProcessId(), GetCurrentThreadId(), fullClientPath.c_str());
 
         READ_COMPLETION_CONTEXT *readCompletionContext;
         DWORD chunkBufferSize;

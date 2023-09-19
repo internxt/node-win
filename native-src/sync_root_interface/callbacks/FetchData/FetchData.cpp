@@ -221,7 +221,7 @@ void HydrateFile(_In_ CONST CF_CALLBACK_INFO *lpCallbackInfo,
     //     return;
     // }
 
-    FileCopierWithProgress::CopyFromServerToClient(lpCallbackInfo, lpCallbackParameters, L"C:\\Users\\User\\Desktop\\fakeserver");
+    FileCopierWithProgress::CopyFromServerToClient(lpCallbackInfo, lpCallbackParameters, fakeServerFilePath.c_str());
 }
 
 void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
