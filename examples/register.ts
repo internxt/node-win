@@ -78,7 +78,8 @@ drive.registerSyncRoot(
                 console.error(error);
             }
         },
-    }
+    },
+    'C:\\Users\\gcarl\\Downloads\\sicon.ico'
 )
 
 drive.connectSyncRoot();
