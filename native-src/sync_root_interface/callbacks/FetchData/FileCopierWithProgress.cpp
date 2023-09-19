@@ -245,7 +245,12 @@ void FileCopierWithProgress::CopyFromServerToClientWorker(
         fullClientPath.append(callbackInfo->NormalizedPath);
 
         // fullServerPath and fullClientPath should have the same file name and extension
-        ArePathsEqual(fullClientPath.c_str(), fullServerPath.c_str());
+        if (!ArePathsEqual(fullClientPath.c_str(), fullServerPath.c_str()))
+        {
+                wprintf(L"[%04x:%04x] - Error names and extensions on server file and placeholder are not equal.\n", GetCurrentProcessId(), GetCurrentThreadId());
+                TransferData(callbackInfo->ConnectionKey, callbackInfo->TransferKey, NULL, requiredFileOffset, requiredLength, STATUS_UNSUCCESSFUL);
+                return;
+        }
 
         // print fullServerPath and fullClientPath
         wprintf(L"[%04x:%04x] - fullServerPath: %s\n", GetCurrentProcessId(), GetCurrentThreadId(), fullServerPath.c_str());
@@ -312,7 +317,7 @@ void FileCopierWithProgress::CopyFromServerToClientWorker(
                 winrt::check_hresult(hr);
         }
 
-        // Tell the read completion context where to copy the chunk(s)   // TODO:
+        // Tell the read completion context where to copy the chunk(s)
         wcsncpy_s(
             (wchar_t *)readCompletionContext->FullPath,
             _countof(readCompletionContext->FullPath), // Tamaño máximo del búfer de destino
@@ -363,8 +368,13 @@ void FileCopierWithProgress::CopyFromServerToClientWorker(
 
                 winrt::check_hresult(hr);
         }
+
+        // delete file in fake server
+        DeleteFileW(fullServerPath.c_str());
+        wprintf(L"[%04x:%04x] - File deleted in fake server.\n", GetCurrentProcessId(), GetCurrentThreadId());
 }
 
+// TODO: likely, we will use this function to create the file in the fake server
 void FileCopierWithProgress::CreateFileTemp(std::wstring fileIdentity)
 {
         std::wstring serverFolder = L"C:\\Users\\<user>\\Desktop\\fakeserver";       // Ruta de la carpeta del servidor
@@ -403,11 +413,12 @@ bool FileCopierWithProgress::ArePathsEqual(const std::wstring &clientPath,
         std::wstring extension2 = filePath2.extension().wstring();
         if (fileName1 == fileName2 && extension1 == extension2)
         {
+                wprintf(L"File names and extensions are equal.\n");
                 return true;
         }
         else
         {
-                // TODO: cfexecute should return error, throw exception
+                wprintf(L"File names and extensions are not equal.\n");
                 return false;
         }
 }

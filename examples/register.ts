@@ -101,7 +101,7 @@ drive.registerSyncRoot(
             onFetchData(fileId).then((response) => {
                 callback(response, "C:\\Users\\User\\Desktop\\fakeserver\\imagen.rar");
             }).catch((err) => {
-                callback(false, "C:\\Users\\User\\Desktop\\fakeserver\\imagen.rar");
+                callback(false, "nothing here");
             });
         }
     }
@@ -115,6 +115,7 @@ drive.createItemByPath(`/only-folder/`, 'fa8217c9-2dd6-4641-9180-8206e60368123',
 drive.createItemByPath(`/folderWithFolder/folder2/`, 'fa8217c9-2dd6-4641-9180-8206e6036845', 1000);
 drive.createItemByPath(`/folderWithFile/file2.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036216', 1000);
 
+drive.createItemByPath(`/fakefile.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036843', 57); // keep in mind that the file size must be the same as the original file
 drive.createItemByPath(`/imagen.rar`, 'fa8217c9-2dd6-4641-9180-8206e60368f1', 33020); // keep in mind that the file size must be the same as the original file
 
 drive.watchAndWait(config.syncRootPath);
