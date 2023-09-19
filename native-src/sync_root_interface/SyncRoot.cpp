@@ -18,7 +18,7 @@ void AddCustomState(
     customStates.Append(customState);
 }
 
-HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *providerName, const wchar_t *providerVersion, const GUID &providerId)
+HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *providerName, const wchar_t *providerVersion, const GUID &providerId, const wchar_t *logoPath)
 {
     try
     {
@@ -33,8 +33,10 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
         // The string can be in any form acceptable to SHLoadIndirectString.
         info.DisplayNameResource(providerName);
 
+        std::wstring completeIconResource = std::wstring(logoPath) + L",0";
+    
         // This icon is just for the sample. You should provide your own branded icon here
-        info.IconResource(L"%SystemRoot%\\system32\\charmap.exe,0");
+        info.IconResource(completeIconResource.c_str());
         info.HydrationPolicy(winrt::StorageProviderHydrationPolicy::Full);
         info.HydrationPolicyModifier(winrt::StorageProviderHydrationPolicyModifier::None);
         info.PopulationPolicy(winrt::StorageProviderPopulationPolicy::AlwaysFull);

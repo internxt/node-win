@@ -183,9 +183,9 @@ class VirtualDrive {
         return path.includes('.');
     }    
     
-    async registerSyncRoot(providerName: string, providerVersion: string, providerId: string, callbacks: Callbacks): Promise<any> {
+    async registerSyncRoot(providerName: string, providerVersion: string, providerId: string, callbacks: Callbacks, logoPath: string): Promise<any> {
         this.callbacks = callbacks;
-        return await addon.registerSyncRoot(this.syncRootPath, providerName, providerVersion, providerId);
+        return await addon.registerSyncRoot(this.syncRootPath, providerName, providerVersion, providerId, logoPath);
     }
 
     unregisterSyncRoot(): any {
