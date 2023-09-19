@@ -91,3 +91,12 @@ drive.createItemByPath(`/folderWithFolder/folder2/`, 'fa8217c9-2dd6-4641-9180-82
 drive.createItemByPath(`/folderWithFile/file2.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036216', 1000);
 
 drive.watchAndWait(config.syncRootPath);
+
+// disconnect after 10 seconds -> this can use before of unregister
+const timeToWait = 10000;
+setTimeout(
+    () => {
+        console.log("Disconnecting...");
+        drive.disconnectSyncRoot();
+    }
+, timeToWait)

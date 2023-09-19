@@ -276,6 +276,10 @@ class VirtualDrive {
             console.error("Invalid path");
         }
     }
+
+    disconnectSyncRoot(): any {
+        return addon.disconnectSyncRoot(this.syncRootPath);
+    }
     
 }
 
