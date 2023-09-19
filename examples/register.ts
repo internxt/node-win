@@ -80,7 +80,7 @@ drive.registerSyncRoot(
         },
         fetchDataCallback: async (fileId: string, callback: (data : boolean, path: string) => void ) => {
             console.log("File ID: " + fileId);
-            callback(true,"C:\\Users\\User\\Desktop\\fakeserver\\fakefile.txt");
+            callback(true, "C:\\Users\\gcarl\\Desktop\\fakeserver\\fakefile.txt");
         }
     }
 )

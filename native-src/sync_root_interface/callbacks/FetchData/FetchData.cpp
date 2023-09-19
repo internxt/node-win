@@ -6,6 +6,7 @@
 #include <fstream>
 #include <vector>
 #include <utility> // para std::pai
+#include <cfapi.h>
 
 napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
@@ -14,6 +15,8 @@ inline std::condition_variable cv;
 inline bool ready = false;
 inline bool callbackResult = false;
 inline std::wstring fullServerFilePath;
+
+#define FIELD_SIZE(type, field) (sizeof(((type *)0)->field))
 
 #define CF_SIZE_OF_OP_PARAM(field)                  \
     (FIELD_OFFSET(CF_OPERATION_PARAMETERS, field) + \
@@ -130,7 +133,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 
     napi_get_value_string_utf16(env, argv[1], (char16_t *)response_wstr.data(), response_len + 1, &response_len);
 
-    wprintf(L"input path: %s .\n", response_wstr);
+    wprintf(L"input path: %s .\n", response_wstr.c_str());
 
     fullServerFilePath = response_wstr;
 
@@ -153,33 +156,60 @@ void HydrateFile(_In_ CONST CF_CALLBACK_INFO *lpCallbackInfo,
     wprintf(L"buffer: %s .\n", buffer.data());
 
     // crear archivo en escritorio desde el buffer
-    createFileFromBuffer("C:\\Users\\User\\Desktop\\nuevoarchivo.txt", buffer);
+    createFileFromBuffer("C:\\Users\\gcarl\\Desktop\\nuevoarchivo.txt", buffer);
 
+    wprintf(L"HydrateFile called\n");
     CF_OPERATION_INFO opInfo = {0};
+
+    wprintf(L"after opInfo\n");
     CF_OPERATION_PARAMETERS opParams = {0};
 
+    wprintf(L"after opParams\n");
     opInfo.StructSize = sizeof(opInfo);
+
+    wprintf(L"after opInfo.StructSize\n");
     opInfo.Type = CF_OPERATION_TYPE_TRANSFER_DATA;
+
+    wprintf(L"after opInfo.Type\n");
     opInfo.ConnectionKey = lpCallbackInfo->ConnectionKey;
+
+    wprintf(L"after opInfo.ConnectionKey\n");
     opInfo.TransferKey = lpCallbackInfo->TransferKey;
-    opInfo.CorrelationVector = lpCallbackInfo->CorrelationVector;
-    opInfo.RequestKey = lpCallbackInfo->RequestKey;
+
+    // wprintf(L"after opInfo.TransferKey\n");
+    // opInfo.CorrelationVector = lpCallbackInfo->CorrelationVector;
+
+    // wprintf(L"after opInfo.CorrelationVector\n");
+    // opInfo.RequestKey = lpCallbackInfo->RequestKey;
     // opInfo.SyncStatus =
-
+    
+    wprintf(L"after opParams.TransferData.Length\n");
     opParams.ParamSize = CF_SIZE_OF_OP_PARAM(TransferData);
-    opParams.TransferData.Flags = CF_OPERATION_TRANSFER_DATA_FLAG_NONE;
-    opParams.TransferData.CompletionStatus = STATUS_SUCCESS;
-    opParams.TransferData.Buffer = (LPCVOID)buffer.data();
-    // LARGE_INTEGER largeIntoffset;
-    // largeIntoffset.QuadPart = static_cast<LONGLONG>(0);
-    // opParams.TransferData.Offset = largeIntoffset; // lpCallbackParameters->FetchData.RequiredFileOffset;
 
+    // wprintf(L"after opInfo.RequestKey\n");
+    // opParams.TransferData.Flags = CF_OPERATION_TRANSFER_DATA_FLAG_NONE;
+
+    wprintf(L"after opParams.TransferData.Flags\n");
+    opParams.TransferData.CompletionStatus = STATUS_SUCCESS;
+
+    wprintf(L"after opParams.TransferData.CompletionStatus\n");
+    opParams.TransferData.Buffer = (LPCVOID)buffer.data();
+
+    wprintf(L"after opParams.TransferData.Buffer\n");
+    LARGE_INTEGER largeIntoffset;
+    largeIntoffset.QuadPart = static_cast<LONGLONG>(0);
+    opParams.TransferData.Offset = largeIntoffset; // lpCallbackParameters->FetchData.RequiredFileOffset;
+
+    wprintf(L"after opParams.TransferData.offset\n");
     LARGE_INTEGER largeInt;
     largeInt.QuadPart = static_cast<LONGLONG>(size);
+
+    wprintf(L"after largeInt: %d .\n", largeInt);
     opParams.TransferData.Length = largeInt;
+
     // opParams.TransferData.Length = (LARGE_INTEGER)sizeof(buffer);
     // imprimir opinfo y opparams
-    wprintf(L" detils opInfo and opParams: %s - %s - %s - %s - %s .\n", opInfo.StructSize);
+    // wprintf(L" detils opInfo and opParams: %s - %s - %s - %s - %s .\n", opInfo.StructSize);
 
     HRESULT hr = CfExecute(&opInfo, &opParams);
 

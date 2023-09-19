@@ -381,7 +381,7 @@ void FileCopierWithProgress::CopyFromServerToClientWorker(
 
 void FileCopierWithProgress::CreateFileTemp(std::wstring fileIdentity)
 {
-        std::wstring serverFolder = L"C:\\Users\\User\\Desktop\\fakeserver";         // Ruta de la carpeta del servidor
+        std::wstring serverFolder = L"C:\\Users\\gcarl\\Desktop\\fakeserver";         // Ruta de la carpeta del servidor
         std::wstring fullServerPath = serverFolder + L"\\" + fileIdentity + L".txt"; // Ruta completa del archivo
         wprintf(L"Ruta completa del archivo: %s\n", fullServerPath.c_str());
         std::wofstream file(fullServerPath);
