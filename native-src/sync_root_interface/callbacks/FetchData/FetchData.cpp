@@ -145,81 +145,83 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 void HydrateFile(_In_ CONST CF_CALLBACK_INFO *lpCallbackInfo,
                  _In_ CONST CF_CALLBACK_PARAMETERS *lpCallbackParameters, const std::wstring &syncRootPath, const std::wstring &fakeServerFilePath)
 {
-    // FileCopierWithProgress::CopyFromServerToClient(lpCallbackInfo, lpCallbackParameters, L"C:\\Users\\User\\Desktop\\fakeserver");
-    wprintf(L"HydrateFile called\n");
-    wprintf(L"fullServerPath: %s .\n", fakeServerFilePath.c_str());
-    wprintf(L"fullClientPath: %s .\n", syncRootPath.c_str());
 
-    // leer archivo
-    auto [buffer, size] = readFileToBuffer(fakeServerFilePath); // path fake server file
-    wprintf(L"size: %d .\n", size);
-    wprintf(L"buffer: %s .\n", buffer.data());
+    // wprintf(L"HydrateFile called\n");
+    // wprintf(L"fullServerPath: %s .\n", fakeServerFilePath.c_str());
+    // wprintf(L"fullClientPath: %s .\n", syncRootPath.c_str());
 
-    // crear archivo en escritorio desde el buffer
-    createFileFromBuffer("C:\\Users\\gcarl\\Desktop\\nuevoarchivo.txt", buffer);
+    // // leer archivo
+    // auto [buffer, size] = readFileToBuffer(fakeServerFilePath); // path fake server file
+    // wprintf(L"size: %d .\n", size);
+    // wprintf(L"buffer: %s .\n", buffer.data());
 
-    wprintf(L"HydrateFile called\n");
-    CF_OPERATION_INFO opInfo = {0};
+    // // crear archivo en escritorio desde el buffer
+    // createFileFromBuffer("C:\\Users\\User\\Desktop\\nuevoarchivo.txt", buffer);
 
-    wprintf(L"after opInfo\n");
-    CF_OPERATION_PARAMETERS opParams = {0};
+    // wprintf(L"HydrateFile called\n");
+    // CF_OPERATION_INFO opInfo = {0};
 
-    wprintf(L"after opParams\n");
-    opInfo.StructSize = sizeof(opInfo);
+    // wprintf(L"after opInfo\n");
+    // CF_OPERATION_PARAMETERS opParams = {0};
 
-    wprintf(L"after opInfo.StructSize\n");
-    opInfo.Type = CF_OPERATION_TYPE_TRANSFER_DATA;
+    // wprintf(L"after opParams\n");
+    // opInfo.StructSize = sizeof(opInfo);
 
-    wprintf(L"after opInfo.Type\n");
-    opInfo.ConnectionKey = lpCallbackInfo->ConnectionKey;
+    // wprintf(L"after opInfo.StructSize\n");
+    // opInfo.Type = CF_OPERATION_TYPE_TRANSFER_DATA;
 
-    wprintf(L"after opInfo.ConnectionKey\n");
-    opInfo.TransferKey = lpCallbackInfo->TransferKey;
+    // wprintf(L"after opInfo.Type\n");
+    // opInfo.ConnectionKey = lpCallbackInfo->ConnectionKey;
 
-    // wprintf(L"after opInfo.TransferKey\n");
-    // opInfo.CorrelationVector = lpCallbackInfo->CorrelationVector;
+    // wprintf(L"after opInfo.ConnectionKey\n");
+    // opInfo.TransferKey = lpCallbackInfo->TransferKey;
 
-    // wprintf(L"after opInfo.CorrelationVector\n");
-    // opInfo.RequestKey = lpCallbackInfo->RequestKey;
-    // opInfo.SyncStatus =
-    
-    wprintf(L"after opParams.TransferData.Length\n");
-    opParams.ParamSize = CF_SIZE_OF_OP_PARAM(TransferData);
+    // // wprintf(L"after opInfo.TransferKey\n");
+    // // opInfo.CorrelationVector = lpCallbackInfo->CorrelationVector;
 
-    // wprintf(L"after opInfo.RequestKey\n");
-    // opParams.TransferData.Flags = CF_OPERATION_TRANSFER_DATA_FLAG_NONE;
+    // // wprintf(L"after opInfo.CorrelationVector\n");
+    // // opInfo.RequestKey = lpCallbackInfo->RequestKey;
+    // // opInfo.SyncStatus =
 
-    wprintf(L"after opParams.TransferData.Flags\n");
-    opParams.TransferData.CompletionStatus = STATUS_SUCCESS;
+    // wprintf(L"after opParams.TransferData.Length\n");
+    // opParams.ParamSize = CF_SIZE_OF_OP_PARAM(TransferData);
 
-    wprintf(L"after opParams.TransferData.CompletionStatus\n");
-    opParams.TransferData.Buffer = (LPCVOID)buffer.data();
+    // // wprintf(L"after opInfo.RequestKey\n");
+    // // opParams.TransferData.Flags = CF_OPERATION_TRANSFER_DATA_FLAG_NONE;
 
-    wprintf(L"after opParams.TransferData.Buffer\n");
-    LARGE_INTEGER largeIntoffset;
-    largeIntoffset.QuadPart = static_cast<LONGLONG>(0);
-    opParams.TransferData.Offset = largeIntoffset; // lpCallbackParameters->FetchData.RequiredFileOffset;
+    // wprintf(L"after opParams.TransferData.Flags\n");
+    // opParams.TransferData.CompletionStatus = STATUS_SUCCESS;
 
-    wprintf(L"after opParams.TransferData.offset\n");
-    LARGE_INTEGER largeInt;
-    largeInt.QuadPart = static_cast<LONGLONG>(size);
+    // wprintf(L"after opParams.TransferData.CompletionStatus\n");
+    // opParams.TransferData.Buffer = (LPCVOID)buffer.data();
 
-    wprintf(L"after largeInt: %d .\n", largeInt);
-    opParams.TransferData.Length = largeInt;
+    // wprintf(L"after opParams.TransferData.Buffer\n");
+    // LARGE_INTEGER largeIntoffset;
+    // largeIntoffset.QuadPart = static_cast<LONGLONG>(0);
+    // opParams.TransferData.Offset = largeIntoffset; // lpCallbackParameters->FetchData.RequiredFileOffset;
 
-    // opParams.TransferData.Length = (LARGE_INTEGER)sizeof(buffer);
-    // imprimir opinfo y opparams
-    // wprintf(L" detils opInfo and opParams: %s - %s - %s - %s - %s .\n", opInfo.StructSize);
+    // wprintf(L"after opParams.TransferData.offset\n");
+    // LARGE_INTEGER largeInt;
+    // largeInt.QuadPart = static_cast<LONGLONG>(size);
 
-    HRESULT hr = CfExecute(&opInfo, &opParams);
+    // wprintf(L"after largeInt: %d .\n", largeInt);
+    // opParams.TransferData.Length = largeInt;
 
-    if (FAILED(hr))
-    {
-        wprintf(L"Failed to execute CF_OPERATION_TYPE_TRANSFER_DATA\n");
-        // error details
-        wprintf(L"hr: %d .\n", hr);
-        return;
-    }
+    // // opParams.TransferData.Length = (LARGE_INTEGER)sizeof(buffer);
+    // // imprimir opinfo y opparams
+    // // wprintf(L" detils opInfo and opParams: %s - %s - %s - %s - %s .\n", opInfo.StructSize);
+
+    // HRESULT hr = CfExecute(&opInfo, &opParams);
+
+    // if (FAILED(hr))
+    // {
+    //     wprintf(L"Failed to execute CF_OPERATION_TYPE_TRANSFER_DATA\n");
+    //     // error details
+    //     wprintf(L"hr: %d .\n", hr);
+    //     return;
+    // }
+
+    FileCopierWithProgress::CopyFromServerToClient(lpCallbackInfo, lpCallbackParameters, L"C:\\Users\\User\\Desktop\\fakeserver");
 }
 
 void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
