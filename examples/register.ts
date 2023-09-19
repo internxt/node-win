@@ -53,6 +53,23 @@ function onRenameCallbackWithCallback(newName: string, fileId: string, responseC
     });
 }
 
+async function onFetchData(fileId: string): Promise<boolean> {
+    console.log("downloading file: " + fileId);
+    // simulating a download from a real server
+    const a = await (new Promise<boolean>((resolve, reject) => {
+        try {
+
+            setTimeout(() => {
+                resolve(true);
+            }, 1000)
+        } catch (err) {
+            reject(err);
+        }
+    }));
+
+    return a;
+}
+
 drive.registerSyncRoot(
     config.driveName,
     config.driveVersion,
@@ -79,8 +96,13 @@ drive.registerSyncRoot(
             }
         },
         fetchDataCallback: async (fileId: string, callback: (data : boolean, path: string) => void ) => {
-            console.log("File ID: " + fileId);
-            callback(true, "C:\\Users\\gcarl\\Desktop\\fakeserver\\fakefile.txt");
+            console.log("file id: " + fileId);
+            // simulate a download from a real server and response with the path of the downloaded file of a fake server
+            onFetchData(fileId).then((response) => {
+                callback(response, "C:\\Users\\User\\Desktop\\fakeserver\\imagen.rar");
+            }).catch((err) => {
+                callback(false, "C:\\Users\\User\\Desktop\\fakeserver\\imagen.rar");
+            });
         }
     }
 )
@@ -89,9 +111,10 @@ drive.connectSyncRoot();
 
 drive.createItemByPath(`/A (5th copy).pdfs`, '280ab650-acef-4438-8bbc-29863810b24a', 1000);
 drive.createItemByPath(`/file1.txt`, 'fa8217c9-2dd6-4641-9180-8206e60368a6', 1000);
-drive.createItemByPath(`/fakefile.txt`, 'fa8217c9-2dd6-4641-9180-8206e60368a8', 26);
 drive.createItemByPath(`/only-folder/`, 'fa8217c9-2dd6-4641-9180-8206e60368123', 1000);
 drive.createItemByPath(`/folderWithFolder/folder2/`, 'fa8217c9-2dd6-4641-9180-8206e6036845', 1000);
 drive.createItemByPath(`/folderWithFile/file2.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036216', 1000);
+
+drive.createItemByPath(`/imagen.rar`, 'fa8217c9-2dd6-4641-9180-8206e60368f1', 33020); // keep in mind that the file size must be the same as the original file
 
 drive.watchAndWait(config.syncRootPath);

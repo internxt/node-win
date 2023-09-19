@@ -27,59 +27,6 @@ struct FetchDataArgs
     std::wstring fileIdentityArg;
 };
 
-std::pair<std::vector<char>, size_t> readFileToBuffer(const std::wstring &filePath)
-{
-    // Abre el archivo en modo binario y mueve el puntero al final
-    std::ifstream file(filePath, std::ios::binary | std::ios::ate);
-
-    if (!file.is_open())
-    {
-        // Manejar el error
-        throw std::runtime_error("Could not open file");
-    }
-
-    // Obtén el tamaño del archivo
-    std::streamsize size = file.tellg();
-
-    // Mueve el puntero al inicio del archivo
-    file.seekg(0, std::ios::beg);
-
-    // Crea un vector para almacenar el contenido del archivo
-    std::vector<char> buffer(size);
-
-    // Lee el archivo al buffer
-    if (!file.read(buffer.data(), size))
-    {
-        // Manejar el error
-        throw std::runtime_error("Could not read file");
-    }
-
-    return {buffer, static_cast<size_t>(size)};
-}
-
-bool createFileFromBuffer(const std::string &filePath, const std::vector<char> &buffer)
-{
-    std::ofstream outputFile(filePath, std::ios::binary);
-    if (!outputFile)
-    {
-        std::cerr << "No se pudo crear el archivo." << std::endl;
-        return false;
-    }
-
-    // Escribir el contenido del búfer en el archivo
-    outputFile.write(buffer.data(), buffer.size());
-
-    if (!outputFile)
-    {
-        std::cerr << "Error al escribir en el archivo." << std::endl;
-        return false;
-    }
-
-    outputFile.close();
-    std::cout << "Archivo creado exitosamente." << std::endl;
-    return true;
-}
-
 void setup_global_tsfn_fetch_data(napi_threadsafe_function tsfn)
 {
     wprintf(L"setup_global_tsfn_fetch_data called\n");
@@ -145,82 +92,6 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 void HydrateFile(_In_ CONST CF_CALLBACK_INFO *lpCallbackInfo,
                  _In_ CONST CF_CALLBACK_PARAMETERS *lpCallbackParameters, const std::wstring &syncRootPath, const std::wstring &fakeServerFilePath)
 {
-
-    // wprintf(L"HydrateFile called\n");
-    // wprintf(L"fullServerPath: %s .\n", fakeServerFilePath.c_str());
-    // wprintf(L"fullClientPath: %s .\n", syncRootPath.c_str());
-
-    // // leer archivo
-    // auto [buffer, size] = readFileToBuffer(fakeServerFilePath); // path fake server file
-    // wprintf(L"size: %d .\n", size);
-    // wprintf(L"buffer: %s .\n", buffer.data());
-
-    // // crear archivo en escritorio desde el buffer
-    // createFileFromBuffer("C:\\Users\\User\\Desktop\\nuevoarchivo.txt", buffer);
-
-    // wprintf(L"HydrateFile called\n");
-    // CF_OPERATION_INFO opInfo = {0};
-
-    // wprintf(L"after opInfo\n");
-    // CF_OPERATION_PARAMETERS opParams = {0};
-
-    // wprintf(L"after opParams\n");
-    // opInfo.StructSize = sizeof(opInfo);
-
-    // wprintf(L"after opInfo.StructSize\n");
-    // opInfo.Type = CF_OPERATION_TYPE_TRANSFER_DATA;
-
-    // wprintf(L"after opInfo.Type\n");
-    // opInfo.ConnectionKey = lpCallbackInfo->ConnectionKey;
-
-    // wprintf(L"after opInfo.ConnectionKey\n");
-    // opInfo.TransferKey = lpCallbackInfo->TransferKey;
-
-    // // wprintf(L"after opInfo.TransferKey\n");
-    // // opInfo.CorrelationVector = lpCallbackInfo->CorrelationVector;
-
-    // // wprintf(L"after opInfo.CorrelationVector\n");
-    // // opInfo.RequestKey = lpCallbackInfo->RequestKey;
-    // // opInfo.SyncStatus =
-
-    // wprintf(L"after opParams.TransferData.Length\n");
-    // opParams.ParamSize = CF_SIZE_OF_OP_PARAM(TransferData);
-
-    // // wprintf(L"after opInfo.RequestKey\n");
-    // // opParams.TransferData.Flags = CF_OPERATION_TRANSFER_DATA_FLAG_NONE;
-
-    // wprintf(L"after opParams.TransferData.Flags\n");
-    // opParams.TransferData.CompletionStatus = STATUS_SUCCESS;
-
-    // wprintf(L"after opParams.TransferData.CompletionStatus\n");
-    // opParams.TransferData.Buffer = (LPCVOID)buffer.data();
-
-    // wprintf(L"after opParams.TransferData.Buffer\n");
-    // LARGE_INTEGER largeIntoffset;
-    // largeIntoffset.QuadPart = static_cast<LONGLONG>(0);
-    // opParams.TransferData.Offset = largeIntoffset; // lpCallbackParameters->FetchData.RequiredFileOffset;
-
-    // wprintf(L"after opParams.TransferData.offset\n");
-    // LARGE_INTEGER largeInt;
-    // largeInt.QuadPart = static_cast<LONGLONG>(size);
-
-    // wprintf(L"after largeInt: %d .\n", largeInt);
-    // opParams.TransferData.Length = largeInt;
-
-    // // opParams.TransferData.Length = (LARGE_INTEGER)sizeof(buffer);
-    // // imprimir opinfo y opparams
-    // // wprintf(L" detils opInfo and opParams: %s - %s - %s - %s - %s .\n", opInfo.StructSize);
-
-    // HRESULT hr = CfExecute(&opInfo, &opParams);
-
-    // if (FAILED(hr))
-    // {
-    //     wprintf(L"Failed to execute CF_OPERATION_TYPE_TRANSFER_DATA\n");
-    //     // error details
-    //     wprintf(L"hr: %d .\n", hr);
-    //     return;
-    // }
-
     FileCopierWithProgress::CopyFromServerToClient(lpCallbackInfo, lpCallbackParameters, fakeServerFilePath.c_str());
 }
 
@@ -337,7 +208,14 @@ void CALLBACK fetch_data_callback_wrapper(
     }
     else
     {
-        wprintf(L"File %s has been dehydrated.\n", fileIdentityStr.c_str());
+        // when callbackResult is false, we need to return STATUS_UNSUCCESSFUL on execution of TransferData
+        FileCopierWithProgress::TransferData(
+            callbackInfo->ConnectionKey,
+            callbackInfo->TransferKey,
+            NULL,
+            callbackParameters->FetchData.RequiredFileOffset,
+            callbackParameters->FetchData.RequiredLength,
+            STATUS_UNSUCCESSFUL);
     }
 
     std::lock_guard<std::mutex> lock(mtx);

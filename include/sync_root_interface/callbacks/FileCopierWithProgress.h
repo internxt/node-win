@@ -17,6 +17,14 @@ public:
         _In_ CONST CF_CALLBACK_PARAMETERS *callbackParameters,
         _In_ LPCWSTR serverFolder);
 
+    static void TransferData(
+        _In_ CF_CONNECTION_KEY connectionKey,
+        _In_ LARGE_INTEGER transferKey,
+        _In_reads_bytes_opt_(length.QuadPart) LPCVOID transferData,
+        _In_ LARGE_INTEGER startingOffset,
+        _In_ LARGE_INTEGER length,
+        _In_ NTSTATUS completionStatus);
+
 private:
     static void CopyFromServerToClientWorker(
         _In_ CONST CF_CALLBACK_INFO *callbackInfo,
@@ -34,13 +42,10 @@ private:
         _In_ DWORD numberOfBytesTransfered,
         _Inout_ LPOVERLAPPED overlapped);
 
-    static void TransferData(
-        _In_ CF_CONNECTION_KEY connectionKey,
-        _In_ LARGE_INTEGER transferKey,
-        _In_reads_bytes_opt_(length.QuadPart) LPCVOID transferData,
-        _In_ LARGE_INTEGER startingOffset,
-        _In_ LARGE_INTEGER length,
-        _In_ NTSTATUS completionStatus);
+    static void CreateFileTemp(
+        std::wstring fileIdentity);
 
-    static void CreateFileTemp(std::wstring fileIdentity);
+    static bool ArePathsEqual(
+        const std::wstring &clientPath,
+        const std::wstring &fakeServerPath);
 };

@@ -5,6 +5,8 @@
 #include <windows.h>
 #include "FileCopierWithProgress.h"
 #include "Utilities.h"
+#include <filesystem>
+namespace fs = std::filesystem;
 
 #define CHUNKSIZE 4096
 // Arbitrary delay per chunk, again, so you can actually see the progress bar
@@ -36,11 +38,9 @@ void FileCopierWithProgress::CopyFromServerToClient(
     _In_ CONST CF_CALLBACK_PARAMETERS *lpCallbackParameters,
     _In_ LPCWSTR serverFolder) // fake nube
 {
-        // serverFolder = L"C:\\Users\\User\\Desktop\\fakeserver";
-        // syncRoot = L"C:\\Users\\User\\Desktop\\carpeta";
+
         try
         {
-                // CreateFileTemp(reinterpret_cast<wchar_t const *>(lpCallbackInfo->FileIdentity));
                 CopyFromServerToClientWorker(
                     lpCallbackInfo,
                     lpCallbackInfo->ProcessInfo,
@@ -79,37 +79,19 @@ void FileCopierWithProgress::TransferData(
         CF_OPERATION_INFO opInfo = {0};
         CF_OPERATION_PARAMETERS opParams = {0};
         wprintf(L"[%04x:%04x] - TransferData\n", GetCurrentProcessId(), GetCurrentThreadId());
-        wprintf(L"0");
         opInfo.StructSize = sizeof(opInfo);
-        wprintf(L"1");
         opInfo.Type = CF_OPERATION_TYPE_TRANSFER_DATA;
-        wprintf(L"2");
         opInfo.ConnectionKey = connectionKey;
-        wprintf(L"3");
         opInfo.TransferKey = transferKey;
-        wprintf(L"4");
         opParams.ParamSize = CF_SIZE_OF_OP_PARAM(TransferData);
-        wprintf(L"5");
         opParams.TransferData.CompletionStatus = completionStatus;
-        wprintf(L"6");
         opParams.TransferData.Buffer = transferData;
-        wprintf(L"7");
         opParams.TransferData.Offset = startingOffset;
-        wprintf(L"8");
         opParams.TransferData.Length = length;
-        wprintf(L"9");
-
-        // wprintf(L"[%04x:%04x] - TransferData: - %d - %s - %s - %s - %s - %s - %s \n", GetCurrentProcessId(), GetCurrentThreadId(),
-        //         opParams.TransferData.CompletionStatus,
-        //         opParams.TransferData.Buffer,
-        //         opParams.TransferData.Offset,
-        //         opParams.TransferData.Length,
-        //         opParams.TransferData.Flags);
 
         HRESULT hr = CfExecute(&opInfo, &opParams);
         if (FAILED(hr))
         {
-                wprintf(L"Error in CfExecute().\n");
                 wprintf(L"Error in CfExecute(), HRESULT: %lx\n", hr);
         }
 }
@@ -259,11 +241,11 @@ void FileCopierWithProgress::CopyFromServerToClientWorker(
         HANDLE serverFileHandle;
 
         std::wstring fullServerPath(serverFolder);
-        // fullServerPath.append(L"\\");
-        // fullServerPath.append(reinterpret_cast<wchar_t const *>(callbackInfo->FileIdentity));
-        //fullServerPath.append(L".txt");
         std::wstring fullClientPath(callbackInfo->VolumeDosName);
         fullClientPath.append(callbackInfo->NormalizedPath);
+
+        // fullServerPath and fullClientPath should have the same file name and extension
+        ArePathsEqual(fullClientPath.c_str(), fullServerPath.c_str());
 
         // print fullServerPath and fullClientPath
         wprintf(L"[%04x:%04x] - fullServerPath: %s\n", GetCurrentProcessId(), GetCurrentThreadId(), fullServerPath.c_str());
@@ -385,7 +367,7 @@ void FileCopierWithProgress::CopyFromServerToClientWorker(
 
 void FileCopierWithProgress::CreateFileTemp(std::wstring fileIdentity)
 {
-        std::wstring serverFolder = L"C:\\Users\\gcarl\\Desktop\\fakeserver";         // Ruta de la carpeta del servidor
+        std::wstring serverFolder = L"C:\\Users\\<user>\\Desktop\\fakeserver";       // Ruta de la carpeta del servidor
         std::wstring fullServerPath = serverFolder + L"\\" + fileIdentity + L".txt"; // Ruta completa del archivo
         wprintf(L"Ruta completa del archivo: %s\n", fullServerPath.c_str());
         std::wofstream file(fullServerPath);
@@ -407,5 +389,25 @@ void FileCopierWithProgress::CreateFileTemp(std::wstring fileIdentity)
         else
         {
                 wprintf(L"Error al crear el archivo.\n");
+        }
+}
+
+bool FileCopierWithProgress::ArePathsEqual(const std::wstring &clientPath,
+                                           const std::wstring &fakeServerPath)
+{
+        fs::path filePath1(clientPath);
+        fs::path filePath2(fakeServerPath);
+        std::wstring fileName1 = filePath1.filename().wstring();
+        std::wstring fileName2 = filePath2.filename().wstring();
+        std::wstring extension1 = filePath1.extension().wstring();
+        std::wstring extension2 = filePath2.extension().wstring();
+        if (fileName1 == fileName2 && extension1 == extension2)
+        {
+                return true;
+        }
+        else
+        {
+                // TODO: cfexecute should return error, throw exception
+                return false;
         }
 }
