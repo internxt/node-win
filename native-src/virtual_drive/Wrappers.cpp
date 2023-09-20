@@ -130,7 +130,7 @@ napi_value RegisterSyncRootWrapper(napi_env env, napi_callback_info args)
 
     if (argc < 5)
     {
-        napi_throw_error(env, nullptr, "4 arguments are required for RegisterSyncRoot");
+        napi_throw_error(env, nullptr, "5 arguments are required for RegisterSyncRoot");
         return nullptr;
     }
 
@@ -211,6 +211,7 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args)
 
         napi_value notifyDeleteCompletionCallback;
         napi_value notifyRenameCallback;
+        napi_value fetchDataCallback;
 
         if (napi_get_named_property(env, argv[1], "notifyDeleteCallback", &notifyDeleteCompletionCallback) == napi_ok)
         {
@@ -235,6 +236,19 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args)
         if (type_status_rename != napi_ok || valuetype_rename != napi_function)
         {
             napi_throw_error(env, nullptr, "notifyRenameCallback should be a function.");
+            return nullptr;
+        }
+
+        if (napi_get_named_property(env, argv[1], "fetchDataCallback", &fetchDataCallback) == napi_ok)
+        {
+            napi_create_reference(env, fetchDataCallback, 1, &callbacks.fetch_data_callback_ref);
+        }
+
+        napi_valuetype valuetype_fetch_data;
+        napi_status type_status_fetch_data = napi_typeof(env, fetchDataCallback, &valuetype_fetch_data);
+        if (type_status_fetch_data != napi_ok || valuetype_fetch_data != napi_function)
+        {
+            napi_throw_error(env, nullptr, "fetchDataCallback should be a function.");
             return nullptr;
         }
 

@@ -30,7 +30,7 @@ void Placeholders::CreateOne(
         cloudEntry.Flags = CF_PLACEHOLDER_CREATE_FLAG_MARK_IN_SYNC;
 
         cloudEntry.FsMetadata.FileSize.QuadPart = fileSize;
-        cloudEntry.FsMetadata.BasicInfo.FileAttributes = fileAttributes;
+        cloudEntry.FsMetadata.BasicInfo.FileAttributes = FILE_ATTRIBUTE_NORMAL;
         cloudEntry.FsMetadata.BasicInfo.CreationTime = Utilities::FileTimeToLargeInteger(creationTime);
         cloudEntry.FsMetadata.BasicInfo.LastWriteTime = Utilities::FileTimeToLargeInteger(lastWriteTime);
         cloudEntry.FsMetadata.BasicInfo.LastAccessTime = Utilities::FileTimeToLargeInteger(lastAccessTime);
@@ -84,7 +84,7 @@ void Placeholders::CreateEntry(
 
     try
     {
-        if (isDirectory)
+        if (isDirectory) // TODO: the function createEntry is used to create only folders (directories), so this if is always true
         {
             cloudEntry.FsMetadata.FileSize.QuadPart = 0;
             wprintf(L"create placeholder folder: \n");

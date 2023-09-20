@@ -53,6 +53,23 @@ function onRenameCallbackWithCallback(newName: string, fileId: string, responseC
     });
 }
 
+async function onFetchData(fileId: string): Promise<boolean> {
+    console.log("downloading file: " + fileId);
+    // simulating a download from a real server
+    const a = await (new Promise<boolean>((resolve, reject) => {
+        try {
+
+            setTimeout(() => {
+                resolve(true);
+            }, 1000)
+        } catch (err) {
+            reject(err);
+        }
+    }));
+
+    return a;
+}
+
 drive.registerSyncRoot(
     config.driveName,
     config.driveVersion,
@@ -78,6 +95,15 @@ drive.registerSyncRoot(
                 console.error(error);
             }
         },
+        fetchDataCallback: async (fileId: string, callback: (data : boolean, path: string) => void ) => {
+            console.log("file id: " + fileId);
+            // simulate a download from a real server and response with the path of the downloaded file of a fake server
+            onFetchData(fileId).then((response) => {
+                callback(response, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
+            }).catch((err) => {
+                callback(false, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
+            });
+        }
     },
     'C:\\Users\\gcarl\\Downloads\\sicon.ico'
 )
@@ -90,13 +116,16 @@ drive.createItemByPath(`/only-folder/`, 'fa8217c9-2dd6-4641-9180-8206e60368123',
 drive.createItemByPath(`/folderWithFolder/folder2/`, 'fa8217c9-2dd6-4641-9180-8206e6036845', 1000);
 drive.createItemByPath(`/folderWithFile/file2.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036216', 1000);
 
+drive.createItemByPath(`/fakefile.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036843', 57); // keep in mind that the file size must be the same as the original file
+drive.createItemByPath(`/imagen.rar`, 'fa8217c9-2dd6-4641-9180-8206e60368f1', 33020); // keep in mind that the file size must be the same as the original file
+
 drive.watchAndWait(config.syncRootPath);
 
 // disconnect after 10 seconds -> this can use before of unregister
-const timeToWait = 10000;
-setTimeout(
-    () => {
-        console.log("Disconnecting...");
-        drive.disconnectSyncRoot();
-    }
-, timeToWait)
+// const timeToWait = 10000;
+// setTimeout(
+//     () => {
+//         console.log("Disconnecting...");
+//         drive.disconnectSyncRoot();
+//     }
+// , timeToWait)
