@@ -188,15 +188,16 @@ class VirtualDrive {
         return await addon.registerSyncRoot(this.syncRootPath, providerName, providerVersion, providerId, logoPath);
     }
 
-    unregisterSyncRoot(): any {
-        const result = addon.unregisterSyncRoot(this.syncRootPath);
-        deleteAllSubfolders(this.syncRootPath);
-        return result;
-    }
+    // unregisterSyncRoot(): any {
+    //     const result = addon.unregisterSyncRoot(this.syncRootPath);
+    //     deleteAllSubfolders(this.syncRootPath);
+    //     return result;
+    // }
 
     static unregisterSyncRoot(syncRootPath: string): any {
         const result = addon.unregisterSyncRoot(syncRootPath);
         deleteAllSubfolders(syncRootPath);
+        console.log(`Unregistered sync root`);
         return result;
     }
 

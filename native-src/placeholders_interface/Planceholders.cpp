@@ -74,19 +74,12 @@ void Placeholders::CreateEntry(
     cloudEntry.FileIdentity = relativeName.c_str();
     cloudEntry.FileIdentityLength = static_cast<DWORD>((relativeName.size() + 1) * sizeof(WCHAR));
     cloudEntry.RelativeFileName = itemName;
-    cloudEntry.Flags = CF_PLACEHOLDER_CREATE_FLAG_DISABLE_ON_DEMAND_POPULATION;
-    cloudEntry.FsMetadata.FileSize.QuadPart = 0;
+    cloudEntry.Flags = CF_PLACEHOLDER_CREATE_FLAG_DISABLE_ON_DEMAND_POPULATION; // -> desactive download on demand
     cloudEntry.FsMetadata.BasicInfo.FileAttributes = FILE_ATTRIBUTE_DIRECTORY;
-    cloudEntry.FsMetadata.BasicInfo.CreationTime = Utilities::FileTimeToLargeInteger(creationTime);
-    cloudEntry.FsMetadata.BasicInfo.LastWriteTime = Utilities::FileTimeToLargeInteger(lastWriteTime);
-    cloudEntry.FsMetadata.BasicInfo.LastAccessTime = Utilities::FileTimeToLargeInteger(lastAccessTime);
-    cloudEntry.FsMetadata.BasicInfo.ChangeTime = Utilities::FileTimeToLargeInteger(lastWriteTime);
-
     try
     {
         if (isDirectory) // TODO: the function createEntry is used to create only folders (directories), so this if is always true
         {
-            cloudEntry.FsMetadata.FileSize.QuadPart = 0;
             wprintf(L"create placeholder folder: \n");
             PathRemoveFileSpecW(&fullDestPath[0]);
             wprintf(L"Full destination path: %ls\n", fullDestPath.c_str());
