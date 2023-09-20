@@ -3,6 +3,9 @@
 #include "Callbacks.h"
 #include <iostream>
 
+// variable to disconect
+CF_CONNECTION_KEY gloablConnectionKey;
+
 void TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCallbacks input)
 {
     register_threadsafe_callbacks(env, input);
@@ -19,7 +22,7 @@ void AddCustomState(
     customStates.Append(customState);
 }
 
-HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *providerName, const wchar_t *providerVersion, const GUID &providerId)
+HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *providerName, const wchar_t *providerVersion, const GUID &providerId, const wchar_t *logoPath)
 {
     try
     {
@@ -34,8 +37,10 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
         // The string can be in any form acceptable to SHLoadIndirectString.
         info.DisplayNameResource(providerName);
 
+        std::wstring completeIconResource = std::wstring(logoPath) + L",0";
+    
         // This icon is just for the sample. You should provide your own branded icon here
-        info.IconResource(L"%SystemRoot%\\system32\\charmap.exe,0");
+        info.IconResource(completeIconResource.c_str());
         info.HydrationPolicy(winrt::StorageProviderHydrationPolicy::Full);
         info.HydrationPolicyModifier(winrt::StorageProviderHydrationPolicyModifier::None);
         info.PopulationPolicy(winrt::StorageProviderPopulationPolicy::AlwaysFull);
@@ -109,7 +114,28 @@ HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallback
             nullptr, // Contexto (opcional)
             CF_CONNECT_FLAG_REQUIRE_PROCESS_INFO | CF_CONNECT_FLAG_REQUIRE_FULL_FILE_PATH,
             connectionKey);
+        wprintf(L"Connection key: %llu\n", *connectionKey);
+        gloablConnectionKey = *connectionKey;
+        return hr;
+    }
+    catch (const std::exception &e)
+    {
+        wprintf(L"Excepción capturada: %hs\n", e.what());
+        // Aquí puedes decidir si retornar un código de error específico o mantener el E_FAIL.
+    }
+    catch (...)
+    {
+        wprintf(L"Excepción desconocida capturada\n");
+        // Igualmente, puedes decidir el código de error a retornar.
+    }
+}
 
+// disconection sync root
+HRESULT SyncRoot::DisconnectSyncRoot()
+{
+    try
+    {
+        HRESULT hr = CfDisconnectSyncRoot(gloablConnectionKey);
         return hr;
     }
     catch (const std::exception &e)

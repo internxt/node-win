@@ -99,12 +99,13 @@ drive.registerSyncRoot(
             console.log("file id: " + fileId);
             // simulate a download from a real server and response with the path of the downloaded file of a fake server
             onFetchData(fileId).then((response) => {
-                callback(response, "C:\\Users\\User\\Desktop\\fakeserver\\imagen.rar");
+                callback(response, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
             }).catch((err) => {
-                callback(false, "C:\\Users\\User\\Desktop\\fakeserver\\imagen.rar");
+                callback(false, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
             });
         }
-    }
+    },
+    'C:\\Users\\gcarl\\Downloads\\sicon.ico'
 )
 
 drive.connectSyncRoot();
@@ -118,3 +119,12 @@ drive.createItemByPath(`/folderWithFile/file2.txt`, 'fa8217c9-2dd6-4641-9180-820
 drive.createItemByPath(`/imagen.rar`, 'fa8217c9-2dd6-4641-9180-8206e60368f1', 33020); // keep in mind that the file size must be the same as the original file
 
 drive.watchAndWait(config.syncRootPath);
+
+// disconnect after 10 seconds -> this can use before of unregister
+// const timeToWait = 10000;
+// setTimeout(
+//     () => {
+//         console.log("Disconnecting...");
+//         drive.disconnectSyncRoot();
+//     }
+// , timeToWait)

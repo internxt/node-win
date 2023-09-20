@@ -123,14 +123,14 @@ napi_value UnregisterSyncRootWrapper(napi_env env, napi_callback_info args)
 
 napi_value RegisterSyncRootWrapper(napi_env env, napi_callback_info args)
 {
-    size_t argc = 4;
-    napi_value argv[4];
+    size_t argc = 5;
+    napi_value argv[5];
 
     napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
 
-    if (argc < 4)
+    if (argc < 5)
     {
-        napi_throw_error(env, nullptr, "4 arguments are required for RegisterSyncRoot");
+        napi_throw_error(env, nullptr, "5 arguments are required for RegisterSyncRoot");
         return nullptr;
     }
 
@@ -169,7 +169,13 @@ napi_value RegisterSyncRootWrapper(napi_env env, napi_callback_info args)
         return nullptr;
     }
 
-    HRESULT result = SyncRoot::RegisterSyncRoot(syncRootPath, providerName, providerVersion, providerId);
+    LPCWSTR logoPath;
+    size_t logoPathLength;
+    napi_get_value_string_utf16(env, argv[4], nullptr, 0, &logoPathLength);
+    logoPath = new WCHAR[logoPathLength + 1];
+    napi_get_value_string_utf16(env, argv[4], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(logoPath)), logoPathLength + 1, nullptr);
+
+    HRESULT result = SyncRoot::RegisterSyncRoot(syncRootPath, providerName, providerVersion, providerId, logoPath);
 
     delete[] providerIdStr;
 
@@ -426,4 +432,33 @@ napi_value CreateEntryWrapper(napi_env env, napi_callback_info args)
     napi_value result;
     napi_get_boolean(env, true, &result);
     return result;
+}
+
+// disconection wrapper
+napi_value DisconnectSyncRootWrapper(napi_env env, napi_callback_info args)
+{
+    size_t argc = 1;
+    napi_value argv[1];
+
+    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
+
+    if (argc < 1)
+    {
+        napi_throw_error(env, nullptr, "The sync root path is required for DisconnectSyncRoot");
+        return nullptr;
+    }
+
+    LPCWSTR syncRootPath;
+    size_t pathLength;
+    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
+    syncRootPath = new WCHAR[pathLength + 1];
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(syncRootPath)), pathLength + 1, nullptr);
+
+    HRESULT result = SyncRoot::DisconnectSyncRoot();
+    wprintf(L"DisconnectSyncRootWrapper: %08x\n", static_cast<HRESULT>(result));
+    delete[] syncRootPath;
+
+    napi_value napiResult;
+    napi_create_int32(env, static_cast<int32_t>(result), &napiResult);
+    return napiResult;
 }
