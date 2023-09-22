@@ -44,11 +44,12 @@ void Placeholders::CreateOne(
         {
             wprintf(L"Error al crear placeholder: %s", error.message().c_str());
         }
-
         winrt::StorageProviderItemProperty prop;
         prop.Id(1);
         prop.Value(L"Value1");
         prop.IconResource(L"shell32.dll,-44");
+
+        wprintf(L"Successfully created placeholder file");
     }
     catch (...)
     {
@@ -68,6 +69,7 @@ void Placeholders::CreateEntry(
     FILETIME lastAccessTime,
     _In_ PCWSTR destPath)
 {
+
     std::wstring fullDestPath = std::wstring(destPath) + L"\\" + std::wstring(itemName);
     CF_PLACEHOLDER_CREATE_INFO cloudEntry = {};
     std::wstring relativeName(itemIdentity);
@@ -76,6 +78,8 @@ void Placeholders::CreateEntry(
     cloudEntry.RelativeFileName = itemName;
     cloudEntry.Flags = CF_PLACEHOLDER_CREATE_FLAG_DISABLE_ON_DEMAND_POPULATION; // -> desactive download on demand
     cloudEntry.FsMetadata.BasicInfo.FileAttributes = FILE_ATTRIBUTE_DIRECTORY;
+    cloudEntry.FsMetadata.BasicInfo.CreationTime = Utilities::FileTimeToLargeInteger(creationTime);
+    cloudEntry.FsMetadata.BasicInfo.LastWriteTime = Utilities::FileTimeToLargeInteger(lastWriteTime);
     try
     {
         if (isDirectory) // TODO: the function createEntry is used to create only folders (directories), so this if is always true

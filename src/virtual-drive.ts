@@ -162,14 +162,16 @@ class VirtualDrive {
         lastAccessTime: number,
         path: string
     ) {
+        const creationTimeStr = this.convertToWindowsTime(creationTime).toString();        
+        const lastWriteTimeStr = this.convertToWindowsTime(lastWriteTime).toString();
         return addon.createEntry(
             itemName,
             itemId,
             isDirectory,
             itemSize,
             fileAttributes,
-            creationTime,
-            lastWriteTime,
+            creationTimeStr,
+            lastWriteTimeStr,
             lastAccessTime,
             path
         )
@@ -188,16 +190,9 @@ class VirtualDrive {
         return await addon.registerSyncRoot(this.syncRootPath, providerName, providerVersion, providerId, logoPath);
     }
 
-    // unregisterSyncRoot(): any {
-    //     const result = addon.unregisterSyncRoot(this.syncRootPath);
-    //     deleteAllSubfolders(this.syncRootPath);
-    //     return result;
-    // }
-
     static unregisterSyncRoot(syncRootPath: string): any {
         const result = addon.unregisterSyncRoot(syncRootPath);
         deleteAllSubfolders(syncRootPath);
-        console.log(`Unregistered sync root`);
         return result;
     }
 
@@ -209,7 +204,7 @@ class VirtualDrive {
         addon.watchAndWait(path, this.getExtraCallbacks());
     }
     
-    createItemByPath(relativePath: string, itemId: string, size: number = 0) {
+    createItemByPath(relativePath: string, itemId: string, size: number = 0, creationTime: number = Date.now(), lastWriteTime: number = Date.now()): void {
         const fullPath = path.join(this.syncRootPath, relativePath);
         const splitPath = relativePath.split('/').filter(p => p);
         const directoryPath = path.resolve(this.syncRootPath);
@@ -225,8 +220,8 @@ class VirtualDrive {
                             true,
                             size,
                             this.PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
-                            Date.now(),
-                            Date.now(),
+                            creationTime,
+                            lastWriteTime,
                             Date.now(),
                             currentPath,
                         );
@@ -240,7 +235,7 @@ class VirtualDrive {
         } else if(this.isValidFilePath(relativePath)) { // Es un archivo
             
             try {
-                
+
                 for (let i = 0; i < splitPath.length - 1; i++) { // everything except last element
                     const dir = splitPath[i];
                     if (fs.existsSync(currentPath)) {
@@ -264,8 +259,8 @@ class VirtualDrive {
                     itemId,
                     size,
                     this.PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
-                    Date.now(),
-                    Date.now(),
+                    creationTime,
+                    lastWriteTime,
                     Date.now(),
                     currentPath
                 );                
