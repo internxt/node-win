@@ -114,8 +114,13 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             FileChange fc;
             fc.path = fullPath;
             bool isTmpFile = IsTemporaryFile(fullPath);
+
+            DWORD fileAttributes = GetFileAttributesW(fullPath.c_str());
             
-            fc.file_added =( next->Action == FILE_ACTION_ADDED || next->Action == FILE_ACTION_MODIFIED) && !isTmpFile;
+            bool isDirectory = (fileAttributes != INVALID_FILE_ATTRIBUTES) && (fileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+            bool fileExists = (fileAttributes != INVALID_FILE_ATTRIBUTES);
+            
+            fc.file_added =( next->Action == FILE_ACTION_ADDED || (next->Action == FILE_ACTION_MODIFIED && !fileExists)) && !isTmpFile && !isDirectory;
             result.push_back(fc);
 
             wprintf(L"next->Action: %d\n", next->Action);
