@@ -69,6 +69,7 @@
         "xtr1common": "cpp",
         "xtree": "cpp",
         "xutility": "cpp",
-        "condition_variable": "cpp"
+        "condition_variable": "cpp",
+        "filesystem": "cpp"
     }
 }

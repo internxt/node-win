@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "SyncRootWatcher.h"
 #include "DirectoryWatcher.h"
+#include "Callbacks.h"
 
 namespace winrt
 {
@@ -57,20 +58,20 @@ void SyncRootWatcher::WatcherTask(const wchar_t *syncRootPath, napi_env env, Inp
     }
 }
 
-void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<std::wstring>& changes)
+void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange>& changes, napi_env env, InputSyncCallbacksThreadsafe input)
 {
     auto start = GetTickCount64();
     s_state = winrt::StorageProviderState::Syncing;
     s_statusChanged(nullptr, nullptr);
 
-    for (auto path : changes)
+    for (auto change : changes)
     {
-        wprintf(L"Processing change for %s\n", path.c_str());
+        wprintf(L"Processing change for %s\n", change.path.c_str());
 
-        DWORD attrib = GetFileAttributesW(path.c_str());
-        if (!(attrib & FILE_ATTRIBUTE_DIRECTORY))
+        DWORD attrib = GetFileAttributesW(change.path.c_str());
+        if (!(attrib & FILE_ATTRIBUTE_DIRECTORY) && !change.file_added)
         {
-            winrt::handle placeholder(CreateFileW(path.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
+            winrt::handle placeholder(CreateFileW(change.path.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
 
             LARGE_INTEGER offset = {};
             LARGE_INTEGER length;
@@ -78,14 +79,19 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<std::wstring>& change
 
             if (attrib & FILE_ATTRIBUTE_PINNED)
             {
-                wprintf(L"Hydrating file %s\n", path.c_str());
+                wprintf(L"Hydrating file %s\n", change.path.c_str());
                 CfHydratePlaceholder(placeholder.get(), offset, length, CF_HYDRATE_FLAG_NONE, NULL);
             }
             else if (attrib & FILE_ATTRIBUTE_UNPINNED)
             {
-                wprintf(L"Dehydrating file %s\n", path.c_str());
+                wprintf(L"Dehydrating file %s\n", change.path.c_str());
                 CfDehydratePlaceholder(placeholder.get(), offset, length, CF_DEHYDRATE_FLAG_NONE, NULL);
             }
+        }
+
+        if (change.file_added)
+        {
+           register_threadsafe_notify_file_added_callback(change, "file_added", env, input);
         }
     }
 

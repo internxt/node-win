@@ -29,6 +29,30 @@ void Utilities::ApplyCustomStateToPlaceholderFile(LPCWSTR path, LPCWSTR filename
     }
 }
 
+void Utilities::ApplyCustomOverwriteStateToPlaceholderFile(LPCWSTR path, LPCWSTR filename, winrt::StorageProviderItemProperty &prop)
+{
+    try
+    {
+        std::wstring fullPath(path);
+        fullPath.append(L"\\");
+        fullPath.append(filename);
+
+        wprintf(L"Full path: %s\n", fullPath.c_str());
+        winrt::IStorageItem item = winrt::StorageFile::GetFileFromPathAsync(fullPath).get();
+        winrt::StorageProviderItemProperties::SetAsync(item, {}).get();
+        winrt::StorageProviderItemProperties::SetAsync(item, {prop}).get();
+    }
+    catch (const winrt::hresult_error &error)
+    {
+        wprintf(L"Failed to set custom state. Error: %s (Code: %08x)\n", error.message().c_str(), error.code());
+    }
+    catch (...)
+    {
+        wprintf(L"Failed to set custom state with unknown error %08x\n", static_cast<HRESULT>(winrt::to_hresult()));
+    }
+}
+
+
 void Utilities::AddFolderToSearchIndexer(_In_ PCWSTR folder)
 {
     HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);

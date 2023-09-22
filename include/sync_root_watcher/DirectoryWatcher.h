@@ -1,6 +1,10 @@
 #pragma once
 
 #include <node_api.h>
+struct FileChange {
+    std::wstring path;
+    bool file_added;
+};
 
 struct InputCallbacks {
     napi_ref notify_file_added_callback_ref;
@@ -13,7 +17,7 @@ class DirectoryWatcher
 {
 public:
     std::atomic<bool> _shouldRun;
-    void Initialize(_In_ PCWSTR path, _In_ std::function<void(std::list<std::wstring>&)> callback, napi_env env, InputSyncCallbacksThreadsafe input);
+    void Initialize(_In_ PCWSTR path, _In_ std::function<void(std::list<FileChange>&, napi_env env, InputSyncCallbacksThreadsafe input)> callback, napi_env env, InputSyncCallbacksThreadsafe input);
     winrt::Windows::Foundation::IAsyncAction ReadChangesAsync();
     void Cancel();
 
@@ -27,6 +31,6 @@ private:
     std::unique_ptr<FILE_NOTIFY_INFORMATION> _notify;
     OVERLAPPED _overlapped{};
     winrt::Windows::Foundation::IAsyncAction _readTask;
-    std::function<void(std::list<std::wstring>&)> _callback;
+    std::function<void(std::list<FileChange>&, napi_env env, InputSyncCallbacksThreadsafe input)> _callback;
 };
 

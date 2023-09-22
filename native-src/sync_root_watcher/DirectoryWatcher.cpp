@@ -1,11 +1,11 @@
 #include "stdafx.h"
 #include "DirectoryWatcher.h"
 
-const size_t c_bufferSize = sizeof(FILE_NOTIFY_INFORMATION) * 100;
+const size_t c_bufferSize = 32768; //sizeof(FILE_NOTIFY_INFORMATION) * 100;
 
 void DirectoryWatcher::Initialize(
     _In_ PCWSTR path,
-    _In_ std::function<void(std::list<std::wstring>&)> callback,
+    _In_ std::function<void(std::list<FileChange>&, napi_env env, InputSyncCallbacksThreadsafe input)> callback,
     napi_env env,
     InputSyncCallbacksThreadsafe input)
 {
@@ -69,7 +69,7 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             break;
         }
 
-        std::list<std::wstring> result;
+        std::list<FileChange> result;
         std::list<std::wstring> addedFiles;
         std::list<std::wstring> removedFiles;
         FILE_NOTIFY_INFORMATION* next = _notify.get();
@@ -78,16 +78,15 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             std::wstring fullPath(_path);
             fullPath.append(L"\\");
             fullPath.append(std::wstring_view(next->FileName, next->FileNameLength / sizeof(wchar_t)));
-            result.push_back(fullPath);
+            
+            FileChange fc;
+            fc.path = fullPath;
+            bool isTmpFile = fullPath.size() >= 4 && fullPath.compare(fullPath.size() - 4, 4, L".tmp") == 0;
+            
+            fc.file_added =( next->Action == FILE_ACTION_ADDED || next->Action == FILE_ACTION_MODIFIED) && !isTmpFile;
+            result.push_back(fc);
 
-            if (next->Action == FILE_ACTION_ADDED)
-            {
-                addedFiles.push_back(fullPath);
-            }
-            else if (next->Action == FILE_ACTION_REMOVED)
-            {
-                removedFiles.push_back(fullPath);
-            }
+            wprintf(L"next->Action: %d\n", next->Action);
 
             if (next->NextEntryOffset)
             {
@@ -98,20 +97,19 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
                 next = nullptr;
             }
         }
-        for (auto path : removedFiles)
-        {
-            wprintf(L"Removed: %s\n", path.c_str());
-        }
-        for (auto path : addedFiles) {
-            wprintf(L"Added: %s\n", path.c_str());
-            std::wstring *dataToSend = new std::wstring(path);
-            napi_status status = napi_call_threadsafe_function(_input.notify_file_added_threadsafe_callback, dataToSend, napi_tsfn_blocking);
 
-            if (status != napi_ok) {
-                napi_throw_error(_env, NULL, "Unable to call notify_file_added_threadsafe_callback");
-            }
-        }
-        _callback(result);
+        // for (auto path : addedFiles) {
+            
+        //     std::wstring *dataToSend = new std::wstring(path);
+        //     napi_status status = napi_call_threadsafe_function(_input.notify_file_added_threadsafe_callback, dataToSend, napi_tsfn_blocking);
+
+        //     CfConvertToPlaceholder(path.c_str());
+
+        //     if (status != napi_ok) {
+        //         napi_throw_error(_env, NULL, "Unable to call notify_file_added_threadsafe_callback");
+        //     }
+        // }
+        _callback(result, _env, _input);
     }
 
     wprintf(L"watcher exiting\n");
@@ -127,4 +125,5 @@ void DirectoryWatcher::Cancel()
         Sleep(10);
     }
 }
+
 

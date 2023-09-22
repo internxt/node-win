@@ -70,6 +70,33 @@ async function onFetchData(fileId: string): Promise<boolean> {
     return a;
 }
 
+async function onFileAddedCallback(filePath: string, callback: (aknowledge : boolean, id: string) => void) {
+
+    try {
+        console.log("File added in callback: " + filePath);
+        const newFilePath = filePath.replace(config.syncRootPath, '').replace(/\\/g, '/'); //IMPORTANTE CAMBIAR LOS SLASHES
+        await new Promise(resolve => setTimeout(() => {
+            resolve(undefined);
+        }, 1000));
+
+        callback(false, '280ab630-acef-4438-8bbc-29863810b24a'); 
+    } catch (error) {
+        callback(false, '');
+        console.error(error);
+    }
+}
+
+async function onFetchDataCallback(fileId: string, callback: (data : boolean, path: string) => void ) {
+    console.log("file id: " + fileId);
+    // simulate a download from a real server and response with the path of the downloaded file of a fake server
+    onFetchData(fileId).then((response) => {
+        callback(response, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
+    }).catch((err) => {
+        callback(false, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
+    });
+}
+
+const iconPath = 'C:\\Users\\gcarl\\Downloads\\sicon.ico';
 drive.registerSyncRoot(
     config.driveName,
     config.driveVersion,
@@ -77,35 +104,10 @@ drive.registerSyncRoot(
     {
         notifyDeleteCallback: onDeleteCallbackWithCallback,
         notifyRenameCallback: onRenameCallbackWithCallback,
-        notifyFileAddedCallback: async (filePath: string) => {
-
-            try {
-                console.log("File added: " + filePath);
-                const newFilePath = filePath.replace(config.syncRootPath, '').replace(/\\/g, '/'); //IMPORTANTE CAMBIAR LOS SLASHES
-                await new Promise(resolve => setTimeout(() => {
-                    resolve(undefined);
-                }, 1000));
-
-                fs.unlinkSync(filePath);
-
-                console.log("Creating placeholder at: " + newFilePath)
-                drive.createItemByPath(newFilePath.replace('\\','/'), '280ab650-acef-4438-8bbc-29863810b24a', 10); 
-                drive.createItemByPath(newFilePath, '280ab651-acef-4438-8bbc-29863810b24a', 10); 
-            } catch (error) {
-                console.error(error);
-            }
-        },
-        fetchDataCallback: async (fileId: string, callback: (data : boolean, path: string) => void ) => {
-            console.log("file id: " + fileId);
-            // simulate a download from a real server and response with the path of the downloaded file of a fake server
-            onFetchData(fileId).then((response) => {
-                callback(response, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
-            }).catch((err) => {
-                callback(false, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
-            });
-        }
+        notifyFileAddedCallback: onFileAddedCallback,
+        fetchDataCallback: onFetchDataCallback
     },
-    'C:\\Users\\gcarl\\Downloads\\sicon.ico'
+    iconPath
 )
 
 drive.connectSyncRoot();
