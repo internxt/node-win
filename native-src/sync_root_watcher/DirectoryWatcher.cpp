@@ -3,6 +3,38 @@
 
 const size_t c_bufferSize = 32768; //sizeof(FILE_NOTIFY_INFORMATION) * 100;
 
+bool IsTemporaryFile(const std::wstring& fullPath)
+{
+    // Comprueba el prefijo ~$ usado por Word, Excel y PowerPoint
+    size_t fileNameStart = fullPath.find_last_of(L'\\') + 1;
+    if (fullPath.size() >= fileNameStart + 2 && fullPath.compare(fileNameStart, 2, L"~$") == 0)
+    {
+        return true;
+    }
+
+    // Comprueba las extensiones de archivo temporales y las extensiones específicas mencionadas
+    std::array<std::wstring, 7> tempExtensions = {
+        L".tmp",      // Extension genérica de archivo temporal
+        L".laccdb",   // Access
+        L".ldb",      // Access versión más antigua
+        L".bak",      // AutoCAD backup
+        L".sv$",      // AutoCAD autosave
+        L".psdtmp",   // Photoshop (en algunos casos)
+        L".~tmp"      // Algunos programas generan este tipo de archivos temporales
+    };
+
+    for (const auto& ext : tempExtensions)
+    {
+        if (fullPath.size() >= ext.size() && 
+            fullPath.compare(fullPath.size() - ext.size(), ext.size(), ext) == 0)
+        {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
 void DirectoryWatcher::Initialize(
     _In_ PCWSTR path,
     _In_ std::function<void(std::list<FileChange>&, napi_env env, InputSyncCallbacksThreadsafe input)> callback,
@@ -81,7 +113,7 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             
             FileChange fc;
             fc.path = fullPath;
-            bool isTmpFile = fullPath.size() >= 4 && fullPath.compare(fullPath.size() - 4, 4, L".tmp") == 0;
+            bool isTmpFile = IsTemporaryFile(fullPath);
             
             fc.file_added =( next->Action == FILE_ACTION_ADDED || next->Action == FILE_ACTION_MODIFIED) && !isTmpFile;
             result.push_back(fc);

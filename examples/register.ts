@@ -79,7 +79,9 @@ async function onFileAddedCallback(filePath: string, callback: (aknowledge : boo
             resolve(undefined);
         }, 1000));
 
-        callback(false, '280ab630-acef-4438-8bbc-29863810b24a'); 
+        // primer argumento es el boolean que indica si se pudo crear el archivo o no en el cloud
+        // segundo argumento es el id del archivo creado en el cloud
+        callback(true, '280ab630-acef-4438-8bbc-29863810b24a'); 
     } catch (error) {
         callback(false, '');
         console.error(error);

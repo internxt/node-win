@@ -116,30 +116,45 @@ void register_threadsafe_notify_file_added_callback(FileChange& change, const st
             cv.wait(lock);
         }
     }
+    try {
+        winrt::handle placeholder(CreateFileW(change.path.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
 
-    winrt::handle placeholder(CreateFileW(change.path.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
-
-    const std::wstring idStr = server_identity;
-    LPCVOID idStrLPCVOID = static_cast<LPCVOID>(idStr.c_str());
-    DWORD idStrByteLength = static_cast<DWORD>(idStr.size() * sizeof(wchar_t));
-
-    CfConvertToPlaceholder(placeholder.get(), idStrLPCVOID, idStrByteLength, CF_CONVERT_FLAG_MARK_IN_SYNC, nullptr, nullptr);
-    if (!callbackResult) {
-        wprintf(L"not in sync\n");
-        winrt::StorageProviderItemProperty prop;
-        prop.Id(1);
-        prop.Value(L"Value1");
-        prop.IconResource(L"imageres.dll,-1402");
-
-        std::filesystem::path fullPath(change.path.c_str());
-        std::wstring directory = fullPath.parent_path().wstring();
-        std::wstring filename = fullPath.filename().wstring();  
-
-        Utilities::ApplyCustomOverwriteStateToPlaceholderFile(directory.c_str(), filename.c_str(), prop);
+        const std::wstring idStr = server_identity;
+        LPCVOID idStrLPCVOID = static_cast<LPCVOID>(idStr.c_str());
+        DWORD idStrByteLength = static_cast<DWORD>(idStr.size() * sizeof(wchar_t));
+        
+        if (callbackResult) {
+            wprintf(L"in sync============\n");
+            
+                CfConvertToPlaceholder(placeholder.get(), idStrLPCVOID, idStrByteLength, CF_CONVERT_FLAG_MARK_IN_SYNC, nullptr, nullptr);
+            
+        }
+    } catch(...) {
+        wprintf(L"Error al convertir a placeholder.\n");
     }
+    
+    // if (!callbackResult) {
+    //     wprintf(L"not in sync\n");
+    //     winrt::StorageProviderItemProperty prop;
+    //     prop.Id(1);
+    //     prop.Value(L"Value1");
+    //     prop.IconResource(L"imageres.dll,-1402");
 
-    wprintf(L"dehydrate\n");
+    //     std::filesystem::path fullPath(change.path.c_str());
+    //     std::wstring directory = fullPath.parent_path().wstring();
+    //     std::wstring filename = fullPath.filename().wstring();  
+        
+    //     // this is adding the custom state over the existing one
+    //     Utilities::ApplyCustomOverwriteStateToPlaceholderFile(directory.c_str(), filename.c_str(), prop);
+    // }
+
+    wprintf(L"finish upload task\n");
     if (status != napi_ok) {
         napi_throw_error(env, NULL, "Unable to call notify_file_added_threadsafe_callback");
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        ready = false; // Reset ready
     }
 };
