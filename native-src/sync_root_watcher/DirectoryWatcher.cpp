@@ -85,7 +85,7 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             _notify.get(),
             c_bufferSize,
             TRUE,
-            FILE_NOTIFY_CHANGE_ATTRIBUTES | FILE_NOTIFY_CHANGE_FILE_NAME,
+            FILE_NOTIFY_CHANGE_ATTRIBUTES | FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME,
             &returned,
             &_overlapped,
             nullptr));
@@ -120,8 +120,19 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             bool isDirectory = (fileAttributes != INVALID_FILE_ATTRIBUTES) && (fileAttributes & FILE_ATTRIBUTE_DIRECTORY);
             bool fileExists = (fileAttributes != INVALID_FILE_ATTRIBUTES);
             
-            fc.file_added =( next->Action == FILE_ACTION_ADDED || (next->Action == FILE_ACTION_MODIFIED && !fileExists)) && !isTmpFile && !isDirectory;
-            result.push_back(fc);
+            if ( ( next->Action == FILE_ACTION_ADDED || (next->Action == FILE_ACTION_MODIFIED && !fileExists)) && !isTmpFile && !isDirectory ) {
+                wprintf(L"new file: %s\n", fullPath.c_str());
+                fc.type = NEW_FILE;
+                fc.item_added = true;
+                result.push_back(fc);
+            } else if ( next->Action == FILE_ACTION_ADDED && isDirectory ) {
+                wprintf(L"new folder: %s\n", fullPath.c_str());
+                fc.type = NEW_FOLDER;
+                fc.item_added = true;
+                result.push_back(fc);
+            }
+            // fc.file_added =( next->Action == FILE_ACTION_ADDED || (next->Action == FILE_ACTION_MODIFIED && !fileExists)) && !isTmpFile && !isDirectory;
+            // result.push_back(fc);
 
             wprintf(L"next->Action: %d\n", next->Action);
 

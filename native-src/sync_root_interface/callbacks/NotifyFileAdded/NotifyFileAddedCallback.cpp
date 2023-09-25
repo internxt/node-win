@@ -105,7 +105,6 @@ void notify_file_added_call(napi_env env, napi_value js_callback, void *context,
 
 void register_threadsafe_notify_file_added_callback(FileChange& change, const std::string &resource_name, napi_env env, InputSyncCallbacksThreadsafe input)
 {
-    wprintf(L"File added: %s\n", change.path.c_str());
     std::wstring *dataToSend = new std::wstring(change.path);
     napi_status status = napi_call_threadsafe_function(input.notify_file_added_threadsafe_callback, dataToSend, napi_tsfn_blocking);
     
@@ -116,18 +115,41 @@ void register_threadsafe_notify_file_added_callback(FileChange& change, const st
             cv.wait(lock);
         }
     }
+    winrt::handle placeholder;
     try {
-        winrt::handle placeholder(CreateFileW(change.path.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
+
+        if (change.type == NEW_FOLDER) {
+            placeholder = winrt::handle(CreateFileW(
+                change.path.c_str(),
+                FILE_LIST_DIRECTORY | WRITE_DAC,
+                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                nullptr,
+                OPEN_EXISTING,
+                FILE_FLAG_BACKUP_SEMANTICS,
+                nullptr
+            ));
+
+        } else if (change.type == NEW_FILE) {
+            placeholder = winrt::handle(CreateFileW(
+                change.path.c_str(),
+                FILE_READ_DATA | WRITE_DAC,
+                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                nullptr,
+                OPEN_EXISTING,
+                0,
+                nullptr
+            ));
+        }
+
+        // winrt::handle placeholder(CreateFileW(change.path.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
 
         const std::wstring idStr = server_identity;
         LPCVOID idStrLPCVOID = static_cast<LPCVOID>(idStr.c_str());
         DWORD idStrByteLength = static_cast<DWORD>(idStr.size() * sizeof(wchar_t));
         
         if (callbackResult) {
-            wprintf(L"in sync============\n");
             
                 CfConvertToPlaceholder(placeholder.get(), idStrLPCVOID, idStrByteLength, CF_CONVERT_FLAG_MARK_IN_SYNC, nullptr, nullptr);
-            
         }
     } catch(...) {
         wprintf(L"Error al convertir a placeholder.\n");

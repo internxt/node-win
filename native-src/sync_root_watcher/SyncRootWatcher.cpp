@@ -69,7 +69,7 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange>& changes,
         wprintf(L"Processing change for %s\n", change.path.c_str());
 
         DWORD attrib = GetFileAttributesW(change.path.c_str());
-        if (!(attrib & FILE_ATTRIBUTE_DIRECTORY) && !change.file_added)
+        if (!(attrib & FILE_ATTRIBUTE_DIRECTORY) && !change.item_added)
         {
             winrt::handle placeholder(CreateFileW(change.path.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
 
@@ -89,11 +89,11 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange>& changes,
             }
         }
 
-        if (change.file_added)
+        if (change.type == NEW_FILE || change.type == NEW_FOLDER )
         {
            register_threadsafe_notify_file_added_callback(change, "file_added", env, input);
         }
-    }
+     }
 
     try {
 

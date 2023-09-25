@@ -1,9 +1,15 @@
 #pragma once
 
 #include <node_api.h>
+
+enum ChangeType {
+    NEW_FILE,
+    NEW_FOLDER,
+};
 struct FileChange {
     std::wstring path;
-    bool file_added;
+    bool item_added;
+    ChangeType type;
 };
 
 struct InputCallbacks {

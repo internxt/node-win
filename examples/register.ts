@@ -5,7 +5,7 @@ import * as fs from 'fs';
 const drive = new VirtualDrive(config.syncRootPath);
 
 async function onDeleteCallback(fileId: string, callback: (response: boolean) => void) {
-    console.log("File ID: " + fileId);
+    console.log("On delete File ID: " + fileId);
     const a = await (new Promise<boolean>((resolve, reject) => {
         try {
             setTimeout(() => {
@@ -73,7 +73,7 @@ async function onFetchData(fileId: string): Promise<boolean> {
 async function onFileAddedCallback(filePath: string, callback: (aknowledge : boolean, id: string) => void) {
 
     try {
-        console.log("File added in callback: " + filePath);
+        console.log("========================= File added in callback: " + filePath);
         const newFilePath = filePath.replace(config.syncRootPath, '').replace(/\\/g, '/'); //IMPORTANTE CAMBIAR LOS SLASHES
         await new Promise(resolve => setTimeout(() => {
             resolve(undefined);
@@ -81,7 +81,9 @@ async function onFileAddedCallback(filePath: string, callback: (aknowledge : boo
 
         // primer argumento es el boolean que indica si se pudo crear el archivo o no en el cloud
         // segundo argumento es el id del archivo creado en el cloud
-        callback(true, '280ab630-acef-4438-8bbc-29863810b24a'); 
+        const result = Math.random().toString(36).substring(2,7);
+        console.log("=============================== with id" + result);
+        callback(true, result); 
     } catch (error) {
         callback(false, '');
         console.error(error);
