@@ -5,7 +5,7 @@ import { Worker } from 'worker_threads';
 
 const addonPath = path.join(__dirname, '../../build/Release/addon.node');
 const addon = require(addonPath);
-
+type Threshold = '10MB' | '50MB' | '100MB' | '250MB' | '500MB' | '1GB' | '2GB' | '3GB' | '4GB' | '5GB' 
 interface Addon {
     connectSyncRoot(path: string): any;
     createPlaceholderFile(fileName: string, fileId: string, fileSize: number, combinedAttributes: number, creationTime: string, lastWriteTime: string, lastAccessTime: string, path: string): any;
@@ -183,9 +183,10 @@ class VirtualDrive {
         return path.includes('.');
     }    
     
-    async registerSyncRoot(providerName: string, providerVersion: string, providerId: string, callbacks: Callbacks, logoPath: string): Promise<any> {
+    async registerSyncRoot(providerName: string, providerVersion: string, providerId: string, callbacks: Callbacks, logoPath: string, threshold: Threshold, chunksize: number): Promise<any> {
+        console.log(`Registering sync root: ${this.syncRootPath}`);
         this.callbacks = callbacks;
-        return await addon.registerSyncRoot(this.syncRootPath, providerName, providerVersion, providerId, logoPath);
+        return await addon.registerSyncRoot(this.syncRootPath, providerName, providerVersion, providerId, logoPath, threshold, chunksize);
     }
 
     // unregisterSyncRoot(): any {

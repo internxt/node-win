@@ -8,7 +8,10 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
-#define CHUNKSIZE 4096
+// #define CHUNKSIZE 4096
+extern int CHUNKSIZE;
+extern std::wstring THRESHOLD;
+
 // Arbitrary delay per chunk, again, so you can actually see the progress bar
 // move
 #define CHUNKDELAYMS 250
@@ -158,7 +161,7 @@ void WINAPI FileCopierWithProgress::OverlappedCompletionRoutine(
                         numberOfBytesTransfered);
 
                 // This helper function tells the Cloud File API about the transfer,
-                // which will copy the data to the local syncroot
+                // which will copy the data to the local syncrootCHUNKSIZE
                 TransferData(
                     readContext->CallbackInfo.ConnectionKey,
                     readContext->CallbackInfo.TransferKey,
@@ -294,8 +297,58 @@ void FileCopierWithProgress::CopyFromServerToClientWorker(
                 winrt::check_hresult(hr);
         }
 
-        // Allocate the buffer used in the overlapped read.
-        chunkBufferSize = (ULONG)min(requiredLength.QuadPart, CHUNKSIZE);
+        // Convierte la cadena wide a una cadena de caracteres (std::string)
+        std::string sizeString(THRESHOLD.begin(), THRESHOLD.end());
+
+        // Parsea la cadena para extraer la cantidad y la unidad
+        double sizeValue;
+        std::string sizeUnit;
+
+        std::istringstream iss(sizeString);
+        iss >> sizeValue >> sizeUnit;
+
+        // Define un mapa de unidades a su valor en bytes
+        std::map<std::string, long long> unitToBytes = {
+            {"B", 1LL},
+            {"KB", 1024LL},
+            {"MB", 1024LL * 1024LL},
+            {"GB", 1024LL * 1024LL * 1024LL},
+            {"TB", 1024LL * 1024LL * 1024LL * 1024LL}
+            // Agrega más unidades si es necesario
+        };
+        long long sizeInBytesThreshold;
+        // Convierte la cantidad a bytes1
+        if (unitToBytes.find(sizeUnit) != unitToBytes.end())
+        {
+                sizeInBytesThreshold = static_cast<long long>(sizeValue * unitToBytes[sizeUnit]);
+
+                // Almacena el resultado en una variable
+                wprintf(L"[%04x:%04x] - sizeInBytesThreshold: %d\n", GetCurrentProcessId(), GetCurrentThreadId(), sizeInBytesThreshold);
+        }
+        else
+        {
+                wprintf(L"[%04x:%04x] - Error: unidad desconocida.\n", GetCurrentProcessId(), GetCurrentThreadId());
+        }
+
+        // // Allocate the buffer used in the overlapped read.
+        // chunkBufferSize = (ULONG)(CHUNKSIZE * 3000); // CHUNKSIZE
+        chunkBufferSize = (ULONG)min(requiredLength.QuadPart, CHUNKSIZE * 100);
+
+        // impimir el tamaño del archivo
+        // wprintf(L"[%04x:%04x] - requiredLength . QuadPart: %lld\n", GetCurrentProcessId(), GetCurrentThreadId(), requiredLength.QuadPart);
+        // wprintf(L"[%04x:%04x] - THRESHOLD: %d\n", GetCurrentProcessId(), GetCurrentThreadId(), THRESHOLD);
+        // if (requiredLength.QuadPart > sizeInBytesThreshold)
+        // {
+        //         wprintf(L"[%04x:%04x] - requiredLength > THRESHOLD\n", GetCurrentProcessId(), GetCurrentThreadId());
+        //         // Allocate the buffer used in the overlapped read.
+        //         chunkBufferSize = (ULONG)min(requiredLength.QuadPart, CHUNKSIZE * 100); // CHUNKSIZE
+        // }
+        // else
+        // {
+        //         wprintf(L"[%04x:%04x] - requiredLength < THRESHOLD\n", GetCurrentProcessId(), GetCurrentThreadId());
+        //         // Allocate the buffer used in the overlapped read.
+        //         chunkBufferSize = (ULONG)requiredLength.QuadPart;
+        // }
 
         readCompletionContext = (READ_COMPLETION_CONTEXT *)
             HeapAlloc(
@@ -324,6 +377,7 @@ void FileCopierWithProgress::CopyFromServerToClientWorker(
             fullClientPath.data(),
             wcslen(fullClientPath.data()));
 
+        wprintf(L"[%04x:%04x] - callbackInfo->FileSize.QuadPart: %lld\n", GetCurrentProcessId(), GetCurrentThreadId(), callbackInfo->FileSize.QuadPart);
         // Set up the remainder of the overlapped stuff
         readCompletionContext->CallbackInfo = *callbackInfo;
         readCompletionContext->Handle = serverFileHandle;

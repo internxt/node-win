@@ -5,6 +5,8 @@
 
 // variable to disconect
 CF_CONNECTION_KEY gloablConnectionKey;
+int CHUNKSIZE = 4096;
+std::wstring THRESHOLD;
 
 void TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCallbacks input)
 {
@@ -22,10 +24,14 @@ void AddCustomState(
     customStates.Append(customState);
 }
 
-HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *providerName, const wchar_t *providerVersion, const GUID &providerId, const wchar_t *logoPath)
+HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *providerName, const wchar_t *providerVersion, const GUID &providerId, const wchar_t *logoPath, const wchar_t *threshold, const int &chunksize)
 {
     try
     {
+        CHUNKSIZE = chunksize;
+        THRESHOLD = std::wstring(threshold);
+        // impriimr threshold
+        wprintf(L"threshold: %s\n", THRESHOLD.c_str());
         auto syncRootID = providerId;
 
         winrt::StorageProviderSyncRootInfo info;
@@ -38,7 +44,7 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
         info.DisplayNameResource(providerName);
 
         std::wstring completeIconResource = std::wstring(logoPath) + L",0";
-    
+
         // This icon is just for the sample. You should provide your own branded icon here
         info.IconResource(completeIconResource.c_str());
         info.HydrationPolicy(winrt::StorageProviderHydrationPolicy::Full);
@@ -109,6 +115,7 @@ HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallback
             CF_CALLBACK_REGISTRATION_END};
 
         HRESULT hr = CfConnectSyncRoot(
+
             syncRootPath,
             callbackTable,
             nullptr, // Contexto (opcional)

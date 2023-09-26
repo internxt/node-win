@@ -4,6 +4,8 @@
 #include "SyncRoot.h"
 #include "SyncRootWatcher.h"
 #include "Callbacks.h"
+#include <iostream>
+#include <cstdlib>
 
 void notify_file_added_call(napi_env env, napi_value js_callback, void *context, void *data)
 {
@@ -50,8 +52,8 @@ napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
         return nullptr;
     }
 
-    uint32_t fileSize;
-    napi_get_value_uint32(env, argv[2], &fileSize);
+    int64_t fileSize;
+    napi_get_value_int64(env, argv[2], &fileSize);
 
     uint32_t fileAttributes;
     napi_get_value_uint32(env, argv[3], &fileAttributes);
@@ -123,14 +125,14 @@ napi_value UnregisterSyncRootWrapper(napi_env env, napi_callback_info args)
 
 napi_value RegisterSyncRootWrapper(napi_env env, napi_callback_info args)
 {
-    size_t argc = 5;
-    napi_value argv[5];
+    size_t argc = 7;
+    napi_value argv[7];
 
     napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
 
-    if (argc < 5)
+    if (argc < 7)
     {
-        napi_throw_error(env, nullptr, "5 arguments are required for RegisterSyncRoot");
+        napi_throw_error(env, nullptr, "7 arguments are required for RegisterSyncRoot");
         return nullptr;
     }
 
@@ -175,7 +177,18 @@ napi_value RegisterSyncRootWrapper(napi_env env, napi_callback_info args)
     logoPath = new WCHAR[logoPathLength + 1];
     napi_get_value_string_utf16(env, argv[4], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(logoPath)), logoPathLength + 1, nullptr);
 
-    HRESULT result = SyncRoot::RegisterSyncRoot(syncRootPath, providerName, providerVersion, providerId, logoPath);
+    LPCWSTR threshold;
+    size_t thresholdLength;
+    napi_get_value_string_utf16(env, argv[5], nullptr, 0, &thresholdLength);
+    threshold = new WCHAR[thresholdLength + 1];
+    napi_get_value_string_utf16(env, argv[5], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(threshold)), thresholdLength + 1, nullptr);
+    wprintf(L"wrapper -> threshold: %s\n", threshold);
+
+    int64_t chunkSize;
+    napi_get_value_int64(env, argv[6], &chunkSize);
+    wprintf(L"wrapper -> chunkSize: %d\n", chunkSize);
+
+    HRESULT result = SyncRoot::RegisterSyncRoot(syncRootPath, providerName, providerVersion, providerId, logoPath, threshold, chunkSize);
 
     delete[] providerIdStr;
 

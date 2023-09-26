@@ -7,7 +7,7 @@
 void Placeholders::CreateOne(
     _In_ PCWSTR fileName,
     _In_ PCWSTR fileIdentity,
-    uint32_t fileSize,
+    uint64_t fileSize,
     DWORD fileIdentityLength,
     uint32_t fileAttributes,
     FILETIME creationTime,
@@ -30,6 +30,7 @@ void Placeholders::CreateOne(
         cloudEntry.Flags = CF_PLACEHOLDER_CREATE_FLAG_MARK_IN_SYNC;
 
         cloudEntry.FsMetadata.FileSize.QuadPart = fileSize;
+        wprintf(L"fileSize: %lld\n", fileSize);
         cloudEntry.FsMetadata.BasicInfo.FileAttributes = FILE_ATTRIBUTE_NORMAL;
         cloudEntry.FsMetadata.BasicInfo.CreationTime = Utilities::FileTimeToLargeInteger(creationTime);
         cloudEntry.FsMetadata.BasicInfo.LastWriteTime = Utilities::FileTimeToLargeInteger(lastWriteTime);

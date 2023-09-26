@@ -99,13 +99,15 @@ drive.registerSyncRoot(
             console.log("file id: " + fileId);
             // simulate a download from a real server and response with the path of the downloaded file of a fake server
             onFetchData(fileId).then((response) => {
-                callback(response, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
+                callback(response, "C:\\Users\\User\\Desktop\\fakeserver\\2023-08-08 09-46-29.mkv");
             }).catch((err) => {
-                callback(false, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
+                callback(false, "C:\\Users\\User\\Desktop\\fakeserver\\2023-08-08 09-46-29.mkv");
             });
         }
     },
-    'C:\\Users\\gcarl\\Downloads\\sicon.ico'
+    'C:\\Users\\User\\Downloads\\sicon.ico',
+    '4GB',
+    config.download.chunksize,
 )
 
 drive.connectSyncRoot();
@@ -117,9 +119,11 @@ drive.createItemByPath(`/folderWithFolder/folder2/`, 'fa8217c9-2dd6-4641-9180-82
 drive.createItemByPath(`/folderWithFile/file2.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036216', 1000);
 
 drive.createItemByPath(`/fakefile.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036843', 57); // keep in mind that the file size must be the same as the original file
-drive.createItemByPath(`/imagen.rar`, 'fa8217c9-2dd6-4641-9180-8206e60368f1', 33020); // keep in mind that the file size must be the same as the original file
+drive.createItemByPath(`/downloads.rar`, 'fa8217c9-2dd6-4641-9180-8206e60368f5', 453792); // keep in mind that the file size must be the same as the original file
+drive.createItemByPath(`/2023-08-01 16-03-55.mkv`, 'fa8217c9-2dd6-4641-9180-8206e60168f9', 4416917504); // keep in mind that the file size must be the same as the original file
+drive.createItemByPath(`/2023-08-08 09-46-29.mkv`, 'fa8217c9-2dd6-4641-9180-8206e60112f6', 2418423428); // keep in mind that the file size must be the same as the original file
 
-drive.watchAndWait(config.syncRootPath);
+// drive.watchAndWait(config.syncRootPath);
 
 // disconnect after 10 seconds -> this can use before of unregister
 // const timeToWait = 10000;

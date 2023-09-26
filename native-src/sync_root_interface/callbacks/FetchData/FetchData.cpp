@@ -92,6 +92,8 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 void HydrateFile(_In_ CONST CF_CALLBACK_INFO *lpCallbackInfo,
                  _In_ CONST CF_CALLBACK_PARAMETERS *lpCallbackParameters, const std::wstring &syncRootPath, const std::wstring &fakeServerFilePath)
 {
+    wprintf(L"HydrateFile called filesize 1 %lld\n", lpCallbackParameters->FetchData.RequiredLength.QuadPart);
+    wprintf(L"HydrateFile called filesize 2 %lld\n", lpCallbackParameters->FetchData.OptionalLength.QuadPart);
     FileCopierWithProgress::CopyFromServerToClient(lpCallbackInfo, lpCallbackParameters, fakeServerFilePath.c_str());
 }
 
