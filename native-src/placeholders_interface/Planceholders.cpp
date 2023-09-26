@@ -93,6 +93,31 @@ void Placeholders::CreateEntry(
             {
                 wprintf(L"Successfully created placeholder directory\n");
             }
+
+            // HANDLE fileHandle = CreateFileW(
+            //     fullDestPath.c_str(),
+            //     FILE_READ_DATA | WRITE_DAC,
+            //     FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+            //     nullptr,
+            //     OPEN_EXISTING,
+            //     FILE_FLAG_BACKUP_SEMANTICS,
+            //     nullptr
+            // );
+
+            // if (fileHandle == INVALID_HANDLE_VALUE)
+            // {
+            //     wprintf(L"Error al abrir el archivo: %d\n", GetLastError());
+            //     return;
+            // }
+
+            // // https://learn.microsoft.com/en-us/windows/win32/api/cfapi/nf-cfapi-cfsetinsyncstate
+            // // https://learn.microsoft.com/en-us/windows/win32/api/cfapi/ne-cfapi-cf_in_sync_state
+            // hr = CfSetInSyncState(fileHandle, CF_IN_SYNC_STATE_IN_SYNC, CF_SET_IN_SYNC_FLAG_NONE, nullptr );
+            // if (FAILED(hr))
+            // {
+            //     wprintf(L"Error al establecer el estado de sincronización: %ld\n", hr);
+            // }
+
         }
 
         wprintf(L"Successfully created %s at %s\n", isDirectory ? L"directory" : L"file", fullDestPath.c_str());

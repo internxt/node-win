@@ -59,9 +59,6 @@ napi_value response_callback_fn_added(napi_env env, napi_callback_info info) {
     callbackResult = confirmation_response;
     server_identity = response_wstr.c_str();
 
-    wprintf(L"callbackResult: %d\n", callbackResult);
-    wprintf(L"server_identity: %s\n", server_identity.c_str());
-
     cv.notify_one();
 
     return nullptr;
@@ -105,7 +102,7 @@ void notify_file_added_call(napi_env env, napi_value js_callback, void *context,
 
 void register_threadsafe_notify_file_added_callback(FileChange& change, const std::string &resource_name, napi_env env, InputSyncCallbacksThreadsafe input)
 {
-    std::wstring *dataToSend = new std::wstring(change.path);
+    std::wstring *dataToSend = new std::wstring(change.type == NEW_FILE ? change.path : (change.path + L"\\"));
     napi_status status = napi_call_threadsafe_function(input.notify_file_added_threadsafe_callback, dataToSend, napi_tsfn_blocking);
     
     {
@@ -129,7 +126,7 @@ void register_threadsafe_notify_file_added_callback(FileChange& change, const st
                 nullptr
             ));
 
-        } else if (change.type == NEW_FILE) {
+        } else if (change.type == NEW_FILE) { //||  change.type == MODIFIED_FILE) {
             placeholder = winrt::handle(CreateFileW(
                 change.path.c_str(),
                 FILE_READ_DATA | WRITE_DAC,
@@ -147,9 +144,16 @@ void register_threadsafe_notify_file_added_callback(FileChange& change, const st
         LPCVOID idStrLPCVOID = static_cast<LPCVOID>(idStr.c_str());
         DWORD idStrByteLength = static_cast<DWORD>(idStr.size() * sizeof(wchar_t));
         
+        wprintf(L"callbackResult: %d\n", callbackResult);
         if (callbackResult) {
+            HRESULT hr;
+            try {   
+                hr = CfConvertToPlaceholder(placeholder.get(), idStrLPCVOID, idStrByteLength, CF_CONVERT_FLAG_MARK_IN_SYNC, nullptr, nullptr);
+                wprintf(L"convert to placeholder: %d\n", hr);
+            } catch (...) {
+                wprintf(L"Error al convertir a placeholder: %d\n", hr);
+            }
             
-                CfConvertToPlaceholder(placeholder.get(), idStrLPCVOID, idStrByteLength, CF_CONVERT_FLAG_MARK_IN_SYNC, nullptr, nullptr);
         }
     } catch(...) {
         wprintf(L"Error al convertir a placeholder.\n");

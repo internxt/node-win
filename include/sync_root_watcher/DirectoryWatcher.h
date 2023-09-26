@@ -5,6 +5,7 @@
 enum ChangeType {
     NEW_FILE,
     NEW_FOLDER,
+    MODIFIED_FILE
 };
 struct FileChange {
     std::wstring path;
@@ -29,7 +30,7 @@ public:
 
 private:
     winrt::Windows::Foundation::IAsyncAction ReadChangesInternalAsync();
-
+    std::map<std::wstring, DWORD> _file_sizes;
     winrt::handle _dir;
     std::wstring _path;
     napi_env _env;
