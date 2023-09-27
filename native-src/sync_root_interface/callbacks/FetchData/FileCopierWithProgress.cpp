@@ -355,7 +355,7 @@ void FileCopierWithProgress::CopyFromServerToClientWorker(
         readCompletionContext->Overlapped.Offset = requiredFileOffset.LowPart;
         readCompletionContext->Overlapped.OffsetHigh = requiredFileOffset.HighPart;
         readCompletionContext->StartOffset = requiredFileOffset;
-        readCompletionContext->RemainingLength = requiredLength;
+        readCompletionContext->RemainingLength = callbackInfo->FileSize;
         readCompletionContext->BufferSize = chunkBufferSize;
 
         wprintf(L"[%04x:%04x] - Downloading data for %s, priority %d, offset %08x`%08x length %08x\n",
