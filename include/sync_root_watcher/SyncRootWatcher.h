@@ -24,7 +24,7 @@ public:
 private:
     static void WatcherTask(const wchar_t *syncRootPath, napi_env env, InputSyncCallbacksThreadsafe input);
     static void InitDirectoryWatcher(const wchar_t *syncRootPath, napi_env env, InputSyncCallbacksThreadsafe input);
-    static void OnSyncRootFileChanges(_In_ std::list<std::wstring>& changes);
+    static void OnSyncRootFileChanges(_In_ std::list<FileChange>& changes, napi_env env, InputSyncCallbacksThreadsafe input);
 
     static DirectoryWatcher s_directoryWatcher;
     static bool s_shutdownWatcher;

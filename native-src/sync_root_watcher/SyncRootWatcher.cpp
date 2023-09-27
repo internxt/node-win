@@ -1,11 +1,46 @@
 #include "stdafx.h"
 #include "SyncRootWatcher.h"
 #include "DirectoryWatcher.h"
+#include "Callbacks.h"
 
 namespace winrt
 {
     using namespace winrt::Windows::Foundation;
     using namespace winrt::Windows::Storage::Provider;
+}
+
+#include <Windows.h>
+#include <cfapi.h>
+
+
+void MarkFileAsInSync(const std::wstring& filePath)
+{
+    // Abre el archivo placeholder
+    HANDLE fileHandle = CreateFileW(
+        filePath.c_str(),
+        FILE_WRITE_ATTRIBUTES, // Permiso necesario para cambiar el estado
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        nullptr,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,
+        nullptr
+    );
+
+    if (fileHandle == INVALID_HANDLE_VALUE)
+    {
+        wprintf(L"Error al abrir el archivo: %d\n", GetLastError());
+        return;
+    }
+
+    // https://learn.microsoft.com/en-us/windows/win32/api/cfapi/nf-cfapi-cfsetinsyncstate
+    // https://learn.microsoft.com/en-us/windows/win32/api/cfapi/ne-cfapi-cf_in_sync_state
+    HRESULT hr = CfSetInSyncState(fileHandle, CF_IN_SYNC_STATE_IN_SYNC, CF_SET_IN_SYNC_FLAG_NONE, nullptr );
+    if (FAILED(hr))
+    {
+        wprintf(L"Error al establecer el estado de sincronización: %ld\n", hr);
+    }
+
+    CloseHandle(fileHandle); // Cierra el handle del archivo
 }
 
 DirectoryWatcher SyncRootWatcher::s_directoryWatcher;
@@ -57,20 +92,20 @@ void SyncRootWatcher::WatcherTask(const wchar_t *syncRootPath, napi_env env, Inp
     }
 }
 
-void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<std::wstring>& changes)
+void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange>& changes, napi_env env, InputSyncCallbacksThreadsafe input)
 {
     auto start = GetTickCount64();
     s_state = winrt::StorageProviderState::Syncing;
     s_statusChanged(nullptr, nullptr);
 
-    for (auto path : changes)
+    for (auto change : changes)
     {
-        wprintf(L"Processing change for %s\n", path.c_str());
+        wprintf(L"Processing change for %s\n", change.path.c_str());
 
-        DWORD attrib = GetFileAttributesW(path.c_str());
-        if (!(attrib & FILE_ATTRIBUTE_DIRECTORY))
+        DWORD attrib = GetFileAttributesW(change.path.c_str());
+        if (!(attrib & FILE_ATTRIBUTE_DIRECTORY) && !change.item_added)
         {
-            winrt::handle placeholder(CreateFileW(path.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
+            winrt::handle placeholder(CreateFileW(change.path.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
 
             LARGE_INTEGER offset = {};
             LARGE_INTEGER length;
@@ -78,16 +113,24 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<std::wstring>& change
 
             if (attrib & FILE_ATTRIBUTE_PINNED)
             {
-                wprintf(L"Hydrating file %s\n", path.c_str());
+                wprintf(L"Hydrating file %s\n", change.path.c_str());
                 CfHydratePlaceholder(placeholder.get(), offset, length, CF_HYDRATE_FLAG_NONE, NULL);
             }
             else if (attrib & FILE_ATTRIBUTE_UNPINNED)
             {
-                wprintf(L"Dehydrating file %s\n", path.c_str());
+                wprintf(L"Dehydrating file %s\n", change.path.c_str());
                 CfDehydratePlaceholder(placeholder.get(), offset, length, CF_DEHYDRATE_FLAG_NONE, NULL);
             }
         }
-    }
+
+        if (change.type == NEW_FILE || change.type == NEW_FOLDER )
+        {
+           register_threadsafe_notify_file_added_callback(change, "file_added", env, input);
+        } 
+        else if (change.type == MODIFIED_FILE) {
+            MarkFileAsInSync(change.path);
+        }
+     }
 
     try {
 

@@ -6,6 +6,8 @@ public:
     static void AddFolderToSearchIndexer(_In_ LPCWSTR folder);
     static void ApplyTransferStateToFile(_In_ LPCWSTR fullPath, _In_ CF_CALLBACK_INFO &callbackInfo, UINT64 total, UINT64 completed);
     static void ApplyCustomStateToPlaceholderFile(_In_ LPCWSTR path, _In_ LPCWSTR filename, _In_ winrt::StorageProviderItemProperty &prop);
+    static void ApplyCustomOverwriteStateToPlaceholderFile(_In_ LPCWSTR path, _In_ LPCWSTR filename, _In_ winrt::StorageProviderItemProperty &prop);
+
 
     static winrt::com_array<wchar_t> ConvertSidToStringSid(_In_ PSID sid)
     {

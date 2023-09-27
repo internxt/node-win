@@ -5,21 +5,6 @@
 #include "SyncRootWatcher.h"
 #include "Callbacks.h"
 
-void notify_file_added_call(napi_env env, napi_value js_callback, void *context, void *data)
-{
-    std::wstring *receivedData = static_cast<std::wstring *>(data);
-
-    napi_value js_string;
-    napi_create_string_utf16(env, reinterpret_cast<const char16_t *>(receivedData->c_str()), receivedData->size(), &js_string);
-
-    napi_value undefined;
-    napi_get_undefined(env, &undefined);
-    napi_value result;
-    napi_call_function(env, undefined, js_callback, 1, &js_string, &result);
-
-    delete receivedData;
-}
-
 napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
 {
     size_t argc = 8;
