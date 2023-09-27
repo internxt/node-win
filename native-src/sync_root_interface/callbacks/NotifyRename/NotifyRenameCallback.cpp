@@ -1,4 +1,5 @@
 #include <Callbacks.h>
+#include <Placeholders.h>
 #include <string>
 
 napi_threadsafe_function g_notify_rename_threadsafe_callback = nullptr;
@@ -188,16 +189,20 @@ void CALLBACK notify_rename_callback_wrapper(
 
     HRESULT hr = CfExecute(
         &opInfo,
-        &opParams);
+        &opParams
+    );
 
-    {
-        std::lock_guard<std::mutex> lock(mtx);
-        ready = false; // Reset ready
-    }
 
     if (FAILED(hr))
     {
         wprintf(L"Error in CfExecute().\n");
         wprintf(L"Error in CfExecute(), HRESULT: %lx\n", hr);
+    }
+    
+    Placeholders::MarkItemAsSync(targetPathArg, false);
+
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        ready = false; // Reset ready
     }
 }

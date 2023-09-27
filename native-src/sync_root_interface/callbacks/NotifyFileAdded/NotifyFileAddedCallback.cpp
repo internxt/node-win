@@ -113,6 +113,12 @@ void register_threadsafe_notify_file_added_callback(FileChange& change, const st
         }
     }
     winrt::handle placeholder;
+
+    if ( !std::filesystem::exists(change.path) ) {
+        wprintf(L"file does not exist\n");
+        return;
+    };
+    
     try {
 
         if (change.type == NEW_FOLDER) {
