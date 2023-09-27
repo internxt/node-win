@@ -25,4 +25,6 @@ public:
         FILETIME lastWriteTime,
         FILETIME lastAccessTime,
         _In_ PCWSTR destPath);
+
+    static void MarkItemAsSync(const std::wstring &filePath, bool isDirectory);
 };
