@@ -2,6 +2,7 @@
 #include "Placeholders.h"
 #include <winrt/base.h>
 #include <shlwapi.h>
+#include "SyncRootWatcher.h"
 #pragma comment(lib, "shlwapi.lib")
 
 void Placeholders::CreateOne(
@@ -94,30 +95,8 @@ void Placeholders::CreateEntry(
                 wprintf(L"Successfully created placeholder directory\n");
             }
 
-            // HANDLE fileHandle = CreateFileW(
-            //     fullDestPath.c_str(),
-            //     FILE_READ_DATA | WRITE_DAC,
-            //     FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-            //     nullptr,
-            //     OPEN_EXISTING,
-            //     FILE_FLAG_BACKUP_SEMANTICS,
-            //     nullptr
-            // );
-
-            // if (fileHandle == INVALID_HANDLE_VALUE)
-            // {
-            //     wprintf(L"Error al abrir el archivo: %d\n", GetLastError());
-            //     return;
-            // }
-
-            // // https://learn.microsoft.com/en-us/windows/win32/api/cfapi/nf-cfapi-cfsetinsyncstate
-            // // https://learn.microsoft.com/en-us/windows/win32/api/cfapi/ne-cfapi-cf_in_sync_state
-            // hr = CfSetInSyncState(fileHandle, CF_IN_SYNC_STATE_IN_SYNC, CF_SET_IN_SYNC_FLAG_NONE, nullptr );
-            // if (FAILED(hr))
-            // {
-            //     wprintf(L"Error al establecer el estado de sincronización: %ld\n", hr);
-            // }
-
+            std::wstring finalPath = std::wstring(destPath) + L"\\" + std::wstring(itemName);
+            MarkItemAsSync(finalPath, true);
         }
 
         wprintf(L"Successfully created %s at %s\n", isDirectory ? L"directory" : L"file", fullDestPath.c_str());
@@ -126,4 +105,38 @@ void Placeholders::CreateEntry(
     {
         wprintf(L"Error while creating %s: %s\n", isDirectory ? L"directory" : L"file", error.message().c_str());
     }
+}
+
+/**
+ * @brief Mark a file or directory as synchronized
+ * @param filePath path to the file or directory
+ * @param isDirectory true if the path is a directory, false if it is a file
+ * @return void
+ */
+void Placeholders::MarkItemAsSync(const std::wstring &filePath, bool isDirectory = false)
+{
+    HANDLE fileHandle = CreateFileW(
+        filePath.c_str(),
+        FILE_WRITE_ATTRIBUTES, // permisson needed to change the state
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        nullptr,
+        OPEN_EXISTING,
+        isDirectory ? FILE_FLAG_BACKUP_SEMANTICS : FILE_ATTRIBUTE_NORMAL,
+        nullptr);
+
+    if (fileHandle == INVALID_HANDLE_VALUE)
+    {
+        wprintf(L"Error al abrir el archivo: %d\n", GetLastError());
+        return;
+    }
+
+    // https://learn.microsoft.com/en-us/windows/win32/api/cfapi/nf-cfapi-cfsetinsyncstate
+    // https://learn.microsoft.com/en-us/windows/win32/api/cfapi/ne-cfapi-cf_in_sync_state
+    HRESULT hr = CfSetInSyncState(fileHandle, CF_IN_SYNC_STATE_IN_SYNC, CF_SET_IN_SYNC_FLAG_NONE, nullptr);
+    if (FAILED(hr))
+    {
+        wprintf(L"Error al establecer el estado de sincronización: %ld\n", hr);
+    }
+
+    CloseHandle(fileHandle);
 }
