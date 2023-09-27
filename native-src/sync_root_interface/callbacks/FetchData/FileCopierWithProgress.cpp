@@ -8,7 +8,8 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
-#define CHUNKSIZE 4096
+// 100MB chunks
+#define CHUNKSIZE (4096 * 25600)
 // Arbitrary delay per chunk, again, so you can actually see the progress bar
 // move
 #define CHUNKDELAYMS 250
@@ -238,6 +239,7 @@ void FileCopierWithProgress::CopyFromServerToClientWorker(
     _In_ UCHAR priorityHint,
     _In_ LPCWSTR serverFolder)
 {
+        wprintf(L"[%04x:%04x] - CopyFromServerToClientWorker FILESIZE %lld \n", GetCurrentProcessId(), GetCurrentThreadId(), callbackInfo->FileSize.QuadPart);
         HANDLE serverFileHandle;
 
         std::wstring fullServerPath(serverFolder);
@@ -294,8 +296,30 @@ void FileCopierWithProgress::CopyFromServerToClientWorker(
                 winrt::check_hresult(hr);
         }
 
-        // Allocate the buffer used in the overlapped read.
+        // if size file is more than 3.8 GB, we use the chunk size, because we are using uint32_t
+        // if filesize is less than 100MB, we use the file size
         chunkBufferSize = (ULONG)min(requiredLength.QuadPart, CHUNKSIZE);
+
+        // if filesize is more than 1GB, we use the chunk size
+        if (callbackInfo->FileSize.QuadPart > 1073741824)
+        {
+                wprintf(L"[%04x:%04x] - File size is more than 1GB, we use the chunk size\n", GetCurrentProcessId(), GetCurrentThreadId());
+                chunkBufferSize = (ULONG)(CHUNKSIZE * 2);
+        }
+
+        // if filesize is more than 2GB, we use chunksize x3
+        if (callbackInfo->FileSize.QuadPart > 2147483648)
+        {
+                wprintf(L"[%04x:%04x] - File size is more than 2GB, we use the chunk size x3\n", GetCurrentProcessId(), GetCurrentThreadId());
+                chunkBufferSize = (ULONG)(CHUNKSIZE * 3);
+        }
+
+        // if filesize is more than 3GB, we use chunksize x4
+        if (callbackInfo->FileSize.QuadPart > 3221225472)
+        {
+                wprintf(L"[%04x:%04x] - File size is more than 3GB, we use the chunk size x4\n", GetCurrentProcessId(), GetCurrentThreadId());
+                chunkBufferSize = (ULONG)(CHUNKSIZE * 4);
+        }
 
         readCompletionContext = (READ_COMPLETION_CONTEXT *)
             HeapAlloc(
@@ -331,7 +355,7 @@ void FileCopierWithProgress::CopyFromServerToClientWorker(
         readCompletionContext->Overlapped.Offset = requiredFileOffset.LowPart;
         readCompletionContext->Overlapped.OffsetHigh = requiredFileOffset.HighPart;
         readCompletionContext->StartOffset = requiredFileOffset;
-        readCompletionContext->RemainingLength = requiredLength;
+        readCompletionContext->RemainingLength = callbackInfo->FileSize;
         readCompletionContext->BufferSize = chunkBufferSize;
 
         wprintf(L"[%04x:%04x] - Downloading data for %s, priority %d, offset %08x`%08x length %08x\n",

@@ -7,7 +7,7 @@
 void Placeholders::CreateOne(
     _In_ PCWSTR fileName,
     _In_ PCWSTR fileIdentity,
-    uint32_t fileSize,
+    int64_t fileSize,
     DWORD fileIdentityLength,
     uint32_t fileAttributes,
     FILETIME creationTime,

@@ -35,8 +35,8 @@ napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
         return nullptr;
     }
 
-    uint32_t fileSize;
-    napi_get_value_uint32(env, argv[2], &fileSize);
+    int64_t fileSize;
+    napi_get_value_int64(env, argv[2], &fileSize);
 
     uint32_t fileAttributes;
     napi_get_value_uint32(env, argv[3], &fileAttributes);
