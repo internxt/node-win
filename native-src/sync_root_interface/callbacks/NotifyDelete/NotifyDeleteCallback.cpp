@@ -72,37 +72,6 @@ void notify_delete_call(napi_env env, napi_value js_callback, void *context, voi
     delete receivedData;
 }
 
-// void notify_delete_call(napi_env env, napi_value js_callback, void* context, void* data) {
-//     std::wstring* receivedData = static_cast<std::wstring*>(data);
-//     napi_value js_string;
-//     napi_create_string_utf16(env, reinterpret_cast<const char16_t*>(receivedData->c_str()), receivedData->size(), &js_string);
-
-//     napi_value undefined;
-//     napi_get_undefined(env, &undefined);
-//     napi_value result;
-
-//     napi_status status = napi_call_function(env, undefined, js_callback, 1, &js_string, &result);
-//     if (status != napi_ok) {
-//         fprintf(stderr, "Failed to call JS function.\n");
-//         return;
-//     }
-
-//     bool js_result = false;  // Variable para almacenar el resultado booleano
-//     status = napi_get_value_bool(env, result, &js_result);  // Obtiene el valor booleano desde el objeto napi_value
-//     if (status != napi_ok) {
-//         fprintf(stderr, "Failed to convert napi_value to bool.\n");
-//         return;
-//     }
-
-//     {
-//         std::lock_guard<std::mutex> lock(mtx);
-//         ready = js_result;
-//     }
-//     cv.notify_one();
-
-//     delete receivedData;
-// }
-
 void register_threadsafe_notify_delete_callback(const std::string &resource_name, napi_env env, InputSyncCallbacks input)
 {
     std::u16string converted_resource_name = std::u16string(resource_name.begin(), resource_name.end());

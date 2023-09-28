@@ -100,6 +100,21 @@ async function onFetchDataCallback(fileId: string, callback: (data : boolean, pa
     });
 }
 
+async function onFileCloseCompletionCallback(fileId: string) {
+    console.log("File ID: " + fileId);
+    const a = await (new Promise<boolean>((resolve, reject) => {
+        try {
+            setTimeout(() => {
+                resolve(true);
+            }, 1000)
+        } catch (err) {
+            reject(err);
+        }
+    }));
+
+    return a;
+}
+
 const iconPath = 'C:\\Users\\gcarl\\Downloads\\sicon.ico';
 drive.registerSyncRoot(
     config.driveName,
@@ -109,6 +124,7 @@ drive.registerSyncRoot(
         notifyDeleteCallback: onDeleteCallbackWithCallback,
         notifyRenameCallback: onRenameCallbackWithCallback,
         notifyFileAddedCallback: onFileAddedCallback,
+        notifyFileCloseCompletionCallback: onFileCloseCompletionCallback,
         fetchDataCallback: onFetchDataCallback
     },
     iconPath

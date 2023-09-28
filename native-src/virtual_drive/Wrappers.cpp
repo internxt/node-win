@@ -197,6 +197,7 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args)
         napi_value notifyDeleteCompletionCallback;
         napi_value notifyRenameCallback;
         napi_value fetchDataCallback;
+        napi_value notifyFileOpenCompletionCallback;
 
         if (napi_get_named_property(env, argv[1], "notifyDeleteCallback", &notifyDeleteCompletionCallback) == napi_ok)
         {
@@ -234,6 +235,19 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args)
         if (type_status_fetch_data != napi_ok || valuetype_fetch_data != napi_function)
         {
             napi_throw_error(env, nullptr, "fetchDataCallback should be a function.");
+            return nullptr;
+        }
+
+        if (napi_get_named_property(env, argv[1], "notifyFileCloseCompletionCallback", &notifyFileOpenCompletionCallback) == napi_ok)
+        {
+            napi_create_reference(env, notifyFileOpenCompletionCallback, 1, &callbacks.notify_file_open_completion_callback_ref);
+        }
+
+        napi_valuetype valuetype_file_open_completion;
+        napi_status type_status_file_open_completion = napi_typeof(env, notifyFileOpenCompletionCallback, &valuetype_file_open_completion);
+        if (type_status_file_open_completion != napi_ok || valuetype_file_open_completion != napi_function)
+        {
+            napi_throw_error(env, nullptr, "notifyFileCloseCompletionCallback should be a function.");
             return nullptr;
         }
 
