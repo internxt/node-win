@@ -119,29 +119,34 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             
             bool isDirectory = (fileAttributes != INVALID_FILE_ATTRIBUTES) && (fileAttributes & FILE_ATTRIBUTE_DIRECTORY);
             bool fileExists = (fileAttributes != INVALID_FILE_ATTRIBUTES);
+            bool isHidden = (fileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0;
             
-            if ( ( next->Action == FILE_ACTION_ADDED || (next->Action == FILE_ACTION_MODIFIED && !fileExists)) && !isTmpFile && !isDirectory ) {
+            if ( ( next->Action == FILE_ACTION_ADDED || (next->Action == FILE_ACTION_MODIFIED && !fileExists)) && !isTmpFile && !isDirectory && !isHidden ) {
                 wprintf(L"new file: %s\n", fullPath.c_str());
                 fc.type = NEW_FILE;
                 fc.item_added = true;
                 result.push_back(fc);
-            } else if ( next->Action == FILE_ACTION_ADDED && isDirectory ) {
+            } else if ( next->Action == FILE_ACTION_ADDED && isDirectory && !isHidden ) {
                 wprintf(L"new folder: %s\n", fullPath.c_str());
                 fc.type = NEW_FOLDER;
                 fc.item_added = true;
                 result.push_back(fc);
             } 
             
-            // else if (next->Action == FILE_ACTION_MODIFIED && fileExists) {
+            // else if (next->Action == FILE_ACTION_MODIFIED && fileExists  && !isTmpFile && !isDirectory && !isHidden) {
             //     wprintf(L"modified file1: %s\n", fullPath.c_str());
             //     fc.type = MODIFIED_FILE;
             //     fc.item_added = true;
             //     result.push_back(fc);
             // }
+            
             // fc.file_added =( next->Action == FILE_ACTION_ADDED || (next->Action == FILE_ACTION_MODIFIED && !fileExists)) && !isTmpFile && !isDirectory;
             // result.push_back(fc);
-
+            wprintf(L"next->FileName: %ls\n", next->FileName);
             wprintf(L"next->Action: %d\n", next->Action);
+            wprintf(L"fileExists: %d\n", fileExists);
+            wprintf(L"isTmpFile: %d\n", isTmpFile);
+            wprintf(L"isDirectory: %d\n", isDirectory);
 
             if (next->NextEntryOffset)
             {
