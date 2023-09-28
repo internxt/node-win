@@ -199,6 +199,7 @@ void CALLBACK notify_rename_callback_wrapper(
         wprintf(L"Error in CfExecute(), HRESULT: %lx\n", hr);
     }
     
+    printf("Mark item as async: %ls\n", targetPathArg);
     Placeholders::MarkItemAsSync(targetPathArg, false);
 
     {
