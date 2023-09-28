@@ -15,8 +15,8 @@ export function deleteAllSubfolders(directoryPath: string): void {
         let itemPath = path.join(directoryPath, item);
         let itemStats = fs.statSync(itemPath);
 
-        // Si el elemento es una carpeta, eliminarla recursivamente
-        if (itemStats.isDirectory()) {
+        // Si el elemento es una carpeta o archivo, eliminarla recursivamente
+        if (itemStats.isDirectory() || itemStats.isFile()) {
             deleteFolderRecursive(itemPath);
         }
     });
