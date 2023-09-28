@@ -132,22 +132,34 @@ drive.registerSyncRoot(
 
 drive.connectSyncRoot();
 
-drive.createItemByPath(`/A (5th copy).pdfs`, '280ab650-acef-4438-8bbc-29863810b24a', 1000);
-drive.createItemByPath(`/file1.txt`, 'fa8217c9-2dd6-4641-9180-8206e60368a6', 1000);
-drive.createItemByPath(`/only-folder/`, 'fa8217c9-2dd6-4641-9180-8206e60368123', 1000);
-drive.createItemByPath(`/folderWithFolder/folder2/`, 'fa8217c9-2dd6-4641-9180-8206e6036845', 1000);
-drive.createItemByPath(`/folderWithFile/file2.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036216', 1000);
 
-drive.createItemByPath(`/fakefile.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036843', 57); // keep in mind that the file size must be the same as the original file
-drive.createItemByPath(`/imagen.rar`, 'fa8217c9-2dd6-4641-9180-8206e60368f1', 33020); // keep in mind that the file size must be the same as the original file
 
+/**  EXAMPLES OF HOW TO CREATE FILES AND FOLDERS
+ * arguments: 
+ * 1. path of the file or folder
+ * 2. id of the file or folder
+ * 3. size of the file or folder
+ * 4. creation date of the file or folder
+ * 5. update date of the file or folder
+ * 
+ * keep in mind that the file size must be the same as the original file
+*/
+const fileCreatedAt = Date.now() - 172800000; // two days ago
+const fileUpdatedAt = Date.now() - 86400000; // yesterday
+const folderCreatedAt = Date.now() - 259200000; // three days ago
+const folderUpdatedAt = Date.now() - 345600000; // four days ago
+
+// creating files
+drive.createItemByPath(`/A (5th copy).pdfs`, '280ab650-acef-4438-8bbc-29863810b24a', 1000, fileCreatedAt, fileUpdatedAt);
+drive.createItemByPath(`/file1.txt`, 'fa8217c9-2dd6-4641-9180-8206e60368a6', 1000, fileCreatedAt, fileUpdatedAt);
+drive.createItemByPath(`/folderWithFile/file2.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036216', 1000, fileCreatedAt, fileUpdatedAt);
+drive.createItemByPath(`/fakefile.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036843', 57, fileCreatedAt, fileUpdatedAt);
+drive.createItemByPath(`/imagen.rar`, 'fa8217c9-2dd6-4641-9180-8206e60368f1', 33020, fileCreatedAt, fileUpdatedAt);
+// creating folders
+drive.createItemByPath(`/only-folder/`, 'fa8217c9-2dd6-4641-9180-8206e60368123', 1000, folderCreatedAt, folderUpdatedAt);
+drive.createItemByPath(`/folderWithFolder/folder2/`, 'fa8217c9-2dd6-4641-9180-8206e6036845', 1000, folderCreatedAt, folderUpdatedAt);
+
+// using the watch and wait method
 drive.watchAndWait(config.syncRootPath);
 
-// disconnect after 10 seconds -> this can use before of unregister
-// const timeToWait = 10000;
-// setTimeout(
-//     () => {
-//         console.log("Disconnecting...");
-//         drive.disconnectSyncRoot();
-//     }
-// , timeToWait)
+export default drive;

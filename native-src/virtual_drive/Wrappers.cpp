@@ -43,11 +43,35 @@ napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
 
     FILETIME creationTime, lastWriteTime, lastAccessTime;
 
-    creationTime.dwLowDateTime = 12345678;
-    creationTime.dwHighDateTime = 87654321;
+    size_t creationTimeStringLength;
+    napi_get_value_string_utf16(env, argv[4], nullptr, 0, &creationTimeStringLength);
+    std::vector<wchar_t> creationTimeStringBuffer(creationTimeStringLength + 1);
+    napi_get_value_string_utf16(env, argv[4], reinterpret_cast<char16_t *>(creationTimeStringBuffer.data()), creationTimeStringLength + 1, nullptr);
 
-    lastWriteTime.dwLowDateTime = 98765432;
-    lastWriteTime.dwHighDateTime = 23456789;
+    __int64 windowsTimeValue;
+    if (swscanf_s(creationTimeStringBuffer.data(), L"%lld", &windowsTimeValue) != 1)
+    {
+        napi_throw_error(env, nullptr, "No se pudo convertir el valor de Windows Time");
+        return nullptr;
+    }
+
+    creationTime.dwLowDateTime = static_cast<DWORD>(windowsTimeValue & 0xFFFFFFFF);
+    creationTime.dwHighDateTime = static_cast<DWORD>((windowsTimeValue >> 32) & 0xFFFFFFFF);
+
+    size_t lastWriteTimeStringLength;
+    napi_get_value_string_utf16(env, argv[5], nullptr, 0, &lastWriteTimeStringLength);
+    std::vector<wchar_t> lastWriteTimeStringBuffer(lastWriteTimeStringLength + 1);
+    napi_get_value_string_utf16(env, argv[5], reinterpret_cast<char16_t *>(lastWriteTimeStringBuffer.data()), lastWriteTimeStringLength + 1, nullptr);
+
+    __int64 windowsTimeValue2;
+    if (swscanf_s(lastWriteTimeStringBuffer.data(), L"%lld", &windowsTimeValue2) != 1)
+    {
+        napi_throw_error(env, nullptr, "No se pudo convertir el valor de Windows Time");
+        return nullptr;
+    }
+
+    lastWriteTime.dwLowDateTime = static_cast<DWORD>(windowsTimeValue2 & 0xFFFFFFFF);
+    lastWriteTime.dwHighDateTime = static_cast<DWORD>((windowsTimeValue2 >> 32) & 0xFFFFFFFF);
 
     lastAccessTime.dwLowDateTime = 34567890;
     lastAccessTime.dwHighDateTime = 78901234;
@@ -396,15 +420,38 @@ napi_value CreateEntryWrapper(napi_env env, napi_callback_info args)
 
     FILETIME creationTime, lastWriteTime, lastAccessTime;
 
-    // Aquí se debe obtener los valores de FILETIME de los argumentos. Para simplificar, estoy usando valores ficticios.
-    creationTime.dwLowDateTime = 12345678;
-    creationTime.dwHighDateTime = 87654321;
+    size_t creationTimeStringLengthFolder;
+    napi_get_value_string_utf16(env, argv[5], nullptr, 0, &creationTimeStringLengthFolder);
+    std::vector<wchar_t> creationTimeStringBufferFolder(creationTimeStringLengthFolder + 1);
+    napi_get_value_string_utf16(env, argv[5], reinterpret_cast<char16_t *>(creationTimeStringBufferFolder.data()), creationTimeStringLengthFolder + 1, nullptr);
 
-    lastWriteTime.dwLowDateTime = 98765432;
-    lastWriteTime.dwHighDateTime = 23456789;
+    __int64 windowsTimeValue;
+    if (swscanf_s(creationTimeStringBufferFolder.data(), L"%lld", &windowsTimeValue) != 1)
+    {
+        napi_throw_error(env, nullptr, "No se pudo convertir el valor de Windows Time");
+        return nullptr;
+    }
+
+    creationTime.dwLowDateTime = static_cast<DWORD>(windowsTimeValue & 0xFFFFFFFF);
+    creationTime.dwHighDateTime = static_cast<DWORD>((windowsTimeValue >> 32) & 0xFFFFFFFF);
+
+    size_t lastWriteTimeStringLength;
+    napi_get_value_string_utf16(env, argv[6], nullptr, 0, &lastWriteTimeStringLength);
+    std::vector<wchar_t> lastWriteTimeStringBuffer(lastWriteTimeStringLength + 1);
+    napi_get_value_string_utf16(env, argv[6], reinterpret_cast<char16_t *>(lastWriteTimeStringBuffer.data()), lastWriteTimeStringLength + 1, nullptr);
+
+    __int64 windowsTimeValue2;
+    if (swscanf_s(lastWriteTimeStringBuffer.data(), L"%lld", &windowsTimeValue2) != 1)
+    {
+        napi_throw_error(env, nullptr, "No se pudo convertir el valor de Windows Time");
+        return nullptr;
+    }
+
+    lastWriteTime.dwLowDateTime = static_cast<DWORD>(windowsTimeValue2 & 0xFFFFFFFF);
+    lastWriteTime.dwHighDateTime = static_cast<DWORD>((windowsTimeValue2 >> 32) & 0xFFFFFFFF);
 
     lastAccessTime.dwLowDateTime = 34567890;
-    lastAccessTime.dwHighDateTime = 78901234;
+    lastAccessTime.dwHighDateTime = 34567890;
 
     LPCWSTR destPath;
     size_t destPathLength;
