@@ -14,7 +14,8 @@
         "config:gyp": "python gyp.config.py",
         "build": "python gyp.config.py && node-gyp clean && node-gyp configure build && tsc",
         "start:example:register": "node ./dist/examples/register.js",
-        "start:example:unregister": "node ./dist/examples/unregister.js"
+        "start:example:unregister": "node ./dist/examples/unregister.js",
+        "example:disconnect": "node ./dist/examples/disconnect.js"
     },
     "author": "",
     "license": "ISC",
