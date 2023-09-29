@@ -190,13 +190,29 @@ void CALLBACK notify_rename_callback_wrapper(
 
     HRESULT hr = CfExecute(
         &opInfo,
-        &opParams
-    );
+        &opParams);
 
     printf("Mark item as async: %ls\n", targetPathArg);
-    bool isDirectory = std::filesystem::is_directory(targetPathArg);
+    WCHAR systemPath[MAX_PATH];
+    if (!GetWindowsDirectoryW(systemPath, sizeof(systemPath) / sizeof(WCHAR)))
+    {
+        wprintf(L"Error al obtener el directorio de Windows: %d\n", GetLastError());
+        return;
+    }
+    // Extrae la letra de la unidad del directorio del sistema
+    std::wstring driveLetter(systemPath, 2);
+    // Combina la letra de unidad con la ruta relativa si la ruta no existe
+    std::wstring absolutePath = targetPathArg;
+    if (PathFileExistsW(absolutePath.c_str()) == FALSE)
+    {
+        absolutePath = driveLetter + L"\\" + targetPathArg;
+    }
+    // Imprime la ruta
+    wprintf(L"absolutePath: %ls\n", absolutePath.c_str());
+    bool isDirectory = std::filesystem::is_directory(absolutePath);
     printf("Is directory: %d\n", isDirectory);
-    Placeholders::UpdateSyncStatus(targetPathArg, callbackResult, isDirectory);
+
+    Placeholders::UpdateSyncStatus(absolutePath, callbackResult, isDirectory);
 
     if (FAILED(hr))
     {

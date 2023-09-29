@@ -119,6 +119,7 @@ void Placeholders::CreateEntry(
  */
 void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSyncState, bool isDirectory = false)
 {
+
     HANDLE fileHandle = CreateFileW(
         filePath.c_str(),
         FILE_WRITE_ATTRIBUTES, // permisson needed to change the state
@@ -136,8 +137,11 @@ void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSync
 
     // https://learn.microsoft.com/en-us/windows/win32/api/cfapi/nf-cfapi-cfsetinsyncstate
     // https://learn.microsoft.com/en-us/windows/win32/api/cfapi/ne-cfapi-cf_in_sync_state
-    CF_IN_SYNC_STATE syncState = inputSyncState ? CF_IN_SYNC_STATE_IN_SYNC: CF_IN_SYNC_STATE_NOT_IN_SYNC;
+    CF_IN_SYNC_STATE syncState = inputSyncState ? CF_IN_SYNC_STATE_IN_SYNC : CF_IN_SYNC_STATE_NOT_IN_SYNC;
+    wprintf(L"Marking item as %s: %ls\n", inputSyncState ? L"IN_SYNC" : L"NOT_IN_SYNC", filePath.c_str());
     HRESULT hr = CfSetInSyncState(fileHandle, syncState, CF_SET_IN_SYNC_FLAG_NONE, nullptr);
+    // imprimir hresult
+    wprintf(L"hr: %ld\n", hr);
     if (FAILED(hr))
     {
         wprintf(L"Error al establecer el estado de sincronización: %ld\n", hr);
