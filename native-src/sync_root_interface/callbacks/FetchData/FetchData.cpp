@@ -202,12 +202,28 @@ void CALLBACK fetch_data_callback_wrapper(
         }
     }
 
+    HANDLE handle = CreateFileW(fullServerFilePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (handle == INVALID_HANDLE_VALUE)
+    {
+        wprintf(L"[Error] file doesn't exist %s\n", fullServerFilePath.c_str());
+        FileCopierWithProgress::TransferData(
+            callbackInfo->ConnectionKey,
+            callbackInfo->TransferKey,
+            NULL,
+            callbackParameters->FetchData.RequiredFileOffset,
+            callbackParameters->FetchData.RequiredLength,
+            STATUS_UNSUCCESSFUL);
+        return;
+    }
+    // close handle
+    CloseHandle(handle);
     if (callbackResult)
     {
         HydrateFile(callbackInfo, callbackParameters, fullClientPath, fullServerFilePath);
     }
     else
     {
+        wprintf(L"[Error] callbackResult is false\n");
         // when callbackResult is false, we need to return STATUS_UNSUCCESSFUL on execution of TransferData
         FileCopierWithProgress::TransferData(
             callbackInfo->ConnectionKey,
@@ -216,6 +232,7 @@ void CALLBACK fetch_data_callback_wrapper(
             callbackParameters->FetchData.RequiredFileOffset,
             callbackParameters->FetchData.RequiredLength,
             STATUS_UNSUCCESSFUL);
+        return;
     }
 
     std::lock_guard<std::mutex> lock(mtx);
