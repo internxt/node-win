@@ -1,6 +1,7 @@
 #include <Callbacks.h>
 #include <Placeholders.h>
 #include <string>
+#include <filesystem>
 
 napi_threadsafe_function g_notify_rename_threadsafe_callback = nullptr;
 
@@ -192,15 +193,16 @@ void CALLBACK notify_rename_callback_wrapper(
         &opParams
     );
 
+    printf("Mark item as async: %ls\n", targetPathArg);
+    bool isDirectory = std::filesystem::is_directory(targetPathArg);
+    printf("Is directory: %d\n", isDirectory);
+    Placeholders::UpdateSyncStatus(targetPathArg, callbackResult, isDirectory);
 
     if (FAILED(hr))
     {
         wprintf(L"Error in CfExecute().\n");
         wprintf(L"Error in CfExecute(), HRESULT: %lx\n", hr);
     }
-    
-    printf("Mark item as async: %ls\n", targetPathArg);
-    Placeholders::MarkItemAsSync(targetPathArg, false);
 
     {
         std::lock_guard<std::mutex> lock(mtx);

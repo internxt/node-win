@@ -100,7 +100,7 @@ void Placeholders::CreateEntry(
             }
 
             std::wstring finalPath = std::wstring(destPath) + L"\\" + std::wstring(itemName);
-            MarkItemAsSync(finalPath, true);
+            UpdateSyncStatus(finalPath, true, true);
         }
 
         wprintf(L"Successfully created %s at %s\n", isDirectory ? L"directory" : L"file", fullDestPath.c_str());
@@ -117,7 +117,7 @@ void Placeholders::CreateEntry(
  * @param isDirectory true if the path is a directory, false if it is a file
  * @return void
  */
-void Placeholders::MarkItemAsSync(const std::wstring &filePath, bool isDirectory = false)
+void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSyncState, bool isDirectory = false)
 {
     HANDLE fileHandle = CreateFileW(
         filePath.c_str(),
@@ -136,7 +136,8 @@ void Placeholders::MarkItemAsSync(const std::wstring &filePath, bool isDirectory
 
     // https://learn.microsoft.com/en-us/windows/win32/api/cfapi/nf-cfapi-cfsetinsyncstate
     // https://learn.microsoft.com/en-us/windows/win32/api/cfapi/ne-cfapi-cf_in_sync_state
-    HRESULT hr = CfSetInSyncState(fileHandle, CF_IN_SYNC_STATE_IN_SYNC, CF_SET_IN_SYNC_FLAG_NONE, nullptr);
+    CF_IN_SYNC_STATE syncState = inputSyncState ? CF_IN_SYNC_STATE_IN_SYNC: CF_IN_SYNC_STATE_NOT_IN_SYNC;
+    HRESULT hr = CfSetInSyncState(fileHandle, syncState, CF_SET_IN_SYNC_FLAG_NONE, nullptr);
     if (FAILED(hr))
     {
         wprintf(L"Error al establecer el estado de sincronización: %ld\n", hr);
