@@ -134,14 +134,18 @@ const folderCreatedAt = Date.now() - 259200000; // three days ago
 const folderUpdatedAt = Date.now() - 345600000; // four days ago
 
 // creating files
-drive.createItemByPath(`/A (5th copy).pdfs`, '280ab650-acef-4438-8bbc-29863810b24a', 1000, fileCreatedAt, fileUpdatedAt);
-drive.createItemByPath(`/file1.txt`, 'fa8217c9-2dd6-4641-9180-8206e60368a6', 1000, fileCreatedAt, fileUpdatedAt);
-drive.createItemByPath(`/folderWithFile/file2.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036216', 1000, fileCreatedAt, fileUpdatedAt);
-drive.createItemByPath(`/fakefile.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036843', 57, fileCreatedAt, fileUpdatedAt);
-drive.createItemByPath(`/imagen.rar`, 'fa8217c9-2dd6-4641-9180-8206e60368f1', 33020, fileCreatedAt, fileUpdatedAt);
+drive.createFileByPath(`/A (5th copy).pdfs`, '280ab650-acef-4438-8bbc-29863810b24a', 1000, fileCreatedAt, fileUpdatedAt);
+drive.createFileByPath(`/file1.txt`, 'fa8217c9-2dd6-4641-9180-8206e60368a6', 1000, fileCreatedAt, fileUpdatedAt);
+drive.createFileByPath(`/folderWithFile/file2.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036216', 1000, fileCreatedAt, fileUpdatedAt);
+drive.createFileByPath(`/fakefile.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036843', 57, fileCreatedAt, fileUpdatedAt);
+drive.createFileByPath(`/imagen.rar`, 'fa8217c9-2dd6-4641-9180-8206e60368f1', 33020, fileCreatedAt, fileUpdatedAt);
+drive.createFileByPath(`/noExtensionFile`, 'fa8217c9-2dd6-4641-9180-8206e5039843', 33020, fileCreatedAt, fileUpdatedAt);
+
 // creating folders
-drive.createItemByPath(`/only-folder/`, 'fa8217c9-2dd6-4641-9180-8206e60368123', 1000, folderCreatedAt, folderUpdatedAt);
-drive.createItemByPath(`/folderWithFolder/folder2/`, 'fa8217c9-2dd6-4641-9180-8206e6036845', 1000, folderCreatedAt, folderUpdatedAt);
+drive.createFolderByPath(`/only-folder`, 'fa8217c9-2dd6-4641-9180-8206e60368123', 1000, folderCreatedAt, folderUpdatedAt);
+drive.createFolderByPath(`/F.O.L.D.E.R`, 'fa8217c9-2dd6-4641-9180-8206e80000123', 1000, folderCreatedAt, folderUpdatedAt);
+drive.createFolderByPath(`/folderWithFolder/folder2`, 'fa8217c9-2dd6-4641-9180-8206e6036845', 1000, folderCreatedAt, folderUpdatedAt);
+drive.createFolderByPath(`/folderWithFolder/F.O.L.D.E.R`, 'fa8217c9-2dd6-4641-9180-8206e60400123', 1000, folderCreatedAt, folderUpdatedAt);
 
 // using the watch and wait method
 drive.watchAndWait(config.syncRootPath);
