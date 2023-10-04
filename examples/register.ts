@@ -147,6 +147,12 @@ drive.createFolderByPath(`/F.O.L.D.E.R`, 'fa8217c9-2dd6-4641-9180-8206e80000123'
 drive.createFolderByPath(`/folderWithFolder/folder2`, 'fa8217c9-2dd6-4641-9180-8206e6036845', 1000, folderCreatedAt, folderUpdatedAt);
 drive.createFolderByPath(`/folderWithFolder/F.O.L.D.E.R`, 'fa8217c9-2dd6-4641-9180-8206e60400123', 1000, folderCreatedAt, folderUpdatedAt);
 
+
+// create items
+drive.createItemByPath(`/item-folder/`, 'fa8217c9-2dd6-4641-9189-8206e60368123', 1000, folderCreatedAt, folderUpdatedAt);
+drive.createItemByPath(`/imagen-item.rar`, 'fa8217c9-2dd6-4641-9180-053fe60368f1', 33020, fileCreatedAt, fileUpdatedAt);
+
+
 // using the watch and wait method
 drive.watchAndWait(config.syncRootPath);
 
