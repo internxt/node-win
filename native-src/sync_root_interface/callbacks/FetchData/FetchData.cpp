@@ -68,8 +68,8 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
         return nullptr;
     }
 
-    std::lock_guard<std::mutex> lock(mtx);
-    ready = true;
+    // std::lock_guard<std::mutex> lock(mtx);
+    // ready = true;
     callbackResult = response;
     wprintf(L"response_callback_fn_fetch_data called\n");
 

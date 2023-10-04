@@ -4,7 +4,7 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "C:\\Users\\gcarl\\AppData\\Local\\node-gyp\\Cache\\18.17.0\\include\\node\\"
+                "C:\\Users\\User\\AppData\\Local\\node-gyp\\Cache\\16.20.2\\include\\node\\"
             ],
             "defines": [
                 "_DEBUG",

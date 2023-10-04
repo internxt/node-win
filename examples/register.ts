@@ -58,7 +58,7 @@ async function onFetchData(fileId: string): Promise<boolean> {
     // simulating a download from a real server
     const a = await (new Promise<boolean>((resolve, reject) => {
         try {
-
+            //  1 segundo
             setTimeout(() => {
                 resolve(true);
             }, 1000)
@@ -90,17 +90,29 @@ async function onFileAddedCallback(filePath: string, callback: (aknowledge : boo
     }
 }
 
+
+
 async function onFetchDataCallback(fileId: string, callback: (data : boolean, path: string) => void ) {
     console.log("file id: " + fileId);
     // simulate a download from a real server and response with the path of the downloaded file of a fake server
     onFetchData(fileId).then((response) => {
-        callback(response, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
+        function runLoop(index: number) {
+            if (index < 10) {
+              console.log("progress: " + index * 10 + "%");
+              callback(response, "C:\\Users\\User\\Desktop\\fakeserver\\imagen.rar");
+              setTimeout(function() {
+                runLoop(index + 1);
+              }, 2000);
+            }
+          }
+        // bucle simulate progress bar
+        runLoop(0);
     }).catch((err) => {
-        callback(false, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
+        callback(false, "C:\\Users\\User\\Desktop\\fakeserver\\imagen.rar");
     });
 }
 
-const iconPath = 'C:\\Users\\gcarl\\Downloads\\sicon.ico';
+const iconPath = 'C:\\Users\\User\\Downloads\\sicon.ico';
 drive.registerSyncRoot(
     config.driveName,
     config.driveVersion,
@@ -134,16 +146,16 @@ const folderCreatedAt = Date.now() - 259200000; // three days ago
 const folderUpdatedAt = Date.now() - 345600000; // four days ago
 
 // creating files
-drive.createItemByPath(`/A (5th copy).pdfs`, '280ab650-acef-4438-8bbc-29863810b24a', 1000, fileCreatedAt, fileUpdatedAt);
-drive.createItemByPath(`/file1.txt`, 'fa8217c9-2dd6-4641-9180-8206e60368a6', 1000, fileCreatedAt, fileUpdatedAt);
-drive.createItemByPath(`/folderWithFile/file2.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036216', 1000, fileCreatedAt, fileUpdatedAt);
-drive.createItemByPath(`/fakefile.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036843', 57, fileCreatedAt, fileUpdatedAt);
+// drive.createItemByPath(`/A (5th copy).pdfs`, '280ab650-acef-4438-8bbc-29863810b24a', 1000, fileCreatedAt, fileUpdatedAt);
+// drive.createItemByPath(`/file1.txt`, 'fa8217c9-2dd6-4641-9180-8206e60368a6', 1000, fileCreatedAt, fileUpdatedAt);
+// drive.createItemByPath(`/folderWithFile/file2.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036216', 1000, fileCreatedAt, fileUpdatedAt);
+// drive.createItemByPath(`/fakefile.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036843', 57, fileCreatedAt, fileUpdatedAt);
 drive.createItemByPath(`/imagen.rar`, 'fa8217c9-2dd6-4641-9180-8206e60368f1', 33020, fileCreatedAt, fileUpdatedAt);
 // creating folders
-drive.createItemByPath(`/only-folder/`, 'fa8217c9-2dd6-4641-9180-8206e60368123', 1000, folderCreatedAt, folderUpdatedAt);
-drive.createItemByPath(`/folderWithFolder/folder2/`, 'fa8217c9-2dd6-4641-9180-8206e6036845', 1000, folderCreatedAt, folderUpdatedAt);
+// drive.createItemByPath(`/only-folder/`, 'fa8217c9-2dd6-4641-9180-8206e60368123', 1000, folderCreatedAt, folderUpdatedAt);
+// drive.createItemByPath(`/folderWithFolder/folder2/`, 'fa8217c9-2dd6-4641-9180-8206e6036845', 1000, folderCreatedAt, folderUpdatedAt);
 
 // using the watch and wait method
-drive.watchAndWait(config.syncRootPath);
+// drive.watchAndWait(config.syncRootPath);
 
 export default drive;
