@@ -26,7 +26,6 @@ inline std::wstring fullServerFilePath;
 
 #define CHUNK_SIZE (4096 * 25600)
 
-
 CF_CONNECTION_KEY connectionKey;
 CF_TRANSFER_KEY transferKey;
 LARGE_INTEGER fileSize;
@@ -39,7 +38,8 @@ struct FetchDataArgs
     std::wstring fileIdentityArg;
 };
 
-void load_data() {
+void load_data()
+{
     printf("load_data called");
 }
 
@@ -49,7 +49,8 @@ void setup_global_tsfn_fetch_data(napi_threadsafe_function tsfn)
     g_fetch_data_threadsafe_callback = tsfn;
 }
 
-std::string WStringToString(const std::wstring &wstr) {
+std::string WStringToString(const std::wstring &wstr)
+{
     if (wstr.empty())
         return std::string();
 
@@ -59,24 +60,27 @@ std::string WStringToString(const std::wstring &wstr) {
     return strTo;
 }
 
-size_t file_incremental_reading(const std::string& filename, size_t& previousSize) {
+size_t file_incremental_reading(const std::string &filename, size_t &previousSize)
+{
     std::ifstream file;
 
     // Abre el archivo
     file.open(filename, std::ios::in | std::ios::binary);
 
-    if (!file.is_open()) {
+    if (!file.is_open())
+    {
         std::cerr << "Error al abrir el archivo." << std::endl;
-        return previousSize;  // Retorna el previousSize sin cambios
+        return previousSize; // Retorna el previousSize sin cambios
     }
 
-    file.clear(); // Limpia los flags de error/end-of-file
+    file.clear();                 // Limpia los flags de error/end-of-file
     file.seekg(0, std::ios::end); // Va al final del archivo
     size_t newSize = file.tellg();
 
     size_t growth = newSize - previousSize;
 
-    if (growth > 0 && CHUNK_SIZE < growth) { // Si el archivo ha crecido
+    if (growth > 0 && CHUNK_SIZE < growth)
+    { // Si el archivo ha crecido
         std::vector<char> buffer(growth);
         file.seekg(previousSize);
         file.read(buffer.data(), growth);
@@ -84,7 +88,7 @@ size_t file_incremental_reading(const std::string& filename, size_t& previousSiz
 
         LARGE_INTEGER startingOffset, length;
 
-        startingOffset.QuadPart = previousSize;  // Desplazamiento desde el cual se leyeron los datos
+        startingOffset.QuadPart = previousSize; // Desplazamiento desde el cual se leyeron los datos
         length.QuadPart = growth;
 
         printf("connectionKey: %d\n", connectionKey);
@@ -93,7 +97,8 @@ size_t file_incremental_reading(const std::string& filename, size_t& previousSiz
         printf("length: %d\n", length.QuadPart);
 
         // obtain size of buffet and check if is equal to growth
-        if (buffer.size() != growth) {
+        if (buffer.size() != growth)
+        {
             std::cout << "Error al leer el archivo." << std::endl;
         };
 
@@ -103,17 +108,18 @@ size_t file_incremental_reading(const std::string& filename, size_t& previousSiz
             buffer.data(),
             startingOffset,
             length,
-            STATUS_SUCCESS
-        );
-        
+            STATUS_SUCCESS);
+
         previousSize = newSize;
-    } else if (newSize < previousSize) {
+    }
+    else if (newSize < previousSize)
+    {
         // Si el archivo se ha truncado o reiniciado, esto podría ser una consideración para manejar.
         std::cout << "El archivo parece haber sido truncado o reiniciado." << std::endl;
     }
 
     file.close();
-    return previousSize;    // Retorna el nuevo previousSize
+    return previousSize; // Retorna el nuevo previousSize
 }
 
 // response callback fn
@@ -151,8 +157,8 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
         return nullptr;
     }
 
-    //std::lock_guard<std::mutex> lock(mtx);
-    //ready = true;
+    // std::lock_guard<std::mutex> lock(mtx);
+    // ready = true;
     callbackResult = response;
     wprintf(L"response_callback_fn_fetch_data called\n");
 
@@ -169,19 +175,45 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 
     lastIncrementalReadSize = file_incremental_reading(WStringToString(fullServerFilePath), lastIncrementalReadSize);
 
-    // tamaño_archivo == fileSize.QuadPart
-    // while (true) {
-    //    lastIncrementalReadSize = file_incremental_reading(WStringToString(fullServerFilePath), lastIncrementalReadSize);
-    // if (lastIncrementalReadSize == fileSize.QuadPart) {
-    //     printf("File has been fully read.\n");
-    //      break
-    //     load_finished = true;
-    // };
-    // }
+    // size file in real time
+    std::wstring file_path = fullServerFilePath.c_str();
+    std::ifstream file(file_path, std::ios::binary);
 
+    if (!file)
+    {
+        wprintf(L"[Error] No se pudo abrir el archivo en tiempo real.\n");
+    }
 
-    if (lastIncrementalReadSize == fileSize.QuadPart) {
-        printf("File has been fully read.\n");
+    // Obtener el tamaño del archivo
+    file.seekg(0, std::ios::end);
+    LONG total_size = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    // Imprimir el tamaño del archivo
+    wprintf(L"[Debug] El tamaño del archivo es: %lld bytes.\n", total_size);
+
+    // Cerrar el archivo
+    file.close();
+    // end size file in real time
+
+    // tamaño_archivo != fileSize.QuadPart
+    if (total_size != fileSize.QuadPart)
+    {
+        while (true)
+        {
+            lastIncrementalReadSize = file_incremental_reading(WStringToString(fullServerFilePath), lastIncrementalReadSize);
+            if (lastIncrementalReadSize == fileSize.QuadPart)
+            {
+                printf("[Debug]File has been fully read.\n");
+                break;
+                load_finished = true;
+            };
+        }
+    }
+
+    if (lastIncrementalReadSize == fileSize.QuadPart)
+    {
+        printf("[Debug] File has been fully read.\n");
         load_finished = true;
     };
 
@@ -189,7 +221,8 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
         std::lock_guard<std::mutex> lock(mtx);
 
         // Si load_data() ha sido ejecutado 10 veces
-        if (load_finished) {
+        if (load_finished)
+        {
             ready = true;
             cv.notify_one();
         }
