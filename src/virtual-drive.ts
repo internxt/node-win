@@ -271,6 +271,75 @@ class VirtualDrive {
         }
     }
 
+    createItemByPath(relativePath: string, itemId: string, size: number = 0, creationTime: number = Date.now(), lastWriteTime: number = Date.now()): void {
+        const fullPath = path.join(this.syncRootPath, relativePath);
+        const splitPath = relativePath.split('/').filter(p => p);
+        const directoryPath = path.resolve(this.syncRootPath);
+        let currentPath = directoryPath;
+        if (this.isValidFolderPath(relativePath)) { // Es un directorio
+            
+            for (const dir of splitPath) {
+                if (fs.existsSync(currentPath)) {
+                    try {
+                        this.createPlaceholderDirectory(
+                            dir,
+                            itemId,
+                            true,
+                            size,
+                            this.PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
+                            creationTime,
+                            lastWriteTime,
+                            Date.now(),
+                            currentPath,
+                        );
+                    } catch (error) {
+                        //@ts-ignore
+                        console.error(`Error while creating directory: ${error.message}`);
+                    }
+                }
+                currentPath = path.join(currentPath, dir);
+            }
+        } else if(this.isValidFilePath(relativePath)) { // Es un archivo
+            
+            try {
+
+                for (let i = 0; i < splitPath.length - 1; i++) { // everything except last element
+                    const dir = splitPath[i];
+                    if (fs.existsSync(currentPath)) {
+                        this.createPlaceholderDirectory(
+                            dir,
+                            itemId,
+                            true,
+                            0,
+                            this.PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
+                            Date.now(),
+                            Date.now(),
+                            Date.now(),
+                            currentPath,
+                        );
+                    }
+                    currentPath = path.join(currentPath, dir);
+                }
+                // last element is the file                
+                this.createPlaceholderFile(
+                    path.basename(fullPath),
+                    itemId,
+                    size,
+                    this.PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
+                    creationTime,
+                    lastWriteTime,
+                    Date.now(),
+                    currentPath
+                );                
+            } catch (error) {
+                //@ts-ignore
+                console.error(`Error al crear placeholder: ${error.message}`);
+            }
+        } else {
+            console.error("Invalid path");
+        }
+    }
+
     disconnectSyncRoot(): any {
         return addon.disconnectSyncRoot(this.syncRootPath);
     }
