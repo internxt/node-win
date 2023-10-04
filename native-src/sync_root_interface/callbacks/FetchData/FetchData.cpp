@@ -24,7 +24,14 @@ inline std::wstring fullServerFilePath;
     (FIELD_OFFSET(CF_OPERATION_PARAMETERS, field) + \
      FIELD_SIZE(CF_OPERATION_PARAMETERS, field))
 
-inline int load_data_count = 0;
+#define CHUNK_SIZE (1024 * 25600)
+
+
+CF_CONNECTION_KEY connectionKey;
+CF_TRANSFER_KEY transferKey;
+LARGE_INTEGER fileSize;
+
+inline bool load_finished = false;
 inline size_t lastIncrementalReadSize = 0;
 
 struct FetchDataArgs
@@ -69,18 +76,43 @@ size_t file_incremental_reading(const std::string& filename, size_t& previousSiz
 
     size_t growth = newSize - previousSize;
 
-    if (growth > 0) { // Si el archivo ha crecido
+    if (growth > 0 && CHUNK_SIZE < growth) { // Si el archivo ha crecido
         std::vector<char> buffer(growth);
         file.seekg(previousSize);
         file.read(buffer.data(), growth);
-        std::cout.write(buffer.data(), growth);
+        // std::cout.write(buffer.data(), growth);
+
+        LARGE_INTEGER startingOffset, length;
+
+        startingOffset.QuadPart = previousSize;  // Desplazamiento desde el cual se leyeron los datos
+        length.QuadPart = growth;
+
+        printf("connectionKey: %d\n", connectionKey);
+        printf("transferKey: %d\n", transferKey);
+        printf("startingOffset: %d\n", startingOffset.QuadPart);
+        printf("length: %d\n", length.QuadPart);
+
+        // obtain size of buffet and check if is equal to growth
+        if (buffer.size() != growth) {
+            std::cout << "Error al leer el archivo." << std::endl;
+        };
+
+        FileCopierWithProgress::TransferData(
+            connectionKey,
+            transferKey,
+            buffer.data(),
+            startingOffset,
+            length,
+            STATUS_SUCCESS
+        );
+        
+        previousSize = newSize;
     } else if (newSize < previousSize) {
         // Si el archivo se ha truncado o reiniciado, esto podría ser una consideración para manejar.
-        std::cerr << "El archivo parece haber sido truncado o reiniciado." << std::endl;
+        std::cout << "El archivo parece haber sido truncado o reiniciado." << std::endl;
     }
 
     file.close();
-    previousSize = newSize; // Actualiza el previousSize para reflejar el nuevo tamaño
     return previousSize;    // Retorna el nuevo previousSize
 }
 
@@ -137,14 +169,27 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 
     lastIncrementalReadSize = file_incremental_reading(WStringToString(fullServerFilePath), lastIncrementalReadSize);
 
+    // tamaño_archivo == fileSize.QuadPart
+    // while (true) {
+    //    lastIncrementalReadSize = file_incremental_reading(WStringToString(fullServerFilePath), lastIncrementalReadSize);
+    // if (lastIncrementalReadSize == fileSize.QuadPart) {
+    //     printf("File has been fully read.\n");
+    //      break
+    //     load_finished = true;
+    // };
+    // }
+
+
+    if (lastIncrementalReadSize == fileSize.QuadPart) {
+        printf("File has been fully read.\n");
+        load_finished = true;
+    };
+
     {
         std::lock_guard<std::mutex> lock(mtx);
-        
-        // Incrementa el contador de ejecuciones
-        load_data_count++;
 
         // Si load_data() ha sido ejecutado 10 veces
-        if (load_data_count >= 10) {
+        if (load_finished) {
             ready = true;
             cv.notify_one();
         }
@@ -239,6 +284,10 @@ void CALLBACK fetch_data_callback_wrapper(
     wprintf(L"Callback fetch_data_callback_wrapper called\n");
     // get callbackinfo
     wprintf(L"fileId = %s\n", callbackInfo->FileIdentity);
+
+    connectionKey = callbackInfo->ConnectionKey;
+    transferKey = callbackInfo->TransferKey;
+    fileSize = callbackInfo->FileSize;
 
     std::wstring fullClientPath(callbackInfo->VolumeDosName);
     fullClientPath.append(callbackInfo->NormalizedPath);
