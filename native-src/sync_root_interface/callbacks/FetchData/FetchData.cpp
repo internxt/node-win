@@ -24,7 +24,7 @@ inline std::wstring fullServerFilePath;
     (FIELD_OFFSET(CF_OPERATION_PARAMETERS, field) + \
      FIELD_SIZE(CF_OPERATION_PARAMETERS, field))
 
-#define CHUNK_SIZE (1024 * 25600)
+#define CHUNK_SIZE (4096 * 25600)
 
 
 CF_CONNECTION_KEY connectionKey;
