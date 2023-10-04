@@ -7,6 +7,8 @@
 #include <vector>
 #include <utility> // para std::pai
 #include <cfapi.h>
+#include <iostream>
+#include <chrono>
 
 napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
@@ -22,15 +24,64 @@ inline std::wstring fullServerFilePath;
     (FIELD_OFFSET(CF_OPERATION_PARAMETERS, field) + \
      FIELD_SIZE(CF_OPERATION_PARAMETERS, field))
 
+inline int load_data_count = 0;
+inline size_t lastIncrementalReadSize = 0;
+
 struct FetchDataArgs
 {
     std::wstring fileIdentityArg;
 };
 
+void load_data() {
+    printf("load_data called");
+}
+
 void setup_global_tsfn_fetch_data(napi_threadsafe_function tsfn)
 {
     wprintf(L"setup_global_tsfn_fetch_data called\n");
     g_fetch_data_threadsafe_callback = tsfn;
+}
+
+std::string WStringToString(const std::wstring &wstr) {
+    if (wstr.empty())
+        return std::string();
+
+    int sizeNeeded = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
+    std::string strTo(sizeNeeded, 0);
+    WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], sizeNeeded, NULL, NULL);
+    return strTo;
+}
+
+size_t file_incremental_reading(const std::string& filename, size_t& previousSize) {
+    std::ifstream file;
+
+    // Abre el archivo
+    file.open(filename, std::ios::in | std::ios::binary);
+
+    if (!file.is_open()) {
+        std::cerr << "Error al abrir el archivo." << std::endl;
+        return previousSize;  // Retorna el previousSize sin cambios
+    }
+
+    file.clear(); // Limpia los flags de error/end-of-file
+    file.seekg(0, std::ios::end); // Va al final del archivo
+    size_t newSize = file.tellg();
+
+    size_t growth = newSize - previousSize;
+
+    if (growth > 0) { // Si el archivo ha crecido
+        std::vector<char> buffer(growth);
+        file.seekg(previousSize);
+        file.read(buffer.data(), growth);
+        std::cout.write(buffer.data(), growth);
+    } else if (newSize < previousSize) {
+        // Si el archivo se ha truncado o reiniciado, esto podría ser una consideración para manejar.
+        std::cerr << "El archivo parece haber sido truncado o reiniciado." << std::endl;
+    }
+
+    file.close();
+    previousSize = newSize; // Actualiza el previousSize para reflejar el nuevo tamaño
+    return previousSize;    // Retorna el nuevo previousSize
 }
 
 // response callback fn
@@ -68,8 +119,8 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
         return nullptr;
     }
 
-    std::lock_guard<std::mutex> lock(mtx);
-    ready = true;
+    //std::lock_guard<std::mutex> lock(mtx);
+    //ready = true;
     callbackResult = response;
     wprintf(L"response_callback_fn_fetch_data called\n");
 
@@ -84,7 +135,20 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 
     fullServerFilePath = response_wstr;
 
-    cv.notify_one();
+    lastIncrementalReadSize = file_incremental_reading(WStringToString(fullServerFilePath), lastIncrementalReadSize);
+
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        
+        // Incrementa el contador de ejecuciones
+        load_data_count++;
+
+        // Si load_data() ha sido ejecutado 10 veces
+        if (load_data_count >= 10) {
+            ready = true;
+            cv.notify_one();
+        }
+    }
 
     return nullptr;
 }
@@ -118,10 +182,13 @@ void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context,
         return;
     }
 
-    {
-        std::lock_guard<std::mutex> lock(mtx);
-        ready = false;
-    }
+    // {
+    //     std::lock_guard<std::mutex> lock(mtx);
+    //     ready = false;
+    // }
+
+    std::unique_lock<std::mutex> lock(mtx);
+    ready = false;
 
     status = napi_call_function(env, undefined, js_callback, 2, args_to_js_callback, &result);
     if (status != napi_ok)
@@ -202,39 +269,7 @@ void CALLBACK fetch_data_callback_wrapper(
         }
     }
 
-    HANDLE handle = CreateFileW(fullServerFilePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (handle == INVALID_HANDLE_VALUE)
-    {
-        wprintf(L"[Error] file doesn't exist %s\n", fullServerFilePath.c_str());
-        FileCopierWithProgress::TransferData(
-            callbackInfo->ConnectionKey,
-            callbackInfo->TransferKey,
-            NULL,
-            callbackParameters->FetchData.RequiredFileOffset,
-            callbackParameters->FetchData.RequiredLength,
-            STATUS_UNSUCCESSFUL);
-        return;
-    }
-    // close handle
-    CloseHandle(handle);
-    if (callbackResult)
-    {
-        HydrateFile(callbackInfo, callbackParameters, fullClientPath, fullServerFilePath);
-    }
-    else
-    {
-        wprintf(L"[Error] callbackResult is false\n");
-        // when callbackResult is false, we need to return STATUS_UNSUCCESSFUL on execution of TransferData
-        FileCopierWithProgress::TransferData(
-            callbackInfo->ConnectionKey,
-            callbackInfo->TransferKey,
-            NULL,
-            callbackParameters->FetchData.RequiredFileOffset,
-            callbackParameters->FetchData.RequiredLength,
-            STATUS_UNSUCCESSFUL);
-        return;
-    }
-
-    std::lock_guard<std::mutex> lock(mtx);
+    // std::lock_guard<std::mutex> lock(mtx);
+    lastIncrementalReadSize = 0;
     ready = false; // Reset ready
 }

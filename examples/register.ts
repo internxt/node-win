@@ -94,9 +94,19 @@ async function onFetchDataCallback(fileId: string, callback: (data : boolean, pa
     console.log("file id: " + fileId);
     // simulate a download from a real server and response with the path of the downloaded file of a fake server
     onFetchData(fileId).then((response) => {
-        callback(response, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
+        function runLoop(index: number) {
+            if (index < 10) {
+              console.log("progress: " + index * 10 + "%");
+              callback(response, "C:\\Users\\User\\Desktop\\fakeserver\\imagen.rar");
+              setTimeout(function() {
+                runLoop(index + 1);
+              }, 2000);
+            }
+          }
+        // bucle simulate progress bar
+        runLoop(0);
     }).catch((err) => {
-        callback(false, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
+        callback(false, "C:\\Users\\User\\Desktop\\fakeserver\\imagen.rar");
     });
 }
 
