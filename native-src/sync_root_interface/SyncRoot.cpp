@@ -2,7 +2,10 @@
 #include "SyncRoot.h"
 #include "Callbacks.h"
 #include <iostream>
+#include <iostream>
+#include <filesystem>
 
+namespace fs = std::filesystem;
 // variable to disconect
 CF_CONNECTION_KEY gloablConnectionKey;
 
@@ -38,7 +41,7 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
         info.DisplayNameResource(providerName);
 
         std::wstring completeIconResource = std::wstring(logoPath) + L",0";
-    
+
         // This icon is just for the sample. You should provide your own branded icon here
         info.IconResource(completeIconResource.c_str());
         info.HydrationPolicy(winrt::StorageProviderHydrationPolicy::Full);
@@ -147,5 +150,25 @@ HRESULT SyncRoot::DisconnectSyncRoot()
     {
         wprintf(L"Excepción desconocida capturada\n");
         // Igualmente, puedes decidir el código de error a retornar.
+    }
+}
+
+// get items sync root
+HRESULT SyncRoot::GetItemsSyncRoot(const wchar_t *syncRootPath)
+{
+    try
+    {
+        // get all items there are in the sync root
+        // std::string directory_path = syncRootPath;
+        std::wstring directory_path(syncRootPath);
+        wprintf(L"Items in sync root: \n");
+        for (const auto &entry : fs::directory_iterator(directory_path))
+        {
+            wprintf(L"Item: %ls\n", entry.path().c_str());
+        }
+    }
+    catch (const std::exception &e)
+    {
+        wprintf(L"Excepción capturada: %hs\n", e.what());
     }
 }

@@ -12,6 +12,7 @@ interface Addon {
     registerSyncRootWindowsStorageProvider(path: string, providerName: string, providerVersion: string, providerId: string): any;
     unregisterSyncRoot(path: string): any;
     watchAndWait(path: string): any;
+    getItems(): any;
 }
 
 type NapiCallbackFunction = (...args: any[]) => any;
@@ -115,6 +116,11 @@ class VirtualDrive {
 
     convertToWindowsTime(jsTime: number): bigint {
         return BigInt(jsTime) * 10000n + 116444736000000000n;
+    }
+
+    getItems(): any {
+        console.debug("getItems");
+        return addon.getItems(this.syncRootPath);
     }
 
     async connectSyncRoot(): Promise<any> {

@@ -128,7 +128,23 @@ napi_value init(napi_env env, napi_value exports)
     return nullptr;
   }
 
+  napi_property_descriptor getItemsDesc{
+      "getItems",
+      nullptr,
+      GetItemsSyncRootWrapper,
+      nullptr,
+      nullptr,
+      nullptr,
+      napi_default,
+      nullptr};
+
+  napi_status defineGetItemsStatus = napi_define_properties(env, exports, 1, &getItemsDesc);
+  if (defineGetItemsStatus != napi_ok)
+  {
+    napi_throw_error(env, nullptr, "Failed to define GetItemsSyncRoot function");
+    return nullptr;
+  }
+
   return exports;
 }
-
 NAPI_MODULE(NODE_GYP_MODULE_NAME, init)
