@@ -230,6 +230,8 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     napi_value resultBool;
     napi_get_boolean(env, lastReadOffset == fileSize.QuadPart, &resultBool);
 
+    printf("resultBool: %d\n", lastReadOffset == fileSize.QuadPart);
+
     return resultBool;
 }
 
