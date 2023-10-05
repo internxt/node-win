@@ -21,13 +21,17 @@ inline bool ready = false;
 inline bool callbackResult = false;
 inline std::wstring fullServerFilePath;
 
+inline size_t lastSize;
+
 #define FIELD_SIZE(type, field) (sizeof(((type *)0)->field))
 
 #define CF_SIZE_OF_OP_PARAM(field)                  \
     (FIELD_OFFSET(CF_OPERATION_PARAMETERS, field) + \
      FIELD_SIZE(CF_OPERATION_PARAMETERS, field))
 
-#define CHUNK_SIZE (4096)
+#define CHUNK_SIZE (4096 * 1024)
+
+#define CHUNKDELAYMS 250
 
 CF_CONNECTION_KEY connectionKey;
 CF_TRANSFER_KEY transferKey;
@@ -87,7 +91,12 @@ size_t file_incremental_reading(const std::string &filename, size_t &dataSizeRea
 
     size_t datasizeAvailableUnread = newSize - dataSizeRead;
 
-    if ((datasizeAvailableUnread > 0 && CHUNK_SIZE < datasizeAvailableUnread && !final_step) || (datasizeAvailableUnread > 0 && final_step))
+    size_t growth = newSize - lastSize;
+
+    wprintf(L"growth: %d\n", growth);
+
+
+    if ((datasizeAvailableUnread > 0 )) // && CHUNK_SIZE < datasizeAvailableUnread && !final_step) || (datasizeAvailableUnread > 0 && final_step)
     { // Si el archivo ha crecido
         printf("============ENTER IN IF STATEMENT============\n");
         std::vector<char> buffer(CHUNK_SIZE);
@@ -104,7 +113,7 @@ size_t file_incremental_reading(const std::string &filename, size_t &dataSizeRea
         printf("startingOffset: %d\n", startingOffset.QuadPart);
 
         LARGE_INTEGER chunkBufferSize;
-        chunkBufferSize.QuadPart = min(requiredLength.QuadPart, CHUNK_SIZE);
+        chunkBufferSize.QuadPart = min( datasizeAvailableUnread, CHUNK_SIZE);
 
         FileCopierWithProgress::TransferData(
             connectionKey,
@@ -119,8 +128,9 @@ size_t file_incremental_reading(const std::string &filename, size_t &dataSizeRea
 
     UINT64 totalSize = static_cast<UINT64>(fileSize.QuadPart);
     Utilities::ApplyTransferStateToFile(g_full_client_path.c_str(), g_callback_info, totalSize , dataSizeRead);
-
+    Sleep(CHUNKDELAYMS);
     file.close();
+    lastSize = newSize;
     return dataSizeRead; // Retorna el nuevo dataSizeRead
 }
 
@@ -199,20 +209,6 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     // end size file in real time
 
     // tamaño_archivo != fileSize.QuadPart
-    if (total_size == fileSize.QuadPart)
-    {
-        wprintf(L"[Debug - total_size == fileSize.QuadPart] El tamaño del archivo es igual al fileSize.QuadPart.\n");
-        while (true)
-        {
-            lastReadOffset = file_incremental_reading(WStringToString(fullServerFilePath), lastReadOffset, CHUNK_SIZE >= fileSize.QuadPart - lastReadOffset);
-            if (lastReadOffset == fileSize.QuadPart)
-            {
-                printf("[Debug]File has been fully read.\n");
-                load_finished = true;
-                break;
-            };
-        }
-    }
 
     if (lastReadOffset == fileSize.QuadPart)
     {
@@ -231,7 +227,10 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
         }
     }
 
-    return nullptr;
+    napi_value resultBool;
+    napi_get_boolean(env, lastReadOffset == fileSize.QuadPart, &resultBool);
+
+    return resultBool;
 }
 
 void HydrateFile(_In_ CONST CF_CALLBACK_INFO *lpCallbackInfo,
