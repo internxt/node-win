@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include <Callbacks.h>
 #include <string>
 #include <condition_variable>
@@ -7,8 +8,10 @@
 #include <vector>
 #include <utility> // para std::pai
 #include <cfapi.h>
+#include <windows.h>
 #include <iostream>
 #include <chrono>
+#include "Utilities.h"
 
 napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
@@ -24,14 +27,18 @@ inline std::wstring fullServerFilePath;
     (FIELD_OFFSET(CF_OPERATION_PARAMETERS, field) + \
      FIELD_SIZE(CF_OPERATION_PARAMETERS, field))
 
-#define CHUNK_SIZE (4096 * 25600)
+#define CHUNK_SIZE (4096)
 
 CF_CONNECTION_KEY connectionKey;
 CF_TRANSFER_KEY transferKey;
 LARGE_INTEGER fileSize;
+LARGE_INTEGER requiredLength;
+CF_CALLBACK_INFO g_callback_info;
+std::wstring g_full_client_path;
+
 
 inline bool load_finished = false;
-inline size_t lastIncrementalReadSize = 0;
+inline size_t lastReadOffset = 0;
 
 struct FetchDataArgs
 {
@@ -60,8 +67,9 @@ std::string WStringToString(const std::wstring &wstr)
     return strTo;
 }
 
-size_t file_incremental_reading(const std::string &filename, size_t &previousSize)
+size_t file_incremental_reading(const std::string &filename, size_t &dataSizeRead, bool final_step)
 {
+    printf("===================RESPONSE CALLBACK CALLED===================\n");
     std::ifstream file;
 
     // Abre el archivo
@@ -70,56 +78,50 @@ size_t file_incremental_reading(const std::string &filename, size_t &previousSiz
     if (!file.is_open())
     {
         std::cerr << "Error al abrir el archivo." << std::endl;
-        return previousSize; // Retorna el previousSize sin cambios
+        return dataSizeRead; // Retorna el dataSizeRead sin cambios
     }
 
     file.clear();                 // Limpia los flags de error/end-of-file
     file.seekg(0, std::ios::end); // Va al final del archivo
     size_t newSize = file.tellg();
 
-    size_t growth = newSize - previousSize;
+    size_t datasizeAvailableUnread = newSize - dataSizeRead;
 
-    if (growth > 0 && CHUNK_SIZE < growth)
+    if ((datasizeAvailableUnread > 0 && CHUNK_SIZE < datasizeAvailableUnread && !final_step) || (datasizeAvailableUnread > 0 && final_step))
     { // Si el archivo ha crecido
-        std::vector<char> buffer(growth);
-        file.seekg(previousSize);
-        file.read(buffer.data(), growth);
-        // std::cout.write(buffer.data(), growth);
+        printf("============ENTER IN IF STATEMENT============\n");
+        std::vector<char> buffer(CHUNK_SIZE);
+        file.seekg(dataSizeRead);
+        file.read(buffer.data(), CHUNK_SIZE);
+        // std::cout.write(buffer.data(), datasizeAvailableUnread);
 
         LARGE_INTEGER startingOffset, length;
 
-        startingOffset.QuadPart = previousSize; // Desplazamiento desde el cual se leyeron los datos
-        length.QuadPart = growth;
+        startingOffset.QuadPart = dataSizeRead; // Desplazamiento desde el cual se leyeron los datos
 
         printf("connectionKey: %d\n", connectionKey);
         printf("transferKey: %d\n", transferKey);
         printf("startingOffset: %d\n", startingOffset.QuadPart);
-        printf("length: %d\n", length.QuadPart);
 
-        // obtain size of buffet and check if is equal to growth
-        if (buffer.size() != growth)
-        {
-            std::cout << "Error al leer el archivo." << std::endl;
-        };
+        LARGE_INTEGER chunkBufferSize;
+        chunkBufferSize.QuadPart = min(requiredLength.QuadPart, CHUNK_SIZE);
 
         FileCopierWithProgress::TransferData(
             connectionKey,
             transferKey,
             buffer.data(),
             startingOffset,
-            length,
+            chunkBufferSize,
             STATUS_SUCCESS);
 
-        previousSize = newSize;
-    }
-    else if (newSize < previousSize)
-    {
-        // Si el archivo se ha truncado o reiniciado, esto podría ser una consideración para manejar.
-        std::cout << "El archivo parece haber sido truncado o reiniciado." << std::endl;
+        dataSizeRead += chunkBufferSize.QuadPart;
     }
 
+    UINT64 totalSize = static_cast<UINT64>(fileSize.QuadPart);
+    Utilities::ApplyTransferStateToFile(g_full_client_path.c_str(), g_callback_info, totalSize , dataSizeRead);
+
     file.close();
-    return previousSize; // Retorna el nuevo previousSize
+    return dataSizeRead; // Retorna el nuevo dataSizeRead
 }
 
 // response callback fn
@@ -149,7 +151,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     bool response;
     napi_get_value_bool(env, argv[0], &response);
 
-    // Verificar el segundo argumento: debería ser una cadena
+    // Verificar el segundo argumento: debería ser una cadenai
     napi_typeof(env, argv[1], &valueType);
     if (valueType != napi_string)
     {
@@ -173,7 +175,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 
     fullServerFilePath = response_wstr;
 
-    lastIncrementalReadSize = file_incremental_reading(WStringToString(fullServerFilePath), lastIncrementalReadSize);
+    lastReadOffset = file_incremental_reading(WStringToString(fullServerFilePath), lastReadOffset, false);
 
     // size file in real time
     std::wstring file_path = fullServerFilePath.c_str();
@@ -197,21 +199,22 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     // end size file in real time
 
     // tamaño_archivo != fileSize.QuadPart
-    if (total_size != fileSize.QuadPart)
+    if (total_size == fileSize.QuadPart)
     {
+        wprintf(L"[Debug - total_size == fileSize.QuadPart] El tamaño del archivo es igual al fileSize.QuadPart.\n");
         while (true)
         {
-            lastIncrementalReadSize = file_incremental_reading(WStringToString(fullServerFilePath), lastIncrementalReadSize);
-            if (lastIncrementalReadSize == fileSize.QuadPart)
+            lastReadOffset = file_incremental_reading(WStringToString(fullServerFilePath), lastReadOffset, CHUNK_SIZE >= fileSize.QuadPart - lastReadOffset);
+            if (lastReadOffset == fileSize.QuadPart)
             {
                 printf("[Debug]File has been fully read.\n");
-                break;
                 load_finished = true;
+                break;
             };
         }
     }
 
-    if (lastIncrementalReadSize == fileSize.QuadPart)
+    if (lastReadOffset == fileSize.QuadPart)
     {
         printf("[Debug] File has been fully read.\n");
         load_finished = true;
@@ -321,9 +324,14 @@ void CALLBACK fetch_data_callback_wrapper(
     connectionKey = callbackInfo->ConnectionKey;
     transferKey = callbackInfo->TransferKey;
     fileSize = callbackInfo->FileSize;
+    requiredLength = callbackParameters->FetchData.RequiredLength;
+    g_callback_info = *callbackInfo;
 
     std::wstring fullClientPath(callbackInfo->VolumeDosName);
-    fullClientPath.append(callbackInfo->NormalizedPath);
+        fullClientPath.append(callbackInfo->NormalizedPath);
+
+    g_full_client_path = fullClientPath;
+
     wprintf(L"Full path: %s\n", fullClientPath.c_str());
 
     LPCVOID fileIdentity = callbackInfo->FileIdentity;
@@ -351,7 +359,9 @@ void CALLBACK fetch_data_callback_wrapper(
         }
     }
 
+    wprintf(L"FINISH\n");
+
     // std::lock_guard<std::mutex> lock(mtx);
-    lastIncrementalReadSize = 0;
+    lastReadOffset = 0;
     ready = false; // Reset ready
 }
