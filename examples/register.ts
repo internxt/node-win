@@ -92,23 +92,29 @@ async function onFileAddedCallback(filePath: string, callback: (aknowledge : boo
 
 
 
-async function onFetchDataCallback(fileId: string, callback: (data : boolean, path: string) => void ) {
+async function onFetchDataCallback(fileId: string, callback: (data : any, path: string) => void ) {
     console.log("file id: " + fileId);
     // simulate a download from a real server and response with the path of the downloaded file of a fake server
     onFetchData(fileId).then((response) => {
-        function runLoop(index: number) {
+        function runLoop(index: number, status: string) {
             if (index < 10) {
               console.log("progress: " + index * 10 + "%");
-              callback(response, "C:\\Users\\User\\Desktop\\fakeserver\\imagen.rar");
+              callback("progress", "C:\\Users\\User\\Desktop\\fakeserver\\2023-06-27 17-05-32.mkv");
               setTimeout(function() {
-                runLoop(index + 1);
+                // al ultimo mandar finish
+                if (index === 9) {
+                  console.log("finish: ");
+                  callback("finish", "C:\\Users\\User\\Desktop\\fakeserver\\2023-06-27 17-05-32.mkv");
+                } else {
+                  runLoop(index + 1, status);
+                }
               }, 2000);
             }
           }
         // bucle simulate progress bar
-        runLoop(0);
+        runLoop(0, 'progres');
     }).catch((err) => {
-        callback(false, "C:\\Users\\User\\Desktop\\fakeserver\\imagen.rar");
+        callback("error", "C:\\Users\\User\\Desktop\\fakeserver\\/2023-06-27 17-05-32.mkv");
     });
 }
 
@@ -151,6 +157,7 @@ const folderUpdatedAt = Date.now() - 345600000; // four days ago
 // drive.createItemByPath(`/folderWithFile/file2.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036216', 1000, fileCreatedAt, fileUpdatedAt);
 // drive.createItemByPath(`/fakefile.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036843', 57, fileCreatedAt, fileUpdatedAt);
 drive.createItemByPath(`/imagen.rar`, 'fa8217c9-2dd6-4641-9180-8206e60368f1', 33020, fileCreatedAt, fileUpdatedAt);
+drive.createItemByPath(`/2023-06-27 17-05-32.mkv`, 'fa8217c9-2dd6-4641-9180-8206e60368f2', 339604918, fileCreatedAt, fileUpdatedAt);
 // creating folders
 // drive.createItemByPath(`/only-folder/`, 'fa8217c9-2dd6-4641-9180-8206e60368123', 1000, folderCreatedAt, folderUpdatedAt);
 // drive.createItemByPath(`/folderWithFolder/folder2/`, 'fa8217c9-2dd6-4641-9180-8206e6036845', 1000, folderCreatedAt, folderUpdatedAt);

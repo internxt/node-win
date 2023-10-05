@@ -15,7 +15,8 @@ public:
     static void CopyFromServerToClient(
         _In_ CONST CF_CALLBACK_INFO *callbackInfo,
         _In_ CONST CF_CALLBACK_PARAMETERS *callbackParameters,
-        _In_ LPCWSTR serverFolder);
+        _In_ LPCWSTR serverFolder,
+        _In_ LPCWSTR callbackResponse);
 
     static void TransferData(
         _In_ CF_CONNECTION_KEY connectionKey,
@@ -35,7 +36,8 @@ private:
         _In_ LARGE_INTEGER optionalLength,
         _In_ CF_CALLBACK_FETCH_DATA_FLAGS fetchFlags,
         _In_ UCHAR priorityHint,
-        _In_ LPCWSTR serverFolder);
+        _In_ LPCWSTR serverFolder,
+        _In_ LPCWSTR callbackResponse);
 
     static void WINAPI OverlappedCompletionRoutine(
         _In_ DWORD errorCode,

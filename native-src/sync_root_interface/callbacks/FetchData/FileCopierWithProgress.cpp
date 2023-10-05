@@ -9,7 +9,7 @@
 namespace fs = std::filesystem;
 
 // 100MB chunks
-#define CHUNKSIZE (4096 * 25600)
+#define CHUNKSIZE 4096 //(4096 * 25600)
 // Arbitrary delay per chunk, again, so you can actually see the progress bar
 // move
 #define CHUNKDELAYMS 250
@@ -18,6 +18,8 @@ namespace fs = std::filesystem;
 #define CF_SIZE_OF_OP_PARAM(field)                      \
         (FIELD_OFFSET(CF_OPERATION_PARAMETERS, field) + \
          FIELD_SIZE(CF_OPERATION_PARAMETERS, field))
+
+inline std::wstring gloablCallbackResponse = L"nothing";
 
 struct READ_COMPLETION_CONTEXT
 {
@@ -37,7 +39,8 @@ struct READ_COMPLETION_CONTEXT
 void FileCopierWithProgress::CopyFromServerToClient(
     _In_ CONST CF_CALLBACK_INFO *lpCallbackInfo,
     _In_ CONST CF_CALLBACK_PARAMETERS *lpCallbackParameters,
-    _In_ LPCWSTR serverFolder) // fake nube
+    _In_ LPCWSTR serverFolder,
+    _In_ LPCWSTR callbackResponse) // fake nube
 {
 
         try
@@ -51,7 +54,8 @@ void FileCopierWithProgress::CopyFromServerToClient(
                     lpCallbackParameters->FetchData.OptionalLength,
                     lpCallbackParameters->FetchData.Flags,
                     lpCallbackInfo->PriorityHint,
-                    serverFolder);
+                    serverFolder,
+                    callbackResponse);
         }
         catch (...)
         {
@@ -107,6 +111,10 @@ void WINAPI FileCopierWithProgress::OverlappedCompletionRoutine(
 
         // There is the possibility that this code will need to be retried, see end of loop
         auto keepProcessing{false};
+        if (gloablCallbackResponse == L"progress")
+        {
+                keepProcessing = false;
+        }
 
         do
         {
@@ -197,20 +205,23 @@ void WINAPI FileCopierWithProgress::OverlappedCompletionRoutine(
                         // has completed this new ReadFileEx again, then this entire
                         // method will be called again with the new chunk.
                         // In that case, the handle and buffer need to remain intact
-                        if (!ReadFileEx(
-                                readContext->Handle,
-                                readContext->Buffer,
-                                bytesToRead,
-                                &readContext->Overlapped,
-                                OverlappedCompletionRoutine))
+                        if (gloablCallbackResponse == L"finish")
                         {
-                                // In the event the ReadFileEx failed,
-                                // we want to loop through again to try and
-                                // process this again
-                                errorCode = GetLastError();
-                                numberOfBytesTransfered = 0;
+                                if (!ReadFileEx(
+                                        readContext->Handle,
+                                        readContext->Buffer,
+                                        bytesToRead,
+                                        &readContext->Overlapped,
+                                        OverlappedCompletionRoutine))
+                                {
+                                        // In the event the ReadFileEx failed,
+                                        // we want to loop through again to try and
+                                        // process this again
+                                        errorCode = GetLastError();
+                                        numberOfBytesTransfered = 0;
 
-                                keepProcessing = true;
+                                        keepProcessing = true;
+                                }
                         }
                 }
                 else
@@ -237,8 +248,12 @@ void FileCopierWithProgress::CopyFromServerToClientWorker(
     _In_ LARGE_INTEGER /*optionalLength*/,
     _In_ CF_CALLBACK_FETCH_DATA_FLAGS /*fetchFlags*/,
     _In_ UCHAR priorityHint,
-    _In_ LPCWSTR serverFolder)
+    _In_ LPCWSTR serverFolder,
+    _In_ LPCWSTR callbackResponse)
 {
+        std::wstring calbackResp(callbackResponse);
+        gloablCallbackResponse = calbackResp;
+        wprintf(L"[%04x:%04x] - callbackResponse: %s\n", GetCurrentProcessId(), GetCurrentThreadId(), calbackResp.c_str());
         wprintf(L"[%04x:%04x] - CopyFromServerToClientWorker FILESIZE %lld \n", GetCurrentProcessId(), GetCurrentThreadId(), callbackInfo->FileSize.QuadPart);
         HANDLE serverFileHandle;
 
@@ -301,25 +316,25 @@ void FileCopierWithProgress::CopyFromServerToClientWorker(
         chunkBufferSize = (ULONG)min(requiredLength.QuadPart, CHUNKSIZE);
 
         // if filesize is more than 1GB, we use the chunk size
-        if (callbackInfo->FileSize.QuadPart > 1073741824)
-        {
-                wprintf(L"[%04x:%04x] - File size is more than 1GB, we use the chunk size\n", GetCurrentProcessId(), GetCurrentThreadId());
-                chunkBufferSize = (ULONG)(CHUNKSIZE * 2);
-        }
+        // if (callbackInfo->FileSize.QuadPart > 1073741824)
+        // {
+        //         wprintf(L"[%04x:%04x] - File size is more than 1GB, we use the chunk size\n", GetCurrentProcessId(), GetCurrentThreadId());
+        //         chunkBufferSize = (ULONG)(CHUNKSIZE * 2);
+        // }
 
-        // if filesize is more than 2GB, we use chunksize x3
-        if (callbackInfo->FileSize.QuadPart > 2147483648)
-        {
-                wprintf(L"[%04x:%04x] - File size is more than 2GB, we use the chunk size x3\n", GetCurrentProcessId(), GetCurrentThreadId());
-                chunkBufferSize = (ULONG)(CHUNKSIZE * 3);
-        }
+        // // if filesize is more than 2GB, we use chunksize x3
+        // if (callbackInfo->FileSize.QuadPart > 2147483648)
+        // {
+        //         wprintf(L"[%04x:%04x] - File size is more than 2GB, we use the chunk size x3\n", GetCurrentProcessId(), GetCurrentThreadId());
+        //         chunkBufferSize = (ULONG)(CHUNKSIZE * 3);
+        // }
 
-        // if filesize is more than 3GB, we use chunksize x4
-        if (callbackInfo->FileSize.QuadPart > 3221225472)
-        {
-                wprintf(L"[%04x:%04x] - File size is more than 3GB, we use the chunk size x4\n", GetCurrentProcessId(), GetCurrentThreadId());
-                chunkBufferSize = (ULONG)(CHUNKSIZE * 4);
-        }
+        // // if filesize is more than 3GB, we use chunksize x4
+        // if (callbackInfo->FileSize.QuadPart > 3221225472)
+        // {
+        //         wprintf(L"[%04x:%04x] - File size is more than 3GB, we use the chunk size x4\n", GetCurrentProcessId(), GetCurrentThreadId());
+        //         chunkBufferSize = (ULONG)(CHUNKSIZE * 4);
+        // }
 
         readCompletionContext = (READ_COMPLETION_CONTEXT *)
             HeapAlloc(

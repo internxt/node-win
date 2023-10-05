@@ -13,7 +13,8 @@ napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 inline std::mutex mtx;
 inline std::condition_variable cv;
 inline bool ready = false;
-inline bool callbackResult = false;
+// inline bool callbackResult = false;
+inline std::wstring callbackResult = L"nothing";
 inline std::wstring fullServerFilePath;
 
 #define FIELD_SIZE(type, field) (sizeof(((type *)0)->field))
@@ -50,15 +51,34 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     napi_valuetype valueType;
 
     // Verificar el primer argumento: debería ser un booleano
+    // napi_typeof(env, argv[0], &valueType);
+    // if (valueType != napi_boolean)
+    // {
+    //     wprintf(L"First argument should be boolean\n");
+    //     return nullptr;
+    // }
+
+    // bool response;
+    // napi_get_value_bool(env, argv[0], &response);
+
     napi_typeof(env, argv[0], &valueType);
-    if (valueType != napi_boolean)
+    if (valueType != napi_string)
     {
-        wprintf(L"First argument should be boolean\n");
+        wprintf(L"First argument should be string\n");
         return nullptr;
     }
 
-    bool response;
-    napi_get_value_bool(env, argv[0], &response);
+    // std::wstring response;
+    size_t response_len1;
+    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &response_len1);
+
+    std::wstring callbackresponse_wstr(response_len1, L'\0');
+
+    napi_get_value_string_utf16(env, argv[0], (char16_t *)callbackresponse_wstr.data(), response_len1 + 1, &response_len1);
+
+    wprintf(L"input path: %s .\n", callbackresponse_wstr.c_str());
+
+    callbackResult = callbackresponse_wstr;
 
     // Verificar el segundo argumento: debería ser una cadena
     napi_typeof(env, argv[1], &valueType);
@@ -70,7 +90,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 
     // std::lock_guard<std::mutex> lock(mtx);
     // ready = true;
-    callbackResult = response;
+
     wprintf(L"response_callback_fn_fetch_data called\n");
 
     size_t response_len;
@@ -90,9 +110,9 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 }
 
 void HydrateFile(_In_ CONST CF_CALLBACK_INFO *lpCallbackInfo,
-                 _In_ CONST CF_CALLBACK_PARAMETERS *lpCallbackParameters, const std::wstring &syncRootPath, const std::wstring &fakeServerFilePath)
+                 _In_ CONST CF_CALLBACK_PARAMETERS *lpCallbackParameters, const std::wstring &syncRootPath, const std::wstring &fakeServerFilePath, const std::wstring &callbackResult)
 {
-    FileCopierWithProgress::CopyFromServerToClient(lpCallbackInfo, lpCallbackParameters, fakeServerFilePath.c_str());
+    FileCopierWithProgress::CopyFromServerToClient(lpCallbackInfo, lpCallbackParameters, fakeServerFilePath.c_str(), callbackResult.c_str());
 }
 
 void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
@@ -201,7 +221,7 @@ void CALLBACK fetch_data_callback_wrapper(
             cv.wait(lock);
         }
     }
-
+    Sleep(2000);
     HANDLE handle = CreateFileW(fullServerFilePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (handle == INVALID_HANDLE_VALUE)
     {
@@ -217,9 +237,10 @@ void CALLBACK fetch_data_callback_wrapper(
     }
     // close handle
     CloseHandle(handle);
-    if (callbackResult)
+    wprintf(L"callbackResult = %s\n", callbackResult.c_str());
+    if (callbackResult == L"progress" || callbackResult == L"finish")
     {
-        HydrateFile(callbackInfo, callbackParameters, fullClientPath, fullServerFilePath);
+        HydrateFile(callbackInfo, callbackParameters, fullClientPath, fullServerFilePath, callbackResult);
     }
     else
     {
