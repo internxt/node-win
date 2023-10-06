@@ -131,7 +131,11 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
                 fc.type = NEW_FOLDER;
                 fc.item_added = true;
                 result.push_back(fc);
-            } 
+            } else {
+                fc.type = OTHER;
+                fc.item_added = false;
+                result.push_back(fc);
+            }
             
             // else if (next->Action == FILE_ACTION_MODIFIED && fileExists  && !isTmpFile && !isDirectory && !isHidden) {
             //     wprintf(L"modified file1: %s\n", fullPath.c_str());
@@ -141,7 +145,7 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             // }
             
             // fc.file_added =( next->Action == FILE_ACTION_ADDED || (next->Action == FILE_ACTION_MODIFIED && !fileExists)) && !isTmpFile && !isDirectory;
-            // result.push_back(fc);
+            
             wprintf(L"next->FileName: %ls\n", next->FileName);
             wprintf(L"next->Action: %d\n", next->Action);
             wprintf(L"fileExists: %d\n", fileExists);
