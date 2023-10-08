@@ -6,7 +6,8 @@ enum ChangeType
 {
     NEW_FILE,
     NEW_FOLDER,
-    MODIFIED_FILE
+    MODIFIED_FILE,
+    OTHER
 };
 struct FileChange
 {

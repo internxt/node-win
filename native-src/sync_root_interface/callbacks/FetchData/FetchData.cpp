@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include <Callbacks.h>
 #include <string>
 #include <condition_variable>
@@ -7,6 +8,10 @@
 #include <vector>
 #include <utility> // para std::pai
 #include <cfapi.h>
+#include <windows.h>
+#include <iostream>
+#include <chrono>
+#include "Utilities.h"
 
 napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
@@ -16,21 +21,117 @@ inline bool ready = false;
 inline bool callbackResult = false;
 inline std::wstring fullServerFilePath;
 
+inline size_t lastSize;
+
 #define FIELD_SIZE(type, field) (sizeof(((type *)0)->field))
 
 #define CF_SIZE_OF_OP_PARAM(field)                  \
     (FIELD_OFFSET(CF_OPERATION_PARAMETERS, field) + \
      FIELD_SIZE(CF_OPERATION_PARAMETERS, field))
 
+#define CHUNK_SIZE (4096 * 1024)
+
+#define CHUNKDELAYMS 250
+
+CF_CONNECTION_KEY connectionKey;
+CF_TRANSFER_KEY transferKey;
+LARGE_INTEGER fileSize;
+LARGE_INTEGER requiredLength;
+CF_CALLBACK_INFO g_callback_info;
+std::wstring g_full_client_path;
+
+
+inline bool load_finished = false;
+inline size_t lastReadOffset = 0;
+
 struct FetchDataArgs
 {
     std::wstring fileIdentityArg;
 };
 
+void load_data()
+{
+    printf("load_data called");
+}
+
 void setup_global_tsfn_fetch_data(napi_threadsafe_function tsfn)
 {
     wprintf(L"setup_global_tsfn_fetch_data called\n");
     g_fetch_data_threadsafe_callback = tsfn;
+}
+
+std::string WStringToString(const std::wstring &wstr)
+{
+    if (wstr.empty())
+        return std::string();
+
+    int sizeNeeded = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
+    std::string strTo(sizeNeeded, 0);
+    WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], sizeNeeded, NULL, NULL);
+    return strTo;
+}
+
+size_t file_incremental_reading(const std::string &filename, size_t &dataSizeRead, bool final_step)
+{
+    printf("===================RESPONSE CALLBACK CALLED===================\n");
+    std::ifstream file;
+
+    // Abre el archivo
+    file.open(filename, std::ios::in | std::ios::binary);
+
+    if (!file.is_open())
+    {
+        std::cerr << "Error al abrir el archivo." << std::endl;
+        return dataSizeRead; // Retorna el dataSizeRead sin cambios
+    }
+
+    file.clear();                 // Limpia los flags de error/end-of-file
+    file.seekg(0, std::ios::end); // Va al final del archivo
+    size_t newSize = file.tellg();
+
+    size_t datasizeAvailableUnread = newSize - dataSizeRead;
+
+    size_t growth = newSize - lastSize;
+
+    wprintf(L"growth: %d\n", growth);
+
+
+    if ((datasizeAvailableUnread > 0 )) // && CHUNK_SIZE < datasizeAvailableUnread && !final_step) || (datasizeAvailableUnread > 0 && final_step)
+    { // Si el archivo ha crecido
+        printf("============ENTER IN IF STATEMENT============\n");
+        std::vector<char> buffer(CHUNK_SIZE);
+        file.seekg(dataSizeRead);
+        file.read(buffer.data(), CHUNK_SIZE);
+        // std::cout.write(buffer.data(), datasizeAvailableUnread);
+
+        LARGE_INTEGER startingOffset, length;
+
+        startingOffset.QuadPart = dataSizeRead; // Desplazamiento desde el cual se leyeron los datos
+
+        printf("connectionKey: %d\n", connectionKey);
+        printf("transferKey: %d\n", transferKey);
+        printf("startingOffset: %d\n", startingOffset.QuadPart);
+
+        LARGE_INTEGER chunkBufferSize;
+        chunkBufferSize.QuadPart = min( datasizeAvailableUnread, CHUNK_SIZE);
+
+        FileCopierWithProgress::TransferData(
+            connectionKey,
+            transferKey,
+            buffer.data(),
+            startingOffset,
+            chunkBufferSize,
+            STATUS_SUCCESS);
+
+        dataSizeRead += chunkBufferSize.QuadPart;
+    }
+
+    UINT64 totalSize = static_cast<UINT64>(fileSize.QuadPart);
+    Utilities::ApplyTransferStateToFile(g_full_client_path.c_str(), g_callback_info, totalSize , dataSizeRead);
+    Sleep(CHUNKDELAYMS);
+    file.close();
+    lastSize = newSize;
+    return dataSizeRead; // Retorna el nuevo dataSizeRead
 }
 
 // response callback fn
@@ -60,7 +161,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     bool response;
     napi_get_value_bool(env, argv[0], &response);
 
-    // Verificar el segundo argumento: debería ser una cadena
+    // Verificar el segundo argumento: debería ser una cadenai
     napi_typeof(env, argv[1], &valueType);
     if (valueType != napi_string)
     {
@@ -68,8 +169,8 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
         return nullptr;
     }
 
-    std::lock_guard<std::mutex> lock(mtx);
-    ready = true;
+    // std::lock_guard<std::mutex> lock(mtx);
+    // ready = true;
     callbackResult = response;
     wprintf(L"response_callback_fn_fetch_data called\n");
 
@@ -84,9 +185,54 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 
     fullServerFilePath = response_wstr;
 
-    cv.notify_one();
+    lastReadOffset = file_incremental_reading(WStringToString(fullServerFilePath), lastReadOffset, false);
 
-    return nullptr;
+    // size file in real time
+    std::wstring file_path = fullServerFilePath.c_str();
+    std::ifstream file(file_path, std::ios::binary);
+
+    if (!file)
+    {
+        wprintf(L"[Error] No se pudo abrir el archivo en tiempo real.\n");
+    }
+
+    // Obtener el tamaño del archivo
+    file.seekg(0, std::ios::end);
+    LONG total_size = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    // Imprimir el tamaño del archivo
+    wprintf(L"[Debug] El tamaño del archivo es: %lld bytes.\n", total_size);
+
+    // Cerrar el archivo
+    file.close();
+    // end size file in real time
+
+    // tamaño_archivo != fileSize.QuadPart
+
+    if (lastReadOffset == fileSize.QuadPart)
+    {
+        printf("[Debug] File has been fully read.\n");
+        load_finished = true;
+    };
+
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+
+        // Si load_data() ha sido ejecutado 10 veces
+        if (load_finished)
+        {
+            ready = true;
+            cv.notify_one();
+        }
+    }
+
+    napi_value resultBool;
+    napi_get_boolean(env, lastReadOffset == fileSize.QuadPart, &resultBool);
+
+    printf("resultBool: %d\n", lastReadOffset == fileSize.QuadPart);
+
+    return resultBool;
 }
 
 void HydrateFile(_In_ CONST CF_CALLBACK_INFO *lpCallbackInfo,
@@ -118,10 +264,13 @@ void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context,
         return;
     }
 
-    {
-        std::lock_guard<std::mutex> lock(mtx);
-        ready = false;
-    }
+    // {
+    //     std::lock_guard<std::mutex> lock(mtx);
+    //     ready = false;
+    // }
+
+    std::unique_lock<std::mutex> lock(mtx);
+    ready = false;
 
     status = napi_call_function(env, undefined, js_callback, 2, args_to_js_callback, &result);
     if (status != napi_ok)
@@ -173,8 +322,17 @@ void CALLBACK fetch_data_callback_wrapper(
     // get callbackinfo
     wprintf(L"fileId = %s\n", callbackInfo->FileIdentity);
 
+    connectionKey = callbackInfo->ConnectionKey;
+    transferKey = callbackInfo->TransferKey;
+    fileSize = callbackInfo->FileSize;
+    requiredLength = callbackParameters->FetchData.RequiredLength;
+    g_callback_info = *callbackInfo;
+
     std::wstring fullClientPath(callbackInfo->VolumeDosName);
-    fullClientPath.append(callbackInfo->NormalizedPath);
+        fullClientPath.append(callbackInfo->NormalizedPath);
+
+    g_full_client_path = fullClientPath;
+
     wprintf(L"Full path: %s\n", fullClientPath.c_str());
 
     LPCVOID fileIdentity = callbackInfo->FileIdentity;
@@ -207,39 +365,9 @@ void CALLBACK fetch_data_callback_wrapper(
         }
     }
 
-    HANDLE handle = CreateFileW(fullServerFilePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (handle == INVALID_HANDLE_VALUE)
-    {
-        wprintf(L"[Error] file doesn't exist %s\n", fullServerFilePath.c_str());
-        FileCopierWithProgress::TransferData(
-            callbackInfo->ConnectionKey,
-            callbackInfo->TransferKey,
-            NULL,
-            callbackParameters->FetchData.RequiredFileOffset,
-            callbackParameters->FetchData.RequiredLength,
-            STATUS_UNSUCCESSFUL);
-        return;
-    }
-    // close handle
-    CloseHandle(handle);
-    if (callbackResult)
-    {
-        HydrateFile(callbackInfo, callbackParameters, fullClientPath, fullServerFilePath);
-    }
-    else
-    {
-        wprintf(L"[Error] callbackResult is false\n");
-        // when callbackResult is false, we need to return STATUS_UNSUCCESSFUL on execution of TransferData
-        FileCopierWithProgress::TransferData(
-            callbackInfo->ConnectionKey,
-            callbackInfo->TransferKey,
-            NULL,
-            callbackParameters->FetchData.RequiredFileOffset,
-            callbackParameters->FetchData.RequiredLength,
-            STATUS_UNSUCCESSFUL);
-        return;
-    }
+    wprintf(L"FINISH\n");
 
-    std::lock_guard<std::mutex> lock(mtx);
+    // std::lock_guard<std::mutex> lock(mtx);
+    lastReadOffset = 0;
     ready = false; // Reset ready
 }

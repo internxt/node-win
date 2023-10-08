@@ -95,6 +95,7 @@ void FileCopierWithProgress::TransferData(
         {
                 wprintf(L"Error in CfExecute(), HRESULT: %lx\n", hr);
         }
+        printf("TransferData : %s\n", SUCCEEDED(hr) ? "Succeeded" : "Failed");
 }
 
 void WINAPI FileCopierWithProgress::OverlappedCompletionRoutine(
