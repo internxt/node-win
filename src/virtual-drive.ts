@@ -43,6 +43,7 @@ class VirtualDrive {
     PLACEHOLDER_ATTRIBUTES: { [key: string]: number };
     syncRootPath: string;
     callbacks?: Callbacks;
+    items: any;
 
     constructor(syncRootPath: string) {
 
@@ -118,16 +119,16 @@ class VirtualDrive {
         return BigInt(jsTime) * 10000n + 116444736000000000n;
     }
 
-    getItems(): any {
-        console.debug("getItems");
-        return addon.getItems(this.syncRootPath);
+    syncItems() {
+        const items =  addon.getItems(this.syncRootPath);
+        console.debug("[Debug] addon items: " + items);
+        this.items = items;     // return Array.from(items);
     }
 
     async connectSyncRoot(): Promise<any> {
         if (this.callbacks === undefined) {
             throw new Error('Callbacks are not defined');
         }
-        return await addon.connectSyncRoot(this.syncRootPath, this.getInputSyncCallbacks());
     }
 
     createPlaceholderFile(

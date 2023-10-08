@@ -10,5 +10,5 @@ public:
     static HRESULT ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallbacks syncCallbacks, napi_env env, CF_CONNECTION_KEY *connectionKey);
     static HRESULT DisconnectSyncRoot();
     static HRESULT UnregisterSyncRoot();
-    static HRESULT GetItemsSyncRoot(const wchar_t *syncRootPath);
+    static HRESULT GetItemsSyncRoot(const wchar_t *syncRootPath, std::vector<std::wstring> &getFileIdentities);
 };
