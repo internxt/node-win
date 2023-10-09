@@ -89,13 +89,25 @@ void Utilities::AddFolderToSearchIndexer(_In_ PCWSTR folder)
 
 void Utilities::ApplyTransferStateToFile(_In_ PCWSTR fullPath, _In_ CF_CALLBACK_INFO &callbackInfo, UINT64 total, UINT64 completed)
 {
+    printf("ApplyTransferStateToFile\n");
     // Tell the Cloud File API about progress so that toasts can be displayed
-    winrt::check_hresult(
-        CfReportProviderProgress(
+ 
+    HRESULT hr1 = CfReportProviderProgress(
             callbackInfo.ConnectionKey,
             callbackInfo.TransferKey,
             LongLongToLargeInteger(total),
-            LongLongToLargeInteger(completed)));
+            LongLongToLargeInteger(completed)
+        );
+
+    if (FAILED(hr1))
+    {
+        wprintf(L"Failed to call CfReportProviderProgress with %08x\n", hr1);
+        return;
+    }
+    else
+    {
+        wprintf(L"Succesfully called CfReportProviderProgress \"%s\" with %llu/%llu\n", fullPath, completed, total);
+    }
     wprintf(L"Succesfully called CfReportProviderProgress \"%s\" with %llu/%llu\n", fullPath, completed, total);
 
     // Tell the Shell so File Explorer can display the progress bar in its view
