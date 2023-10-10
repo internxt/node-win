@@ -76,9 +76,11 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange>& changes,
         {
             winrt::handle placeholder(CreateFileW(change.path.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
 
-            LARGE_INTEGER offset = {};
+            LARGE_INTEGER offset;
+            offset.QuadPart = 0;
             LARGE_INTEGER length;
-            length.QuadPart = MAXLONGLONG;
+            GetFileSizeEx(placeholder.get(), &length);
+            //length.QuadPart = MAXLONGLONG;
 
             if (attrib & FILE_ATTRIBUTE_PINNED)
             {
