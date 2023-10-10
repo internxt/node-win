@@ -129,7 +129,7 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
         {
             placeholder = CreateFileW(
                 change.path.c_str(),
-                FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES,
+                FILE_LIST_DIRECTORY | WRITE_DAC,
                 FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                 nullptr,
                 OPEN_EXISTING,
@@ -172,7 +172,8 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
                 {
                     wprintf(L"Error al convertir a placeholder: %d\n", hr);
                 }
-                        }
+                CloseHandle(placeholder);
+            }
             catch (...)
             {
                 wprintf(L"Error al convertir a placeholder: \n");
