@@ -515,11 +515,9 @@ napi_value GetItemsSyncRootWrapper(napi_env env, napi_callback_info args)
     syncRootPath = new WCHAR[pathLength + 1];
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(syncRootPath)), pathLength + 1, nullptr);
 
-    wprintf(L"[Debug] GetItemsSyncRootWrapper: %s\n", syncRootPath);
     std::vector<std::wstring> getFileIdentities;
     HRESULT result = SyncRoot::GetItemsSyncRoot(syncRootPath, getFileIdentities);
-    wprintf(L"[Debug] getFileIdentities size: %d\n", getFileIdentities.size());
-    wprintf(L"[Debug] getFileIdentities[0]: %s\n", getFileIdentities[0].c_str());
+
     if (FAILED(result))
     {
         napi_throw_error(env, nullptr, "GetItemsSyncRoot failed");
@@ -535,11 +533,8 @@ napi_value GetItemsSyncRootWrapper(napi_env env, napi_callback_info args)
         napi_create_string_utf16(env, reinterpret_cast<const char16_t *>(getFileIdentities[i].c_str()), getFileIdentities[i].length(), &jsFileIdentity);
         napi_set_element(env, jsFileIdentities, i, jsFileIdentity);
     }
-    return jsFileIdentities;
+    // Sleep(250);
     // Delete the syncRootPath buffer
-    // delete[] syncRootPath;
-
-    // Return the JavaScript array of strings
-
-    // delete[] syncRootPath;
+    delete[] syncRootPath;
+    return jsFileIdentities;
 }

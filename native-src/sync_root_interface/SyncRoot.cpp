@@ -164,7 +164,7 @@ std::vector<std::wstring> fileIdentities; // Vector para almacenar FileIdentity 
 
 void EnumerateAndQueryPlaceholders(const std::wstring &directoryPath)
 {
-    wprintf(L"Items in sync root:\n");
+
     for (const auto &entry : std::filesystem::directory_iterator(directoryPath))
     {
         HANDLE hFile = CreateFileW(
@@ -177,7 +177,6 @@ void EnumerateAndQueryPlaceholders(const std::wstring &directoryPath)
             nullptr);
         if (hFile != INVALID_HANDLE_VALUE)
         {
-            wprintf(L"Item: %ls\n", entry.path().c_str());
             int size = sizeof(CF_PLACEHOLDER_STANDARD_INFO) + 300;
             CF_PLACEHOLDER_STANDARD_INFO PlaceholderInfo;
             DWORD returnlength(0);
@@ -186,14 +185,9 @@ void EnumerateAndQueryPlaceholders(const std::wstring &directoryPath)
             {
                 LARGE_INTEGER FileId = PlaceholderInfo.FileId;
                 BYTE *FileIdentity = PlaceholderInfo.FileIdentity;
-                wprintf(L"FileIdentity del marcador de posición: %s\n", FileIdentity);
-                wprintf(L"FileId del marcador de posición: %lld\n", FileId);
                 // Convertir FileIdentity a una cadena wstring
                 size_t identityLength = PlaceholderInfo.FileIdentityLength / sizeof(wchar_t);
                 std::wstring fileIdentityString(reinterpret_cast<const wchar_t *>(FileIdentity), identityLength);
-
-                // std::wstring fileIdentityString(reinterpret_cast<const wchar_t *>(FileIdentity), PlaceholderInfo.FileIdentityLength);
-                wprintf(L"FileIdentity del marcador de posición: %ls\n", fileIdentityString.c_str());
                 fileIdentities.push_back(fileIdentityString);
             }
             else
@@ -218,50 +212,12 @@ HRESULT SyncRoot::GetItemsSyncRoot(const wchar_t *syncRootPath, std::vector<std:
     try
     {
         EnumerateAndQueryPlaceholders(syncRootPath);
-        wprintf(L"FileIdentities:\n");
         getFileIdentities = fileIdentities;
         fileIdentities.clear();
+        return S_OK;
     }
     catch (const std::exception &e)
     {
         wprintf(L"Excepción capturada: %hs\n", e.what());
     }
 }
-
-// std::wstring directory_path(syncRootPath);
-// wprintf(L"Items in sync root: \n");
-// for (const auto &entry : fs::directory_iterator(directory_path))
-// {
-//     HANDLE hFile = CreateFileW(entry.path().c_str(),
-//                                FILE_READ_ATTRIBUTES,
-//                                FILE_SHARE_READ | FILE_SHARE_WRITE,
-//                                nullptr,
-//                                OPEN_EXISTING,
-//                                FILE_FLAG_BACKUP_SEMANTICS | FILE_ATTRIBUTE_NORMAL,
-//                                nullptr);
-//     if (hFile != INVALID_HANDLE_VALUE)
-//     {
-
-//         wprintf(L"Item: %ls\n", entry.path().c_str());
-//         int size = sizeof(CF_PLACEHOLDER_STANDARD_INFO) + 300;
-//         CF_PLACEHOLDER_STANDARD_INFO PlaceholderInfo;
-//         DWORD returnlength(0);
-//         HRESULT hr = CfGetPlaceholderInfo(hFile, CF_PLACEHOLDER_INFO_STANDARD, &PlaceholderInfo, size, &returnlength);
-//         if (SUCCEEDED(hr))
-//         {
-//             LARGE_INTEGER FileId = PlaceholderInfo.FileId;
-//             BYTE *FileIdentity = PlaceholderInfo.FileIdentity;
-//             wprintf(L"FileIdentity del marcador de posición: %s\n", FileIdentity);
-//             wprintf(L"FileId del marcador de posición: %lld\n", FileId);
-//         }
-//         else
-//         {
-//             wprintf(L"La llamada a CfGetPlaceholderInfo falló con el código de error 0x%X\n", hr);
-//         }
-//     }
-//     else
-//     {
-//         wprintf(L"Invalid Item: %ls\n", entry.path().c_str());
-//     }
-//     CloseHandle(hFile);
-// }

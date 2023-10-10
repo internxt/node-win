@@ -163,8 +163,12 @@ drive.createItemByPath(`/item-folder/`, 'fa8217c9-2dd6-4641-9189-8206e60368123',
 drive.createItemByPath(`/imagen-item.rar`, 'fa8217c9-2dd6-4641-9180-053fe60368f1', 33020, fileCreatedAt, fileUpdatedAt);
 
 // get items --------------
-drive.syncItems();
-console.log('items desde js: '+ drive.items);
+console.log('==============    GET ITEMS IDS    ==============');
+drive.getItemsIds().then((ids) => {
+    ids.map((id,i) => {
+        console.log(`Item Id [${i}]: ` + id);
+    })
+})
 //---------------
 
 
