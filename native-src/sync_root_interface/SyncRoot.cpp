@@ -2,7 +2,10 @@
 #include "SyncRoot.h"
 #include "Callbacks.h"
 #include <iostream>
+#include <iostream>
+#include <filesystem>
 
+namespace fs = std::filesystem;
 // variable to disconect
 CF_CONNECTION_KEY gloablConnectionKey;
 
@@ -38,7 +41,7 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
         info.DisplayNameResource(providerName);
 
         std::wstring completeIconResource = std::wstring(logoPath) + L",0";
-    
+
         // This icon is just for the sample. You should provide your own branded icon here
         info.IconResource(completeIconResource.c_str());
         info.HydrationPolicy(winrt::StorageProviderHydrationPolicy::Full);
@@ -147,5 +150,74 @@ HRESULT SyncRoot::DisconnectSyncRoot()
     {
         wprintf(L"Excepción desconocida capturada\n");
         // Igualmente, puedes decidir el código de error a retornar.
+    }
+}
+
+// struct
+struct FileIdentityInfo
+{
+    BYTE *FileIdentity;
+    size_t FileIdentityLength;
+};
+
+std::vector<std::wstring> fileIdentities; // Vector para almacenar FileIdentity como strings
+
+void EnumerateAndQueryPlaceholders(const std::wstring &directoryPath)
+{
+
+    for (const auto &entry : std::filesystem::directory_iterator(directoryPath))
+    {
+        HANDLE hFile = CreateFileW(
+            entry.path().c_str(),
+            FILE_READ_ATTRIBUTES,
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
+            nullptr,
+            OPEN_EXISTING,
+            FILE_FLAG_BACKUP_SEMANTICS | FILE_ATTRIBUTE_NORMAL,
+            nullptr);
+        if (hFile != INVALID_HANDLE_VALUE)
+        {
+            int size = sizeof(CF_PLACEHOLDER_STANDARD_INFO) + 300;
+            CF_PLACEHOLDER_STANDARD_INFO PlaceholderInfo;
+            DWORD returnlength(0);
+            HRESULT hr = CfGetPlaceholderInfo(hFile, CF_PLACEHOLDER_INFO_STANDARD, &PlaceholderInfo, size, &returnlength);
+            if (SUCCEEDED(hr))
+            {
+                LARGE_INTEGER FileId = PlaceholderInfo.FileId;
+                BYTE *FileIdentity = PlaceholderInfo.FileIdentity;
+                // Convertir FileIdentity a una cadena wstring
+                size_t identityLength = PlaceholderInfo.FileIdentityLength / sizeof(wchar_t);
+                std::wstring fileIdentityString(reinterpret_cast<const wchar_t *>(FileIdentity), identityLength);
+                fileIdentities.push_back(fileIdentityString);
+            }
+            else
+            {
+                wprintf(L"La llamada a CfGetPlaceholderInfo falló con el código de error 0x%X\n", hr);
+            }
+            CloseHandle(hFile);
+            if (entry.is_directory())
+            {
+                EnumerateAndQueryPlaceholders(entry.path().c_str());
+            }
+        }
+        else
+        {
+            wprintf(L"Invalid Item: %ls\n", entry.path().c_str());
+        }
+    }
+}
+// get items sync root
+HRESULT SyncRoot::GetItemsSyncRoot(const wchar_t *syncRootPath, std::vector<std::wstring> &getFileIdentities)
+{
+    try
+    {
+        EnumerateAndQueryPlaceholders(syncRootPath);
+        getFileIdentities = fileIdentities;
+        fileIdentities.clear();
+        return S_OK;
+    }
+    catch (const std::exception &e)
+    {
+        wprintf(L"Excepción capturada: %hs\n", e.what());
     }
 }
