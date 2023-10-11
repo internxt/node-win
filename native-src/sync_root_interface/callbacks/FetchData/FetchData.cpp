@@ -345,6 +345,11 @@ void CALLBACK fetch_data_callback_wrapper(
     args->fileIdentityArg = fileIdentityStr;
     wprintf(L"Callback fetch_data_callback_wrapper called\n");
     wprintf(L"g_fetch_data_threadsafe_callback = %s\n", g_fetch_data_threadsafe_callback);
+    if (g_fetch_data_threadsafe_callback == nullptr)
+    {
+        wprintf(L"Callback fetch_data_callback_wrapper called but g_fetch_data_threadsafe_callback is null\n");
+        return;
+    }
     napi_status status = napi_call_threadsafe_function(g_fetch_data_threadsafe_callback, args, napi_tsfn_blocking);
 
     if (status != napi_ok)
