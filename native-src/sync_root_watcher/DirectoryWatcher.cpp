@@ -98,6 +98,7 @@ void ExploreDirectory(const std::wstring &directoryPath, std::list<FileChange> &
             }
             else
             {
+                wprintf(L"new file recursivo: %s\n", data.cFileName);
                 // Es un archivo
                 std::wstring fullPath2 = directoryPath + L"\\" + data.cFileName;
                 FileChange fc;
@@ -170,39 +171,7 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             }
             else if (next->Action == FILE_ACTION_ADDED && isDirectory && !isHidden)
             {
-                // wprintf(L"\nnew folder: %s\n", fullPath.c_str());
-                // fc.type = NEW_FOLDER;
-                // fc.item_added = true;
-                // result.push_back(fc);
                 ExploreDirectory(fullPath, result, fc);
-                // si dentro de esta carpeta hay archivos agregar al push_back
-                // std::wstring path = fullPath;
-                // path.append(L"\\*");
-                // WIN32_FIND_DATAW data;
-                // HANDLE hFind = FindFirstFileW(path.c_str(), &data);
-                // if (hFind != INVALID_HANDLE_VALUE)
-                // {
-                //     do
-                //     {
-                //         if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-                //         {
-                //             wprintf(L"Directory: %s\n", data.cFileName);
-                //         }
-                //         else
-                //         {
-                //             wprintf(L"new file recursivo: %s\n", data.cFileName);
-                //             std::wstring fullPath2(fullPath);
-                //             fullPath2.append(L"\\");
-                //             fullPath2.append(std::wstring_view(data.cFileName, wcslen(data.cFileName)));
-                //             FileChange fc2;
-                //             fc2.path = fullPath2;
-                //             fc2.type = NEW_FILE;
-                //             fc2.item_added = true;
-                //             result.push_back(fc2);
-                //         }
-                //     } while (FindNextFileW(hFind, &data));
-                //     FindClose(hFind);
-                // }
             }
             else
             {
