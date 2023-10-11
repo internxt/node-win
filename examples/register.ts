@@ -90,23 +90,23 @@ async function onFileAddedCallback(filePath: string, callback: (aknowledge : boo
     }
 }
 
-async function onFetchDataCallback(fileId: string, callback: (data : boolean, path: string) => void ) {
+async function onFetchDataCallback(fileId: string, callback: (data : boolean, path: string) => boolean ) {
     console.log("file id: " + fileId);
     // simulate a download from a real server and response with the path of the downloaded file of a fake server
-    onFetchData(fileId).then((response) => {
-        function runLoop(index: number) {
-            if (index < 10) {
-              console.log("progress: " + index * 10 + "%");
-              callback(response, "C:\\Users\\User\\Desktop\\fakeserver\\imagen.rar");
-              setTimeout(function() {
-                runLoop(index + 1);
-              }, 2000);
+    onFetchData(fileId).then(async (response) => {
+        let finish = false;
+        while(!finish) {
+            finish = callback(response, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
+            console.log("finish: " + finish);
+            await new Promise(resolve => setTimeout(() => {
+                resolve(undefined);
             }
-          }
-        // bucle simulate progress bar
-        runLoop(0);
+            , 1000));
+        }
+
     }).catch((err) => {
-        callback(false, "C:\\Users\\User\\Desktop\\fakeserver\\imagen.rar");
+        //callback(false, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
+        console.log(err);
     });
 }
 
@@ -119,7 +119,10 @@ drive.registerSyncRoot(
         notifyDeleteCallback: onDeleteCallbackWithCallback,
         notifyRenameCallback: onRenameCallbackWithCallback,
         notifyFileAddedCallback: onFileAddedCallback,
-        fetchDataCallback: onFetchDataCallback
+        fetchDataCallback: onFetchDataCallback,
+        cancelFetchDataCallback: () => {
+            console.log("cancel fetch data");
+        }
     },
     iconPath
 )
@@ -148,7 +151,7 @@ drive.createFileByPath(`/A (5th copy).pdfs`, '280ab650-acef-4438-8bbc-29863810b2
 drive.createFileByPath(`/file1.txt`, 'fa8217c9-2dd6-4641-9180-8206e60368a6', 1000, fileCreatedAt, fileUpdatedAt);
 drive.createFileByPath(`/folderWithFile/file2.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036216', 1000, fileCreatedAt, fileUpdatedAt);
 drive.createFileByPath(`/fakefile.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036843', 57, fileCreatedAt, fileUpdatedAt);
-drive.createFileByPath(`/imagen.rar`, 'fa8217c9-2dd6-4641-9180-8206e60368f1', 33020, fileCreatedAt, fileUpdatedAt);
+drive.createFileByPath(`/imagen.rar`, 'fa8217c9-2dd6-4641-9180-8206e60368f1', 80582195, fileCreatedAt, fileUpdatedAt);
 drive.createFileByPath(`/noExtensionFile`, 'fa8217c9-2dd6-4641-9180-8206e5039843', 33020, fileCreatedAt, fileUpdatedAt);
 
 // creating folders

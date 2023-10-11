@@ -77,6 +77,7 @@ size_t file_incremental_reading(const std::string &filename, size_t &dataSizeRea
     std::ifstream file;
 
     // Abre el archivo
+    printf("filename: %s\n", filename.c_str());
     file.open(filename, std::ios::in | std::ios::binary);
 
     if (!file.is_open())
