@@ -71,7 +71,7 @@ std::string WStringToString(const std::wstring &wstr)
     return strTo;
 }
 
-size_t file_incremental_reading(const std::string &filename, size_t &dataSizeRead, bool final_step)
+size_t file_incremental_reading(const std::string &filename, size_t &dataSizeRead, bool final_step, float& progress)
 {
     printf("===================RESPONSE CALLBACK CALLED===================\n");
     std::ifstream file;
@@ -125,11 +125,13 @@ size_t file_incremental_reading(const std::string &filename, size_t &dataSizeRea
             STATUS_SUCCESS);
 
         dataSizeRead += chunkBufferSize.QuadPart;
+        
+        UINT64 totalSize = static_cast<UINT64>(fileSize.QuadPart);
+        progress = static_cast<float>(dataSizeRead) / static_cast<float>(totalSize);
+        Utilities::ApplyTransferStateToFile(g_full_client_path.c_str(), g_callback_info, totalSize , dataSizeRead);
+        Sleep(CHUNKDELAYMS);
     }
 
-    UINT64 totalSize = static_cast<UINT64>(fileSize.QuadPart);
-    Utilities::ApplyTransferStateToFile(g_full_client_path.c_str(), g_callback_info, totalSize , dataSizeRead);
-    Sleep(CHUNKDELAYMS);
     file.close();
     lastSize = newSize;
     return dataSizeRead; // Retorna el nuevo dataSizeRead
@@ -186,7 +188,8 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 
     fullServerFilePath = response_wstr;
 
-    lastReadOffset = file_incremental_reading(WStringToString(fullServerFilePath), lastReadOffset, false);
+    float progress;
+    lastReadOffset = file_incremental_reading(WStringToString(fullServerFilePath), lastReadOffset, false, progress);
 
     // size file in real time
     std::wstring file_path = fullServerFilePath.c_str();
@@ -214,7 +217,10 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     if (lastReadOffset == fileSize.QuadPart)
     {
         printf("[Debug] File has been fully read.\n");
+        lastReadOffset = 0;
         load_finished = true;
+        Utilities::ApplyTransferStateToFile(g_full_client_path.c_str(), g_callback_info, fileSize.QuadPart, fileSize.QuadPart);
+        Sleep(CHUNKDELAYMS);
     };
 
     {
@@ -229,11 +235,24 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     }
 
     napi_value resultBool;
-    napi_get_boolean(env, lastReadOffset == fileSize.QuadPart, &resultBool);
+    napi_get_boolean(env, load_finished, &resultBool);
 
-    printf("resultBool: %d\n", lastReadOffset == fileSize.QuadPart);
+    napi_value progress_value;
+    napi_create_double(env, progress, &progress_value);
 
-    return resultBool;
+    printf("resultBool: %d\n", load_finished);
+
+    napi_value result_object;
+    napi_create_object(env, &result_object);
+
+    napi_set_named_property(env, result_object, "finished", resultBool);
+    napi_set_named_property(env, result_object, "progress", progress_value);
+
+    if ( load_finished ) {
+        load_finished = false;
+    };
+
+    return result_object;
 }
 
 void HydrateFile(_In_ CONST CF_CALLBACK_INFO *lpCallbackInfo,
@@ -279,6 +298,7 @@ void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context,
         fprintf(stderr, "Failed to call JS function.\n");
         return;
     }
+
     delete args;
 }
 

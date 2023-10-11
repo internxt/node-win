@@ -90,14 +90,15 @@ async function onFileAddedCallback(filePath: string, callback: (aknowledge : boo
     }
 }
 
-async function onFetchDataCallback(fileId: string, callback: (data : boolean, path: string) => boolean ) {
+async function onFetchDataCallback(fileId: string, callback: (data : boolean, path: string) => { finished: boolean, progress: number } ) {
     console.log("file id: " + fileId);
     // simulate a download from a real server and response with the path of the downloaded file of a fake server
+    let finish = false;
     onFetchData(fileId).then(async (response) => {
-        let finish = false;
         while(!finish) {
-            finish = callback(response, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
-            console.log("finish: " + finish);
+            const callbackResponse = callback(response, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
+            console.log("response callback ====================== : ", callbackResponse.finished, ' ', callbackResponse.progress);
+            finish = callbackResponse.finished;
             await new Promise(resolve => setTimeout(() => {
                 resolve(undefined);
             }
@@ -105,6 +106,7 @@ async function onFetchDataCallback(fileId: string, callback: (data : boolean, pa
         }
 
     }).catch((err) => {
+        finish = true;
         //callback(false, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
         console.log(err);
     });
@@ -165,14 +167,14 @@ drive.createFolderByPath(`/folderWithFolder/F.O.L.D.E.R`, 'fa8217c9-2dd6-4641-91
 drive.createItemByPath(`/item-folder/`, 'fa8217c9-2dd6-4641-9189-8206e60368123', 1000, folderCreatedAt, folderUpdatedAt);
 drive.createItemByPath(`/imagen-item.rar`, 'fa8217c9-2dd6-4641-9180-053fe60368f1', 33020, fileCreatedAt, fileUpdatedAt);
 
-// get items --------------
-console.log('==============    GET ITEMS IDS    ==============');
-drive.getItemsIds().then((ids) => {
-    ids.map((id,i) => {
-        console.log(`Item Id [${i}]: ` + id);
-    })
-})
-//---------------
+// // get items --------------
+// console.log('\n==============    GET ITEMS IDS    ==============');
+// drive.getItemsIds().then((ids) => {
+//     ids.map((id,i) => {
+//         console.log(`Item Id [${i}]: ` + id);
+//     })
+// })
+// //---------------
 
 
 // using the watch and wait method

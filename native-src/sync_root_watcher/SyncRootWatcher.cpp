@@ -128,6 +128,10 @@ void SyncRootWatcher::InitDirectoryWatcher(const wchar_t *syncRootPath, napi_env
     {
         s_directoryWatcher.Initialize(syncRootPath, OnSyncRootFileChanges, env , input);
     }
+    catch(std::exception& e) {
+        wprintf(L"Error initializing directory watcher: %S\n", e.what());
+        throw;
+    }
     catch (...)
     {
         wprintf(L"Could not init directory watcher.\n");
