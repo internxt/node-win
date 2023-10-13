@@ -90,26 +90,29 @@ async function onFileAddedCallback(filePath: string, callback: (aknowledge : boo
     }
 }
 
-async function onFetchDataCallback(fileId: string, callback: (data : boolean, path: string) => { finished: boolean, progress: number } ) {
+type CallbackResponse = (data : boolean, path: string, errorHandler?: () => void) => Promise<{ finished: boolean, progress: number }>;
+async function onFetchDataCallback(fileId: string, callback: CallbackResponse ) {
     console.log("file id: " + fileId);
     // simulate a download from a real server and response with the path of the downloaded file of a fake server
     let finish = false;
     onFetchData(fileId).then(async (response) => {
-        while(!finish) {
-            const callbackResponse = callback(response, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
-            console.log("response callback ====================== : ", callbackResponse.finished, ' ', callbackResponse.progress);
+        while (!finish) {
+            const callbackResponse = await callback(response, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
             finish = callbackResponse.finished;
-            await new Promise(resolve => setTimeout(() => {
-                resolve(undefined);
-            }
-            , 1000));
-        }
+            if (finish) {
+                console.log("finished");
+                break;
+            };
+        };
 
-    }).catch((err) => {
-        finish = true;
+    }).catch((err) => { // THIS CATCH IS REALLY IMPORTANT
         //callback(false, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
         console.log(err);
     });
+}
+
+async function onCancelFetchDataCallback(fileId: string) {
+    console.log("cancel fetch data: ", fileId);
 }
 
 const iconPath = 'C:\\Users\\gcarl\\Downloads\\sicon.ico';
@@ -122,9 +125,7 @@ drive.registerSyncRoot(
         notifyRenameCallback: onRenameCallbackWithCallback,
         notifyFileAddedCallback: onFileAddedCallback,
         fetchDataCallback: onFetchDataCallback,
-        cancelFetchDataCallback: () => {
-            console.log("cancel fetch data");
-        }
+        cancelFetchDataCallback: onCancelFetchDataCallback
     },
     iconPath
 )
