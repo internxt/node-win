@@ -13,13 +13,15 @@ struct FetchDataArgs
     std::wstring fileIdentityArg;
 };
 
-napi_value response_callback_fn_added(napi_env env, napi_callback_info info) {
+napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
+{
     wprintf(L"response_callback_fn_added called\n");
     size_t argc = 2;
     napi_value argv[2];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
 
-    if ( argc < 2 ) {
+    if (argc < 2)
+    {
         wprintf(L"This function must receive at least two arguments");
         return nullptr;
     }
@@ -53,7 +55,7 @@ napi_value response_callback_fn_added(napi_env env, napi_callback_info info) {
     napi_get_value_string_utf16(env, argv[1], (char16_t *)response_wstr.data(), response_len + 1, &response_len);
 
     wprintf(L"input path: %s .\n", response_wstr.c_str());
-    
+
     std::lock_guard<std::mutex> lock(mtx);
     ready = true;
     callbackResult = confirmation_response;
@@ -74,7 +76,7 @@ void notify_file_added_call(napi_env env, napi_value js_callback, void *context,
     std::u16string u16_fileIdentity(args->fileIdentityArg.begin(), args->fileIdentityArg.end());
 
     napi_create_string_utf16(env, u16_fileIdentity.c_str(), u16_fileIdentity.size(), &js_string_path);
-    
+
     napi_create_function(env, "responseCallback", NAPI_AUTO_LENGTH, response_callback_fn_added, nullptr, &js_response_callback_fn);
 
     napi_value args_to_js_callback[2] = {js_string_path, js_response_callback_fn};
@@ -100,11 +102,11 @@ void notify_file_added_call(napi_env env, napi_value js_callback, void *context,
     delete args;
 }
 
-void register_threadsafe_notify_file_added_callback(FileChange& change, const std::string &resource_name, napi_env env, InputSyncCallbacksThreadsafe input)
+void register_threadsafe_notify_file_added_callback(FileChange &change, const std::string &resource_name, napi_env env, InputSyncCallbacksThreadsafe input)
 {
     std::wstring *dataToSend = new std::wstring(change.type == NEW_FILE ? change.path : (change.path + L"\\"));
     napi_status status = napi_call_threadsafe_function(input.notify_file_added_threadsafe_callback, dataToSend, napi_tsfn_blocking);
-    
+
     {
         std::unique_lock<std::mutex> lock(mtx);
         while (!ready)
@@ -112,36 +114,38 @@ void register_threadsafe_notify_file_added_callback(FileChange& change, const st
             cv.wait(lock);
         }
     }
-    winrt::handle placeholder;
+    HANDLE placeholder;
 
-    if ( !std::filesystem::exists(change.path) ) {
+    if (!std::filesystem::exists(change.path))
+    {
         wprintf(L"file does not exist\n");
         return;
     };
-    
-    try {
 
-        if (change.type == NEW_FOLDER) {
-            placeholder = winrt::handle(CreateFileW(
+    try
+    {
+
+        if (change.type == NEW_FOLDER)
+        {
+            placeholder = CreateFileW(
                 change.path.c_str(),
                 FILE_LIST_DIRECTORY | WRITE_DAC,
                 FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                 nullptr,
                 OPEN_EXISTING,
                 FILE_FLAG_BACKUP_SEMANTICS,
-                nullptr
-            ));
-
-        } else if (change.type == NEW_FILE) { //||  change.type == MODIFIED_FILE) {
-            placeholder = winrt::handle(CreateFileW(
+                nullptr);
+        }
+        else if (change.type == NEW_FILE)
+        { //||  change.type == MODIFIED_FILE) {
+            placeholder = CreateFileW(
                 change.path.c_str(),
-                FILE_READ_DATA | WRITE_DAC,
+                FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES,
                 FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                 nullptr,
                 OPEN_EXISTING,
                 0,
-                nullptr
-            ));
+                nullptr);
         }
 
         // winrt::handle placeholder(CreateFileW(change.path.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
@@ -149,22 +153,33 @@ void register_threadsafe_notify_file_added_callback(FileChange& change, const st
         const std::wstring idStr = server_identity;
         LPCVOID idStrLPCVOID = static_cast<LPCVOID>(idStr.c_str());
         DWORD idStrByteLength = static_cast<DWORD>(idStr.size() * sizeof(wchar_t));
-        
+
         wprintf(L"callbackResult: %d\n", callbackResult);
-        if (callbackResult) {
-            HRESULT hr;
-            try {   
-                hr = CfConvertToPlaceholder(placeholder.get(), idStrLPCVOID, idStrByteLength, CF_CONVERT_FLAG_MARK_IN_SYNC, nullptr, nullptr);
-                wprintf(L"convert to placeholder: %d\n", hr);
-            } catch (...) {
-                wprintf(L"Error al convertir a placeholder: %d\n", hr);
+        if (callbackResult)
+        {
+            try
+            {
+                wprintf(L"convert to placeholder in sync \n");
+                Sleep(1000);
+                HRESULT hr = CfConvertToPlaceholder(placeholder, idStrLPCVOID, idStrByteLength, CF_CONVERT_FLAG_MARK_IN_SYNC, nullptr, nullptr);
+                // show error
+                if (FAILED(hr) || hr != S_OK)
+                {
+                    wprintf(L"Error al convertir a placeholder: 0x%X\n", hr);
+                }
+                CloseHandle(placeholder);
             }
-            
+            catch (...)
+            {
+                wprintf(L"Error al convertir a placeholder: \n");
+            }
         }
-    } catch(...) {
+    }
+    catch (...)
+    {
         wprintf(L"Error al convertir a placeholder.\n");
     }
-    
+
     // if (!callbackResult) {
     //     wprintf(L"not in sync\n");
     //     winrt::StorageProviderItemProperty prop;
@@ -174,14 +189,15 @@ void register_threadsafe_notify_file_added_callback(FileChange& change, const st
 
     //     std::filesystem::path fullPath(change.path.c_str());
     //     std::wstring directory = fullPath.parent_path().wstring();
-    //     std::wstring filename = fullPath.filename().wstring();  
-        
+    //     std::wstring filename = fullPath.filename().wstring();
+
     //     // this is adding the custom state over the existing one
     //     Utilities::ApplyCustomOverwriteStateToPlaceholderFile(directory.c_str(), filename.c_str(), prop);
     // }
 
     wprintf(L"finish upload task\n");
-    if (status != napi_ok) {
+    if (status != napi_ok)
+    {
         napi_throw_error(env, NULL, "Unable to call notify_file_added_threadsafe_callback");
     }
 
