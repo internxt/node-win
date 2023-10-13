@@ -118,6 +118,9 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
 
     while (true)
     {
+        wprintf(L"\n[Control] Waiting for changes\n");
+        // todo: get info from root folder
+        wprintf(L"[Control] FileInfo Syncronized\n");
         DWORD returned;
         winrt::check_bool(ReadDirectoryChangesW(
             _dir.get(),
