@@ -1,7 +1,23 @@
+#include <iostream>
 #include "stdafx.h"
 #include "DirectoryWatcher.h"
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 const size_t c_bufferSize = 32768; // sizeof(FILE_NOTIFY_INFORMATION) * 100;
+
+void GetSyncItemsInfo(const std::wstring &fullPath)
+{
+    wprintf(L"GetSyncItemsInfo\n");
+    for (const auto &entry : std::filesystem::directory_iterator(fullPath))
+    {
+        if (entry.is_regular_file())
+        {
+            wprintf(L"file: %s\n", entry.path().c_str());
+        }
+    }
+}
 
 bool IsTemporaryFile(const std::wstring &fullPath)
 {
@@ -120,6 +136,7 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
     {
         wprintf(L"\n[Control] Waiting for changes\n");
         // todo: get info from root folder
+        GetSyncItemsInfo(_path);
         wprintf(L"[Control] FileInfo Syncronized\n");
         DWORD returned;
         winrt::check_bool(ReadDirectoryChangesW(
