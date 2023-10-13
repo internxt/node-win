@@ -90,24 +90,29 @@ async function onFileAddedCallback(filePath: string, callback: (aknowledge : boo
     }
 }
 
-async function onFetchDataCallback(fileId: string, callback: (data : boolean, path: string) => void ) {
+type CallbackResponse = (data : boolean, path: string, errorHandler?: () => void) => Promise<{ finished: boolean, progress: number }>;
+async function onFetchDataCallback(fileId: string, callback: CallbackResponse ) {
     console.log("file id: " + fileId);
     // simulate a download from a real server and response with the path of the downloaded file of a fake server
-    onFetchData(fileId).then((response) => {
-        function runLoop(index: number) {
-            if (index < 10) {
-              console.log("progress: " + index * 10 + "%");
-              callback(response, "C:\\Users\\User\\Desktop\\fakeserver\\imagen.rar");
-              setTimeout(function() {
-                runLoop(index + 1);
-              }, 2000);
-            }
-          }
-        // bucle simulate progress bar
-        runLoop(0);
-    }).catch((err) => {
-        callback(false, "C:\\Users\\User\\Desktop\\fakeserver\\imagen.rar");
+    let finish = false;
+    onFetchData(fileId).then(async (response) => {
+        while (!finish) {
+            const callbackResponse = await callback(response, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
+            finish = callbackResponse.finished;
+            if (finish) {
+                console.log("finished");
+                break;
+            };
+        };
+
+    }).catch((err) => { // THIS CATCH IS REALLY IMPORTANT
+        //callback(false, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
+        console.log(err);
     });
+}
+
+async function onCancelFetchDataCallback(fileId: string) {
+    console.log("cancel fetch data: ", fileId);
 }
 
 const iconPath = 'C:\\Users\\gcarl\\Downloads\\sicon.ico';
@@ -119,7 +124,8 @@ drive.registerSyncRoot(
         notifyDeleteCallback: onDeleteCallbackWithCallback,
         notifyRenameCallback: onRenameCallbackWithCallback,
         notifyFileAddedCallback: onFileAddedCallback,
-        fetchDataCallback: onFetchDataCallback
+        fetchDataCallback: onFetchDataCallback,
+        cancelFetchDataCallback: onCancelFetchDataCallback
     },
     iconPath
 )
@@ -148,7 +154,7 @@ drive.createFileByPath(`/A (5th copy).pdfs`, '280ab650-acef-4438-8bbc-29863810b2
 drive.createFileByPath(`/file1.txt`, 'fa8217c9-2dd6-4641-9180-8206e60368a6', 1000, fileCreatedAt, fileUpdatedAt);
 drive.createFileByPath(`/folderWithFile/file2.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036216', 1000, fileCreatedAt, fileUpdatedAt);
 drive.createFileByPath(`/fakefile.txt`, 'fa8217c9-2dd6-4641-9180-8206e6036843', 57, fileCreatedAt, fileUpdatedAt);
-drive.createFileByPath(`/imagen.rar`, 'fa8217c9-2dd6-4641-9180-8206e60368f1', 33020, fileCreatedAt, fileUpdatedAt);
+drive.createFileByPath(`/imagen.rar`, 'fa8217c9-2dd6-4641-9180-8206e60368f1', 80582195, fileCreatedAt, fileUpdatedAt);
 drive.createFileByPath(`/noExtensionFile`, 'fa8217c9-2dd6-4641-9180-8206e5039843', 33020, fileCreatedAt, fileUpdatedAt);
 
 // creating folders
@@ -162,14 +168,14 @@ drive.createFolderByPath(`/folderWithFolder/F.O.L.D.E.R`, 'fa8217c9-2dd6-4641-91
 drive.createItemByPath(`/item-folder/`, 'fa8217c9-2dd6-4641-9189-8206e60368123', 1000, folderCreatedAt, folderUpdatedAt);
 drive.createItemByPath(`/imagen-item.rar`, 'fa8217c9-2dd6-4641-9180-053fe60368f1', 33020, fileCreatedAt, fileUpdatedAt);
 
-// get items --------------
-console.log('==============    GET ITEMS IDS    ==============');
-drive.getItemsIds().then((ids) => {
-    ids.map((id,i) => {
-        console.log(`Item Id [${i}]: ` + id);
-    })
-})
-//---------------
+// // get items --------------
+// console.log('\n==============    GET ITEMS IDS    ==============');
+// drive.getItemsIds().then((ids) => {
+//     ids.map((id,i) => {
+//         console.log(`Item Id [${i}]: ` + id);
+//     })
+// })
+// //---------------
 
 
 // using the watch and wait method

@@ -13,6 +13,7 @@
 #include <chrono>
 #include "Utilities.h"
 
+
 napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
 inline std::mutex mtx;
@@ -37,13 +38,13 @@ CF_CONNECTION_KEY connectionKey;
 CF_TRANSFER_KEY transferKey;
 LARGE_INTEGER fileSize;
 LARGE_INTEGER requiredLength;
+LARGE_INTEGER requiredOffset;
 CF_CALLBACK_INFO g_callback_info;
 std::wstring g_full_client_path;
 
 
 inline bool load_finished = false;
 inline size_t lastReadOffset = 0;
-
 struct FetchDataArgs
 {
     std::wstring fileIdentityArg;
@@ -71,12 +72,13 @@ std::string WStringToString(const std::wstring &wstr)
     return strTo;
 }
 
-size_t file_incremental_reading(const std::string &filename, size_t &dataSizeRead, bool final_step)
+size_t file_incremental_reading(napi_env env, const std::string &filename, size_t &dataSizeRead, bool final_step, float& progress, napi_value error_callback = nullptr)
 {
     printf("===================RESPONSE CALLBACK CALLED===================\n");
     std::ifstream file;
 
     // Abre el archivo
+    printf("filename: %s\n", filename.c_str());
     file.open(filename, std::ios::in | std::ios::binary);
 
     if (!file.is_open())
@@ -95,40 +97,73 @@ size_t file_incremental_reading(const std::string &filename, size_t &dataSizeRea
 
     wprintf(L"growth: %d\n", growth);
 
+    try {
 
-    if ((datasizeAvailableUnread > 0 )) // && CHUNK_SIZE < datasizeAvailableUnread && !final_step) || (datasizeAvailableUnread > 0 && final_step)
-    { // Si el archivo ha crecido
-        printf("============ENTER IN IF STATEMENT============\n");
-        std::vector<char> buffer(CHUNK_SIZE);
-        file.seekg(dataSizeRead);
-        file.read(buffer.data(), CHUNK_SIZE);
-        // std::cout.write(buffer.data(), datasizeAvailableUnread);
+        if ((datasizeAvailableUnread > 0 )) // && CHUNK_SIZE < datasizeAvailableUnread && !final_step) || (datasizeAvailableUnread > 0 && final_step)
+        { // Si el archivo ha crecido
+            printf("============ENTER IN IF STATEMENT============\n");
+            std::vector<char> buffer(CHUNK_SIZE);
+            file.seekg(dataSizeRead);
+            file.read(buffer.data(), CHUNK_SIZE);
+            // std::cout.write(buffer.data(), datasizeAvailableUnread);
 
-        LARGE_INTEGER startingOffset, length;
+            LARGE_INTEGER startingOffset, length;
 
-        startingOffset.QuadPart = dataSizeRead; // Desplazamiento desde el cual se leyeron los datos
+            startingOffset.QuadPart = dataSizeRead; // Desplazamiento desde el cual se leyeron los datos
 
-        printf("connectionKey: %d\n", connectionKey);
-        printf("transferKey: %d\n", transferKey);
-        printf("startingOffset: %d\n", startingOffset.QuadPart);
+            printf("connectionKey: %d\n", connectionKey);
+            printf("transferKey: %d\n", transferKey);
+            printf("startingOffset: %d\n", startingOffset.QuadPart);
 
-        LARGE_INTEGER chunkBufferSize;
-        chunkBufferSize.QuadPart = min( datasizeAvailableUnread, CHUNK_SIZE);
+            LARGE_INTEGER chunkBufferSize;
+            chunkBufferSize.QuadPart = min( datasizeAvailableUnread, CHUNK_SIZE);
 
-        FileCopierWithProgress::TransferData(
-            connectionKey,
-            transferKey,
-            buffer.data(),
-            startingOffset,
-            chunkBufferSize,
-            STATUS_SUCCESS);
+            HRESULT hr = FileCopierWithProgress::TransferData(
+                connectionKey,
+                transferKey,
+                buffer.data(),
+                startingOffset,
+                chunkBufferSize,
+                STATUS_SUCCESS
+            );
 
-        dataSizeRead += chunkBufferSize.QuadPart;
+            dataSizeRead += chunkBufferSize.QuadPart;
+
+            if (FAILED(hr))
+            {
+                wprintf(L"Error in FileCopierWithProgress::TransferData(), HRESULT: %lx\n", hr);
+                load_finished = true;
+
+                HRESULT hr = FileCopierWithProgress::TransferData(
+                    connectionKey,
+                    transferKey,
+                    NULL,
+                    requiredOffset,
+                    requiredLength,
+                    STATUS_UNSUCCESSFUL);
+                // Sleep(CHUNKDELAYMS);
+                // if (error_callback != nullptr) {
+                //     napi_value result;
+                //     napi_value undefined_val;
+                //     napi_call_function(env, undefined_val, error_callback, 0, nullptr, &result);
+                // }
+            } else {
+                UINT64 totalSize = static_cast<UINT64>(fileSize.QuadPart);
+                progress = static_cast<float>(dataSizeRead) / static_cast<float>(totalSize);
+                Utilities::ApplyTransferStateToFile(g_full_client_path.c_str(), g_callback_info, totalSize , dataSizeRead);
+                Sleep(CHUNKDELAYMS);
+            }
+        }
+    } catch (...) {
+        HRESULT hr = FileCopierWithProgress::TransferData(
+                    connectionKey,
+                    transferKey,
+                    NULL,
+                    requiredOffset,
+                    requiredLength,
+                    STATUS_UNSUCCESSFUL);
     }
 
-    UINT64 totalSize = static_cast<UINT64>(fileSize.QuadPart);
-    Utilities::ApplyTransferStateToFile(g_full_client_path.c_str(), g_callback_info, totalSize , dataSizeRead);
-    Sleep(CHUNKDELAYMS);
     file.close();
     lastSize = newSize;
     return dataSizeRead; // Retorna el nuevo dataSizeRead
@@ -137,8 +172,8 @@ size_t file_incremental_reading(const std::string &filename, size_t &dataSizeRea
 // response callback fn
 napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info)
 {
-    size_t argc = 2;
-    napi_value argv[2];
+    size_t argc = 3;
+    napi_value argv[3];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
 
     if (argc < 2)
@@ -165,6 +200,21 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     napi_typeof(env, argv[1], &valueType);
     if (valueType != napi_string)
     {
+        // napi_value failed_result_bool;
+        // napi_get_boolean(env, true, &failed_result_bool);
+
+        // napi_value failed_progress_value;
+        // napi_create_double(env, 0, &failed_progress_value);
+
+        // wprintf(L"Second argument should be string\n");
+        // napi_value failed_result_object;
+        // napi_create_object(env, &failed_result_object);
+
+        // napi_set_named_property(env, failed_result_object, "finished", failed_result_bool);
+        // napi_set_named_property(env, failed_result_object, "progress", failed_progress_value);
+
+        // return failed_result_bool;
+
         wprintf(L"Second argument should be string\n");
         return nullptr;
     }
@@ -181,11 +231,21 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 
     napi_get_value_string_utf16(env, argv[1], (char16_t *)response_wstr.data(), response_len + 1, &response_len);
 
+    if (argc == 3) {
+        napi_valuetype callbackType;
+        napi_typeof(env, argv[2], &callbackType);
+        if (callbackType != napi_function) {
+            wprintf(L"Third argument should be a function\n");
+            return nullptr;
+        }
+    }
+
     wprintf(L"input path: %s .\n", response_wstr.c_str());
 
     fullServerFilePath = response_wstr;
 
-    lastReadOffset = file_incremental_reading(WStringToString(fullServerFilePath), lastReadOffset, false);
+    float progress;
+    lastReadOffset = file_incremental_reading(env, WStringToString(fullServerFilePath), lastReadOffset, false, progress, argc == 3 ? argv[2] : nullptr);
 
     // size file in real time
     std::wstring file_path = fullServerFilePath.c_str();
@@ -213,7 +273,10 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     if (lastReadOffset == fileSize.QuadPart)
     {
         printf("[Debug] File has been fully read.\n");
+        lastReadOffset = 0;
         load_finished = true;
+        Utilities::ApplyTransferStateToFile(g_full_client_path.c_str(), g_callback_info, fileSize.QuadPart, fileSize.QuadPart);
+        Sleep(CHUNKDELAYMS);
     };
 
     {
@@ -228,17 +291,30 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     }
 
     napi_value resultBool;
-    napi_get_boolean(env, lastReadOffset == fileSize.QuadPart, &resultBool);
+    napi_get_boolean(env, load_finished, &resultBool);
 
-    printf("resultBool: %d\n", lastReadOffset == fileSize.QuadPart);
+    napi_value progress_value;
+    napi_create_double(env, progress, &progress_value);
 
-    return resultBool;
-}
+    printf("resultBool: %d\n", load_finished);
 
-void HydrateFile(_In_ CONST CF_CALLBACK_INFO *lpCallbackInfo,
-                 _In_ CONST CF_CALLBACK_PARAMETERS *lpCallbackParameters, const std::wstring &syncRootPath, const std::wstring &fakeServerFilePath)
-{
-    FileCopierWithProgress::CopyFromServerToClient(lpCallbackInfo, lpCallbackParameters, fakeServerFilePath.c_str());
+    napi_value result_object;
+    napi_create_object(env, &result_object);
+
+    napi_set_named_property(env, result_object, "finished", resultBool);
+    napi_set_named_property(env, result_object, "progress", progress_value);
+
+    if ( load_finished ) {
+        load_finished = false;
+    };
+
+    napi_value promise;
+    napi_deferred deferred;
+    napi_create_promise(env, &deferred, &promise);
+
+    napi_resolve_deferred(env, deferred, result_object);
+
+    return promise;
 }
 
 void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
@@ -278,6 +354,7 @@ void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context,
         fprintf(stderr, "Failed to call JS function.\n");
         return;
     }
+
     delete args;
 }
 
@@ -326,6 +403,7 @@ void CALLBACK fetch_data_callback_wrapper(
     transferKey = callbackInfo->TransferKey;
     fileSize = callbackInfo->FileSize;
     requiredLength = callbackParameters->FetchData.RequiredLength;
+    requiredOffset = callbackParameters->FetchData.RequiredFileOffset;
     g_callback_info = *callbackInfo;
 
     std::wstring fullClientPath(callbackInfo->VolumeDosName);

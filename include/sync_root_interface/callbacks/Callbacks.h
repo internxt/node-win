@@ -21,6 +21,10 @@ void CALLBACK fetch_placeholders_callback_wrapper(_In_ CONST CF_CALLBACK_INFO *c
 void register_threadsafe_fetch_data_callback(const std::string &resource_name, napi_env env, InputSyncCallbacks input);
 void CALLBACK fetch_data_callback_wrapper(_In_ CONST CF_CALLBACK_INFO *callbackInfo, _In_ CONST CF_CALLBACK_PARAMETERS *callbackParameters);
 
+// Fetch Data Cancel Callback
+void register_threadsafe_cancel_fetch_data_callback(const std::string &resource_name, napi_env env, InputSyncCallbacks input);
+void CALLBACK cancel_fetch_data_callback_wrapper(_In_ CONST CF_CALLBACK_INFO *callbackInfo, _In_ CONST CF_CALLBACK_PARAMETERS *callbackParameters);
+
 // Notify File Added Callback. This is a fake callback
 void notify_file_added_call(napi_env env, napi_value js_callback, void *context, void *data);
 void register_threadsafe_notify_file_added_callback(FileChange& change, const std::string &resource_name, napi_env env, InputSyncCallbacksThreadsafe input);
