@@ -12,6 +12,7 @@ enum ChangeType
 struct FileChangedInfo
 {
     std::wstring path;
+    uintmax_t size;
 };
 struct FileChange
 {
