@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "DirectoryWatcher.h"
+#include <filesystem>
+namespace fs = std::filesystem;
 
 const size_t c_bufferSize = 32768; // sizeof(FILE_NOTIFY_INFORMATION) * 100;
 
@@ -112,12 +114,73 @@ void ExploreDirectory(const std::wstring &directoryPath, std::list<FileChange> &
     }
 }
 
+// struct FileInformation
+// {
+//     std::wstring path;
+//     std::uintmax_t size;
+// };
+// std::vector<FileInformation> _fileInfoList;
+// funcion para obtener todos los paths de los arhicov y sus tamaños
+void GetSyncItemsInfo(const std::wstring &directoryPath, std::vector<std::wstring> &fileInfoList)
+{
+    wprintf(L"[Debug] GetSyncItemsInfo\n");
+    for (const auto &entry : std::filesystem::directory_iterator(directoryPath))
+    {
+        if (entry.is_regular_file())
+        {
+            fileInfoList.push_back(entry.path().wstring());
+        }
+    }
+}
+
+// get info de un archivo por el path del archivo de un solo archivo
+// void SizeUpdated(std::wstring &filePath, std::vector<auto> &fileInfoList)
+// {
+//     wprintf(L"[Debug] SizeUpdated\n");
+
+//     // const auto &entry = fs::directory_entry(filePath);
+
+//     // if (fs::is_regular_file(filePath))
+//     // {
+//     //     wprintf(L"[Debug] is_regular_file\n");
+//     //     wprintf(L"[Debug] filePath.c_str(): %ls\n", filePath.c_str());
+//     //     wprintf(L"[Debug] filename size: %d\n", entry.path().filename());
+//     //     wprintf(L"[Debug] filePath.file_size(): %d\n", entry.file_size());
+//     // }
+
+//     // recorrer fileInfoList para encontrar el archivo y retornar true si su tamaño es diferente
+//     // for (auto &fileInfo : fileInfoList)
+//     // {
+//     //     if (fileInfo.path.c_str() == filePath.c_str())
+//     //     {
+//     //         wprintf(L"[Debug] fileInfo.path: %ls\n", fileInfo.path.c_str());
+//     //         wprintf(L"[Debug] filePath: %ls\n", filePath.c_str());
+//     //         // wprintf(L"[Debug] fileInfo.size: %d\n", fileInfo.size);
+//     //         // wprintf(L"[Debug] entry.file_size(): %d\n", entry.file_size());
+
+//     //         // return fileInfo.size != fs::file_size(filePath);
+//     //     }
+//     // }
+// }
+
 winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAsync()
 {
     co_await winrt::resume_background();
 
     while (true)
     {
+        wprintf(L"[Control] waiting for changes\n");
+        // obtenermos el tamaño de path de todos los archivos y sus tamaños
+        std::vector<std::wstring> f;
+        GetSyncItemsInfo(_path, f);
+
+        // wprintf(L"[Control] _fileInfoList.size(): %d\n", _fileInfoList.size());
+        // for (FileInformation &f : _fileInfoList)
+        // {
+        //     wprintf(L"File: %ls\n", f.path.c_str());
+        //     wprintf(L"File size: %llu\n", f.size);
+        // }
+
         DWORD returned;
         winrt::check_bool(ReadDirectoryChangesW(
             _dir.get(),
@@ -146,6 +209,7 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
         FILE_NOTIFY_INFORMATION *next = _notify.get();
         while (next != nullptr)
         {
+            wprintf(L"[Control] action\n");
             std::wstring fullPath(_path);
             fullPath.append(L"\\");
             fullPath.append(std::wstring_view(next->FileName, next->FileNameLength / sizeof(wchar_t)));
@@ -155,6 +219,8 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             bool isTmpFile = IsTemporaryFile(fullPath);
 
             DWORD fileAttributes = GetFileAttributesW(fullPath.c_str());
+            // bool isPlaceholderFile = isPlaceholder(fullPath);
+            // wprintf(L"[Control] isPlaceholderFile: %d\n", isPlaceholderFile);
 
             bool isDirectory = (fileAttributes != INVALID_FILE_ATTRIBUTES) && (fileAttributes & FILE_ATTRIBUTE_DIRECTORY);
             bool fileExists = (fileAttributes != INVALID_FILE_ATTRIBUTES);
@@ -173,13 +239,22 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             {
                 ExploreDirectory(fullPath, result, fc);
             }
+            else if (next->Action == FILE_ACTION_MODIFIED && !isDirectory)
+            {
+                // SizeUpdated(fullPath, _fileInfoList);
+                wprintf(L"modified file: \n");
+                // for (FileInformation &f : _fileInfoList)
+                // {
+                //     wprintf(L"File: %ls\n", f.path.c_str());
+                //     wprintf(L"File size: %llu\n", f.size);
+                // }
+            }
             else
             {
                 fc.type = OTHER;
                 fc.item_added = false;
                 result.push_back(fc);
             }
-
             // else if (next->Action == FILE_ACTION_MODIFIED && fileExists  && !isTmpFile && !isDirectory && !isHidden) {
             //     wprintf(L"modified file1: %s\n", fullPath.c_str());
             //     fc.type = MODIFIED_FILE;
@@ -216,6 +291,7 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
         //         napi_throw_error(_env, NULL, "Unable to call notify_file_added_threadsafe_callback");
         //     }
         // }
+        // _fileInfoList.clear();
         _callback(result, _env, _input);
     }
 
