@@ -11,22 +11,49 @@ const size_t c_bufferSize = 32768; // sizeof(FILE_NOTIFY_INFORMATION) * 100;
 std::list<FileChangedInfo> _fileInfoList;
 void GetSyncItemsInfo(const std::wstring &fullPath)
 {
-    wprintf(L"GetSyncItemsInfo\n");
+    // wprintf(L"GetSyncItemsInfo\n");
     for (const auto &entry : std::filesystem::directory_iterator(fullPath))
     {
         if (entry.is_regular_file())
         {
             FileChangedInfo list = {};
-            wprintf(L"file: %s\n", entry.path().c_str());
-            wprintf(L"filesize: %d\n", entry.file_size());
+            // wprintf(L"file: %s\n", entry.path().c_str());
+            // wprintf(L"filesize: %d\n", entry.file_size());
             list.path = entry.path();
             list.size = entry.file_size();
             _fileInfoList.push_back(list);
         }
         if (entry.is_directory())
         {
-            wprintf(L"directory: %s\n", entry.path().c_str());
+            // wprintf(L"directory: %s\n", entry.path().c_str());
             GetSyncItemsInfo(entry.path());
+        }
+    }
+}
+
+void FileModified(const std::wstring &fullPath, std::list<FileChange> &result, FileChange fc)
+{
+    // wprintf(L"FileModified\n");
+    bool found = false;
+    for (auto &f : _fileInfoList)
+    {
+        if (f.path == fullPath)
+        {
+            // wprintf(L"found\n");
+            found = true;
+            if (f.size != fs::file_size(fullPath))
+            {
+                wprintf(L"file size changed\n");
+                // wprintf(L"\nnew file: %s\n", fullPath.c_str());
+                fc.type = NEW_FILE;
+                fc.item_added = true;
+                result.push_back(fc);
+            }
+            else
+            {
+                wprintf(L"file size not changed\n");
+            }
+            break;
         }
     }
 }
@@ -207,30 +234,7 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             }
             else if (next->Action == FILE_ACTION_MODIFIED && !isDirectory && !isHidden && !isTmpFile)
             {
-                wprintf(L"\n[Control] file modified\n");
-                bool found = false;
-                for (auto &f : _fileInfoList)
-                {
-
-                    if (f.path == fullPath)
-                    {
-                        wprintf(L"found\n");
-                        found = true;
-                        if (f.size != fs::file_size(fullPath))
-                        {
-                            wprintf(L"file size changed\n");
-                            wprintf(L"\nnew file: %s\n", fullPath.c_str());
-                            fc.type = NEW_FILE;
-                            fc.item_added = true;
-                            result.push_back(fc);
-                        }
-                        else
-                        {
-                            wprintf(L"file size not changed\n");
-                        }
-                        break;
-                    }
-                }
+                FileModified(fullPath, result, fc);
             }
             else
             {
