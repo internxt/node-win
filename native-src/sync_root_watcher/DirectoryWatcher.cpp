@@ -8,9 +8,9 @@ namespace fs = std::filesystem;
 
 const size_t c_bufferSize = 32768; // sizeof(FILE_NOTIFY_INFORMATION) * 100;
 
-std::list<FileChangedInfo> GetSyncItemsInfo(const std::wstring &fullPath)
+std::list<FileChangedInfo> _fileInfoList;
+void GetSyncItemsInfo(const std::wstring &fullPath)
 {
-    std::list<FileChangedInfo> fileInfoList = {};
     wprintf(L"GetSyncItemsInfo\n");
     for (const auto &entry : std::filesystem::directory_iterator(fullPath))
     {
@@ -21,10 +21,14 @@ std::list<FileChangedInfo> GetSyncItemsInfo(const std::wstring &fullPath)
             wprintf(L"filesize: %d\n", entry.file_size());
             list.path = entry.path();
             list.size = entry.file_size();
-            fileInfoList.push_back(list);
+            _fileInfoList.push_back(list);
+        }
+        if (entry.is_directory())
+        {
+            wprintf(L"directory: %s\n", entry.path().c_str());
+            GetSyncItemsInfo(entry.path());
         }
     }
-    return fileInfoList;
 }
 
 bool IsTemporaryFile(const std::wstring &fullPath)
@@ -144,7 +148,7 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
     {
         wprintf(L"\n[Control] Waiting for changes\n");
         // todo: get info from root folder
-        std::list<FileChangedInfo> fileInfoList = GetSyncItemsInfo(_path);
+        GetSyncItemsInfo(_path);
         wprintf(L"[Control] FileInfo Syncronized\n");
         DWORD returned;
         winrt::check_bool(ReadDirectoryChangesW(
@@ -205,7 +209,7 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             {
                 wprintf(L"\n[Control] file modified\n");
                 bool found = false;
-                for (auto &f : fileInfoList)
+                for (auto &f : _fileInfoList)
                 {
 
                     if (f.path == fullPath)
@@ -271,6 +275,7 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
         //         napi_throw_error(_env, NULL, "Unable to call notify_file_added_threadsafe_callback");
         //     }
         // }
+        _fileInfoList.clear();
         _callback(result, _env, _input);
     }
 
