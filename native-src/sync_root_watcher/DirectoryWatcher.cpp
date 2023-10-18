@@ -3,6 +3,8 @@
 #include "DirectoryWatcher.h"
 #include <filesystem>
 #include <list>
+#include <string>
+#include <algorithm>
 
 namespace fs = std::filesystem;
 
@@ -31,31 +33,45 @@ void GetSyncItemsInfo(const std::wstring &fullPath)
     }
 }
 
-void FileModified(const std::wstring &fullPath, std::list<FileChange> &result, FileChange fc)
+std::wstring normalizePath(const std::wstring &path)
 {
-    // wprintf(L"FileModified\n");
+    std::wstring normalizedPath = path;
+    std::replace(normalizedPath.begin(), normalizedPath.end(), L'\\', L'/');
+    return normalizedPath;
+}
+
+bool FileModified(const std::wstring &fullPath, std::list<FileChange> &result, FileChange fc)
+{
+    wprintf(L"[Control] FileModified\n");
     bool found = false;
     for (auto &f : _fileInfoList)
     {
-        if (f.path == fullPath)
+        // wprintf(L"fullPath: %s\n", fullPath.c_str());
+        // wprintf(L"f.path: %s\n", f.path.c_str());
+        std::wstring fpath = normalizePath(f.path);
+        std::wstring fullpath = normalizePath(fullPath);
+        // wprintf(L"fpath: %s\n", fpath.c_str());
+        // wprintf(L"fullpath: %s\n", fullpath.c_str());
+        if (fpath == fullpath)
         {
-            // wprintf(L"found\n");
             found = true;
             if (f.size != fs::file_size(fullPath))
             {
-                wprintf(L"file size changed\n");
+                wprintf(L"[Control] file size changed\n");
                 // wprintf(L"\nnew file: %s\n", fullPath.c_str());
-                fc.type = NEW_FILE;
-                fc.item_added = true;
-                result.push_back(fc);
+                // fc.type = NEW_FILE;
+                // fc.item_added = true;
+                // result.push_back(fc);
+                return true;
             }
             else
             {
-                wprintf(L"file size not changed\n");
+                wprintf(L"[Control] file size not changed\n");
             }
             break;
         }
     }
+    return false;
 }
 
 bool IsTemporaryFile(const std::wstring &fullPath)
@@ -206,7 +222,13 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
         while (next != nullptr)
         {
             std::wstring fullPath(_path);
-            fullPath.append(L"\\");
+            // wprintf(L"before append fullPath: %s\n", fullPath.c_str());
+            if (fullPath.back() != L'\\')
+            {
+                fullPath.append(L"\\");
+            }
+            // fullPath.append(L"\\");
+            // wprintf(L"after append fullPath: %s\n", fullPath.c_str());
             fullPath.append(std::wstring_view(next->FileName, next->FileNameLength / sizeof(wchar_t)));
 
             FileChange fc;
@@ -220,24 +242,29 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             bool isHidden = (fileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0;
 
             // imprimir eventos que estan sucediendo
-
             if ((next->Action == FILE_ACTION_ADDED || (next->Action == FILE_ACTION_MODIFIED && !fileExists)) && !isTmpFile && !isDirectory && !isHidden)
             {
-                wprintf(L"\nnew file: %s\n", fullPath.c_str());
+                wprintf(L"\n[Control] New File: %s\n", fullPath.c_str());
                 fc.type = NEW_FILE;
                 fc.item_added = true;
                 result.push_back(fc);
             }
             else if (next->Action == FILE_ACTION_ADDED && isDirectory && !isHidden)
             {
+                wprintf(L"\n[Control] New Directory:\n", fullPath.c_str());
                 ExploreDirectory(fullPath, result, fc);
             }
-            else if (next->Action == FILE_ACTION_MODIFIED && !isDirectory && !isHidden && !isTmpFile)
+            else if (next->Action == FILE_ACTION_MODIFIED && !isDirectory && !isHidden && !isTmpFile && FileModified(fullPath, result, fc))
             {
-                FileModified(fullPath, result, fc);
+                wprintf(L"\n[Control] File Modified:\n", fullPath.c_str());
+                // FileModified(fullPath, result, fc);
+                fc.type = NEW_FILE;
+                fc.item_added = true;
+                result.push_back(fc);
             }
             else
             {
+                wprintf(L"\n[Control] Other Action Applied:\n", fullPath.c_str());
                 fc.type = OTHER;
                 fc.item_added = false;
                 result.push_back(fc);
