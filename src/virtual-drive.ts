@@ -215,7 +215,6 @@ class VirtualDrive {
 
     static unregisterSyncRoot(syncRootPath: string): any {
         const result = addon.unregisterSyncRoot(syncRootPath);
-        deleteAllSubfolders(syncRootPath);
         return result;
     }
 
