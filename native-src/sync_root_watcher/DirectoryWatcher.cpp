@@ -1,7 +1,10 @@
 #include "stdafx.h"
 #include "DirectoryWatcher.h"
+#include <iostream>
+#include <filesystem>
 
 const size_t c_bufferSize = 32768; // sizeof(FILE_NOTIFY_INFORMATION) * 100;
+namespace fs = std::filesystem;
 
 bool IsTemporaryFile(const std::wstring &fullPath)
 {
@@ -68,6 +71,21 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesAsync()
 {
     _readTask = ReadChangesInternalAsync();
     return _readTask;
+}
+
+std::uintmax_t getDirectorySize(const fs::path &directoryPath)
+{
+    std::uintmax_t size = 0;
+
+    for (const auto &entry : fs::recursive_directory_iterator(directoryPath))
+    {
+        if (fs::is_regular_file(entry))
+        {
+            size += fs::file_size(entry.path());
+        }
+    }
+
+    return size;
 }
 
 void ExploreDirectory(const std::wstring &directoryPath, std::list<FileChange> &result, FileChange fc)
@@ -165,13 +183,35 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             if ((next->Action == FILE_ACTION_ADDED || (next->Action == FILE_ACTION_MODIFIED && !fileExists)) && !isTmpFile && !isDirectory && !isHidden)
             {
                 wprintf(L"\nnew file: %s\n", fullPath.c_str());
+                std::filesystem::path p(fullPath);
+                // si es mayor a 20GB emitir error
+                if (std::filesystem::file_size(p) > 20000000000)
+                {
+                    fc.type = ERROR_FILE_SIZE_EXCEEDED;
+                    fc.item_added = false;
+                    result.push_back(fc);
+                    break;
+                }
+                // size del archivo
+
                 fc.type = NEW_FILE;
                 fc.item_added = true;
                 result.push_back(fc);
             }
             else if (next->Action == FILE_ACTION_ADDED && isDirectory && !isHidden)
             {
+                // if (getDirectorySize(fullPath) > 20000000000)
+                // {
+                //     fc.type = ERROR_FOLDER_SIZE_EXCEEDED;
+                //     fc.item_added = false;
+                //     result.push_back(fc);
+                //     break;
+                // }
+                // else
+                // {
+
                 ExploreDirectory(fullPath, result, fc);
+                // }
             }
             else
             {

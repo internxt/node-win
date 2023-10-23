@@ -7,6 +7,8 @@ enum ChangeType
     NEW_FILE,
     NEW_FOLDER,
     MODIFIED_FILE,
+    ERROR_FILE_SIZE_EXCEEDED,
+    ERROR_FOLDER_SIZE_EXCEEDED,
     OTHER
 };
 struct FileChange
