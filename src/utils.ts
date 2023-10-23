@@ -1,46 +1,44 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-export function deleteAllSubfolders(directoryPath: string): void {
+type Options = { filtered: boolean, filterPaths: string[] };
+
+
+export function deleteAllSubfolders(directoryPath: string, options?: Options): void {
     // Comprobar si el directorio existe
     if (!fs.existsSync(directoryPath)) {
-        console.error('El directorio especificado no existe:', directoryPath);
+        console.error('[Debug] El directorio especificado no existe:', directoryPath);
         return;
     }
-
+    const rootPath = directoryPath;
     // Leer todos los elementos del directorio
-    const items = fs.readdirSync(directoryPath);
-
-    items.forEach(item => {
-        let itemPath = path.join(directoryPath, item);
-        let itemStats = fs.statSync(itemPath);
-
-        // Si el elemento es una carpeta, eliminarla recursivamente
-        if (itemStats.isDirectory() ) {
-            deleteFolderRecursive(itemPath);
-        }
-        // Si el elemento es un archivo, eliminarlo
-        if (itemStats.isFile()){
-            fs.unlinkSync(itemPath);
-        }
-    });
+    if (options?.filtered){
+        deleteFolderRecursive(directoryPath, rootPath, options);
+    } else {
+        deleteFolderRecursive(directoryPath, rootPath);
+    }
 }
 
-export function deleteFolderRecursive(folderPath: string): void {
+export function deleteFolderRecursive(folderPath: string, rootPath: string,options?: Options): void {
     if (fs.existsSync(folderPath)) {
+        
         fs.readdirSync(folderPath).forEach((file, index) => {
             const currentPath = path.join(folderPath, file);
             if (fs.statSync(currentPath).isDirectory()) {
-                deleteFolderRecursive(currentPath);
+                options?.filtered ? deleteFolderRecursive(currentPath, rootPath, options) : deleteFolderRecursive(currentPath, rootPath);
+            } else if (options?.filtered) {
+                options?.filterPaths.includes(currentPath) ? fs.unlinkSync(currentPath): console.log('[Debug] Filtered: File is not in cloud storage so they are not deleted');
             } else {
-                fs.unlinkSync(currentPath);
+                fs.unlinkSync(currentPath)
             }
         });
-
-        // Después de eliminar todos los subdirectorios y archivos, eliminar la carpeta
-        fs.rmdirSync(folderPath);
+        
+        // Después de eliminar todos archivos, eliminar la carpeta si no es la raiz
+        if (options?.filtered && folderPath !== rootPath) {
+            options.filterPaths.includes(folderPath) ? fs.rmdirSync(folderPath) : console.log('[Debug] Filtered: Folder is not in cloud storage so they are not deleted');
+        } else if (folderPath !== rootPath) {
+            fs.rmdirSync(folderPath);
+        } 
+        
     }
 }
-
-// Uso de la función:
-// deleteAllSubfolders('/ruta/del/directorio');

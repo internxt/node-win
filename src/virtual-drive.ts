@@ -366,8 +366,8 @@ class VirtualDrive {
         return addon.disconnectSyncRoot(this.syncRootPath);
     }
 
-    syncAndCleanUp(): any {
-        
+    static syncAndCleanUp(syncRootPath: string, items: string[]): any {
+        return deleteAllSubfolders(syncRootPath, { filtered: true, filterPaths: items });
     }    
 }
 
