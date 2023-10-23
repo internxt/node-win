@@ -166,9 +166,22 @@ std::vector<std::wstring> fileIdentities; // Vector para almacenar FileIdentity 
 void EnumerateAndQueryPlaceholders(const std::wstring &directoryPath)
 {
 
+    HANDLE hFile;
+    HRESULT hr;
+    int size = sizeof(CF_PLACEHOLDER_BASIC_INFO) + 1000;
+    CF_PLACEHOLDER_BASIC_INFO PlaceholderInfo;
+    DWORD returnlength(0);
+    LARGE_INTEGER FileId;
+    BYTE *FileIdentity;
+    size_t identityLength;
     for (const auto &entry : std::filesystem::directory_iterator(directoryPath))
     {
-        HANDLE hFile = CreateFileW(
+        // Sleep(1000);
+        // hFile = INVALID_HANDLE_VALUE;
+        // while (hFile == INVALID_HANDLE_VALUE)
+        // {
+        printf("File: %ls\n", entry.path().c_str());
+        hFile = CreateFileW(
             entry.path().c_str(),
             FILE_READ_ATTRIBUTES,
             FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -176,36 +189,47 @@ void EnumerateAndQueryPlaceholders(const std::wstring &directoryPath)
             OPEN_EXISTING,
             FILE_FLAG_BACKUP_SEMANTICS | FILE_ATTRIBUTE_NORMAL,
             nullptr);
+        // }
+        // while(hFile != INVALID_HANDLE_VALUE)
         if (hFile != INVALID_HANDLE_VALUE)
         {
-            int size = sizeof(CF_PLACEHOLDER_STANDARD_INFO) + 300;
-            CF_PLACEHOLDER_STANDARD_INFO PlaceholderInfo;
-            DWORD returnlength(0);
-            HRESULT hr = CfGetPlaceholderInfo(hFile, CF_PLACEHOLDER_INFO_STANDARD, &PlaceholderInfo, size, &returnlength);
-            if (SUCCEEDED(hr))
-            {
-                LARGE_INTEGER FileId = PlaceholderInfo.FileId;
-                BYTE *FileIdentity = PlaceholderInfo.FileIdentity;
-                // Convertir FileIdentity a una cadena wstring
-                size_t identityLength = PlaceholderInfo.FileIdentityLength / sizeof(wchar_t);
-                std::wstring fileIdentityString(reinterpret_cast<const wchar_t *>(FileIdentity), identityLength);
-                fileIdentities.push_back(fileIdentityString);
-            }
-            else
-            {
-                wprintf(L"La llamada a CfGetPlaceholderInfo falló con el código de error 0x%X\n", hr);
-            }
-            CloseHandle(hFile);
+
+            hr = CfGetPlaceholderInfo(hFile, CF_PLACEHOLDER_INFO_BASIC, &PlaceholderInfo, size, &returnlength);
+            printf("[Control] hr: %d\n", hr);
+            // Sleep(5000);
+
+            // if (SUCCEEDED(hr))
+            // {
+            //     // FileId = PlaceholderInfo.FileId;
+            //     // FileIdentity = PlaceholderInfo.FileIdentity;
+            //     // // Convertir FileIdentity a una cadena wstring
+            //     // identityLength = PlaceholderInfo.FileIdentityLength / sizeof(wchar_t);
+            //     // std::wstring fileIdentityString(reinterpret_cast<const wchar_t *>(FileIdentity), identityLength);
+            //     printf("[Control] FileIdentities Push: \n");
+            //     // fileIdentities.push_back(fileIdentityString);
+            // }
+            // else
+            // {
+            //     wprintf(L"La llamada a CfGetPlaceholderInfo falló con el código de error 0x%X\n", hr);
+            //     throw std::exception("[Error] La llamada a CfGetPlaceholderInfo falló");
+            // }
+            // CloseHandle(hFile);
             if (entry.is_directory())
             {
+                printf("[Control] Directory: %ls\n", entry.path().c_str());
                 EnumerateAndQueryPlaceholders(entry.path().c_str());
             }
+            printf("[Control] Finished CfGetPlaceholderInfo \n");
         }
         else
         {
+            CloseHandle(hFile);
             wprintf(L"Invalid Item: %ls\n", entry.path().c_str());
+            throw std::exception("[Error] Invalid Item");
         }
+        printf("[Control] Finished each for\n");
     }
+    printf("[Control] Finished for\n");
 }
 // get items sync root
 HRESULT SyncRoot::GetItemsSyncRoot(const wchar_t *syncRootPath, std::vector<std::wstring> &getFileIdentities)
@@ -213,8 +237,11 @@ HRESULT SyncRoot::GetItemsSyncRoot(const wchar_t *syncRootPath, std::vector<std:
     try
     {
         EnumerateAndQueryPlaceholders(syncRootPath);
+        printf("[Control] Finish EnumerateAndQueryPlaceholders \n");
         getFileIdentities = fileIdentities;
+        printf("[Control] Finish getFileIdentities = fileIdentities \n");
         fileIdentities.clear();
+        printf("[Control] Finish bucle \n");
         return S_OK;
     }
     catch (const std::exception &e)
