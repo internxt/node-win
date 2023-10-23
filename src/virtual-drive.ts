@@ -3,8 +3,7 @@ import fs from 'fs';
 import { deleteAllSubfolders } from './utils';
 import { Worker } from 'worker_threads';
 
-const addonPath = path.join(__dirname, '../../build/Release/addon.node');
-const addon = require(addonPath);
+const addon = require('../../build/Release/addon.node');
 
 interface Addon {
     connectSyncRoot(path: string): any;
