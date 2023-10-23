@@ -366,7 +366,10 @@ class VirtualDrive {
     disconnectSyncRoot(): any {
         return addon.disconnectSyncRoot(this.syncRootPath);
     }
-    
+
+    syncAndCleanUp(): any {
+        
+    }    
 }
 
 export default VirtualDrive;
