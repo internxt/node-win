@@ -12,7 +12,8 @@
 #include <iostream>
 #include <chrono>
 #include "Utilities.h"
-
+#include <locale>
+#include <codecvt>
 
 napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
@@ -42,7 +43,6 @@ LARGE_INTEGER requiredOffset;
 CF_CALLBACK_INFO g_callback_info;
 std::wstring g_full_client_path;
 
-
 inline bool load_finished = false;
 inline size_t lastReadOffset = 0;
 struct FetchDataArgs
@@ -66,13 +66,16 @@ std::string WStringToString(const std::wstring &wstr)
     if (wstr.empty())
         return std::string();
 
-    int sizeNeeded = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
-    std::string strTo(sizeNeeded, 0);
-    WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], sizeNeeded, NULL, NULL);
-    return strTo;
+    // int sizeNeeded = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
+    // std::string strTo(sizeNeeded, 0);
+    // WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], sizeNeeded, NULL, NULL);
+    std::wstring_convert<std::codecvt<wchar_t, char, std::mbstate_t>> converter;
+    std::wstring filename = wstr;
+    std::string utf8_filename = converter.to_bytes(filename);
+    return utf8_filename;
 }
 
-size_t file_incremental_reading(napi_env env, const std::string &filename, size_t &dataSizeRead, bool final_step, float& progress, napi_value error_callback = nullptr)
+size_t file_incremental_reading(napi_env env, const std::string &filename, size_t &dataSizeRead, bool final_step, float &progress, napi_value error_callback = nullptr)
 {
     printf("===================RESPONSE CALLBACK CALLED===================\n");
     std::ifstream file;
@@ -97,10 +100,11 @@ size_t file_incremental_reading(napi_env env, const std::string &filename, size_
 
     wprintf(L"growth: %d\n", growth);
 
-    try {
+    try
+    {
 
-        if ((datasizeAvailableUnread > 0 )) // && CHUNK_SIZE < datasizeAvailableUnread && !final_step) || (datasizeAvailableUnread > 0 && final_step)
-        { // Si el archivo ha crecido
+        if ((datasizeAvailableUnread > 0)) // && CHUNK_SIZE < datasizeAvailableUnread && !final_step) || (datasizeAvailableUnread > 0 && final_step)
+        {                                  // Si el archivo ha crecido
             printf("============ENTER IN IF STATEMENT============\n");
             std::vector<char> buffer(CHUNK_SIZE);
             file.seekg(dataSizeRead);
@@ -116,7 +120,7 @@ size_t file_incremental_reading(napi_env env, const std::string &filename, size_
             printf("startingOffset: %d\n", startingOffset.QuadPart);
 
             LARGE_INTEGER chunkBufferSize;
-            chunkBufferSize.QuadPart = min( datasizeAvailableUnread, CHUNK_SIZE);
+            chunkBufferSize.QuadPart = min(datasizeAvailableUnread, CHUNK_SIZE);
 
             HRESULT hr = FileCopierWithProgress::TransferData(
                 connectionKey,
@@ -124,8 +128,7 @@ size_t file_incremental_reading(napi_env env, const std::string &filename, size_
                 buffer.data(),
                 startingOffset,
                 chunkBufferSize,
-                STATUS_SUCCESS
-            );
+                STATUS_SUCCESS);
 
             dataSizeRead += chunkBufferSize.QuadPart;
 
@@ -147,21 +150,25 @@ size_t file_incremental_reading(napi_env env, const std::string &filename, size_
                 //     napi_value undefined_val;
                 //     napi_call_function(env, undefined_val, error_callback, 0, nullptr, &result);
                 // }
-            } else {
+            }
+            else
+            {
                 UINT64 totalSize = static_cast<UINT64>(fileSize.QuadPart);
                 progress = static_cast<float>(dataSizeRead) / static_cast<float>(totalSize);
-                Utilities::ApplyTransferStateToFile(g_full_client_path.c_str(), g_callback_info, totalSize , dataSizeRead);
+                Utilities::ApplyTransferStateToFile(g_full_client_path.c_str(), g_callback_info, totalSize, dataSizeRead);
                 Sleep(CHUNKDELAYMS);
             }
         }
-    } catch (...) {
+    }
+    catch (...)
+    {
         HRESULT hr = FileCopierWithProgress::TransferData(
-                    connectionKey,
-                    transferKey,
-                    NULL,
-                    requiredOffset,
-                    requiredLength,
-                    STATUS_UNSUCCESSFUL);
+            connectionKey,
+            transferKey,
+            NULL,
+            requiredOffset,
+            requiredLength,
+            STATUS_UNSUCCESSFUL);
     }
 
     file.close();
@@ -231,10 +238,12 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 
     napi_get_value_string_utf16(env, argv[1], (char16_t *)response_wstr.data(), response_len + 1, &response_len);
 
-    if (argc == 3) {
+    if (argc == 3)
+    {
         napi_valuetype callbackType;
         napi_typeof(env, argv[2], &callbackType);
-        if (callbackType != napi_function) {
+        if (callbackType != napi_function)
+        {
             wprintf(L"Third argument should be a function\n");
             return nullptr;
         }
@@ -304,7 +313,8 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     napi_set_named_property(env, result_object, "finished", resultBool);
     napi_set_named_property(env, result_object, "progress", progress_value);
 
-    if ( load_finished ) {
+    if (load_finished)
+    {
         load_finished = false;
     };
 
@@ -407,7 +417,7 @@ void CALLBACK fetch_data_callback_wrapper(
     g_callback_info = *callbackInfo;
 
     std::wstring fullClientPath(callbackInfo->VolumeDosName);
-        fullClientPath.append(callbackInfo->NormalizedPath);
+    fullClientPath.append(callbackInfo->NormalizedPath);
 
     g_full_client_path = fullClientPath;
 
