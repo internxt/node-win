@@ -1,3 +1,4 @@
+#include <stdafx.h>
 #include <chrono>
 #include <iostream>
 
@@ -10,4 +11,7 @@ enum EventType {
 class FolderEvent {
     EventType type;
     std::chrono::system_clock::time_point timestamp;
+    std::string itemPath;
+    DWORD itemAttribute;
+    DWORD directoryNotification;
 };

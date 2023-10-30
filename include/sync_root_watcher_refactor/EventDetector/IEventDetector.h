@@ -3,5 +3,5 @@
 
 class IEventDetector {
     public:
-        virtual void detect(std::deque<FolderEvent> EventBuffer) = 0;
+        virtual boolean detect(std::deque<FolderEvent>* EventBuffer) = 0;
 };
