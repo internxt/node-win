@@ -1,7 +1,19 @@
 #include "stdafx.h"
 #include "DirectoryWatcher.h"
+#include <iostream>
+#include <filesystem>
+#include <chrono>
+#include <ctime>
+#include <algorithm> // Asegúrate de incluir esta cabecera para std::min
 
+namespace fs = std::filesystem;
 const size_t c_bufferSize = 32768; // sizeof(FILE_NOTIFY_INFORMATION) * 100;
+struct NotificationInfo
+{
+    DWORD Action;          // Puedes usar un DWORD para almacenar la acción
+    std::wstring FileName; // Nombre del archivo afectado (usando wstring para manejar nombres Unicode)
+    std::chrono::system_clock::time_point timestamp;
+};
 
 bool IsTemporaryFile(const std::wstring &fullPath)
 {
@@ -115,9 +127,10 @@ void ExploreDirectory(const std::wstring &directoryPath, std::list<FileChange> &
 winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAsync()
 {
     co_await winrt::resume_background();
-
+    std::list<NotificationInfo> notificationInfoList;
     while (true)
     {
+        wprintf(L"[Control] watcher running\n");
         DWORD returned;
         winrt::check_bool(ReadDirectoryChangesW(
             _dir.get(),
@@ -129,21 +142,59 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             &_overlapped,
             nullptr));
 
+        // DWORD transferred;
+        // wprintf(L"[Control] Expecting\n");
+        // // std::chrono::system_clock::time_point vent = std::chrono::system_clock::now();
+        // if (!GetOverlappedResult(_dir.get(), &_overlapped, &transferred, TRUE))
+        // {
+        //     DWORD error = GetLastError();
+        //     if (error != ERROR_OPERATION_ABORTED)
+        //     {
+        //         throw winrt::hresult_error(HRESULT_FROM_WIN32(error));
+        //     }
+        //     break;
+        // }
+        // Events detector implementing -- start
+        std::chrono::system_clock::time_point lastTimestamp;
+        std::list<NotificationInfo> eventsCaptured;
+        NotificationInfo lastNotification;
+        std::wstring lastPath;
+        bool isLastTimestampSet = false;
+
         DWORD transferred;
-        if (!GetOverlappedResult(_dir.get(), &_overlapped, &transferred, TRUE))
+        bool isEventSet = false;
+        const DWORD timeout = 1000; // tiempo de espera en milisegundos
+        DWORD timeAccumulator = 0;
+        while (!isEventSet)
         {
-            DWORD error = GetLastError();
-            if (error != ERROR_OPERATION_ABORTED)
+            if (GetOverlappedResult(_dir.get(), &_overlapped, &transferred, FALSE))
             {
-                throw winrt::hresult_error(HRESULT_FROM_WIN32(error));
+                // se ha producido un evento, hacer algo aquí
+                isEventSet = true;
             }
-            break;
+            else
+            {
+                DWORD error = GetLastError();
+                if (error != ERROR_IO_INCOMPLETE)
+                {
+                    throw winrt::hresult_error(HRESULT_FROM_WIN32(error));
+                }
+                // wprintf(L"[Control] esperando evento...\n");
+                Sleep(timeout);
+                timeAccumulator += timeout;
+                // si ya paso el acumulador 4 segundos evaluar los ultimos eventos
+                if (timeAccumulator >= 4000)
+                {
+                    // wprintf(L"[Control] 4 seconds - unheard evetns\n");
+                }
+            }
         }
 
         std::list<FileChange> result;
         std::list<std::wstring> addedFiles;
         std::list<std::wstring> removedFiles;
         FILE_NOTIFY_INFORMATION *next = _notify.get();
+        wprintf(L"[Control] Event emited1\n");
         while (next != nullptr)
         {
             std::wstring fullPath(_path);
@@ -160,25 +211,30 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             bool fileExists = (fileAttributes != INVALID_FILE_ATTRIBUTES);
             bool isHidden = (fileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0;
 
-            // imprimir eventos que estan sucediendo
+            // almacenar eventos
+            NotificationInfo notificationInfo;
+            notificationInfo.Action = next->Action;
+            notificationInfo.FileName = fullPath;
+            notificationInfo.timestamp = std::chrono::system_clock::now();
+            notificationInfoList.push_back(notificationInfo);
 
-            if ((next->Action == FILE_ACTION_ADDED || (next->Action == FILE_ACTION_MODIFIED && !fileExists)) && !isTmpFile && !isDirectory && !isHidden)
-            {
-                wprintf(L"\nnew file: %s\n", fullPath.c_str());
-                fc.type = NEW_FILE;
-                fc.item_added = true;
-                result.push_back(fc);
-            }
-            else if (next->Action == FILE_ACTION_ADDED && isDirectory && !isHidden)
-            {
-                ExploreDirectory(fullPath, result, fc);
-            }
-            else
-            {
-                fc.type = OTHER;
-                fc.item_added = false;
-                result.push_back(fc);
-            }
+            // if ((next->Action == FILE_ACTION_ADDED || (next->Action == FILE_ACTION_MODIFIED && !fileExists)) && !isTmpFile && !isDirectory && !isHidden)
+            // {
+            //     wprintf(L"\nnew file: %s\n", fullPath.c_str());
+            //     fc.type = NEW_FILE;
+            //     fc.item_added = true;
+            //     result.push_back(fc);
+            // }
+            // else if (next->Action == FILE_ACTION_ADDED && isDirectory && !isHidden)
+            // {
+            //     ExploreDirectory(fullPath, result, fc);
+            // }
+            // else
+            // {
+            //     fc.type = OTHER;
+            //     fc.item_added = false;
+            //     result.push_back(fc);
+            // }
 
             // else if (next->Action == FILE_ACTION_MODIFIED && fileExists  && !isTmpFile && !isDirectory && !isHidden) {
             //     wprintf(L"modified file1: %s\n", fullPath.c_str());
@@ -217,6 +273,39 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
         //     }
         // }
         _callback(result, _env, _input);
+
+        for (NotificationInfo notificationInfo : notificationInfoList)
+        {
+            wprintf(L"[Control] notificationInfo [Action]: %d\n", notificationInfo.Action);
+            wprintf(L"[Control] notificationInfo [lastTimestamp]: %lld\n", lastTimestamp.time_since_epoch().count());
+            wprintf(L"[Control] notificationInfo [lastPath]: %ls\n", lastPath.c_str());
+            wprintf(L"[Control] notificationInfo [FileName]: %ls\n", notificationInfo.FileName.c_str());
+            wprintf(L"[Control] notificationInfo [timestamp]: %lld\n", notificationInfo.timestamp.time_since_epoch().count());
+            if (!isLastTimestampSet)
+            {
+                wprintf(L"[Control] No lastTimestamp set, maybe new event\n");
+            }
+            else
+            {
+                std::chrono::duration<double> elapsed_seconds = notificationInfo.timestamp - lastTimestamp;
+                std::chrono::milliseconds elapsed_milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_seconds);
+                wprintf(L"[Control] time since last notifition (seconds): %f\n", elapsed_seconds.count());
+                wprintf(L"[Control] time since epoch (milliseconds): %lld\n", elapsed_milliseconds.count());
+                if (elapsed_milliseconds.count() < 5000)
+                {
+                    eventsCaptured.push_back(notificationInfo);
+                }
+                else
+                {
+                    wprintf(L"[Control] Likely new event! - called events removed \n");
+                }
+            }
+            lastNotification = notificationInfo;
+            lastTimestamp = notificationInfo.timestamp;
+            lastPath = notificationInfo.FileName;
+            isLastTimestampSet = true;
+        }
+        // Events detector implementing -- end
     }
 
     wprintf(L"watcher exiting\n");
