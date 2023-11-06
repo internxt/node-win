@@ -1,7 +1,15 @@
 #include "stdafx.h"
 #include "DirectoryWatcher.h"
+#include <iostream>
+#include <filesystem>
 
 const size_t c_bufferSize = 32768; // sizeof(FILE_NOTIFY_INFORMATION) * 100;
+
+struct NotificationInfo
+{
+    DWORD Action;
+    std::wstring FileName;
+};
 
 bool IsTemporaryFile(const std::wstring &fullPath)
 {
@@ -115,7 +123,7 @@ void ExploreDirectory(const std::wstring &directoryPath, std::list<FileChange> &
 winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAsync()
 {
     co_await winrt::resume_background();
-
+    std::list<NotificationInfo> notificationInfoList;
     while (true)
     {
         DWORD returned;
@@ -180,6 +188,10 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
                 result.push_back(fc);
             }
 
+            NotificationInfo notificationInfo;
+            notificationInfo.Action = next->Action;
+            notificationInfo.FileName = fullPath;
+            notificationInfoList.push_back(notificationInfo);
             // else if (next->Action == FILE_ACTION_MODIFIED && fileExists  && !isTmpFile && !isDirectory && !isHidden) {
             //     wprintf(L"modified file1: %s\n", fullPath.c_str());
             //     fc.type = MODIFIED_FILE;
@@ -217,6 +229,11 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
         //     }
         // }
         _callback(result, _env, _input);
+        for (NotificationInfo notificationInfo : notificationInfoList)
+        {
+            wprintf(L"[Control] notificationInfo [Action]: %d\n", notificationInfo.Action);
+            wprintf(L"[Control] notificationInfo [FileName]: %ls\n", notificationInfo.FileName.c_str());
+        }
     }
 
     wprintf(L"watcher exiting\n");
