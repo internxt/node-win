@@ -9,6 +9,11 @@ enum ChangeType
     MODIFIED_FILE,
     OTHER
 };
+struct FileChangedInfo
+{
+    std::wstring path;
+    uintmax_t size;
+};
 struct FileChange
 {
     std::wstring path;
