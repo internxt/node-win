@@ -325,6 +325,7 @@ napi_value WatchAndWaitWrapper(napi_env env, napi_callback_info args)
 
     InputCallbacks input = {};
 
+    // [CALLBACKS] file_added
     napi_value notifyFileAddedCallback;
 
     if (napi_get_named_property(env, argv[1], "notifyFileAddedCallback", &notifyFileAddedCallback) == napi_ok)
@@ -365,8 +366,50 @@ napi_value WatchAndWaitWrapper(napi_env env, napi_callback_info args)
         notify_file_added_call,
         &notify_file_added_threadsafe_callback);
 
+    // [CALLBACKS] notify_message
+    napi_value notifyMessageCallback;
+
+    if (napi_get_named_property(env, argv[1], "notifyMessageCallback", &notifyMessageCallback) == napi_ok)
+    {
+        napi_create_reference(env, notifyMessageCallback, 1, &input.notify_message_callback_ref);
+    }
+
+    napi_valuetype valuetype_message;
+    napi_status type_status_message = napi_typeof(env, notifyMessageCallback, &valuetype_message);
+    if (type_status_message != napi_ok || valuetype_message != napi_function)
+    {
+        napi_throw_error(env, nullptr, "notifyMessageCallback should be a function.");
+        return nullptr;
+    }
+
+    napi_value resource_name_value_message;
+
+    std::string resource_name_message = "notify_message_callback";
+    std::u16string converted_resource_name_message = std::u16string(resource_name_message.begin(), resource_name_message.end());
+
+    napi_create_string_utf16(env, converted_resource_name_message.c_str(), NAPI_AUTO_LENGTH, &resource_name_value_message);
+
+    napi_value notify_message_callback_value;
+    napi_status status_ref_message = napi_get_reference_value(env, input.notify_message_callback_ref, &notify_message_callback_value);
+
+    napi_threadsafe_function notify_message_threadsafe_callback;
+
+    napi_status status_threadsafe_message = napi_create_threadsafe_function(
+        env,
+        notify_message_callback_value,
+        NULL,
+        resource_name_value_message,
+        0,
+        1,
+        NULL,
+        NULL,
+        NULL,
+        notify_message_call,
+        &notify_message_threadsafe_callback);
+
     InputSyncCallbacksThreadsafe inputThreadsafe = {};
     inputThreadsafe.notify_file_added_threadsafe_callback = notify_file_added_threadsafe_callback;
+    inputThreadsafe.notify_message_threadsafe_callback = notify_message_threadsafe_callback;
 
     LPCWSTR syncRootPath;
     size_t pathLength;

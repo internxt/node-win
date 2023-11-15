@@ -115,7 +115,22 @@ async function onCancelFetchDataCallback(fileId: string) {
     console.log("cancel fetch data: ", fileId);
 }
 
-const iconPath = 'C:\\Users\\gcarl\\Downloads\\sicon.ico';
+async function onMessageCallback(
+    message: string, 
+    action: string, 
+    errorName: string, 
+    callback: (response: boolean) => void) {
+    try {
+        console.log("[Example] Message received: ", message);
+        console.log("[Example] Action: ", action);
+        console.log("[Example] Error name: ", errorName);
+        await callback(true);
+    } catch (error) {
+        callback(false);
+    }
+}
+
+const iconPath = 'C:\\Users\\User\\Downloads\\sicon.ico';
 drive.registerSyncRoot(
     config.driveName,
     config.driveVersion,
@@ -125,7 +140,9 @@ drive.registerSyncRoot(
         notifyRenameCallback: onRenameCallbackWithCallback,
         notifyFileAddedCallback: onFileAddedCallback,
         fetchDataCallback: onFetchDataCallback,
-        cancelFetchDataCallback: onCancelFetchDataCallback
+        cancelFetchDataCallback: onCancelFetchDataCallback,
+        notifyMessageCallback: onMessageCallback,
+
     },
     iconPath
 )
@@ -168,14 +185,10 @@ drive.createFolderByPath(`/folderWithFolder/F.O.L.D.E.R`, 'fa8217c9-2dd6-4641-91
 drive.createItemByPath(`/item-folder/`, 'fa8217c9-2dd6-4641-9189-8206e60368123', 1000, folderCreatedAt, folderUpdatedAt);
 drive.createItemByPath(`/imagen-item.rar`, 'fa8217c9-2dd6-4641-9180-053fe60368f1', 33020, fileCreatedAt, fileUpdatedAt);
 
-// // get items --------------
-// console.log('\n==============    GET ITEMS IDS    ==============');
-// drive.getItemsIds().then((ids) => {
-//     ids.map((id,i) => {
-//         console.log(`Item Id [${i}]: ` + id);
-//     })
-// })
-// //---------------
+// get items --------------
+console.log('\n==============    GET ITEMS IDS    ==============');
+// drive.getItemsIds();
+//---------------
 
 
 // using the watch and wait method

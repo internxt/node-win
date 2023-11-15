@@ -3,6 +3,7 @@
 #include <propkey.h>
 #include <propvarutil.h>
 #include "Utilities.h"
+#include <ProcessTypes.h>
 
 #define MSSEARCH_INDEX L"SystemIndex"
 DEFINE_PROPERTYKEY(PKEY_StorageProviderTransferProgress, 0xE77E90DF, 0x6271, 0x4F5B, 0x83, 0x4F, 0x2D, 0xD1, 0xF2, 0x45, 0xDD, 0xA4, 4);
@@ -52,7 +53,6 @@ void Utilities::ApplyCustomOverwriteStateToPlaceholderFile(LPCWSTR path, LPCWSTR
     }
 }
 
-
 void Utilities::AddFolderToSearchIndexer(_In_ PCWSTR folder)
 {
     HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
@@ -91,13 +91,12 @@ void Utilities::ApplyTransferStateToFile(_In_ PCWSTR fullPath, _In_ CF_CALLBACK_
 {
     printf("ApplyTransferStateToFile\n");
     // Tell the Cloud File API about progress so that toasts can be displayed
- 
+
     HRESULT hr1 = CfReportProviderProgress(
-            callbackInfo.ConnectionKey,
-            callbackInfo.TransferKey,
-            LongLongToLargeInteger(total),
-            LongLongToLargeInteger(completed)
-        );
+        callbackInfo.ConnectionKey,
+        callbackInfo.TransferKey,
+        LongLongToLargeInteger(total),
+        LongLongToLargeInteger(completed));
 
     if (FAILED(hr1))
     {
@@ -156,5 +155,49 @@ void Utilities::ApplyTransferStateToFile(_In_ PCWSTR fullPath, _In_ CF_CALLBACK_
         // winrt::to_hresult() will eat the exception if it is a result of winrt::check_hresult,
         // otherwise the exception will get rethrown and this method will crash out as it should
         wprintf(L"Failed to Set Transfer Progress on \"%s\" with %08x\n", fullPath, static_cast<HRESULT>(winrt::to_hresult()));
+    }
+}
+
+std::wstring Utilities::ProcessErrorNameToWString(ProcessErrorName error)
+{
+    switch (error)
+    {
+    case ProcessErrorName::NOT_EXISTS:
+        return L"NOT_EXISTS";
+    case ProcessErrorName::NO_PERMISSION:
+        return L"NO_PERMISSION";
+    case ProcessErrorName::NO_INTERNET:
+        return L"NO_INTERNET";
+    case ProcessErrorName::NO_REMOTE_CONNECTION:
+        return L"NO_REMOTE_CONNECTION";
+    case ProcessErrorName::BAD_RESPONSE:
+        return L"BAD_RESPONSE";
+    case ProcessErrorName::EMPTY_FILE:
+        return L"EMPTY_FILE";
+    case ProcessErrorName::FILE_TOO_BIG:
+        return L"FILE_TOO_BIG";
+    case ProcessErrorName::UNKNOWN:
+        return L"UNKNOWN";
+    default:
+        return L"UNKNOWN";
+    }
+}
+
+std::wstring Utilities::FileOperationErrorToWString(FileOperationError error)
+{
+    switch (error)
+    {
+    case FileOperationError::UPLOAD_ERROR:
+        return L"UPLOAD_ERROR";
+    case FileOperationError::DOWNLOAD_ERROR:
+        return L"DOWNLOAD_ERROR";
+    case FileOperationError::RENAME_ERROR:
+        return L"RENAME_ERROR";
+    case FileOperationError::DELETE_ERROR:
+        return L"DELETE_ERROR";
+    case FileOperationError::METADATA_READ_ERROR:
+        return L"METADATA_READ_ERROR";
+    default:
+        return L"UNKNOWN";
     }
 }

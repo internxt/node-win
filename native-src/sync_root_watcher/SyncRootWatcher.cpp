@@ -72,22 +72,16 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
 
     for (auto change : changes)
     {
-        wprintf(L"Processing change for %s\n", change.path.c_str());
+        wprintf(L"[Log] Processing change for %s\n", change.path.c_str());
 
         if (change.type == ERROR_FILE_SIZE_EXCEEDED || change.type == ERROR_FOLDER_SIZE_EXCEEDED)
         {
-            wprintf(L"Error processing change for %s\n", change.path.c_str());
-            // generar un backup del archivo o carpeta que no se pudo procesar
+            wprintf(L"[Error] processing change for %s\n", change.path.c_str());
             if (ERROR_FILE_SIZE_EXCEEDED)
             {
-                wprintf(L"ERROR_FILE_SIZE_EXCEEDED\n");
-                // TODO: generate a callback to notify the error
-            }
-            else if (ERROR_FOLDER_SIZE_EXCEEDED)
-            {
-                // TODO: check it if this is a use case to keep in mind
-                wprintf(L"ERROR_FOLDER_SIZE_EXCEEDED\n");
-                // TODO: generate a callback to notify the error
+                wprintf(L"[Log] ERROR_FILE_SIZE_EXCEEDED\n");
+                change.message = change.path.c_str();
+                register_threadsafe_message_callback(change, "message", env, input);
             }
             break;
         }
@@ -105,12 +99,12 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
 
             if (attrib & FILE_ATTRIBUTE_PINNED)
             {
-                wprintf(L"Hydrating file %s\n", change.path.c_str());
+                wprintf(L"[Log] Hydrating file %s\n", change.path.c_str());
                 CfHydratePlaceholder(placeholder.get(), offset, length, CF_HYDRATE_FLAG_NONE, NULL);
             }
             else if (attrib & FILE_ATTRIBUTE_UNPINNED)
             {
-                wprintf(L"Dehydrating file %s\n", change.path.c_str());
+                wprintf(L"[Log] Dehydrating file %s\n", change.path.c_str());
                 CfDehydratePlaceholder(placeholder.get(), offset, length, CF_DEHYDRATE_FLAG_NONE, NULL);
             }
         }

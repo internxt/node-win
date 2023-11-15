@@ -27,4 +27,8 @@ void CALLBACK cancel_fetch_data_callback_wrapper(_In_ CONST CF_CALLBACK_INFO *ca
 
 // Notify File Added Callback. This is a fake callback
 void notify_file_added_call(napi_env env, napi_value js_callback, void *context, void *data);
-void register_threadsafe_notify_file_added_callback(FileChange& change, const std::string &resource_name, napi_env env, InputSyncCallbacksThreadsafe input);
+void register_threadsafe_notify_file_added_callback(FileChange &change, const std::string &resource_name, napi_env env, InputSyncCallbacksThreadsafe input);
+
+// Notify message from node-win
+void notify_message_call(napi_env env, napi_value js_callback, void *context, void *data);
+void register_threadsafe_message_callback(FileChange &change, const std::string &resource_name, napi_env env, InputSyncCallbacksThreadsafe input);
