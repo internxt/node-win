@@ -1,5 +1,6 @@
 #pragma once
 #include <Windows.h>
+#include "ProcessTypes.h"
 class Utilities
 {
 public:
@@ -7,9 +8,11 @@ public:
     static void ApplyTransferStateToFile(_In_ LPCWSTR fullPath, _In_ CF_CALLBACK_INFO &callbackInfo, UINT64 total, UINT64 completed);
     static void ApplyCustomStateToPlaceholderFile(_In_ LPCWSTR path, _In_ LPCWSTR filename, _In_ winrt::StorageProviderItemProperty &prop);
     static void ApplyCustomOverwriteStateToPlaceholderFile(_In_ LPCWSTR path, _In_ LPCWSTR filename, _In_ winrt::StorageProviderItemProperty &prop);
+    static std::wstring ProcessErrorNameToWString(_In_ ProcessErrorName error);
+    static std::wstring FileOperationErrorToWString(_In_ FileOperationError error);
 
-
-    static winrt::com_array<wchar_t> ConvertSidToStringSid(_In_ PSID sid)
+    static winrt::com_array<wchar_t>
+    ConvertSidToStringSid(_In_ PSID sid)
     {
         winrt::com_array<wchar_t> string;
         if (::ConvertSidToStringSidW(sid, winrt::put_abi(string)))

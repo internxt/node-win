@@ -2,11 +2,16 @@
 
 #include <node_api.h>
 
+// 20GB limit
+#define FILE_SIZE_LIMIT 21474836480
+
 enum ChangeType
 {
     NEW_FILE,
     NEW_FOLDER,
     MODIFIED_FILE,
+    ERROR_FILE_SIZE_EXCEEDED,
+    ERROR_FOLDER_SIZE_EXCEEDED,
     OTHER
 };
 struct FileChange
@@ -14,16 +19,19 @@ struct FileChange
     std::wstring path;
     bool item_added;
     ChangeType type;
+    std::wstring message;
 };
 
 struct InputCallbacks
 {
     napi_ref notify_file_added_callback_ref;
+    napi_ref notify_message_callback_ref;
 };
 
 struct InputSyncCallbacksThreadsafe
 {
     napi_threadsafe_function notify_file_added_threadsafe_callback;
+    napi_threadsafe_function notify_message_threadsafe_callback;
 };
 class DirectoryWatcher
 {

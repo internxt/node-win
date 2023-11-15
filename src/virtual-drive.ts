@@ -35,6 +35,7 @@ type InputSyncCallbacks = {
 
 type ExtraCallbacks = {
     notifyFileAddedCallback?: NapiCallbackFunction;
+    notifyMessageCallback?: NapiCallbackFunction;
 }
 
 type Callbacks = InputSyncCallbacks & ExtraCallbacks;
@@ -91,7 +92,8 @@ class VirtualDrive {
 
     getExtraCallbacks(): ExtraCallbacks {
         const extraCallbackKeys: (keyof ExtraCallbacks)[] = [
-            'notifyFileAddedCallback'
+            'notifyFileAddedCallback',
+            'notifyMessageCallback',
         ];
 
         const result: ExtraCallbacks = {};

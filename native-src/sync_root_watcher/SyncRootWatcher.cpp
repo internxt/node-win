@@ -2,7 +2,7 @@
 #include "SyncRootWatcher.h"
 #include "DirectoryWatcher.h"
 #include "Callbacks.h"
-
+#include <windows.h>
 namespace winrt
 {
     using namespace winrt::Windows::Foundation;
@@ -19,16 +19,19 @@ winrt::event<winrt::EventHandler<winrt::IInspectable>> SyncRootWatcher::s_status
 
 void SyncRootWatcher::WatchAndWait(const wchar_t *syncRootPath, napi_env env, InputSyncCallbacksThreadsafe input)
 {
-    std::thread watcherThread([this, syncRootPath, env, input] { WatcherTask(syncRootPath, env , input); });
+    std::thread watcherThread([this, syncRootPath, env, input]
+                              { WatcherTask(syncRootPath, env, input); });
     watcherThread.detach();
 }
 
 void SyncRootWatcher::WatcherTask(const wchar_t *syncRootPath, napi_env env, InputSyncCallbacksThreadsafe input)
 {
     SetConsoleCtrlHandler(Stop, TRUE);
-    InitDirectoryWatcher(syncRootPath, env, input);;
+    InitDirectoryWatcher(syncRootPath, env, input);
+    ;
 
-    if (syncRootPath == nullptr) {
+    if (syncRootPath == nullptr)
+    {
         wprintf(L"syncRootPath es nulo.\n");
         throw std::invalid_argument("syncRootPath no puede ser nulo");
     }
@@ -61,7 +64,7 @@ void SyncRootWatcher::WatcherTask(const wchar_t *syncRootPath, napi_env env, Inp
     }
 }
 
-void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange>& changes, napi_env env, InputSyncCallbacksThreadsafe input)
+void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes, napi_env env, InputSyncCallbacksThreadsafe input)
 {
     auto start = GetTickCount64();
     s_state = winrt::StorageProviderState::Syncing;
@@ -69,7 +72,19 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange>& changes,
 
     for (auto change : changes)
     {
-        wprintf(L"Processing change for %s\n", change.path.c_str());
+        wprintf(L"[Log] Processing change for %s\n", change.path.c_str());
+
+        if (change.type == ERROR_FILE_SIZE_EXCEEDED || change.type == ERROR_FOLDER_SIZE_EXCEEDED)
+        {
+            wprintf(L"[Error] processing change for %s\n", change.path.c_str());
+            if (ERROR_FILE_SIZE_EXCEEDED)
+            {
+                wprintf(L"[Log] ERROR_FILE_SIZE_EXCEEDED\n");
+                change.message = change.path.c_str();
+                register_threadsafe_message_callback(change, "message", env, input);
+            }
+            break;
+        }
 
         DWORD attrib = GetFileAttributesW(change.path.c_str());
         if (!(attrib & FILE_ATTRIBUTE_DIRECTORY) && !change.item_added)
@@ -80,40 +95,42 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange>& changes,
             offset.QuadPart = 0;
             LARGE_INTEGER length;
             GetFileSizeEx(placeholder.get(), &length);
-            //length.QuadPart = MAXLONGLONG;
+            // length.QuadPart = MAXLONGLONG;
 
             if (attrib & FILE_ATTRIBUTE_PINNED)
             {
-                wprintf(L"Hydrating file %s\n", change.path.c_str());
+                wprintf(L"[Log] Hydrating file %s\n", change.path.c_str());
                 CfHydratePlaceholder(placeholder.get(), offset, length, CF_HYDRATE_FLAG_NONE, NULL);
             }
             else if (attrib & FILE_ATTRIBUTE_UNPINNED)
             {
-                wprintf(L"Dehydrating file %s\n", change.path.c_str());
+                wprintf(L"[Log] Dehydrating file %s\n", change.path.c_str());
                 CfDehydratePlaceholder(placeholder.get(), offset, length, CF_DEHYDRATE_FLAG_NONE, NULL);
             }
         }
 
-        if (change.type == NEW_FILE || change.type == NEW_FOLDER )
+        if (change.type == NEW_FILE || change.type == NEW_FOLDER)
         {
-           register_threadsafe_notify_file_added_callback(change, "file_added", env, input);
-        } 
+            register_threadsafe_notify_file_added_callback(change, "file_added", env, input);
+        }
         // else if ( change.type == MODIFIED_FILE) {
         //     wprintf(L"MODIFIED_FILE\n");
         //     wprintf(L"change.path: %s\n", change.path.c_str());
         //     MarkFileAsInSync(change.path);
         // }
-     }
+    }
 
-    try {
+    try
+    {
 
         auto elapsed = GetTickCount64() - start;
         if (elapsed < 3000)
         {
             Sleep(static_cast<DWORD>(3000 - elapsed));
         }
-
-    } catch (...) {
+    }
+    catch (...)
+    {
         wprintf(L"Error al dormir el hilo.\n");
         throw;
     }
@@ -126,9 +143,10 @@ void SyncRootWatcher::InitDirectoryWatcher(const wchar_t *syncRootPath, napi_env
 {
     try
     {
-        s_directoryWatcher.Initialize(syncRootPath, OnSyncRootFileChanges, env , input);
+        s_directoryWatcher.Initialize(syncRootPath, OnSyncRootFileChanges, env, input);
     }
-    catch(std::exception& e) {
+    catch (std::exception &e)
+    {
         wprintf(L"Error initializing directory watcher: %S\n", e.what());
         throw;
     }
@@ -145,4 +163,3 @@ SyncRootWatcher::Stop(DWORD /*dwReason*/)
     s_shutdownWatcher = TRUE;
     return TRUE;
 }
-
