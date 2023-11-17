@@ -15,7 +15,6 @@ struct FetchDataArgs
 
 napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
 {
-    wprintf(L"response_callback_fn_added called\n");
     size_t argc = 2;
     napi_value argv[2];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
@@ -54,7 +53,7 @@ napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
 
     napi_get_value_string_utf16(env, argv[1], (char16_t *)response_wstr.data(), response_len + 1, &response_len);
 
-    wprintf(L"input path: %s .\n", response_wstr.c_str());
+    // wprintf(L"input path: %s .\n", response_wstr.c_str());
 
     std::lock_guard<std::mutex> lock(mtx);
     ready = true;
@@ -68,7 +67,6 @@ napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
 
 void notify_file_added_call(napi_env env, napi_value js_callback, void *context, void *data)
 {
-    wprintf(L"notify_file_added_call called\n");
     napi_status status;
     FetchDataArgs *args = static_cast<FetchDataArgs *>(data);
     napi_value js_string_path, js_response_callback_fn, undefined, result;
@@ -154,7 +152,6 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
         LPCVOID idStrLPCVOID = static_cast<LPCVOID>(idStr.c_str());
         DWORD idStrByteLength = static_cast<DWORD>(idStr.size() * sizeof(wchar_t));
 
-        wprintf(L"callbackResult: %d\n", callbackResult);
         if (callbackResult)
         {
             try
@@ -195,7 +192,6 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
     //     Utilities::ApplyCustomOverwriteStateToPlaceholderFile(directory.c_str(), filename.c_str(), prop);
     // }
 
-    wprintf(L"finish upload task\n");
     if (status != napi_ok)
     {
         napi_throw_error(env, NULL, "Unable to call notify_file_added_threadsafe_callback");

@@ -544,7 +544,7 @@ napi_value DisconnectSyncRootWrapper(napi_env env, napi_callback_info args)
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(syncRootPath)), pathLength + 1, nullptr);
 
     HRESULT result = SyncRoot::DisconnectSyncRoot();
-    wprintf(L"DisconnectSyncRootWrapper: %08x\n", static_cast<HRESULT>(result));
+    // wprintf(L"DisconnectSyncRootWrapper: %08x\n", static_cast<HRESULT>(result));
     delete[] syncRootPath;
 
     napi_value napiResult;
@@ -554,7 +554,7 @@ napi_value DisconnectSyncRootWrapper(napi_env env, napi_callback_info args)
 
 napi_value GetItemsSyncRootWrapper(napi_env env, napi_callback_info args)
 {
-    wprintf(L"[Debug] GetItemsSyncRootWrapper\n");
+    // wprintf(L"[Debug] GetItemsSyncRootWrapper\n");
     size_t argc = 1;
     napi_value argv[1];
 
@@ -580,7 +580,7 @@ napi_value GetItemsSyncRootWrapper(napi_env env, napi_callback_info args)
         napi_throw_error(env, nullptr, "GetItemsSyncRoot failed");
         return nullptr;
     }
-    wprintf(L"[Debug] Finish GetItemsSyncRootWrapper\n");
+    // wprintf(L"[Debug] Finish GetItemsSyncRootWrapper\n");
     // Convert the vector to a JavaScript array of strings
     napi_value jsFileIdentities;
     napi_create_array(env, &jsFileIdentities);

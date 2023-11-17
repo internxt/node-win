@@ -19,7 +19,6 @@ struct ProcessNotifications
 
 napi_value response_callback_fn_nofify(napi_env env, napi_callback_info info)
 {
-    wprintf(L"[Log] notify callback called\n");
     // just 1 argument
     size_t argc = 1;
     napi_value argv[1];
@@ -132,5 +131,4 @@ void register_threadsafe_message_callback(FileChange &change, const std::string 
             cv.wait(lock);
         }
     }
-    wprintf(L"[Debug] notify message was received: %d\n", callbackResult);
 };

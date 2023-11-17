@@ -95,7 +95,6 @@ void notify_rename_call(napi_env env, napi_value js_callback, void *context, voi
 
 void setup_global_tsfn_rename(napi_threadsafe_function tsfn)
 {
-    wprintf(L"setup_global_tsfn_rename called\n");
     g_notify_rename_threadsafe_callback = tsfn;
 }
 
@@ -160,8 +159,8 @@ void CALLBACK notify_rename_callback_wrapper(
     NotifyRenameArgs *args = new NotifyRenameArgs();
     args->targetPathArg = std::wstring(targetPathArg);
     args->fileIdentityArg = fileIdentityStr;
-    wprintf(L"Callback notify_rename_callback_wrapper called\n");
-    wprintf(L"g_notify_rename_threadsafe_callback = %s\n", g_notify_rename_threadsafe_callback);
+    // wprintf(L"Callback notify_rename_callback_wrapper called\n");
+    // wprintf(L"g_notify_rename_threadsafe_callback = %s\n", g_notify_rename_threadsafe_callback);
     napi_status status = napi_call_threadsafe_function(g_notify_rename_threadsafe_callback, args, napi_tsfn_blocking);
 
     if (status != napi_ok)
@@ -208,16 +207,15 @@ void CALLBACK notify_rename_callback_wrapper(
         absolutePath = driveLetter + L"\\" + targetPathArg;
     }
     // Imprime la ruta
-    wprintf(L"absolutePath: %ls\n", absolutePath.c_str());
+    // wprintf(L"absolutePath: %ls\n", absolutePath.c_str());
     bool isDirectory = std::filesystem::is_directory(absolutePath);
-    printf("Is directory: %d\n", isDirectory);
+    // printf("Is directory: %d\n", isDirectory);
 
     Placeholders::UpdateSyncStatus(absolutePath, callbackResult, isDirectory);
 
     if (FAILED(hr))
     {
-        wprintf(L"Error in CfExecute().\n");
-        wprintf(L"Error in CfExecute(), HRESULT: %lx\n", hr);
+        wprintf(L"Error in CfExecute() rename action, HRESULT: %lx\n", hr);
     }
 
     {

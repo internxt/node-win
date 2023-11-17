@@ -92,7 +92,7 @@ std::uintmax_t getDirectorySize(const fs::path &directoryPath)
 void ExploreDirectory(const std::wstring &directoryPath, std::list<FileChange> &result, FileChange fc)
 {
     // FileChange fc;
-    wprintf(L"\nnew folder: %s\n", directoryPath.c_str());
+    // wprintf(L"\nnew folder: %s\n", directoryPath.c_str());
     fc.path = directoryPath;
     fc.type = NEW_FOLDER;
     fc.item_added = true;
@@ -117,7 +117,7 @@ void ExploreDirectory(const std::wstring &directoryPath, std::list<FileChange> &
             }
             else
             {
-                wprintf(L"new file recursivo: %s\n", data.cFileName);
+                // wprintf(L"new file recursivo: %s\n", data.cFileName);
                 // Es un archivo
                 std::wstring fullPath2 = directoryPath + L"\\" + data.cFileName;
                 FileChange fc;
@@ -183,7 +183,7 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
 
             if ((next->Action == FILE_ACTION_ADDED || (next->Action == FILE_ACTION_MODIFIED && !fileExists)) && !isTmpFile && !isDirectory && !isHidden)
             {
-                wprintf(L"\n[Log] New file: %s\n", fullPath.c_str());
+                // wprintf(L"\n[Log] New file: %s\n", fullPath.c_str());
                 std::filesystem::path p(fullPath);
 
                 if (std::filesystem::file_size(p) > FILE_SIZE_LIMIT)
@@ -218,11 +218,11 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
 
             // fc.file_added =( next->Action == FILE_ACTION_ADDED || (next->Action == FILE_ACTION_MODIFIED && !fileExists)) && !isTmpFile && !isDirectory;
 
-            wprintf(L"next->FileName: %ls\n", next->FileName);
-            wprintf(L"next->Action: %d\n", next->Action);
-            wprintf(L"fileExists: %d\n", fileExists);
-            wprintf(L"isTmpFile: %d\n", isTmpFile);
-            wprintf(L"isDirectory: %d\n", isDirectory);
+            // wprintf(L"next->FileName: %ls\n", next->FileName);
+            // wprintf(L"next->Action: %d\n", next->Action);
+            // wprintf(L"fileExists: %d\n", fileExists);
+            // wprintf(L"isTmpFile: %d\n", isTmpFile);
+            // wprintf(L"isDirectory: %d\n", isDirectory);
 
             if (next->NextEntryOffset)
             {
@@ -247,13 +247,10 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
         // }
         _callback(result, _env, _input);
     }
-
-    wprintf(L"watcher exiting\n");
 }
 
 void DirectoryWatcher::Cancel()
 {
-    wprintf(L"Canceling watcher\n");
     while (_readTask && (_readTask.Status() == winrt::AsyncStatus::Started) &&
            !CancelIoEx(_dir.get(), &_overlapped))
     {

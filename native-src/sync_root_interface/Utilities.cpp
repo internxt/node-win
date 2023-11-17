@@ -16,7 +16,7 @@ void Utilities::ApplyCustomStateToPlaceholderFile(LPCWSTR path, LPCWSTR filename
         fullPath.append(L"\\");
         fullPath.append(filename);
 
-        wprintf(L"Full path: %s\n", fullPath.c_str());
+        // wprintf(L"Full path: %s\n", fullPath.c_str());
         winrt::IStorageItem item = winrt::StorageFile::GetFileFromPathAsync(fullPath).get();
         winrt::StorageProviderItemProperties::SetAsync(item, {prop}).get();
     }
@@ -38,7 +38,7 @@ void Utilities::ApplyCustomOverwriteStateToPlaceholderFile(LPCWSTR path, LPCWSTR
         fullPath.append(L"\\");
         fullPath.append(filename);
 
-        wprintf(L"Full path: %s\n", fullPath.c_str());
+        // wprintf(L"Full path: %s\n", fullPath.c_str());
         winrt::IStorageItem item = winrt::StorageFile::GetFileFromPathAsync(fullPath).get();
         winrt::StorageProviderItemProperties::SetAsync(item, {}).get();
         winrt::StorageProviderItemProperties::SetAsync(item, {prop}).get();
@@ -107,7 +107,7 @@ void Utilities::ApplyTransferStateToFile(_In_ PCWSTR fullPath, _In_ CF_CALLBACK_
     {
         wprintf(L"Succesfully called CfReportProviderProgress \"%s\" with %llu/%llu\n", fullPath, completed, total);
     }
-    wprintf(L"Succesfully called CfReportProviderProgress \"%s\" with %llu/%llu\n", fullPath, completed, total);
+    // wprintf(L"Succesfully called CfReportProviderProgress \"%s\" with %llu/%llu\n", fullPath, completed, total);
 
     // Tell the Shell so File Explorer can display the progress bar in its view
     try
