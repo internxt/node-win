@@ -194,8 +194,7 @@ void CALLBACK notify_delete_callback_wrapper(
     }
 
     if (FAILED(hr))
-    {
-        wprintf(L"Error in CfExecute().\n");
-        wprintf(L"Error in CfExecute(), HRESULT: %lx\n", hr);
+    { 
+        wprintf(L"Error in CfExecute() delete action, HRESULT: %lx\n", hr);
     }
 }

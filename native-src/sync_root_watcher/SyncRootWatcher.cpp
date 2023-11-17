@@ -32,8 +32,8 @@ void SyncRootWatcher::WatcherTask(const wchar_t *syncRootPath, napi_env env, Inp
 
     if (syncRootPath == nullptr)
     {
-        wprintf(L"syncRootPath es nulo.\n");
-        throw std::invalid_argument("syncRootPath no puede ser nulo");
+        wprintf(L"syncRootPath null.\n");
+        throw std::invalid_argument("syncRootPath must be a valid path.");
     }
     while (true)
     {
@@ -72,7 +72,6 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
 
     for (auto change : changes)
     {
-        wprintf(L"[Log] Processing change for %s\n", change.path.c_str());
 
         if (change.type == ERROR_FILE_SIZE_EXCEEDED || change.type == ERROR_FOLDER_SIZE_EXCEEDED)
         {
@@ -131,7 +130,7 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
     }
     catch (...)
     {
-        wprintf(L"Error al dormir el hilo.\n");
+        wprintf(L"Error sleeping the thread.\n");
         throw;
     }
 

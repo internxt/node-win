@@ -57,7 +57,6 @@ void load_data()
 
 void setup_global_tsfn_fetch_data(napi_threadsafe_function tsfn)
 {
-    wprintf(L"setup_global_tsfn_fetch_data called\n");
     g_fetch_data_threadsafe_callback = tsfn;
 }
 
@@ -77,7 +76,6 @@ std::string WStringToString(const std::wstring &wstr)
 
 size_t file_incremental_reading(napi_env env, const std::string &filename, size_t &dataSizeRead, bool final_step, float &progress, napi_value error_callback = nullptr)
 {
-    printf("===================RESPONSE CALLBACK CALLED===================\n");
     std::ifstream file;
 
     // Abre el archivo
@@ -98,14 +96,11 @@ size_t file_incremental_reading(napi_env env, const std::string &filename, size_
 
     size_t growth = newSize - lastSize;
 
-    wprintf(L"growth: %d\n", growth);
-
     try
     {
 
         if ((datasizeAvailableUnread > 0)) // && CHUNK_SIZE < datasizeAvailableUnread && !final_step) || (datasizeAvailableUnread > 0 && final_step)
         {                                  // Si el archivo ha crecido
-            printf("============ENTER IN IF STATEMENT============\n");
             std::vector<char> buffer(CHUNK_SIZE);
             file.seekg(dataSizeRead);
             file.read(buffer.data(), CHUNK_SIZE);
@@ -115,9 +110,9 @@ size_t file_incremental_reading(napi_env env, const std::string &filename, size_
 
             startingOffset.QuadPart = dataSizeRead; // Desplazamiento desde el cual se leyeron los datos
 
-            printf("connectionKey: %d\n", connectionKey);
-            printf("transferKey: %d\n", transferKey);
-            printf("startingOffset: %d\n", startingOffset.QuadPart);
+            // printf("connectionKey: %d\n", connectionKey);
+            // printf("transferKey: %d\n", transferKey);
+            // printf("startingOffset: %d\n", startingOffset.QuadPart);
 
             LARGE_INTEGER chunkBufferSize;
             chunkBufferSize.QuadPart = min(datasizeAvailableUnread, CHUNK_SIZE);
@@ -229,7 +224,6 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     // std::lock_guard<std::mutex> lock(mtx);
     // ready = true;
     callbackResult = response;
-    wprintf(L"response_callback_fn_fetch_data called\n");
 
     size_t response_len;
     napi_get_value_string_utf16(env, argv[1], nullptr, 0, &response_len);
@@ -249,7 +243,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
         }
     }
 
-    wprintf(L"input path: %s .\n", response_wstr.c_str());
+    // wprintf(L"input path: %s .\n", response_wstr.c_str());
 
     fullServerFilePath = response_wstr;
 
@@ -262,7 +256,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 
     if (!file)
     {
-        wprintf(L"[Error] No se pudo abrir el archivo en tiempo real.\n");
+        wprintf(L"[Error] This file couldn't be opened in realtime.\n");
     }
 
     // Obtener el tamaño del archivo
@@ -271,7 +265,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     file.seekg(0, std::ios::beg);
 
     // Imprimir el tamaño del archivo
-    wprintf(L"[Debug] El tamaño del archivo es: %lld bytes.\n", total_size);
+    // wprintf(L"[Debug] El tamaño del archivo es: %lld bytes.\n", total_size);
 
     // Cerrar el archivo
     file.close();
@@ -305,7 +299,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     napi_value progress_value;
     napi_create_double(env, progress, &progress_value);
 
-    printf("resultBool: %d\n", load_finished);
+    printf("fetch data result: %d\n", load_finished);
 
     napi_value result_object;
     napi_create_object(env, &result_object);
@@ -329,7 +323,6 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 
 void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
 {
-    wprintf(L"notify_fetch_data_call called\n");
     napi_status status;
     FetchDataArgs *args = static_cast<FetchDataArgs *>(data);
     napi_value js_fileIdentityArg, undefined, result;
@@ -397,7 +390,6 @@ void register_threadsafe_fetch_data_callback(const std::string &resource_name, n
         fprintf(stderr, "Failed to create threadsafe function.\n");
         return;
     }
-    wprintf(L"Threadsafe function created.\n");
     setup_global_tsfn_fetch_data(tsfn_fetch_data);
 }
 
@@ -405,10 +397,6 @@ void CALLBACK fetch_data_callback_wrapper(
     _In_ CONST CF_CALLBACK_INFO *callbackInfo,
     _In_ CONST CF_CALLBACK_PARAMETERS *callbackParameters)
 {
-    wprintf(L"Callback fetch_data_callback_wrapper called\n");
-    // get callbackinfo
-    wprintf(L"fileId = %s\n", callbackInfo->FileIdentity);
-
     connectionKey = callbackInfo->ConnectionKey;
     transferKey = callbackInfo->TransferKey;
     fileSize = callbackInfo->FileSize;
@@ -453,7 +441,7 @@ void CALLBACK fetch_data_callback_wrapper(
         }
     }
 
-    wprintf(L"FINISH\n");
+    wprintf(L"Hydration Completed\n");
 
     // std::lock_guard<std::mutex> lock(mtx);
     lastReadOffset = 0;

@@ -29,7 +29,7 @@ HRESULT FileCopierWithProgress::TransferData(
 {
         CF_OPERATION_INFO opInfo = {0};
         CF_OPERATION_PARAMETERS opParams = {0};
-        wprintf(L"[%04x:%04x] - TransferData\n", GetCurrentProcessId(), GetCurrentThreadId());
+        // wprintf(L"[%04x:%04x] - TransferData\n", GetCurrentProcessId(), GetCurrentThreadId());
         opInfo.StructSize = sizeof(opInfo);
         opInfo.Type = CF_OPERATION_TYPE_TRANSFER_DATA;
         opInfo.ConnectionKey = connectionKey;

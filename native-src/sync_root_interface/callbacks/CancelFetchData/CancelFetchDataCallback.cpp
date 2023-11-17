@@ -14,8 +14,7 @@ struct CancelFetchDataArgs
 };
 
 void setup_global_tsfn_cancel_fetch_data(napi_threadsafe_function tsfn)
-{
-    wprintf(L"setup_global_tsfn_cancel_fetch_data called\n");
+{ 
     g_cancel_delete_fetch_data_threadsafe_callback = tsfn;
 }
 
@@ -74,7 +73,6 @@ void register_threadsafe_cancel_fetch_data_callback(const std::string &resource_
         fprintf(stderr, "Failed to create threadsafe function.\n");
         return;
     }
-    wprintf(L"Threadsafe function created.\n");
     setup_global_tsfn_cancel_fetch_data(tsfn_cancel_fetch_data);
 }
 
