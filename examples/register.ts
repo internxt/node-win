@@ -1,8 +1,11 @@
 import VirtualDrive from '../src/virtual-drive';
 import * as config from './config.json';
-import * as fs from 'fs';
 
-const drive = new VirtualDrive(config.syncRootPath);
+const drive = new VirtualDrive(config.syncRootPath, "C:\\Users\\gcarl\\AppData\\Roaming\\internxt-drive\\logs\\node-win.txt");
+
+function generateRandomNumber(min: number, max: number) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 async function onDeleteCallback(fileId: string, callback: (response: boolean) => void) {
     console.log("On delete File ID: " + fileId);
@@ -73,11 +76,12 @@ async function onFetchData(fileId: string): Promise<boolean> {
 async function onFileAddedCallback(filePath: string, callback: (aknowledge : boolean, id: string) => void) {
 
     try {
+        let randomNumber = generateRandomNumber(10000, 60000);
         console.log("========================= File added in callback: " + filePath);
         const newFilePath = filePath.replace(config.syncRootPath, '').replace(/\\/g, '/'); //IMPORTANTE CAMBIAR LOS SLASHES
         await new Promise(resolve => setTimeout(() => {
             resolve(undefined);
-        }, 1000));
+        }, randomNumber));
 
         // primer argumento es el boolean que indica si se pudo crear el archivo o no en el cloud
         // segundo argumento es el id del archivo creado en el cloud
