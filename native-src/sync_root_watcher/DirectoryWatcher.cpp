@@ -92,43 +92,59 @@ std::uintmax_t getDirectorySize(const fs::path &directoryPath)
 void ExploreDirectory(const std::wstring &directoryPath, std::list<FileChange> &result, FileChange fc)
 {
     // FileChange fc;
-    // wprintf(L"\nnew folder: %s\n", directoryPath.c_str());
+    wprintf(L"[Debug] new folder: %s\n", directoryPath.c_str());
     fc.path = directoryPath;
     fc.type = NEW_FOLDER;
     fc.item_added = true;
     result.push_back(fc);
 
-    std::wstring searchPath = directoryPath + L"\\*";
-    WIN32_FIND_DATAW data;
-    HANDLE hFind = FindFirstFileW(searchPath.c_str(), &data);
+    // std::wstring searchPath = directoryPath + L"\\*";
+    // WIN32_FIND_DATAW data;
+    // HANDLE hFind = FindFirstFileW(searchPath.c_str(), &data);
 
-    if (hFind != INVALID_HANDLE_VALUE)
-    {
-        do
-        {
-            if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-            {
-                if (wcscmp(data.cFileName, L".") != 0 && wcscmp(data.cFileName, L"..") != 0)
-                {
-                    // Es un directorio, llama a la función recursivamente
-                    std::wstring fullPath2 = directoryPath + L"\\" + data.cFileName;
-                    ExploreDirectory(fullPath2, result, fc);
-                }
-            }
-            else
-            {
-                // wprintf(L"new file recursivo: %s\n", data.cFileName);
-                // Es un archivo
-                std::wstring fullPath2 = directoryPath + L"\\" + data.cFileName;
-                FileChange fc;
-                fc.path = fullPath2;
-                fc.type = NEW_FILE;
-                fc.item_added = true;
-                result.push_back(fc);
-            }
-        } while (FindNextFileW(hFind, &data));
-        FindClose(hFind);
-    }
+    // if (hFind != INVALID_HANDLE_VALUE)
+    // {
+    //     do
+    //     {
+    //         if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+    //         {
+    //             if (wcscmp(data.cFileName, L".") != 0 && wcscmp(data.cFileName, L"..") != 0)
+    //             {
+    //                 // Es un directorio, llama a la función recursivamente
+    //                 std::wstring fullPath2 = directoryPath + L"\\" + data.cFileName;
+    //                 ExploreDirectory(fullPath2, result, fc);
+    //             }
+    //         }
+    //         else
+    //         {
+    //             wprintf(L"[Debug] New file recursivo: %s\n", data.cFileName);
+    //             std::wstring fullPath2 = directoryPath + L"\\" + data.cFileName;
+    //             FileChange fc;
+    //             fc.path = fullPath2;
+    //             DWORD fileAttributes = GetFileAttributesW(fullPath2.c_str());
+    //             bool isUnPinned = (fileAttributes != INVALID_FILE_ATTRIBUTES) && (fileAttributes & FILE_ATTRIBUTE_UNPINNED);
+    //             bool isPinned = (fileAttributes != INVALID_FILE_ATTRIBUTES) && (fileAttributes & FILE_ATTRIBUTE_PINNED);
+    //             if (isUnPinned)
+    //             {
+    //                 wprintf(L"[Debug] UNPINNED new file recursivo:\n");
+    //                 fc.type = NEW_FILE;
+    //                 fc.item_added = true;
+    //                 result.push_back(fc);
+    //             }
+    //             if (isPinned)
+    //             {
+    //                 wprintf(L"[Debug] PINNED new file recursivo:\n");
+    //                 fc.type = NEW_FILE;
+    //                 fc.item_added = true;
+    //                 result.push_back(fc);
+    //             }
+    //             // fc.type = NEW_FILE;
+    //             // fc.item_added = true;
+    //             // result.push_back(fc);
+    //         }
+    //     } while (FindNextFileW(hFind, &data));
+    //     FindClose(hFind);
+    // }
 }
 
 winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAsync()
@@ -137,6 +153,7 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
 
     while (true)
     {
+        wprintf(L"[Log] Watching \n");
         DWORD returned;
         winrt::check_bool(ReadDirectoryChangesW(
             _dir.get(),
