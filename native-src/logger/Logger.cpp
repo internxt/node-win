@@ -37,7 +37,7 @@ std::string Logger::toString(LogLevel level) {
         case LogLevel::DEBUG: return "DEBUG";
         case LogLevel::INFO:  return "INFO";
         case LogLevel::WARN:  return "WARN";
-        case LogLevel::ERROR: return "ERROR";  // Corrige la ortografía aquí también
+        case LogLevel::ERROR: return "ERROR"; 
         case LogLevel::TRACE: return "TRACE";
         case LogLevel::FATAL: return "FATAL";
         default: return "UNKNOWN";
