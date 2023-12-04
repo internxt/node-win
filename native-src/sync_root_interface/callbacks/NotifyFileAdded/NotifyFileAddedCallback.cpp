@@ -1,5 +1,6 @@
 #include "Callbacks.h"
 #include "DirectoryWatcher.h"
+#include "Logger.h"
 
 inline std::mutex mtx;
 inline std::condition_variable cv;
@@ -12,6 +13,8 @@ struct FetchDataArgs
 {
     std::wstring fileIdentityArg;
 };
+
+std::shared_ptr<Logger> logger;
 
 napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
 {
@@ -102,6 +105,7 @@ void notify_file_added_call(napi_env env, napi_value js_callback, void *context,
 
 void register_threadsafe_notify_file_added_callback(FileChange &change, const std::string &resource_name, napi_env env, InputSyncCallbacksThreadsafe input)
 {
+    logger = std::make_shared<Logger>();
     std::wstring *dataToSend = new std::wstring(change.type == NEW_FILE ? change.path : (change.path + L"\\"));
     napi_status status = napi_call_threadsafe_function(input.notify_file_added_threadsafe_callback, dataToSend, napi_tsfn_blocking);
 
@@ -156,14 +160,13 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
         {
             try
             {
-                wprintf(L"[Log] convert to placeholder in sync \n");
+                logger->log("convert to placeholder in sync", LogLevel::DEBUG);
                 // Sleep(1000);
                 HRESULT hr = CfConvertToPlaceholder(placeholder, idStrLPCVOID, idStrByteLength, CF_CONVERT_FLAG_MARK_IN_SYNC, nullptr, nullptr);
                 // show error
                 if (FAILED(hr) || hr != S_OK)
                 {
-                    wprintf(L"[Error] path %s\n", change.path.c_str());
-                    wprintf(L"[Error] al convertir a placeholder: 0x%X\n", hr);
+                    logger->log("Error al convertir a placeholder", LogLevel::FATAL);
                 }
                 CloseHandle(placeholder);
             }

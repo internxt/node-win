@@ -45,7 +45,7 @@ class VirtualDrive {
     callbacks?: Callbacks;
     private itemsIds: string[] = [];
 
-    constructor(syncRootPath: string) {
+    constructor(syncRootPath: string, loggerPath?: string) {
 
         this.PLACEHOLDER_ATTRIBUTES = {
             FILE_ATTRIBUTE_READONLY: 0x1,
@@ -55,6 +55,17 @@ class VirtualDrive {
 
         this.syncRootPath = syncRootPath;
         this.createSyncRootFolder();
+
+        let pathElements = this.syncRootPath.split('\\\\');
+        pathElements.pop();
+        let parentPath = pathElements.join('\\\\'); 
+
+        this.addLoggerPath(loggerPath ?? parentPath)
+    }
+
+    addLoggerPath(loggerPath: string) {
+        console.log("loggerPath: ", loggerPath);
+        addon.addLoggerPath(loggerPath);
     }
 
     getInputSyncCallbacks(): InputSyncCallbacks {
