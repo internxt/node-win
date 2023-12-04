@@ -9,7 +9,8 @@ enum class ProcessErrorName
     BAD_RESPONSE,
     EMPTY_FILE,
     FILE_TOO_BIG,
-    UNKNOWN
+    FILE_NON_EXTENSION,
+    UNKNOWN,
 };
 
 enum class FileOperationError

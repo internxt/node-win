@@ -72,51 +72,51 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
 
     for (auto change : changes)
     {
-
-        if (change.type == ERROR_FILE_SIZE_EXCEEDED || change.type == ERROR_FOLDER_SIZE_EXCEEDED)
+        // TODO: it should be just one callback for all the errors -> need refactor
+        if (
+            change.type == ERROR_FILE_SIZE_EXCEEDED ||
+            change.type == ERROR_FOLDER_SIZE_EXCEEDED ||
+            change.type == ERROR_FILE_ZERO_SIZE ||
+            change.type == ERROR_FILE_NON_EXTENSION)
         {
-            wprintf(L"[Error] processing change for %s\n", change.path.c_str());
-            if (ERROR_FILE_SIZE_EXCEEDED)
-            {
-                wprintf(L"[Log] ERROR_FILE_SIZE_EXCEEDED\n");
-                change.message = change.path.c_str();
-                register_threadsafe_message_callback(change, "message", env, input);
-            }
-            break;
+            change.message = change.path.c_str();
+            register_threadsafe_message_callback(change, "message", env, input);
         }
-
-        DWORD attrib = GetFileAttributesW(change.path.c_str());
-        if (!(attrib & FILE_ATTRIBUTE_DIRECTORY) && !change.item_added)
+        else
         {
-            winrt::handle placeholder(CreateFileW(change.path.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
-
-            LARGE_INTEGER offset;
-            offset.QuadPart = 0;
-            LARGE_INTEGER length;
-            GetFileSizeEx(placeholder.get(), &length);
-            // length.QuadPart = MAXLONGLONG;
-
-            if (attrib & FILE_ATTRIBUTE_PINNED)
+            DWORD attrib = GetFileAttributesW(change.path.c_str());
+            if (!(attrib & FILE_ATTRIBUTE_DIRECTORY) && !change.item_added)
             {
-                wprintf(L"[Log] Hydrating file %s\n", change.path.c_str());
-                CfHydratePlaceholder(placeholder.get(), offset, length, CF_HYDRATE_FLAG_NONE, NULL);
-            }
-            else if (attrib & FILE_ATTRIBUTE_UNPINNED)
-            {
-                wprintf(L"[Log] Dehydrating file %s\n", change.path.c_str());
-                CfDehydratePlaceholder(placeholder.get(), offset, length, CF_DEHYDRATE_FLAG_NONE, NULL);
-            }
-        }
+                winrt::handle placeholder(CreateFileW(change.path.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
 
-        if (change.type == NEW_FILE || change.type == NEW_FOLDER)
-        {
-            register_threadsafe_notify_file_added_callback(change, "file_added", env, input);
+                LARGE_INTEGER offset;
+                offset.QuadPart = 0;
+                LARGE_INTEGER length;
+                GetFileSizeEx(placeholder.get(), &length);
+                // length.QuadPart = MAXLONGLONG;
+
+                if (attrib & FILE_ATTRIBUTE_PINNED)
+                {
+                    wprintf(L"[Log] Hydrating file %s\n", change.path.c_str());
+                    CfHydratePlaceholder(placeholder.get(), offset, length, CF_HYDRATE_FLAG_NONE, NULL);
+                }
+                else if (attrib & FILE_ATTRIBUTE_UNPINNED)
+                {
+                    wprintf(L"[Log] Dehydrating file %s\n", change.path.c_str());
+                    CfDehydratePlaceholder(placeholder.get(), offset, length, CF_DEHYDRATE_FLAG_NONE, NULL);
+                }
+            }
+
+            if (change.type == NEW_FILE || change.type == NEW_FOLDER)
+            {
+                register_threadsafe_notify_file_added_callback(change, "file_added", env, input);
+            }
+            // else if ( change.type == MODIFIED_FILE) {
+            //     wprintf(L"MODIFIED_FILE\n");
+            //     wprintf(L"change.path: %s\n", change.path.c_str());
+            //     MarkFileAsInSync(change.path);
+            // }
         }
-        // else if ( change.type == MODIFIED_FILE) {
-        //     wprintf(L"MODIFIED_FILE\n");
-        //     wprintf(L"change.path: %s\n", change.path.c_str());
-        //     MarkFileAsInSync(change.path);
-        // }
     }
 
     try
