@@ -56,16 +56,17 @@ class VirtualDrive {
         this.syncRootPath = syncRootPath;
         this.createSyncRootFolder();
 
-        // let pathElements = this.syncRootPath.split('\\\\');
-        // pathElements.pop();
-        // let parentPath = pathElements.join('\\\\'); 
+        let pathElements = this.syncRootPath.split('\\\\');
+        pathElements.pop();
+        let parentPath = pathElements.join('\\\\'); 
 
-        // this.addLoggerPath(loggerPath ?? parentPath)
+        this.addLoggerPath(loggerPath ?? parentPath)
     }
 
-    // addLoggerPath(loggerPath: string) {
-    //     addon.addLoggerPath(loggerPath);
-    // }
+    addLoggerPath(loggerPath: string) {
+        console.log("loggerPath: ", loggerPath);
+        addon.addLoggerPath(loggerPath);
+    }
 
     getInputSyncCallbacks(): InputSyncCallbacks {
         if (this.callbacks === undefined) {

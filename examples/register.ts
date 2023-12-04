@@ -81,7 +81,7 @@ async function onFileAddedCallback(filePath: string, callback: (aknowledge : boo
         const newFilePath = filePath.replace(config.syncRootPath, '').replace(/\\/g, '/'); //IMPORTANTE CAMBIAR LOS SLASHES
         await new Promise(resolve => setTimeout(() => {
             resolve(undefined);
-        }, randomNumber));
+        }, 1000));
 
         // primer argumento es el boolean que indica si se pudo crear el archivo o no en el cloud
         // segundo argumento es el id del archivo creado en el cloud

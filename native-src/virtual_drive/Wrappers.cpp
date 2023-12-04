@@ -4,7 +4,7 @@
 #include "SyncRoot.h"
 #include "SyncRootWatcher.h"
 #include "Callbacks.h"
-#include "Logger.h"
+#include "LoggerPath.h"
 
 napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
 {
@@ -597,7 +597,7 @@ napi_value GetItemsSyncRootWrapper(napi_env env, napi_callback_info args)
     return jsFileIdentities;
 }
 
-napi_value addLoggerPath(napi_env env, napi_callback_info args) {
+napi_value addLoggerPathWrapper(napi_env env, napi_callback_info args) {
     size_t argc = 1;
     napi_value argv[1];
 
@@ -627,7 +627,7 @@ napi_value addLoggerPath(napi_env env, napi_callback_info args) {
     WideCharToMultiByte(CP_UTF8, 0, widePath.get(), -1, utf8Path.get(), utf8Length, nullptr, nullptr);
 
     // Inicializar el logger con la ruta UTF-8.
-    loggerPath = std::string(utf8Path.get());
+    LoggerPath::set(std::string(utf8Path.get()));
 
     // Devolver un valor booleano verdadero.
     napi_value result;

@@ -1,10 +1,9 @@
 #include "Logger.h"
+#include "LoggerPath.h"
 
-std::string loggerPath = "";
-
-Logger::Logger() : log_file(loggerPath, std::ios::app) {
-    printf("Logger path: %s\n", loggerPath.c_str());
-    if (!log_file.is_open() && !loggerPath.empty()) {
+Logger::Logger() : log_file(LoggerPath::get(), std::ios::app) {
+    std::string path = LoggerPath::get();
+    if (!log_file.is_open() && !path.empty()) {
         throw std::runtime_error("No se pudo abrir el archivo de log.");
     }
 }
@@ -16,6 +15,7 @@ Logger::~Logger() {
 }
 
 void Logger::log(const std::string &message, LogLevel level) {
+    std::lock_guard<std::mutex> guard(log_mutex); // Bloquear el mutex
     log_file << "[" << toString(level) << "] " << message << std::endl;
 }
 

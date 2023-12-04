@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <mutex>
 
 enum class LogLevel {
     DEBUG,
@@ -23,9 +24,10 @@ public:
     Logger(const Logger&) = delete;
     Logger& operator=(const Logger&) = delete;
 
-    std::ofstream log_file;
-
     std::string toString(LogLevel level);
 
-    static Logger* instance;
+private:
+    std::ofstream log_file;
+    std::mutex log_mutex;
+
 };
