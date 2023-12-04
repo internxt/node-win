@@ -14,7 +14,7 @@ struct FetchDataArgs
     std::wstring fileIdentityArg;
 };
 
-Logger& logger = Logger::getInstance();
+Logger* logger;
 
 napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
 {
@@ -159,14 +159,14 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
         {
             try
             {
-                logger.log("convert to placeholder in sync", LogLevel::DEBUG);
+                // logger.log("convert to placeholder in sync", LogLevel::DEBUG);
                 wprintf(L"convert to placeholder in sync \n");
                 Sleep(1000);
                 HRESULT hr = CfConvertToPlaceholder(placeholder, idStrLPCVOID, idStrByteLength, CF_CONVERT_FLAG_MARK_IN_SYNC, nullptr, nullptr);
                 // show error
                 if (FAILED(hr) || hr != S_OK)
                 {
-                    logger.log("Error al convertir a placeholder", LogLevel::FATAL);
+                    logger->log("Error al convertir a placeholder", LogLevel::FATAL);
                     wprintf(L"Error al convertir a placeholder: 0x%X\n", hr);
                 }
                 CloseHandle(placeholder);
@@ -206,4 +206,6 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
         std::lock_guard<std::mutex> lock(mtx);
         ready = false; // Reset ready
     }
+
+    delete logger;
 };

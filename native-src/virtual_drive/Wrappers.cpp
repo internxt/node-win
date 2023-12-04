@@ -627,7 +627,7 @@ napi_value addLoggerPath(napi_env env, napi_callback_info args) {
     WideCharToMultiByte(CP_UTF8, 0, widePath.get(), -1, utf8Path.get(), utf8Length, nullptr, nullptr);
 
     // Inicializar el logger con la ruta UTF-8.
-    Logger::initialize(std::string(utf8Path.get()));
+    loggerPath = std::string(utf8Path.get());
 
     // Devolver un valor booleano verdadero.
     napi_value result;

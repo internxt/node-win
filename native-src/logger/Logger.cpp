@@ -1,23 +1,10 @@
 #include "Logger.h"
 
-// Inicializa el puntero de la instancia singleton a nullptr.
-Logger* Logger::instance = nullptr;
+std::string loggerPath = "";
 
-Logger& Logger::getInstance() {
-    if (instance == nullptr) {
-        throw std::logic_error("El singleton Logger debe ser inicializado antes de su uso.");
-    }
-    return *instance;
-}
-
-void Logger::initialize(const std::string &file_name) {
-    if (instance == nullptr) {
-        instance = new Logger(file_name);
-    }
-}
-
-Logger::Logger(const std::string &file_name) : log_file(file_name, std::ios::app) {
-    if (!log_file.is_open()) {
+Logger::Logger() : log_file(loggerPath, std::ios::app) {
+    printf("Logger path: %s\n", loggerPath.c_str());
+    if (!log_file.is_open() && !loggerPath.empty()) {
         throw std::runtime_error("No se pudo abrir el archivo de log.");
     }
 }
@@ -37,7 +24,6 @@ std::string Logger::toString(LogLevel level) {
         case LogLevel::DEBUG: return "DEBUG";
         case LogLevel::INFO:  return "INFO";
         case LogLevel::WARN:  return "WARN";
-        case LogLevel::ERROR: return "ERROR"; 
         case LogLevel::TRACE: return "TRACE";
         case LogLevel::FATAL: return "FATAL";
         default: return "UNKNOWN";
