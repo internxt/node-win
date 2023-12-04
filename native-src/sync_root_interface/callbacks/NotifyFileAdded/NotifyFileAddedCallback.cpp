@@ -156,13 +156,14 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
         {
             try
             {
-                wprintf(L"convert to placeholder in sync \n");
-                Sleep(1000);
+                wprintf(L"[Log] convert to placeholder in sync \n");
+                // Sleep(1000);
                 HRESULT hr = CfConvertToPlaceholder(placeholder, idStrLPCVOID, idStrByteLength, CF_CONVERT_FLAG_MARK_IN_SYNC, nullptr, nullptr);
                 // show error
                 if (FAILED(hr) || hr != S_OK)
                 {
-                    wprintf(L"Error al convertir a placeholder: 0x%X\n", hr);
+                    wprintf(L"[Error] path %s\n", change.path.c_str());
+                    wprintf(L"[Error] al convertir a placeholder: 0x%X\n", hr);
                 }
                 CloseHandle(placeholder);
             }
