@@ -92,7 +92,7 @@ std::uintmax_t getDirectorySize(const fs::path &directoryPath)
 void ExploreDirectory(const std::wstring &directoryPath, std::list<FileChange> &result, FileChange fc)
 {
     // FileChange fc;
-    wprintf(L"[Debug] new folder: %s\n", directoryPath.c_str());
+    wprintf(L"[Log] New Folder: %s\n", directoryPath.c_str());
     fc.path = directoryPath;
     fc.type = NEW_FOLDER;
     fc.item_added = true;
@@ -145,6 +145,41 @@ void ExploreDirectory(const std::wstring &directoryPath, std::list<FileChange> &
     //     } while (FindNextFileW(hFind, &data));
     //     FindClose(hFind);
     // }
+}
+
+bool isFileValid(const std::wstring &fullPath, std::list<FileChange> &result, FileChange fc)
+{
+    std::filesystem::path p(fullPath);
+    wprintf(L"[Log] File Validation\n");
+    if (std::filesystem::file_size(p) > FILE_SIZE_LIMIT)
+    {
+        wprintf(L"[Error] ERROR_FILE_SIZE_EXCEEDED\n");
+        fc.type = ERROR_FILE_SIZE_EXCEEDED;
+        fc.item_added = false;
+        result.push_back(fc);
+        return false;
+    }
+    else if (std::filesystem::file_size(p) == 0)
+    {
+        wprintf(L"[Error] ERROR_FILE_ZERO_SIZE\n");
+        fc.type = ERROR_FILE_ZERO_SIZE;
+        fc.item_added = false;
+        result.push_back(fc);
+        return false;
+    }
+    else if (p.extension().string().empty())
+    {
+        wprintf(L"[Error] ERROR_FILE_NON_EXTENSION\n");
+        fc.type = ERROR_FILE_NON_EXTENSION;
+        fc.item_added = false;
+        result.push_back(fc);
+        return false;
+    }
+    else
+    {
+        wprintf(L"[Log] Pass File Validation\n");
+        return true;
+    }
 }
 
 winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAsync()
@@ -200,20 +235,13 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
 
             if ((next->Action == FILE_ACTION_ADDED || (next->Action == FILE_ACTION_MODIFIED && !fileExists)) && !isTmpFile && !isDirectory && !isHidden)
             {
-                // wprintf(L"\n[Log] New file: %s\n", fullPath.c_str());
-                std::filesystem::path p(fullPath);
-
-                if (std::filesystem::file_size(p) > FILE_SIZE_LIMIT)
+                wprintf(L"[Log] New File: %s\n", fullPath.c_str());
+                if (isFileValid(fullPath, result, fc))
                 {
-                    fc.type = ERROR_FILE_SIZE_EXCEEDED;
-                    fc.item_added = false;
+                    fc.type = NEW_FILE;
+                    fc.item_added = true;
                     result.push_back(fc);
-                    break;
                 }
-
-                fc.type = NEW_FILE;
-                fc.item_added = true;
-                result.push_back(fc);
             }
             else if (next->Action == FILE_ACTION_ADDED && isDirectory && !isHidden)
             {

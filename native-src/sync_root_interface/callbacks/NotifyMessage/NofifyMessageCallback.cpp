@@ -118,6 +118,16 @@ void register_threadsafe_message_callback(FileChange &change, const std::string 
         args->errorName = Utilities::ProcessErrorNameToWString(ProcessErrorName::FILE_TOO_BIG);
         args->message = change.message;
         break;
+    case ERROR_FILE_ZERO_SIZE:
+        args->action = Utilities::FileOperationErrorToWString(FileOperationError::UPLOAD_ERROR);
+        args->errorName = Utilities::ProcessErrorNameToWString(ProcessErrorName::EMPTY_FILE);
+        args->message = change.message;
+        break;
+    case ERROR_FILE_NON_EXTENSION:
+        args->action = Utilities::FileOperationErrorToWString(FileOperationError::UPLOAD_ERROR);
+        args->errorName = Utilities::ProcessErrorNameToWString(ProcessErrorName::FILE_NON_EXTENSION);
+        args->message = change.message;
+        break;
     default:
         break;
     }

@@ -178,6 +178,8 @@ std::wstring Utilities::ProcessErrorNameToWString(ProcessErrorName error)
         return L"FILE_TOO_BIG";
     case ProcessErrorName::UNKNOWN:
         return L"UNKNOWN";
+    case ProcessErrorName::FILE_NON_EXTENSION:
+        return L"FILE_NON_EXTENSION";
     default:
         return L"UNKNOWN";
     }
