@@ -160,7 +160,7 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
         {
             try
             {
-                logger->log("convert to placeholder in sync", LogLevel::DEBUG);
+                logger->log("Convert to placeholder in sync", LogLevel::DEBUG);
                 // Sleep(1000);
                 HRESULT hr = CfConvertToPlaceholder(placeholder, idStrLPCVOID, idStrByteLength, CF_CONVERT_FLAG_MARK_IN_SYNC, nullptr, nullptr);
                 // show error

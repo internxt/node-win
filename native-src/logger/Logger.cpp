@@ -16,7 +16,20 @@ Logger::~Logger() {
 
 void Logger::log(const std::string &message, LogLevel level) {
     std::lock_guard<std::mutex> guard(log_mutex); // Bloquear el mutex
-    log_file << "[" << toString(level) << "] " << message << std::endl;
+
+    // Obtener la hora y fecha actual
+    auto now = std::chrono::system_clock::now();
+    auto now_c = std::chrono::system_clock::to_time_t(now);
+    std::tm now_tm = *std::localtime(&now_c);
+
+    // Formatear la fecha y hora
+    std::ostringstream time_stream;
+    time_stream << std::put_time(&now_tm, "%Y-%m-%d %H:%M:%S");
+
+    // Escribir en el archivo de log
+    log_file << "[" << toString(level) << "] " 
+             << time_stream.str() << " " 
+             << message << std::endl;
 }
 
 std::string Logger::toString(LogLevel level) {

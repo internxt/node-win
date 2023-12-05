@@ -4,6 +4,9 @@
 #include <fstream>
 #include <string>
 #include <mutex>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
 
 enum class LogLevel {
     DEBUG,
