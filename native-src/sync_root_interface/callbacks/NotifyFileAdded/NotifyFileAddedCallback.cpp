@@ -14,8 +14,6 @@ struct FetchDataArgs
     std::wstring fileIdentityArg;
 };
 
-std::shared_ptr<Logger> logger;
-
 napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
 {
     size_t argc = 2;
@@ -105,7 +103,6 @@ void notify_file_added_call(napi_env env, napi_value js_callback, void *context,
 
 void register_threadsafe_notify_file_added_callback(FileChange &change, const std::string &resource_name, napi_env env, InputSyncCallbacksThreadsafe input)
 {
-    logger = std::make_shared<Logger>();
     std::wstring *dataToSend = new std::wstring(change.type == NEW_FILE ? change.path : (change.path + L"\\"));
     napi_status status = napi_call_threadsafe_function(input.notify_file_added_threadsafe_callback, dataToSend, napi_tsfn_blocking);
 
@@ -120,7 +117,7 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
 
     if (!std::filesystem::exists(change.path))
     {
-        wprintf(L"file does not exist\n");
+        Logger::getInstance().log("File does not exist", LogLevel::ERROR);
         return;
     };
 
@@ -160,25 +157,25 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
         {
             try
             {
-                logger->log("Convert to placeholder in sync", LogLevel::DEBUG);
+                Logger::getInstance().log("Convert to placeholder in sync", LogLevel::DEBUG);
                 // Sleep(1000);
                 HRESULT hr = CfConvertToPlaceholder(placeholder, idStrLPCVOID, idStrByteLength, CF_CONVERT_FLAG_MARK_IN_SYNC, nullptr, nullptr);
                 // show error
                 if (FAILED(hr) || hr != S_OK)
                 {
-                    logger->log("Error al convertir a placeholder", LogLevel::FATAL);
+                    Logger::getInstance().log("Error converting to placeholder, CfConvertToPlaceholder failed,", LogLevel::ERROR);
                 }
                 CloseHandle(placeholder);
             }
             catch (...)
             {
-                wprintf(L"Error al convertir a placeholder: \n");
+                Logger::getInstance().log("Error converting to placeholder, CloseHandle failed.", LogLevel::ERROR);
             }
         }
     }
     catch (...)
     {
-        wprintf(L"Error al convertir a placeholder.\n");
+        Logger::getInstance().log("Error converting to placeholder", LogLevel::ERROR);
     }
 
     // if (!callbackResult) {

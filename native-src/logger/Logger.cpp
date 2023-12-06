@@ -15,21 +15,21 @@ Logger::~Logger() {
 }
 
 void Logger::log(const std::string &message, LogLevel level) {
-    std::lock_guard<std::mutex> guard(log_mutex); // Bloquear el mutex
+    std::lock_guard<std::mutex> guard(log_mutex);
 
-    // Obtener la hora y fecha actual
     auto now = std::chrono::system_clock::now();
-    auto now_c = std::chrono::system_clock::to_time_t(now);
-    std::tm now_tm = *std::localtime(&now_c);
+    auto now_as_time_t = std::chrono::system_clock::to_time_t(now);
+    auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+    std::tm now_tm = *std::localtime(&now_as_time_t);
 
-    // Formatear la fecha y hora
     std::ostringstream time_stream;
     time_stream << std::put_time(&now_tm, "%Y-%m-%d %H:%M:%S");
+    time_stream << '.' << std::setfill('0') << std::setw(3) << now_ms.count();
 
-    // Escribir en el archivo de log
-    log_file << "[" << toString(level) << "] " 
-             << time_stream.str() << " " 
-             << message << std::endl;
+    std::string level_str = toString(level);
+    std::transform(level_str.begin(), level_str.end(), level_str.begin(), ::tolower);
+
+    log_file << "[" << time_stream.str() << "] [" << level_str << "] " << message << std::endl;
 }
 
 std::string Logger::toString(LogLevel level) {
@@ -38,6 +38,7 @@ std::string Logger::toString(LogLevel level) {
         case LogLevel::INFO:  return "INFO";
         case LogLevel::WARN:  return "WARN";
         case LogLevel::TRACE: return "TRACE";
+        case LogLevel::ERROR: return "ERROR";
         case LogLevel::FATAL: return "FATAL";
         default: return "UNKNOWN";
     }
