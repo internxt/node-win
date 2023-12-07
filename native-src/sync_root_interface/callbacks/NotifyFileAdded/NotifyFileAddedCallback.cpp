@@ -95,7 +95,7 @@ void notify_file_added_call(napi_env env, napi_value js_callback, void *context,
     status = napi_call_function(env, undefined, js_callback, 2, args_to_js_callback, &result);
     if (status != napi_ok)
     {
-        fprintf(stderr, "Failed to call JS function.\n");
+        Logger::getInstance().log("Failed to call JS function.", LogLevel::ERROR);
         return;
     }
     delete args;
@@ -163,7 +163,7 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
                 // show error
                 if (FAILED(hr) || hr != S_OK)
                 {
-                    Logger::getInstance().log("Error converting to placeholder, CfConvertToPlaceholder failed,", LogLevel::ERROR);
+                    Logger::getInstance().log("Error converting to placeholder, ConvertToPlaceholder failed,", LogLevel::ERROR);
                 }
                 CloseHandle(placeholder);
             }
@@ -195,6 +195,7 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
 
     if (status != napi_ok)
     {
+        Logger::getInstance().log("Unable to call notify_file_added_threadsafe_callback", LogLevel::ERROR);
         napi_throw_error(env, NULL, "Unable to call notify_file_added_threadsafe_callback");
     }
 

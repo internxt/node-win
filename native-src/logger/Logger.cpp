@@ -30,6 +30,7 @@ void Logger::log(const std::string &message, LogLevel level) {
     std::transform(level_str.begin(), level_str.end(), level_str.begin(), ::tolower);
 
     log_file << "[" << time_stream.str() << "] [" << level_str << "] " << message << std::endl;
+    printf("[%s] [%s] %s\n", time_stream.str().c_str(), level_str.c_str(), message.c_str());
 }
 
 std::string Logger::toString(LogLevel level) {
