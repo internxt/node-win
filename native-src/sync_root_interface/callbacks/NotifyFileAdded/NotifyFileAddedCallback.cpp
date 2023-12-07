@@ -1,7 +1,7 @@
 #include "Callbacks.h"
 #include "DirectoryWatcher.h"
 #include "Logger.h"
-
+#include <codecvt>
 inline std::mutex mtx;
 inline std::condition_variable cv;
 inline bool ready = false;
@@ -103,6 +103,16 @@ void notify_file_added_call(napi_env env, napi_value js_callback, void *context,
     delete args;
 }
 
+// TODO: move to utils
+std::string wstringToString(const std::wstring &wstr)
+{
+    // Configurar la conversión a UTF-8
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+
+    // Utilizar la conversión
+    return converter.to_bytes(wstr);
+}
+
 void register_threadsafe_notify_file_added_callback(FileChange &change, const std::string &resource_name, napi_env env, InputSyncCallbacksThreadsafe input)
 {
     logger = std::make_shared<Logger>();
@@ -120,7 +130,7 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
 
     if (!std::filesystem::exists(change.path))
     {
-        wprintf(L"file does not exist\n");
+        logger->log("Path does not exist", LogLevel::FATAL);
         return;
     };
 
@@ -160,25 +170,28 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
         {
             try
             {
-                logger->log("convert to placeholder in sync", LogLevel::DEBUG);
+
+                // agrega el path al log
+                std::string path = wstringToString(change.path);
+                logger->log("Convert to placeholder in sync for path: " + path, LogLevel::INFO);
                 // Sleep(1000);
                 HRESULT hr = CfConvertToPlaceholder(placeholder, idStrLPCVOID, idStrByteLength, CF_CONVERT_FLAG_MARK_IN_SYNC, nullptr, nullptr);
                 // show error
                 if (FAILED(hr) || hr != S_OK)
                 {
-                    logger->log("Error al convertir a placeholder", LogLevel::FATAL);
+                    logger->log("Error to convert to placeholder in sync for path: " + path, LogLevel::FATAL);
                 }
                 CloseHandle(placeholder);
             }
             catch (...)
             {
-                wprintf(L"Error al convertir a placeholder: \n");
+                logger->log("Error to convert to placeholder in sync for path: ", LogLevel::FATAL);
             }
         }
     }
     catch (...)
     {
-        wprintf(L"Error al convertir a placeholder.\n");
+        logger->log("Error to convert to placeholder in sync", LogLevel::FATAL);
     }
 
     // if (!callbackResult) {
