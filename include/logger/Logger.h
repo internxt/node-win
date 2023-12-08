@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <sstream>
 #include <algorithm>
+#include <windows.h>
 
 #ifdef ERROR
 #undef ERROR
@@ -37,6 +38,7 @@ public:
 
     std::string toString(LogLevel level);
 
+    static std::string fromWStringToString(const std::wstring wstr);
 private:
     explicit Logger();
     ~Logger();

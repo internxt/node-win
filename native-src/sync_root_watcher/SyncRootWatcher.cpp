@@ -3,6 +3,7 @@
 #include "DirectoryWatcher.h"
 #include "Callbacks.h"
 #include <windows.h>
+#include <Logger.h>
 namespace winrt
 {
     using namespace winrt::Windows::Foundation;
@@ -32,7 +33,7 @@ void SyncRootWatcher::WatcherTask(const wchar_t *syncRootPath, napi_env env, Inp
 
     if (syncRootPath == nullptr)
     {
-        Logger::getInstance.log(L"syncRootPath null.", LogLevel::ERROR);
+        Logger::getInstance().log("syncRootPath null.", LogLevel::ERROR);
         throw std::invalid_argument("syncRootPath must be a valid path.");
     }
     while (true)
@@ -58,7 +59,7 @@ void SyncRootWatcher::WatcherTask(const wchar_t *syncRootPath, napi_env env, Inp
         }
         catch (...)
         {
-            Logger::getInstance.log(L"CloudProviderSyncRootWatcher watcher failed. Unknown error.", LogLevel::ERROR);
+            Logger::getInstance().log("CloudProviderSyncRootWatcher watcher failed. Unknown error.", LogLevel::ERROR);
             throw;
         }
     }
@@ -97,12 +98,12 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
 
                 if (attrib & FILE_ATTRIBUTE_PINNED)
                 {        
-                    Logger::getInstance.log(L"Hydrating file" + change.path.c_str(), LogLevel::INFO);
+                    Logger::getInstance().log("Hydrating file" + Logger::fromWStringToString(change.path), LogLevel::INFO);
                     CfHydratePlaceholder(placeholder.get(), offset, length, CF_HYDRATE_FLAG_NONE, NULL);
                 }
                 else if (attrib & FILE_ATTRIBUTE_UNPINNED)
                 {
-                    Logger::getInstance.log(L"Dehydrating file" + change.path.c_str(), LogLevel::INFO);
+                    Logger::getInstance().log("Dehydrating file" + Logger::fromWStringToString(change.path), LogLevel::INFO);
                     CfDehydratePlaceholder(placeholder.get(), offset, length, CF_DEHYDRATE_FLAG_NONE, NULL);
                 }
             }
@@ -130,7 +131,7 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
     }
     catch (...)
     {
-        Logger::getInstance.log(L"Error sleeping the thread.", LogLevel::ERROR);
+        Logger::getInstance().log("Error sleeping the thread.", LogLevel::ERROR);
         throw;
     }
 
@@ -146,12 +147,12 @@ void SyncRootWatcher::InitDirectoryWatcher(const wchar_t *syncRootPath, napi_env
     }
     catch (std::exception &e)
     {
-        Logger::getInstance.log(L"Error initializing directory watcher: " + std::wstring(e.what()), LogLevel::ERROR);
+        Logger::getInstance().log("Error initializing directory watcher: " + std::string(e.what()), LogLevel::ERROR);
         throw;
     }
     catch (...)
     {
-        Logger::getInstance.log(L"Could not init directory watcher.", LogLevel::ERROR);
+        Logger::getInstance().log("Could not init directory watcher.", LogLevel::ERROR);
         throw;
     }
 }
