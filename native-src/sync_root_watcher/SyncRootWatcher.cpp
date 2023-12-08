@@ -32,7 +32,7 @@ void SyncRootWatcher::WatcherTask(const wchar_t *syncRootPath, napi_env env, Inp
 
     if (syncRootPath == nullptr)
     {
-        wprintf(L"syncRootPath null.\n");
+        Logger::LogError(L"syncRootPath null.", LogLevel::ERROR);
         throw std::invalid_argument("syncRootPath must be a valid path.");
     }
     while (true)
@@ -58,7 +58,7 @@ void SyncRootWatcher::WatcherTask(const wchar_t *syncRootPath, napi_env env, Inp
         }
         catch (...)
         {
-            wprintf(L"CloudProviderSyncRootWatcher watcher failed. Unknown error.\n");
+            Logger::LogError(L"CloudProviderSyncRootWatcher watcher failed. Unknown error.", LogLevel::ERROR);
             throw;
         }
     }
@@ -96,13 +96,13 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
                 // length.QuadPart = MAXLONGLONG;
 
                 if (attrib & FILE_ATTRIBUTE_PINNED)
-                {
-                    wprintf(L"[Log] Hydrating file %s\n", change.path.c_str());
+                {        
+                    Logger::LogError(L"Hydrating file" + change.path.c_str(), LogLevel::INFO);
                     CfHydratePlaceholder(placeholder.get(), offset, length, CF_HYDRATE_FLAG_NONE, NULL);
                 }
                 else if (attrib & FILE_ATTRIBUTE_UNPINNED)
                 {
-                    wprintf(L"[Log] Dehydrating file %s\n", change.path.c_str());
+                    Logger::LogError(L"Dehydrating file" + change.path.c_str(), LogLevel::INFO;
                     CfDehydratePlaceholder(placeholder.get(), offset, length, CF_DEHYDRATE_FLAG_NONE, NULL);
                 }
             }
@@ -130,7 +130,7 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
     }
     catch (...)
     {
-        wprintf(L"Error sleeping the thread.\n");
+        Logger::LogError(L"Error sleeping the thread.", LogLevel::ERROR);
         throw;
     }
 
@@ -146,12 +146,12 @@ void SyncRootWatcher::InitDirectoryWatcher(const wchar_t *syncRootPath, napi_env
     }
     catch (std::exception &e)
     {
-        wprintf(L"Error initializing directory watcher: %S\n", e.what());
+        Logger::LogError(L"Error initializing directory watcher: " + std::wstring(e.what()), LogLevel::ERROR);
         throw;
     }
     catch (...)
     {
-        wprintf(L"Could not init directory watcher.\n");
+        Logger::LogError(L"Could not init directory watcher.", LogLevel::ERROR);
         throw;
     }
 }
