@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <Callbacks.h>
 #include <cfapi.h>
+#include "Logger.h"
 
 napi_threadsafe_function g_cancel_delete_fetch_data_threadsafe_callback = nullptr;
 
@@ -35,7 +36,8 @@ void notify_cancel_fetch_data_call(napi_env env, napi_value js_callback, void *c
     napi_status status = napi_call_function(env, undefined, js_callback, 1, args_to_js_callback_cancel_fetch, &result);
     if (status != napi_ok)
     {
-        fprintf(stderr, "Failed to call JS function.\n");
+        Logger::getInstance().log("Failed to call JS function.", LogLevel::ERROR);
+
         return;
     }
 
@@ -70,7 +72,7 @@ void register_threadsafe_cancel_fetch_data_callback(const std::string &resource_
 
     if (status != napi_ok)
     {
-        fprintf(stderr, "Failed to create threadsafe function.\n");
+        Logger::getInstance().log("Failed to create threadsafe function.", LogLevel::ERROR);
         return;
     }
     setup_global_tsfn_cancel_fetch_data(tsfn_cancel_fetch_data);
@@ -80,8 +82,8 @@ void CALLBACK cancel_fetch_data_callback_wrapper(
     _In_ CONST CF_CALLBACK_INFO* callbackInfo,
     _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
 ) {
-    printf("fetch_data_callback_wrapper\n");
-
+    Logger::getInstance().log("fetch_data_callback_wrapper", LogLevel::INFO);
+    
     LPCVOID fileIdentity = callbackInfo->FileIdentity;
     DWORD fileIdentityLength = callbackInfo->FileIdentityLength;
 
@@ -89,8 +91,8 @@ void CALLBACK cancel_fetch_data_callback_wrapper(
     std::wstring fileIdentityStr(wchar_ptr, fileIdentityLength / sizeof(wchar_t));
 
     if (g_cancel_delete_fetch_data_threadsafe_callback == nullptr)
-    {
-        wprintf(L"Callback fetch_data_callback_wrapper called but g_fetch_data_threadsafe_callback is null\n");
+    {  
+        Logger::getInstance().log("Callback fetch_data_callback_wrapper called but g_fetch_data_threadsafe_callback is null", LogLevel::ERROR);
         return;
     }
 
@@ -101,7 +103,7 @@ void CALLBACK cancel_fetch_data_callback_wrapper(
 
     if (status != napi_ok)
     {
-        wprintf(L"Callback called unsuccessfully.\n");
+        Logger::getInstance().log("Failed to call threadsafe function in CancelFetchData", LogLevel::ERROR);    
     };
 
     {
