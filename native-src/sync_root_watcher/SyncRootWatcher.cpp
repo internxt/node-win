@@ -110,6 +110,7 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
 
             if (change.type == NEW_FILE || change.type == NEW_FOLDER)
             {
+                Sleep(250);
                 register_threadsafe_notify_file_added_callback(change, "file_added", env, input);
             }
             // else if ( change.type == MODIFIED_FILE) {
