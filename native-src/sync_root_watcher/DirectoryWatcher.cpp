@@ -91,69 +91,42 @@ std::uintmax_t getDirectorySize(const fs::path &directoryPath)
     return size;
 }
 
-void ExploreDirectory(const std::wstring &directoryPath, std::list<FileChange> &result, FileChange fc)
+CF_PLACEHOLDER_STANDARD_INFO getPlaceholderInfo(const std::wstring &directoryPath)
 {
-    // FileChange fc;
-    Logger::getInstance().log("New Folder: %s\n" + Logger::fromWStringToString(directoryPath), LogLevel::INFO);
-    fc.path = directoryPath;
-    fc.type = NEW_FOLDER;
-    fc.item_added = true;
-    result.push_back(fc);
-
-    // std::wstring searchPath = directoryPath + L"\\*";
-    // WIN32_FIND_DATAW data;
-    // HANDLE hFind = FindFirstFileW(searchPath.c_str(), &data);
-
-    // if (hFind != INVALID_HANDLE_VALUE)
-    // {
-    //     do
-    //     {
-    //         if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-    //         {
-    //             if (wcscmp(data.cFileName, L".") != 0 && wcscmp(data.cFileName, L"..") != 0)
-    //             {
-    //                 // Es un directorio, llama a la función recursivamente
-    //                 std::wstring fullPath2 = directoryPath + L"\\" + data.cFileName;
-    //                 ExploreDirectory(fullPath2, result, fc);
-    //             }
-    //         }
-    //         else
-    //         {
-    //             wprintf(L"[Debug] New file recursivo: %s\n", data.cFileName);
-    //             std::wstring fullPath2 = directoryPath + L"\\" + data.cFileName;
-    //             FileChange fc;
-    //             fc.path = fullPath2;
-    //             DWORD fileAttributes = GetFileAttributesW(fullPath2.c_str());
-    //             bool isUnPinned = (fileAttributes != INVALID_FILE_ATTRIBUTES) && (fileAttributes & FILE_ATTRIBUTE_UNPINNED);
-    //             bool isPinned = (fileAttributes != INVALID_FILE_ATTRIBUTES) && (fileAttributes & FILE_ATTRIBUTE_PINNED);
-    //             if (isUnPinned)
-    //             {
-    //                 wprintf(L"[Debug] UNPINNED new file recursivo:\n");
-    //                 fc.type = NEW_FILE;
-    //                 fc.item_added = true;
-    //                 result.push_back(fc);
-    //             }
-    //             if (isPinned)
-    //             {
-    //                 wprintf(L"[Debug] PINNED new file recursivo:\n");
-    //                 fc.type = NEW_FILE;
-    //                 fc.item_added = true;
-    //                 result.push_back(fc);
-    //             }
-    //             // fc.type = NEW_FILE;
-    //             // fc.item_added = true;
-    //             // result.push_back(fc);
-    //         }
-    //     } while (FindNextFileW(hFind, &data));
-    //     FindClose(hFind);
-    // }
+    HANDLE hFile = CreateFileW(
+        directoryPath.c_str(),
+        FILE_READ_ATTRIBUTES,
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        nullptr,
+        OPEN_EXISTING,
+        FILE_FLAG_BACKUP_SEMANTICS | FILE_ATTRIBUTE_NORMAL,
+        nullptr);
+    if (hFile != INVALID_HANDLE_VALUE)
+    {
+        int size = sizeof(CF_PLACEHOLDER_STANDARD_INFO) + 300;
+        CF_PLACEHOLDER_STANDARD_INFO PlaceholderInfo;
+        DWORD returnlength(0);
+        HRESULT hr = CfGetPlaceholderInfo(hFile, CF_PLACEHOLDER_INFO_STANDARD, &PlaceholderInfo, size, &returnlength);
+        if (SUCCEEDED(hr))
+        {
+            Logger::getInstance().log("getPlaceholderInfo: Success\n", LogLevel::INFO);
+            return PlaceholderInfo;
+            CloseHandle(hFile);
+        }
+        else
+        {
+            CloseHandle(hFile);
+            Logger::getInstance().log("getPlaceholderInfo: Failed, CfGetPlaceholderInfo failed.\n", LogLevel::ERROR);
+            return CF_PLACEHOLDER_STANDARD_INFO{};
+        }
+    }
 }
 
 bool isFileValid(const std::wstring &fullPath, std::list<FileChange> &result, FileChange fc)
 {
     std::filesystem::path p(fullPath);
 
-    Logger::getInstance().log("File Validation\n", LogLevel::INFO);
+    Logger::getInstance().log("File Validation:  " + Logger::fromWStringToString(fullPath) + "\n", LogLevel::INFO);
     if (std::filesystem::file_size(p) > FILE_SIZE_LIMIT)
     {
         Logger::getInstance().log("ERROR_FILE_SIZE_EXCEEDED\n", LogLevel::ERROR);
@@ -182,6 +155,50 @@ bool isFileValid(const std::wstring &fullPath, std::list<FileChange> &result, Fi
     {
         Logger::getInstance().log("Pass File Validation\n", LogLevel::INFO);
         return true;
+    }
+}
+
+void ExploreDirectory(const std::wstring &directoryPath, std::list<FileChange> &result, FileChange fc)
+{
+    Logger::getInstance().log("New Folder: %s\n" + Logger::fromWStringToString(directoryPath), LogLevel::INFO);
+    fc.path = directoryPath;
+    fc.type = NEW_FOLDER;
+    fc.item_added = true;
+    result.push_back(fc);
+
+    std::wstring searchPath = directoryPath + L"\\*";
+    WIN32_FIND_DATAW data;
+    HANDLE hFind = FindFirstFileW(searchPath.c_str(), &data);
+
+    if (hFind != INVALID_HANDLE_VALUE)
+    {
+        do
+        {
+            if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            {
+                if (wcscmp(data.cFileName, L".") != 0 && wcscmp(data.cFileName, L"..") != 0)
+                {
+                    // Es un directorio, llama a la función recursivamente
+                    std::wstring fullPath2 = directoryPath + L"\\" + data.cFileName;
+                    ExploreDirectory(fullPath2, result, fc);
+                }
+            }
+            else
+            {
+                Logger::getInstance().log("New file processed recursively: " + Logger::fromWStringToString(data.cFileName), LogLevel::INFO);
+                std::wstring fullPath2 = directoryPath + L"\\" + data.cFileName;
+                FileChange fc;
+                if (isFileValid(fullPath2, result, fc))
+                {
+
+                    fc.path = fullPath2;
+                    fc.type = NEW_FILE;
+                    fc.item_added = true;
+                    result.push_back(fc);
+                }
+            }
+        } while (FindNextFileW(hFind, &data));
+        FindClose(hFind);
     }
 }
 
@@ -291,6 +308,29 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
         //         napi_throw_error(_env, NULL, "Unable to call notify_file_added_threadsafe_callback");
         //     }
         // }
+        result.sort([](const FileChange &a, const FileChange &b)
+                    { return std::tie(a.path, a.type) < std::tie(b.path, b.type); });
+
+        // Use unique to remove duplicates
+        result.unique([](const FileChange &a, const FileChange &b)
+                      { return a.path == b.path && a.type == b.type; });
+
+        // ordernar de primero las paths de folders y luego las de archivos
+        result.sort([](const FileChange &a, const FileChange &b)
+                    {
+                        bool a_is_folder = a.path.back() == L'\\' || a.path.back() == L'/';
+                        bool b_is_folder = b.path.back() == L'\\' || b.path.back() == L'/';
+                        if (a_is_folder && !b_is_folder)
+                            return true;
+                        if (!a_is_folder && b_is_folder)
+                            return false;
+                        return a.path < b.path; });
+        // TODO: delete this, but it is used to Debug the results from watcher
+        // for (auto change : result)
+        //{
+        //    wprintf(L"[Log] change.path: %s\n", change.path.c_str());
+        //    wprintf(L"[Log] change.type: %d\n", change.type);
+        //}
         _callback(result, _env, _input);
     }
 }

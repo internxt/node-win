@@ -1,7 +1,7 @@
 #include "Callbacks.h"
 #include "DirectoryWatcher.h"
 #include "Logger.h"
-
+#include <codecvt>
 inline std::mutex mtx;
 inline std::condition_variable cv;
 inline bool ready = false;
@@ -99,6 +99,16 @@ void notify_file_added_call(napi_env env, napi_value js_callback, void *context,
         return;
     }
     delete args;
+}
+
+// TODO: move to utils
+std::string wstringToString(const std::wstring &wstr)
+{
+    // Configurar la conversión a UTF-8
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+
+    // Utilizar la conversión
+    return converter.to_bytes(wstr);
 }
 
 void register_threadsafe_notify_file_added_callback(FileChange &change, const std::string &resource_name, napi_env env, InputSyncCallbacksThreadsafe input)
