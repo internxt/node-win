@@ -2,6 +2,8 @@
 #include "DirectoryWatcher.h"
 #include <iostream>
 #include <filesystem>
+#include <sstream>
+#include "Logger.h"
 
 const size_t c_bufferSize = 32768; // sizeof(FILE_NOTIFY_INFORMATION) * 100;
 
@@ -107,14 +109,14 @@ CF_PLACEHOLDER_STANDARD_INFO getPlaceholderInfo(const std::wstring &directoryPat
         HRESULT hr = CfGetPlaceholderInfo(hFile, CF_PLACEHOLDER_INFO_STANDARD, &PlaceholderInfo, size, &returnlength);
         if (SUCCEEDED(hr))
         {
-            wprintf(L"[Debug] Return placeholderInfo\n");
+            Logger::getInstance().log("getPlaceholderInfo: Success\n", LogLevel::INFO);
             return PlaceholderInfo;
             CloseHandle(hFile);
         }
         else
         {
             CloseHandle(hFile);
-            wprintf(L"La llamada a CfGetPlaceholderInfo falló con el código de error 0x%X\n", hr);
+            Logger::getInstance().log("getPlaceholderInfo: Failed, CfGetPlaceholderInfo failed.\n", LogLevel::ERROR);
             return CF_PLACEHOLDER_STANDARD_INFO{};
         }
     }
@@ -123,11 +125,11 @@ CF_PLACEHOLDER_STANDARD_INFO getPlaceholderInfo(const std::wstring &directoryPat
 bool isFileValid(const std::wstring &fullPath, std::list<FileChange> &result, FileChange fc)
 {
     std::filesystem::path p(fullPath);
-    // wprintf(L"[Log] File Validation\n");
-    fc.path = fullPath;
+
+    Logger::getInstance().log("File Validation:  " + Logger::fromWStringToString(fullPath) + "\n", LogLevel::INFO);
     if (std::filesystem::file_size(p) > FILE_SIZE_LIMIT)
     {
-        // wprintf(L"[Error] ERROR_FILE_SIZE_EXCEEDED\n");
+        Logger::getInstance().log("ERROR_FILE_SIZE_EXCEEDED\n", LogLevel::ERROR);
         fc.type = ERROR_FILE_SIZE_EXCEEDED;
         fc.item_added = false;
         result.push_back(fc);
@@ -135,7 +137,7 @@ bool isFileValid(const std::wstring &fullPath, std::list<FileChange> &result, Fi
     }
     else if (std::filesystem::file_size(p) == 0)
     {
-        // wprintf(L"[Error] ERROR_FILE_ZERO_SIZE\n");
+        Logger::getInstance().log("ERROR_FILE_ZERO_SIZE\n", LogLevel::ERROR);
         fc.type = ERROR_FILE_ZERO_SIZE;
         fc.item_added = false;
         result.push_back(fc);
@@ -143,7 +145,7 @@ bool isFileValid(const std::wstring &fullPath, std::list<FileChange> &result, Fi
     }
     else if (p.extension().string().empty())
     {
-        // wprintf(L"[Error] ERROR_FILE_NON_EXTENSION\n");
+        Logger::getInstance().log("ERROR_FILE_NON_EXTENSION\n", LogLevel::ERROR);
         fc.type = ERROR_FILE_NON_EXTENSION;
         fc.item_added = false;
         result.push_back(fc);
@@ -151,15 +153,14 @@ bool isFileValid(const std::wstring &fullPath, std::list<FileChange> &result, Fi
     }
     else
     {
-        // wprintf(L"[Log] Pass File Validation\n");
+        Logger::getInstance().log("Pass File Validation\n", LogLevel::INFO);
         return true;
     }
 }
 
 void ExploreDirectory(const std::wstring &directoryPath, std::list<FileChange> &result, FileChange fc)
 {
-    // FileChange fc;
-    wprintf(L"[Log] New Folder: %s\n", directoryPath.c_str());
+    Logger::getInstance().log("New Folder: %s\n" + Logger::fromWStringToString(directoryPath), LogLevel::INFO);
     fc.path = directoryPath;
     fc.type = NEW_FOLDER;
     fc.item_added = true;
@@ -184,7 +185,7 @@ void ExploreDirectory(const std::wstring &directoryPath, std::list<FileChange> &
             }
             else
             {
-                wprintf(L"[Debug] New file recursivo: %s\n", data.cFileName);
+                Logger::getInstance().log("New file processed recursively: " + Logger::fromWStringToString(data.cFileName), LogLevel::INFO);
                 std::wstring fullPath2 = directoryPath + L"\\" + data.cFileName;
                 FileChange fc;
                 if (isFileValid(fullPath2, result, fc))
@@ -207,7 +208,7 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
 
     while (true)
     {
-        wprintf(L"[Log] Watching \n");
+        Logger::getInstance().log("Watching \n", LogLevel::INFO);
         DWORD returned;
         winrt::check_bool(ReadDirectoryChangesW(
             _dir.get(),
@@ -250,11 +251,9 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             bool fileExists = (fileAttributes != INVALID_FILE_ATTRIBUTES);
             bool isHidden = (fileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0;
 
-            // imprimir eventos que estan sucediendo
-
             if ((next->Action == FILE_ACTION_ADDED || (next->Action == FILE_ACTION_MODIFIED && !fileExists)) && !isTmpFile && !isDirectory && !isHidden)
             {
-                wprintf(L"[Log] New File: %s\n", fullPath.c_str());
+                Logger::getInstance().log("New file" + Logger::fromWStringToString(fullPath), LogLevel::INFO);
                 if (isFileValid(fullPath, result, fc))
                 {
                     fc.type = NEW_FILE;
