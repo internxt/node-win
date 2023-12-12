@@ -4,6 +4,7 @@
 #include <iostream>
 #include <iostream>
 #include <filesystem>
+#include <Logger.h>
 
 namespace fs = std::filesystem;
 // variable to disconect
@@ -85,13 +86,12 @@ HRESULT SyncRoot::UnregisterSyncRoot()
 {
     try
     {
+        Logger::getInstance().log("Unregistering sync root.", LogLevel::INFO);
         winrt::StorageProviderSyncRootManager::Unregister(L"syncRootID");
         return S_OK;
     }
     catch (...)
     {
-        // winrt::to_hresult() will eat the exception if it is a result of winrt::check_hresult,
-        // otherwise the exception will get rethrown and this method will crash out as it should
         wprintf(L"Could not unregister the sync root, hr %08x\n", static_cast<HRESULT>(winrt::to_hresult()));
     }
 }
@@ -137,6 +137,7 @@ HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallback
 // disconection sync root
 HRESULT SyncRoot::DisconnectSyncRoot()
 {
+    Logger::getInstance().log("Disconnecting sync root.", LogLevel::INFO);
     try
     {
         HRESULT hr = CfDisconnectSyncRoot(gloablConnectionKey);
@@ -144,13 +145,11 @@ HRESULT SyncRoot::DisconnectSyncRoot()
     }
     catch (const std::exception &e)
     {
-        wprintf(L"Excepción capturada: %hs\n", e.what());
-        // Aquí puedes decidir si retornar un código de error específico o mantener el E_FAIL.
+        Logger::getInstance().log("Exception caught: " + std::string(e.what()), LogLevel::ERROR);
     }
     catch (...)
     {
-        wprintf(L"Excepción desconocida capturada\n");
-        // Igualmente, puedes decidir el código de error a retornar.
+        Logger::getInstance().log("Unknown exception caught.", LogLevel::ERROR);
     }
 }
 
@@ -193,7 +192,7 @@ void EnumerateAndQueryPlaceholders(const std::wstring &directoryPath)
             }
             else
             {
-                wprintf(L"La llamada a CfGetPlaceholderInfo falló con el código de error 0x%X\n", hr);
+                Logger::getInstance().log("La llamada a CfGetPlaceholderInfo falló con el código de error 0x%X\n", LogLevel::ERROR);
             }
             CloseHandle(hFile);
             if (entry.is_directory())
@@ -203,7 +202,7 @@ void EnumerateAndQueryPlaceholders(const std::wstring &directoryPath)
         }
         else
         {
-            wprintf(L"Invalid Item: %ls\n", entry.path().c_str());
+            Logger::getInstance().log("Invalid Item: " + Logger::fromWStringToString(entry.path().c_str()), LogLevel::ERROR);
         }
     }
 }

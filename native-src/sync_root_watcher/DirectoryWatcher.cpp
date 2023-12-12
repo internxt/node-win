@@ -337,10 +337,16 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
 
 void DirectoryWatcher::Cancel()
 {
-    while (_readTask && (_readTask.Status() == winrt::AsyncStatus::Started) &&
+    Logger::getInstance().log("Canceling DirectoryWatcher.\n", LogLevel::INFO);
+
+    // Modificar la condición del bucle para verificar el estado adecuado de _readTask
+    while (_readTask &&
+           (_readTask.Status() == winrt::AsyncStatus::Started ||
+            _readTask.Status() == winrt::AsyncStatus::Canceled ||
+            _readTask.Status() == winrt::AsyncStatus::Error) &&
            !CancelIoEx(_dir.get(), &_overlapped))
     {
-        // Raced against the thread loop. Try again.
+        Logger::getInstance().log("CancelIoEx failed.\n", LogLevel::ERROR);
         Sleep(10);
     }
 }

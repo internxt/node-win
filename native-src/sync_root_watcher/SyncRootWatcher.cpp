@@ -4,6 +4,7 @@
 #include "Callbacks.h"
 #include <windows.h>
 #include <Logger.h>
+#include "SyncRoot.h"
 namespace winrt
 {
     using namespace winrt::Windows::Foundation;
@@ -20,9 +21,8 @@ winrt::event<winrt::EventHandler<winrt::IInspectable>> SyncRootWatcher::s_status
 
 void SyncRootWatcher::WatchAndWait(const wchar_t *syncRootPath, napi_env env, InputSyncCallbacksThreadsafe input)
 {
-    std::thread watcherThread([this, syncRootPath, env, input]
-                              { WatcherTask(syncRootPath, env, input); });
-    watcherThread.detach();
+    watcherThread = std::make_shared<std::thread>([this, syncRootPath, env, input]
+                                                  { WatcherTask(syncRootPath, env, input); });
 }
 
 void SyncRootWatcher::WatcherTask(const wchar_t *syncRootPath, napi_env env, InputSyncCallbacksThreadsafe input)
@@ -161,6 +161,8 @@ void SyncRootWatcher::InitDirectoryWatcher(const wchar_t *syncRootPath, napi_env
 BOOL WINAPI
 SyncRootWatcher::Stop(DWORD /*dwReason*/)
 {
+    Logger::getInstance().log("Stopping SyncRootWatcher.", LogLevel::INFO);
+    SyncRoot::DisconnectSyncRoot();
     s_shutdownWatcher = TRUE;
     return TRUE;
 }
