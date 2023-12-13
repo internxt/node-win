@@ -126,10 +126,10 @@ bool isFileValid(const std::wstring &fullPath, std::list<FileChange> &result, Fi
 {
     std::filesystem::path p(fullPath);
 
-    Logger::getInstance().log("File Validation:  " + Logger::fromWStringToString(fullPath) + "\n", LogLevel::INFO);
+    Logger::getInstance().log("File Validation:  " + Logger::fromWStringToString(fullPath), LogLevel::INFO);
     if (std::filesystem::file_size(p) > FILE_SIZE_LIMIT)
     {
-        Logger::getInstance().log("ERROR_FILE_SIZE_EXCEEDED\n", LogLevel::ERROR);
+        Logger::getInstance().log("ERROR_FILE_SIZE_EXCEEDED", LogLevel::ERROR);
         fc.type = ERROR_FILE_SIZE_EXCEEDED;
         fc.item_added = false;
         result.push_back(fc);
@@ -137,7 +137,7 @@ bool isFileValid(const std::wstring &fullPath, std::list<FileChange> &result, Fi
     }
     else if (std::filesystem::file_size(p) == 0)
     {
-        Logger::getInstance().log("ERROR_FILE_ZERO_SIZE\n", LogLevel::ERROR);
+        Logger::getInstance().log("ERROR_FILE_ZERO_SIZE", LogLevel::ERROR);
         fc.type = ERROR_FILE_ZERO_SIZE;
         fc.item_added = false;
         result.push_back(fc);
@@ -145,7 +145,7 @@ bool isFileValid(const std::wstring &fullPath, std::list<FileChange> &result, Fi
     }
     else if (p.extension().string().empty())
     {
-        Logger::getInstance().log("ERROR_FILE_NON_EXTENSION\n", LogLevel::ERROR);
+        Logger::getInstance().log("ERROR_FILE_NON_EXTENSION", LogLevel::ERROR);
         fc.type = ERROR_FILE_NON_EXTENSION;
         fc.item_added = false;
         result.push_back(fc);
@@ -153,14 +153,14 @@ bool isFileValid(const std::wstring &fullPath, std::list<FileChange> &result, Fi
     }
     else
     {
-        Logger::getInstance().log("Pass File Validation\n", LogLevel::INFO);
+        // Logger::getInstance().log("Pass File Validation", LogLevel::INFO);
         return true;
     }
 }
 
 void ExploreDirectory(const std::wstring &directoryPath, std::list<FileChange> &result, FileChange fc)
 {
-    Logger::getInstance().log("New Folder: %s\n" + Logger::fromWStringToString(directoryPath), LogLevel::INFO);
+    Logger::getInstance().log("New Folder: " + Logger::fromWStringToString(directoryPath), LogLevel::INFO);
     fc.path = directoryPath;
     fc.type = NEW_FOLDER;
     fc.item_added = true;
@@ -208,7 +208,7 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
 
     while (true)
     {
-        Logger::getInstance().log("Watching \n", LogLevel::INFO);
+        Logger::getInstance().log("Watching...", LogLevel::INFO);
         DWORD returned;
         winrt::check_bool(ReadDirectoryChangesW(
             _dir.get(),
@@ -253,7 +253,7 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
 
             if ((next->Action == FILE_ACTION_ADDED || (next->Action == FILE_ACTION_MODIFIED && !fileExists)) && !isTmpFile && !isDirectory && !isHidden)
             {
-                Logger::getInstance().log("New file" + Logger::fromWStringToString(fullPath), LogLevel::INFO);
+                Logger::getInstance().log("New File: " + Logger::fromWStringToString(fullPath), LogLevel::INFO);
                 if (isFileValid(fullPath, result, fc))
                 {
                     fc.type = NEW_FILE;
