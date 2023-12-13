@@ -97,7 +97,7 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
                 // length.QuadPart = MAXLONGLONG;
 
                 if (attrib & FILE_ATTRIBUTE_PINNED)
-                {        
+                {
                     Logger::getInstance().log("Hydrating file" + Logger::fromWStringToString(change.path), LogLevel::INFO);
                     CfHydratePlaceholder(placeholder.get(), offset, length, CF_HYDRATE_FLAG_NONE, NULL);
                 }
@@ -110,7 +110,7 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
 
             if (change.type == NEW_FILE || change.type == NEW_FOLDER)
             {
-                Sleep(250);
+                Sleep(100);
                 register_threadsafe_notify_file_added_callback(change, "file_added", env, input);
             }
             // else if ( change.type == MODIFIED_FILE) {

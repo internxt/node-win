@@ -167,8 +167,8 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
         {
             try
             {
-                Logger::getInstance().log("Convert to placeholder in sync", LogLevel::DEBUG);
-                // Sleep(1000);
+                Logger::getInstance().log("Convert to placeholder in sync" + Logger::fromWStringToString(change.path), LogLevel::INFO);
+                Sleep(100);
                 HRESULT hr = CfConvertToPlaceholder(placeholder, idStrLPCVOID, idStrByteLength, CF_CONVERT_FLAG_MARK_IN_SYNC, nullptr, nullptr);
                 // show error
                 if (FAILED(hr) || hr != S_OK)
