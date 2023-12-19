@@ -172,6 +172,12 @@ napi_value init(napi_env env, napi_value exports)
     nullptr
   };
 
+  napi_status defineConvertToPlaceholderStatus = napi_define_properties(env, exports, 1, &convertToPlaceholder);
+  if (defineConvertToPlaceholderStatus != napi_ok) {
+      napi_throw_error(env, nullptr, "Failed to define convertToPlaceholder function");
+      return nullptr;
+  }
+
   return exports;
 }
 NAPI_MODULE(NODE_GYP_MODULE_NAME, init)

@@ -658,4 +658,11 @@ napi_value ConvertToPlaceholderWrapper(napi_env env, napi_callback_info args) {
     napi_get_value_string_utf16(env, argv[1], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(itemIdentity)), itemIdentityLength + 1, nullptr);
 
     HRESULT result = Placeholders::ConvertToPlaceholder(itemPath, itemIdentity);
+
+    delete[] itemPath;
+    delete[] itemIdentity;
+
+    napi_value napiResult;
+    napi_create_int32(env, static_cast<int32_t>(result), &napiResult);
+    return napiResult;
 }

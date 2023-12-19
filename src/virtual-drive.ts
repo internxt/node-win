@@ -68,6 +68,10 @@ class VirtualDrive {
         addon.addLoggerPath(loggerPath);
     }
 
+    convertToPlaceholder(filePath: string, itemId: string) {
+        addon.convertToPlaceholder(filePath, itemId);
+    }
+
     getInputSyncCallbacks(): InputSyncCallbacks {
         if (this.callbacks === undefined) {
             throw new Error('Callbacks are not defined');
