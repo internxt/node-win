@@ -634,3 +634,28 @@ napi_value addLoggerPathWrapper(napi_env env, napi_callback_info args) {
     napi_get_boolean(env, true, &result);
     return result;
 }
+
+napi_value ConvertToPlaceholderWrapper(napi_env env, napi_callback_info args) {
+    size_t argc = 2;
+    napi_value argv[2];
+
+    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
+    if (argc < 2) {
+        napi_throw_error(env, nullptr, "The path and the placeholder path are required for convertToPlaceholder");
+        return nullptr;
+    }
+
+    LPCWSTR itemPath;
+    size_t itemPathLength;
+    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &itemPathLength);
+    itemPath = new WCHAR[itemPathLength + 1];
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(itemPath)), itemPathLength + 1, nullptr);
+
+    LPCWSTR itemIdentity;
+    size_t itemIdentityLength;
+    napi_get_value_string_utf16(env, argv[1], nullptr, 0, &itemIdentityLength);
+    itemIdentity = new WCHAR[itemIdentityLength + 1];
+    napi_get_value_string_utf16(env, argv[1], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(itemIdentity)), itemIdentityLength + 1, nullptr);
+
+    HRESULT result = Placeholders::ConvertToPlaceholder(itemPath, itemIdentity);
+}

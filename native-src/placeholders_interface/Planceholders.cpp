@@ -148,3 +148,40 @@ void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSync
 
     CloseHandle(fileHandle);
 }
+
+HRESULT Placeholders::ConvertToPlaceholder(const wchar_t *itemPath, const wchar_t *idStr)
+{
+    try
+    {
+        HANDLE placeholder = CreateFileW(
+            itemPath,
+            FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES,
+            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+            nullptr,
+            OPEN_EXISTING,
+            0,
+            nullptr);
+
+        if (placeholder == INVALID_HANDLE_VALUE)
+        {
+            wprintf(L"Error abriendo el archivo: %ls\n", itemPath);
+            return HRESULT_FROM_WIN32(GetLastError());
+        }
+
+        LPCVOID idStrLPCVOID = static_cast<LPCVOID>(idStr);
+        DWORD idStrByteLength = static_cast<DWORD>(wcslen(idStr) * sizeof(wchar_t));
+
+        HRESULT hr = CfConvertToPlaceholder(placeholder, idStrLPCVOID, idStrByteLength, CF_CONVERT_FLAG_MARK_IN_SYNC, nullptr, nullptr);
+        if (FAILED(hr))
+        {
+            wprintf(L"Error convirtiendo a placeholder, ConvertToPlaceholder falló, hr %08x\n", hr);
+        }
+
+        CloseHandle(placeholder);
+        return hr;
+    }
+    catch (const std::exception &e)
+    {
+        wprintf(L"Excepción capturada: %hs\n", e.what());
+    }
+}

@@ -161,6 +161,17 @@ napi_value init(napi_env env, napi_value exports)
       return nullptr;
   }
 
+  napi_property_descriptor convertToPlaceholder = {
+    "convertToPlaceholder",
+    nullptr,
+    ConvertToPlaceholderWrapper,
+    nullptr,
+    nullptr,
+    nullptr,
+    napi_default,
+    nullptr
+  };
+
   return exports;
 }
 NAPI_MODULE(NODE_GYP_MODULE_NAME, init)
