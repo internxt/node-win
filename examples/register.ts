@@ -194,10 +194,11 @@ console.log('\n==============    GET ITEMS IDS    ==============');
 // drive.getItemsIds();
 //---------------
 
-setTimeout(() => {
-    drive.convertToPlaceholder("C:\\Users\\gcarl\\Desktop\\carpeta\\TOPLACEHOLDER.pdf", "123213123")
-    console.log("converted to placeholder")
-}, 1000);
+// To test placeholder
+// setTimeout(() => {
+//     drive.convertToPlaceholder("C:\\Users\\gcarl\\Desktop\\carpeta\\TOPLACEHOLDER.pdf", "123213123")
+//     console.log("converted to placeholder")
+// }, 1000);
 
 
 // using the watch and wait method
