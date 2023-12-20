@@ -205,7 +205,8 @@ void ExploreDirectory(const std::wstring &directoryPath, std::list<FileChange> &
 winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAsync()
 {
     co_await winrt::resume_background();
-
+    bool folderRenamedAtCreation = false;
+    std::wstring folderRenamedAtCreationPath = L"";
     while (true)
     {
         Logger::getInstance().log("Watching...", LogLevel::INFO);
@@ -234,6 +235,7 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
         std::list<FileChange> result;
         std::list<std::wstring> addedFiles;
         std::list<std::wstring> removedFiles;
+        
         FILE_NOTIFY_INFORMATION *next = _notify.get();
         while (next != nullptr)
         {
@@ -263,7 +265,26 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             }
             else if (next->Action == FILE_ACTION_ADDED && isDirectory && !isHidden)
             {
-                ExploreDirectory(fullPath, result, fc);
+                Logger::getInstance().log("New Folder: " + Logger::fromWStringToString(fullPath), LogLevel::INFO);
+                Sleep(2000);
+                if (std::filesystem::exists(fullPath)) {
+                    Logger::getInstance().log("New Folder exist: " + Logger::fromWStringToString(fullPath) + " exists", LogLevel::INFO);
+                    ExploreDirectory(fullPath, result, fc);
+                } else {
+                    Logger::getInstance().log("New Folder does not exist: " + Logger::fromWStringToString(fullPath) + " does not exist", LogLevel::INFO);
+                    folderRenamedAtCreationPath = fullPath;
+                }
+            }
+            else if (next->Action == FILE_ACTION_RENAMED_OLD_NAME && folderRenamedAtCreationPath == fullPath) {
+                folderRenamedAtCreation = true;
+            }
+            else if (next->Action == FILE_ACTION_RENAMED_NEW_NAME && folderRenamedAtCreation) {
+                Logger::getInstance().log("New Folder renamed at creation: " + Logger::fromWStringToString(fullPath), LogLevel::INFO);
+                fc.type = NEW_FOLDER;
+                fc.item_added = true;
+                result.push_back(fc);
+                folderRenamedAtCreation = false;
+                folderRenamedAtCreationPath = L"";
             }
             else
             {
