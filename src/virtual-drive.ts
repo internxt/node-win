@@ -68,6 +68,10 @@ class VirtualDrive {
         addon.addLoggerPath(loggerPath);
     }
 
+    static isFileSynchronizedOrPinned(filePath: string): boolean {
+        return addon.isFileSynchronizedOrPinned(filePath);
+    }
+
     getInputSyncCallbacks(): InputSyncCallbacks {
         if (this.callbacks === undefined) {
             throw new Error('Callbacks are not defined');

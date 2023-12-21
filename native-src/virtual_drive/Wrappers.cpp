@@ -634,3 +634,36 @@ napi_value addLoggerPathWrapper(napi_env env, napi_callback_info args) {
     napi_get_boolean(env, true, &result);
     return result;
 }
+
+napi_value IsFileSynchronizedOrPinnedWrapper(napi_env env, napi_callback_info args) {
+    size_t argc = 1;
+    napi_value argv[1];
+
+    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
+    if (argc < 1) {
+        napi_throw_error(env, nullptr, "The path is required for IsFileSynchronizedOrPinned");
+        return nullptr;
+    }
+
+    size_t pathLength;
+    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
+
+    std::unique_ptr<wchar_t[]> widePath(new wchar_t[pathLength + 1]);
+
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t*>(widePath.get()), pathLength + 1, nullptr);
+    
+    int utf8Length = WideCharToMultiByte(CP_UTF8, 0, widePath.get(), -1, nullptr, 0, nullptr, nullptr);
+
+    std::unique_ptr<char[]> utf8Path(new char[utf8Length]);
+
+    WideCharToMultiByte(CP_UTF8, 0, widePath.get(), -1, utf8Path.get(), utf8Length, nullptr, nullptr);
+
+    // transform path to wstring
+    std::wstring wstr(utf8Path.get(), utf8Path.get() + utf8Length - 1);
+
+    bool isSynchronizedOrPinned = Placeholders::IsFileSynchronizedOrPinned(wstr);
+
+    napi_value result;
+    napi_get_boolean(env, isSynchronizedOrPinned, &result);
+    return result;
+}

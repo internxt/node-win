@@ -3,6 +3,9 @@
 #include <winrt/base.h>
 #include <shlwapi.h>
 #include "SyncRootWatcher.h"
+#include <cfapi.h>
+#include <Logger.h>
+
 #pragma comment(lib, "shlwapi.lib")
 
 void Placeholders::CreateOne(
@@ -147,4 +150,40 @@ void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSync
     }
 
     CloseHandle(fileHandle);
+}
+
+bool Placeholders::IsFileSynchronizedOrPinned(const std::wstring& filePath)
+{
+    
+    HANDLE hFile = CreateFileW(
+        filePath.c_str(),
+        FILE_READ_ATTRIBUTES,
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        nullptr,
+        OPEN_EXISTING,
+        FILE_FLAG_BACKUP_SEMANTICS | FILE_ATTRIBUTE_NORMAL,
+        nullptr);
+        
+    CF_PLACEHOLDER_STANDARD_INFO PlaceholderInfo;
+    
+    if (hFile != INVALID_HANDLE_VALUE)
+    {
+        int size = sizeof(CF_PLACEHOLDER_STANDARD_INFO) + 300;
+        DWORD returnlength(0);
+        HRESULT hr = CfGetPlaceholderInfo(hFile, CF_PLACEHOLDER_INFO_STANDARD, &PlaceholderInfo, size, &returnlength);
+        if (!SUCCEEDED(hr))
+        {
+            CloseHandle(hFile);
+            Logger::getInstance().log("getPlaceholderInfo: Failed, CfGetPlaceholderInfo failed.\n", LogLevel::ERROR);
+            return false;
+        }
+
+        Logger::getInstance().log("getPlaceholderInfo: Success.\n", LogLevel::INFO);
+        // check if PlaceholderInfo is null
+    }
+
+    bool isPinned = (PlaceholderInfo.PinState == CF_PIN_STATE_PINNED);
+    bool isInSync = (PlaceholderInfo.InSyncState == CF_IN_SYNC_STATE_IN_SYNC);
+
+    return isPinned || isInSync;
 }
