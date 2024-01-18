@@ -234,6 +234,7 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
         std::list<FileChange> result;
         std::list<std::wstring> addedFiles;
         std::list<std::wstring> removedFiles;
+
         FILE_NOTIFY_INFORMATION *next = _notify.get();
         while (next != nullptr)
         {
@@ -265,6 +266,7 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             {
                 ExploreDirectory(fullPath, result, fc);
             }
+
             else
             {
                 fc.type = OTHER;
