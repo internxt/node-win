@@ -27,4 +27,5 @@ public:
         _In_ PCWSTR destPath);
 
     static void UpdateSyncStatus(const std::wstring &filePath, bool syncState, bool isDirectory);
+    static CF_PLACEHOLDER_STATE GetPlaceholderState(const std::wstring& filePath);
 };
