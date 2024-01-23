@@ -26,6 +26,7 @@
 #include <functional>
 #include <strsafe.h>
 
+
 namespace winrt {
   using namespace Windows::Foundation;
   using namespace Windows::Storage;

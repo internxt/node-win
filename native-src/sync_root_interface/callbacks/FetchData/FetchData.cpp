@@ -14,6 +14,10 @@
 #include "Utilities.h"
 #include <locale>
 #include <codecvt>
+#include <condition_variable>
+#include <iostream>
+#include <mutex>
+#include <filesystem>
 
 napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 

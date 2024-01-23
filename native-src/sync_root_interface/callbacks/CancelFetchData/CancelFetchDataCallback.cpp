@@ -1,6 +1,10 @@
 #include "stdafx.h"
 #include <Callbacks.h>
 #include <cfapi.h>
+#include <condition_variable>
+#include <iostream>
+#include <mutex>
+#include <filesystem>
 
 napi_threadsafe_function g_cancel_delete_fetch_data_threadsafe_callback = nullptr;
 
@@ -16,7 +20,7 @@ struct CancelFetchDataArgs
 void setup_global_tsfn_cancel_fetch_data(napi_threadsafe_function tsfn)
 { 
     g_cancel_delete_fetch_data_threadsafe_callback = tsfn;
-}
+};
 
 void notify_cancel_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
 {
