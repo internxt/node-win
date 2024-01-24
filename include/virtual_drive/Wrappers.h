@@ -12,3 +12,4 @@ napi_value DisconnectSyncRootWrapper(napi_env env, napi_callback_info args);
 napi_value GetItemsSyncRootWrapper(napi_env env, napi_callback_info args);
 napi_value addLoggerPathWrapper(napi_env env, napi_callback_info args);
 napi_value GetPlaceholderStateWrapper(napi_env env, napi_callback_info args);
+napi_value GetPlaceholderWithStatePendingWrapper(napi_env env, napi_callback_info args);

@@ -1,4 +1,6 @@
 #pragma once
+#include <vector>
+#include <string>
 
 class Placeholders
 {
@@ -28,4 +30,5 @@ public:
 
     static void UpdateSyncStatus(const std::wstring &filePath, bool syncState, bool isDirectory);
     static CF_PLACEHOLDER_STATE GetPlaceholderState(const std::wstring& filePath);
+    static std::vector<std::wstring> GetPlaceholderWithStatePending(const std::wstring& filePath);
 };

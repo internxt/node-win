@@ -3,6 +3,9 @@
 #include <winrt/base.h>
 #include <shlwapi.h>
 #include "SyncRootWatcher.h"
+#include <vector>
+#include <filesystem>
+#include <random>
 #pragma comment(lib, "shlwapi.lib")
 
 void Placeholders::CreateOne(
@@ -167,4 +170,40 @@ CF_PLACEHOLDER_STATE Placeholders::GetPlaceholderState(const std::wstring& fileP
     CloseHandle(fileHandle);
 
     return placeholderState;
+}
+
+CF_PLACEHOLDER_STATE GetPlaceholderStateMock(const std::wstring& filePath) {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    static std::uniform_int_distribution<int> dis(0, 1);
+
+    if (dis(gen) == 0) {
+        return CF_PLACEHOLDER_STATE_IN_SYNC;
+    } else {
+        return CF_PLACEHOLDER_STATE_SYNC_ROOT;
+    }
+}
+
+  std::vector<std::wstring> Placeholders::GetPlaceholderWithStatePending(const std::wstring& directoryPath) {
+    std::vector<std::wstring> resultPaths;
+
+    for (const auto& entry : std::filesystem::directory_iterator(directoryPath)) {
+        const auto& path = entry.path().wstring();
+
+        if (entry.is_regular_file()) {
+            CF_PLACEHOLDER_STATE placeholderState = GetPlaceholderStateMock(path);
+
+            if (placeholderState == CF_PLACEHOLDER_STATE_IN_SYNC) {
+                resultPaths.push_back(path);
+            }
+        } else if (entry.is_directory()) {
+            CF_PLACEHOLDER_STATE folderState = GetPlaceholderStateMock(path);
+            if (folderState == CF_PLACEHOLDER_STATE_IN_SYNC) {
+                std::vector<std::wstring> subfolderPaths = GetPlaceholderWithStatePending(path);
+                resultPaths.insert(resultPaths.end(), subfolderPaths.begin(), subfolderPaths.end());
+            }
+        }
+    }
+
+    return resultPaths;
 }
