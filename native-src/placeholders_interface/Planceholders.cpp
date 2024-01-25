@@ -150,7 +150,8 @@ void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSync
 }
 
 CF_PLACEHOLDER_STATE Placeholders::GetPlaceholderState(const std::wstring& filePath) {
-    HANDLE fileHandle = CreateFile(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    HANDLE fileHandle = CreateFileW(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+
     if (fileHandle == INVALID_HANDLE_VALUE) {
         // Error al abrir el archivo
         return CF_PLACEHOLDER_STATE_INVALID;
