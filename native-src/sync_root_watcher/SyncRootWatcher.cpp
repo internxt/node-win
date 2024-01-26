@@ -97,7 +97,8 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
                 // length.QuadPart = MAXLONGLONG;
 
                 if (attrib & FILE_ATTRIBUTE_PINNED)
-                {
+                {  
+                    Sleep(100);
                     Logger::getInstance().log("Hydrating file" + Logger::fromWStringToString(change.path), LogLevel::INFO);
                     CfHydratePlaceholder(placeholder.get(), offset, length, CF_HYDRATE_FLAG_NONE, NULL);
                 }
