@@ -1,15 +1,12 @@
 import VirtualDrive from '../src/virtual-drive';
+import settings from './settings';
 import { onCancelFetchDataCallback, onDeleteCallbackWithCallback, onFetchDataCallback, onFileAddedCallback, onMessageCallback, onRenameCallbackWithCallback } from './callbacks';
-import * as config from './config.json';
 
-const drive = new VirtualDrive(config.syncRootPath, "C:\\Users\\gcarl\\AppData\\Roaming\\internxt-drive\\logs\\node-win.txt");
+const drive = new VirtualDrive(settings.syncRootPath, settings.defaultLogPath);
 
-
-
-const iconPath = 'C:\\Users\\User\\Downloads\\sicon.ico';
 drive.registerSyncRoot(
-    config.driveName,
-    config.driveVersion,
+    settings.driveName,
+    settings.driveVersion,
     "{12345678-1234-1234-1234-123456789012}",
     {
         notifyDeleteCallback: onDeleteCallbackWithCallback,
@@ -20,27 +17,15 @@ drive.registerSyncRoot(
         notifyMessageCallback: onMessageCallback,
 
     },
-    iconPath
+    settings.defaultIconPath
 )
 
 drive.connectSyncRoot();
 
-
-
-/**  EXAMPLES OF HOW TO CREATE FILES AND FOLDERS
- * arguments: 
- * 1. path of the file or folder
- * 2. id of the file or folder
- * 3. size of the file or folder
- * 4. creation date of the file or folder
- * 5. update date of the file or folder
- * 
- * keep in mind that the file size must be the same as the original file
-*/
-const fileCreatedAt = Date.now() - 172800000; // two days ago
-const fileUpdatedAt = Date.now() - 86400000; // yesterday
-const folderCreatedAt = Date.now() - 259200000; // three days ago
-const folderUpdatedAt = Date.now() - 345600000; // four days ago
+const fileCreatedAt = Date.now() - 172800000;
+const fileUpdatedAt = Date.now() - 86400000;
+const folderCreatedAt = Date.now() - 259200000;
+const folderUpdatedAt = Date.now() - 345600000;
 
 // creating files
 drive.createFileByPath(`/A (5th copy).pdfs`, '280ab650-acef-4438-8bbc-29863810b24a', 1000, fileCreatedAt, fileUpdatedAt);
@@ -56,18 +41,11 @@ drive.createFolderByPath(`/F.O.L.D.E.R`, 'fa8217c9-2dd6-4641-9180-8206e80000123'
 drive.createFolderByPath(`/folderWithFolder/folder2`, 'fa8217c9-2dd6-4641-9180-8206e6036845', 1000, folderCreatedAt, folderUpdatedAt);
 drive.createFolderByPath(`/folderWithFolder/F.O.L.D.E.R`, 'fa8217c9-2dd6-4641-9180-8206e60400123', 1000, folderCreatedAt, folderUpdatedAt);
 
-
 // create items
 drive.createItemByPath(`/item-folder/`, 'fa8217c9-2dd6-4641-9189-8206e60368123', 1000, folderCreatedAt, folderUpdatedAt);
 drive.createItemByPath(`/imagen-item.rar`, 'fa8217c9-2dd6-4641-9180-053fe60368f1', 33020, fileCreatedAt, fileUpdatedAt);
 
-// get items --------------
-console.log('\n==============    GET ITEMS IDS    ==============');
-// drive.getItemsIds();
-//---------------
 
-
-// using the watch and wait method
-drive.watchAndWait(config.syncRootPath);
+drive.watchAndWait(settings.syncRootPath);
 
 export default drive;
