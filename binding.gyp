@@ -39,9 +39,9 @@
         "include/sync_root_watcher",
         "include/placeholders_interface",
         "include/sync_root_interface",
-        "include/types",
+        "include/sync_root_watcher",
         "include/virtual_drive",
-        "include/sync_root_interface/callbacks"
+        "include"
       ],
       "libraries": [
         "-lCldApi.lib",
