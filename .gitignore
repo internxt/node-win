@@ -163,3 +163,8 @@ build/
 *.bak
 *.tmp
 *~
+
+
+# Archivos de configuración
+example/config.json
+example/filesInfo.json
