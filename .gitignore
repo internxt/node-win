@@ -167,3 +167,4 @@ build/
 
 # Archivos de configuración
 example/config.json
+example/filesInfo.json

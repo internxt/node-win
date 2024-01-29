@@ -44,4 +44,68 @@ function createFilesWithSize(sourceFolder: string, destFolder: string): void {
 
 }
 
-export { createFilesWithSize };
+interface FilesInfo {
+    [uuid: string]: string;
+}
+class ItemsInfoManager {
+    private filePath: string;
+    private data: FilesInfo;
+
+    private constructor(filePath: string, data?: FilesInfo) {
+        this.filePath = filePath;
+        this.data = data || {};
+    }
+
+    public static async initialize(filePath?: string): Promise<ItemsInfoManager> {
+        const resolvedPath = filePath ? path.resolve(filePath) : path.join(__dirname, 'filesInfo.json');
+        let data: FilesInfo;
+
+        try {
+            const fileContent = await fs.promises.readFile(resolvedPath, 'utf8');
+            data = JSON.parse(fileContent);
+        } catch (error) {
+            //@ts-ignore
+            if (error.code === 'ENOENT') {
+                data = {};
+                await fs.promises.writeFile(resolvedPath, JSON.stringify(data));
+            } else {
+                console.error('Error initializing filesInfo.json:', error);
+                throw error;
+            }
+        }
+
+        return new ItemsInfoManager(resolvedPath, data);
+    }
+
+    public async add(info: FilesInfo): Promise<void> {
+        try {
+            this.data = { ...this.data, ...info };
+            await fs.promises.writeFile(this.filePath, JSON.stringify(this.data, null, 2));
+        } catch (error) {
+            console.error('Error adding data to filesInfo.json:', error);
+        }
+    }
+
+    public async remove(uuid: string): Promise<void> {
+        try {
+            if (this.data[uuid]) {
+                delete this.data[uuid];
+                await fs.promises.writeFile(this.filePath, JSON.stringify(this.data, null, 2));
+            } else {
+                console.log(`UUID ${uuid} not found.`);
+            }
+        } catch (error) {
+            console.error('Error removing data from filesInfo.json:', error);
+        }
+    }
+
+    public get(uuid: string): string | undefined {
+        try {
+            return this.data[uuid];
+        } catch (error) {
+            console.error('Error getting data from filesInfo.json:', error);
+        }
+    }
+}
+
+export { ItemsInfoManager, createFilesWithSize };

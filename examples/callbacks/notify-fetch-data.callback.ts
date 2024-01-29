@@ -1,3 +1,5 @@
+import { ItemsInfoManager } from "../utils";
+
 async function onFetchData(fileId: string): Promise<boolean> {
     console.log("[EXAMPLE] downloading file: " + fileId);
     // simulating a download from a real server
@@ -16,13 +18,23 @@ async function onFetchData(fileId: string): Promise<boolean> {
 }
 
 type CallbackResponse = (data : boolean, path: string, errorHandler?: () => void) => Promise<{ finished: boolean, progress: number }>;
+
 async function onFetchDataCallback(fileId: string, callback: CallbackResponse ) {
     console.log("[EXAMPLE] file id: " + fileId);
     // simulate a download from a real server and response with the path of the downloaded file of a fake server
     let finish = false;
     onFetchData(fileId).then(async (response) => {
         while (!finish) {
-            const callbackResponse = await callback(response, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
+            const itemsManager = await ItemsInfoManager.initialize('dist/examples/filesInfo.json')
+            const itemPath = itemsManager.get(fileId.replace(/\x00/g, ''))
+
+            if (!itemPath) {
+                console.log("[EXAMPLE] error: file not found");
+                finish = true;
+                break;
+            }
+
+            const callbackResponse = await callback(response, itemPath);
             finish = callbackResponse.finished;
             if (finish) {
                 console.log("[EXAMPLE] finished");
@@ -30,9 +42,9 @@ async function onFetchDataCallback(fileId: string, callback: CallbackResponse ) 
             };
         };
 
-    }).catch((err) => { // THIS CATCH IS REALLY IMPORTANT
+    }).catch((err) => {
         //callback(false, "C:\\Users\\gcarl\\Desktop\\fakeserver\\imagen.rar");
-        console.log(err);
+        console.log('[EXAMPLE] error:' + err);
     });
 }
 

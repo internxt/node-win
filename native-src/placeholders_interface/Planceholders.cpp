@@ -50,7 +50,7 @@ void Placeholders::CreateOne(
         prop.Value(L"Value1");
         prop.IconResource(L"shell32.dll,-44");
 
-        wprintf(L"Successfully created placeholder file");
+        wprintf(L"Successfully created placeholder file\n");
     }
     catch (...)
     {
