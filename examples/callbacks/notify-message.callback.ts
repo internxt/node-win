@@ -4,9 +4,9 @@ async function onMessageCallback(
     errorName: string, 
     callback: (response: boolean) => void) {
     try {
-        console.log("[Example] Message received: ", message);
-        console.log("[Example] Action: ", action);
-        console.log("[Example] Error name: ", errorName);
+        console.log("[EXAMPLE] Message received: ", message);
+        console.log("[EXAMPLE] Action: ", action);
+        console.log("[EXAMPLE] Error name: ", errorName);
         await callback(true);
     } catch (error) {
         callback(false);

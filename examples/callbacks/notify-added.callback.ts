@@ -6,7 +6,7 @@ async function onFileAddedCallback(filePath: string, callback: (aknowledge : boo
 
     try {
         let randomNumber = generateRandomNumber(10000, 60000);
-        console.log("File added in callback: " + filePath);
+        console.log("[EXAMPLE] File added in callback: " + filePath);
         await new Promise(resolve => setTimeout(() => {
             resolve(undefined);
         }, 1000));

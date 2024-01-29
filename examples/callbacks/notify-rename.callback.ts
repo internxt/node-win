@@ -1,6 +1,6 @@
 async function onRenameCallback(newName: string, fileId: string): Promise<boolean> {
-    console.log("File ID: " + fileId);
-    console.log("New name: " + newName);
+    console.log("[EXAMPLE] File ID: " + fileId);
+    console.log("[EXAMPLE] New name: " + newName);
 
     const a = await (new Promise<boolean>((resolve, reject) => {
         try {

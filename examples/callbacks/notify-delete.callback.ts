@@ -1,5 +1,5 @@
 async function onDeleteCallback(fileId: string, callback: (response: boolean) => void) {
-    console.log("On delete File ID: " + fileId);
+    console.log("[EXAMPLE] On delete File ID: " + fileId);
     const a = await (new Promise<boolean>((resolve, reject) => {
         try {
             setTimeout(() => {
