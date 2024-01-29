@@ -62,7 +62,6 @@ try {
             '62654a1c-0137-4fc7-b271-2c62f0d6f9f5': `${settings.serverRootPath}\\imagen-item.rar`,
         })
     });
-    
 
     drive.watchAndWait(settings.syncRootPath);
 } catch (error) {

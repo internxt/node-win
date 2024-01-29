@@ -91,34 +91,64 @@ std::uintmax_t getDirectorySize(const fs::path &directoryPath)
     return size;
 }
 
-CF_PLACEHOLDER_STANDARD_INFO getPlaceholderInfo(const std::wstring &directoryPath)
+CF_PLACEHOLDER_STATE DirectoryWatcher::getPlaceholderInfo(const std::wstring &directoryPath)
 {
     HANDLE hFile = CreateFileW(
         directoryPath.c_str(),
-        FILE_READ_ATTRIBUTES,
+        GENERIC_READ,
         FILE_SHARE_READ | FILE_SHARE_WRITE,
         nullptr,
         OPEN_EXISTING,
-        FILE_FLAG_BACKUP_SEMANTICS | FILE_ATTRIBUTE_NORMAL,
+        FILE_FLAG_BACKUP_SEMANTICS,
         nullptr);
     if (hFile != INVALID_HANDLE_VALUE)
     {
-        int size = sizeof(CF_PLACEHOLDER_STANDARD_INFO) + 300;
-        CF_PLACEHOLDER_STANDARD_INFO PlaceholderInfo;
-        DWORD returnlength(0);
-        HRESULT hr = CfGetPlaceholderInfo(hFile, CF_PLACEHOLDER_INFO_STANDARD, &PlaceholderInfo, size, &returnlength);
-        if (SUCCEEDED(hr))
+        // printf("getPlaceholderInfo: Success\n");
+        // int size = sizeof(CF_PLACEHOLDER_STANDARD_INFO) + 300;
+        // CF_PLACEHOLDER_STANDARD_INFO PlaceholderInfo;
+        // DWORD returnlength(0);
+        // HRESULT hr = CfGetPlaceholderInfo(hFile, CF_PLACEHOLDER_INFO_STANDARD, &PlaceholderInfo, size, &returnlength);
+        // if (SUCCEEDED(hr))
+        // {
+        //     Logger::getInstance().log("getPlaceholderInfo: Success\n", LogLevel::INFO);
+        //     return PlaceholderInfo;
+        //     CloseHandle(hFile);
+        // }
+        // else
+        // {
+        //     CloseHandle(hFile);
+        //     Logger::getInstance().log("getPlaceholderInfo: Failed, CfGetPlaceholderInfo failed.\n", LogLevel::ERROR);
+        //     return CF_PLACEHOLDER_STANDARD_INFO{};
+        // }
+
+        printf("getPlaceholderInfo 3: Success\n");
+        FILE_ATTRIBUTE_TAG_INFO fileInfo;
+        if (!GetFileInformationByHandleEx(hFile, FileAttributeTagInfo, &fileInfo, sizeof(fileInfo)))
         {
-            Logger::getInstance().log("getPlaceholderInfo: Success\n", LogLevel::INFO);
-            return PlaceholderInfo;
+            DWORD error = GetLastError();  // Obtener el último error
+            printf("getPlaceholderInfo: Failed, GetFileInformationByHandleEx failed with error code %lu.\n", error);
+            // Error al obtener la información básica del archivo
             CloseHandle(hFile);
+            return CF_PLACEHOLDER_STATE_INVALID;
         }
-        else
-        {
-            CloseHandle(hFile);
-            Logger::getInstance().log("getPlaceholderInfo: Failed, CfGetPlaceholderInfo failed.\n", LogLevel::ERROR);
-            return CF_PLACEHOLDER_STANDARD_INFO{};
-        }
+        printf("getPlaceholderInfo 4: Success\n");
+        // print file_basic_info
+        printf("fileInfo.FileAttributes: %d\n", fileInfo.FileAttributes);
+        
+
+        CF_PLACEHOLDER_STATE placeholderState = CfGetPlaceholderStateFromFileInfo(&fileInfo, FileAttributeTagInfo);
+        DWORD error = GetLastError();  // Obtener el último error
+        printf("getPlaceholderInfo: Failed, CfGetPlaceholderStateFromFileInfo failed with error code %lu.\n", error);
+            
+        // Logger::getInstance().log("placeholderState: %d" + placeholderState, LogLevel::DEBUG);
+        // printf("placeholderState: %d\n", placeholderState);
+        CloseHandle(hFile);
+
+        return placeholderState;
+    } else {
+        DWORD error = GetLastError();  // Obtener el último error
+        printf("getPlaceholderInfo: Failed, CreateFileW failed with error code %lu.\n", error);
+        return CF_PLACEHOLDER_STATE_INVALID;
     }
 }
 

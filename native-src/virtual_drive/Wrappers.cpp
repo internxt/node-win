@@ -5,6 +5,7 @@
 #include "SyncRootWatcher.h"
 #include "Callbacks.h"
 #include "LoggerPath.h"
+#include "DirectoryWatcher.h"
 
 napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
 {
@@ -654,7 +655,9 @@ napi_value GetPlaceholderStateWrapper(napi_env env, napi_callback_info args)
 
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(widePath.get()), pathLength + 1, nullptr);
 
-    DWORD state = Placeholders::GetPlaceholderState(widePath.get());
+    // DWORD state = Placeholders::GetPlaceholderState(widePath.get());
+
+    DWORD state = DirectoryWatcher::getPlaceholderInfo(widePath.get());
 
     napi_value result;
     napi_create_int32(env, static_cast<int32_t>(state), &result);

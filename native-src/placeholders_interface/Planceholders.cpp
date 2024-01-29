@@ -3,6 +3,7 @@
 #include <winrt/base.h>
 #include <shlwapi.h>
 #include "SyncRootWatcher.h"
+// #include "Logger.h"
 #pragma comment(lib, "shlwapi.lib")
 
 void Placeholders::CreateOne(
@@ -149,22 +150,36 @@ void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSync
     CloseHandle(fileHandle);
 }
 
-CF_PLACEHOLDER_STATE Placeholders::GetPlaceholderState(const std::wstring& filePath) {
-    HANDLE fileHandle = CreateFileW(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+CF_PLACEHOLDER_STATE Placeholders::GetPlaceholderState(const std::wstring &filePath)
+{
+    HANDLE fileHandle = CreateFileW(
+        filePath.c_str(),
+        FILE_READ_ATTRIBUTES,
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        nullptr,
+        OPEN_EXISTING, 
+        FILE_FLAG_BACKUP_SEMANTICS,
+        nullptr);
 
-    if (fileHandle == INVALID_HANDLE_VALUE) {
+    // Logger::getInstance().log("filePath: " + Logger::fromWStringToString(filePath), LogLevel::DEBUG);
+    printf("filePath: %ls\n", filePath.c_str());
+    if (fileHandle == INVALID_HANDLE_VALUE)
+    {
         // Error al abrir el archivo
         return CF_PLACEHOLDER_STATE_INVALID;
     }
 
     FILE_BASIC_INFO fileBasicInfo;
-    if (!GetFileInformationByHandleEx(fileHandle, FileBasicInfo, &fileBasicInfo, sizeof(fileBasicInfo))) {
+    if (!GetFileInformationByHandleEx(fileHandle, FileBasicInfo, &fileBasicInfo, sizeof(fileBasicInfo)))
+    {
         // Error al obtener la información básica del archivo
         CloseHandle(fileHandle);
         return CF_PLACEHOLDER_STATE_INVALID;
     }
 
     CF_PLACEHOLDER_STATE placeholderState = CfGetPlaceholderStateFromFileInfo(&fileBasicInfo, FileBasicInfo);
+    // Logger::getInstance().log("placeholderState: %d" + placeholderState, LogLevel::DEBUG);
+    // printf("placeholderState: %d\n", placeholderState);
     CloseHandle(fileHandle);
 
     return placeholderState;
