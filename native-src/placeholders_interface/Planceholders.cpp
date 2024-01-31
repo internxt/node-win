@@ -58,6 +58,13 @@ void Placeholders::CreateOne(
     }
 }
 
+bool DirectoryExists(const wchar_t* path)
+{
+    DWORD attributes = GetFileAttributesW(path);
+    return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY);
+}
+
+
 void Placeholders::CreateEntry(
     _In_ PCWSTR itemName,
     _In_ PCWSTR itemIdentity,
@@ -84,7 +91,12 @@ void Placeholders::CreateEntry(
     try
     {
         //TODO: si existe o es placeholder return
-        
+        if (DirectoryExists(fullDestPath.c_str()))
+        {
+            wprintf(L"El directorio ya existe. Se omite la creación.\n");
+            return; // No hacer nada si ya existe
+        }
+
         if (isDirectory) // TODO: the function createEntry is used to create only folders (directories), so this if is always true
         {
             // wprintf(L"Create directory, full destination path: %ls, fullDestPath.c_str()");

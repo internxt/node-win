@@ -657,7 +657,7 @@ napi_value UpdateSyncStatusWrapper(napi_env env, napi_callback_info args) {
     bool isDirectory;
     napi_get_value_bool(env, argv[2], &isDirectory);
 
-    UpdateSyncStatus(widePath.get(), inputSyncState, isDirectory);
+    Placeholders::UpdateSyncStatus(widePath.get(), inputSyncState, isDirectory);
 
     napi_value result;
     napi_get_boolean(env, true, &result);
