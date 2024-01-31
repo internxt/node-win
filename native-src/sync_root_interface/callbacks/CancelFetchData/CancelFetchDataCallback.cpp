@@ -1,6 +1,10 @@
 #include "stdafx.h"
 #include <Callbacks.h>
 #include <cfapi.h>
+#include <condition_variable>
+#include <iostream>
+#include <mutex>
+#include <filesystem>
 
 napi_threadsafe_function g_cancel_delete_fetch_data_threadsafe_callback = nullptr;
 

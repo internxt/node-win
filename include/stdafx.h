@@ -24,6 +24,9 @@
 #include <winrt\windows.storage.provider.h>
 #include <winrt\Windows.Security.Cryptography.h>
 #include <functional>
+#include <mutex>
+#include <condition_variable>
+#include <node_api.h>
 #include <strsafe.h>
 
 namespace winrt {

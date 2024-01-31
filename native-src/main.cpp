@@ -161,7 +161,23 @@ napi_value init(napi_env env, napi_value exports)
       return nullptr;
   }
 
-  napi_property_descriptor getPlaceholderStateDesc = {
+  napi_property_descriptor updateSyncStatusDesc = {
+    "updateSyncStatus",
+    nullptr,
+    UpdateSyncStatusWrapper,
+    nullptr,
+    nullptr,
+    nullptr,
+    napi_default,
+    nullptr};
+
+  napi_status updateSyncStatusStatus = napi_define_properties(env, exports, 1, &updateSyncStatusDesc);
+  if (updateSyncStatusStatus != napi_ok) {
+      napi_throw_error(env, nullptr, "Failed to define updateSyncStatus function");
+      return nullptr;
+  }
+
+    napi_property_descriptor getPlaceholderStateDesc = {
     "getPlaceholderState",
     nullptr,
     GetPlaceholderStateWrapper,
@@ -169,13 +185,33 @@ napi_value init(napi_env env, napi_value exports)
     nullptr,
     nullptr,
     napi_default,
-    nullptr};
+    nullptr
+    };
+
 
   napi_status defineGetPlaceholderStateStatus = napi_define_properties(env, exports, 1, &getPlaceholderStateDesc);
   if (defineGetPlaceholderStateStatus != napi_ok) {
       napi_throw_error(env, nullptr, "Failed to define getPlaceholderState function");
       return nullptr;
   }
+
+  napi_property_descriptor getPlaceholderWithStatePendingDesc = {
+    "getPlaceholderWithStatePending",
+    nullptr,
+    GetPlaceholderWithStatePendingWrapper,
+    nullptr,
+    nullptr,
+    nullptr,
+    napi_default,
+    nullptr
+    };
+
+  napi_status defineGetPlaceholderWithStatePendingStatus = napi_define_properties(env, exports, 1, &getPlaceholderWithStatePendingDesc);
+  if (defineGetPlaceholderWithStatePendingStatus != napi_ok) {
+      napi_throw_error(env, nullptr, "Failed to define getPlaceholderWithStatePending function");
+      return nullptr;
+  }
+
 
   return exports;
 }
