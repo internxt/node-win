@@ -95,7 +95,14 @@ FileHandle handleForPath(const std::wstring &wPath)
             printf("Could not CfOpenFileWithOplock for path: %s with error: %ld\n", path.c_str(), openResult);
         }
     } else if (std::filesystem::is_regular_file(pathFs)) {
-        HANDLE handle = CreateFile(pPath, FILE_READ_ATTRIBUTES, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+        HANDLE handle = CreateFile(
+            pPath,
+            FILE_READ_ATTRIBUTES,
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
+            nullptr,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL,
+            nullptr);
         if (handle != INVALID_HANDLE_VALUE) {
             return {handle, [](HANDLE h) { CloseHandle(h); }};
         } else {
