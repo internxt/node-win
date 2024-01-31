@@ -83,6 +83,8 @@ void Placeholders::CreateEntry(
     cloudEntry.FsMetadata.BasicInfo.LastWriteTime = Utilities::FileTimeToLargeInteger(lastWriteTime);
     try
     {
+        //TODO: si existe o es placeholder return
+        
         if (isDirectory) // TODO: the function createEntry is used to create only folders (directories), so this if is always true
         {
             // wprintf(L"Create directory, full destination path: %ls, fullDestPath.c_str()");
