@@ -184,19 +184,21 @@ CF_PLACEHOLDER_STATE GetPlaceholderStateMock(const std::wstring& filePath) {
     }
 }
 
-  std::vector<std::wstring> Placeholders::GetPlaceholderWithStatePending(const std::wstring& directoryPath) {
+std::vector<std::wstring> Placeholders::GetPlaceholderWithStatePending(const std::wstring& directoryPath) {
     std::vector<std::wstring> resultPaths;
 
     for (const auto& entry : std::filesystem::directory_iterator(directoryPath)) {
         const auto& path = entry.path().wstring();
 
         if (entry.is_regular_file()) {
+            // Verifica el estado del placeholder y las condiciones adicionales
             CF_PLACEHOLDER_STATE placeholderState = GetPlaceholderStateMock(path);
-
-            if (placeholderState == CF_PLACEHOLDER_STATE_IN_SYNC) {
+            if (placeholderState == CF_PLACEHOLDER_STATE_IN_SYNC &&
+                IsFileValidForSync(path)) {
                 resultPaths.push_back(path);
             }
         } else if (entry.is_directory()) {
+            // Verifica el estado del directorio y las condiciones adicionales
             CF_PLACEHOLDER_STATE folderState = GetPlaceholderStateMock(path);
             if (folderState == CF_PLACEHOLDER_STATE_IN_SYNC) {
                 std::vector<std::wstring> subfolderPaths = GetPlaceholderWithStatePending(path);
@@ -206,4 +208,22 @@ CF_PLACEHOLDER_STATE GetPlaceholderStateMock(const std::wstring& filePath) {
     }
 
     return resultPaths;
+}
+
+bool Placeholders::IsFileValidForSync(const std::wstring& filePath) {
+    // Verifica si el archivo no está vacío
+    // if (std::filesystem::file_size(filePath) == 0) {
+    //     return false;
+    // }
+
+    const int64_t maxFileSize = 20 * 1024 * 1024 * 1024; // 20GB
+    if (std::filesystem::file_size(filePath) > maxFileSize) {
+        return false;
+    }
+
+    if (std::filesystem::path(filePath).extension().empty()) {
+        return false;
+    }
+
+    return true; 
 }
