@@ -2,6 +2,10 @@
 #include "DirectoryWatcher.h"
 #include "Utilities.h"
 #include "ProcessTypes.h"
+#include <condition_variable>
+#include <iostream>
+#include <mutex>
+#include <filesystem>
 
 inline std::mutex mtx;
 inline std::condition_variable cv;

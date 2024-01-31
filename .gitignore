@@ -166,5 +166,9 @@ build/
 
 
 # Archivos de configuración
-example/config.json
+exvscode
 example/filesInfo.json
+.vscode
+/.vscode
+
+bindings.gyp
