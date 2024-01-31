@@ -5,7 +5,12 @@
 #include "SyncRootWatcher.h"
 #include <vector>
 #include <filesystem>
+#include <fstream>
 #include <random>
+#include <iostream>
+
+using namespace std;
+
 #pragma comment(lib, "shlwapi.lib")
 
 void Placeholders::CreateOne(
