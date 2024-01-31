@@ -437,6 +437,18 @@ class VirtualDrive {
   disconnectSyncRoot(): any {
     return addon.disconnectSyncRoot(this.syncRootPath);
   }
+
+  updateSyncStatus(
+    itemPath: string,
+    isDirectory: boolean,
+    sync: boolean = true,
+  ): any {
+    return addon.updateSyncStatus(
+      itemPath,
+      sync,
+      isDirectory
+    );
+  }
 }
 
 export default VirtualDrive;
