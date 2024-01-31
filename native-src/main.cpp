@@ -177,6 +177,18 @@ napi_value init(napi_env env, napi_value exports)
       return nullptr;
   }
 
+    napi_property_descriptor getPlaceholderStateDesc = {
+    "getPlaceholderState",
+    nullptr,
+    GetPlaceholderStateWrapper,
+    nullptr,
+    nullptr,
+    nullptr,
+    napi_default,
+    nullptr
+    };
+
+
   napi_status defineGetPlaceholderStateStatus = napi_define_properties(env, exports, 1, &getPlaceholderStateDesc);
   if (defineGetPlaceholderStateStatus != napi_ok) {
       napi_throw_error(env, nullptr, "Failed to define getPlaceholderState function");
