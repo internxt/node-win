@@ -177,6 +177,30 @@ napi_value init(napi_env env, napi_value exports)
       return nullptr;
   }
 
+  napi_status defineGetPlaceholderStateStatus = napi_define_properties(env, exports, 1, &getPlaceholderStateDesc);
+  if (defineGetPlaceholderStateStatus != napi_ok) {
+      napi_throw_error(env, nullptr, "Failed to define getPlaceholderState function");
+      return nullptr;
+  }
+
+  napi_property_descriptor getPlaceholderWithStatePendingDesc = {
+    "getPlaceholderWithStatePending",
+    nullptr,
+    GetPlaceholderWithStatePendingWrapper,
+    nullptr,
+    nullptr,
+    nullptr,
+    napi_default,
+    nullptr
+    };
+
+  napi_status defineGetPlaceholderWithStatePendingStatus = napi_define_properties(env, exports, 1, &getPlaceholderWithStatePendingDesc);
+  if (defineGetPlaceholderWithStatePendingStatus != napi_ok) {
+      napi_throw_error(env, nullptr, "Failed to define getPlaceholderWithStatePending function");
+      return nullptr;
+  }
+
+
   return exports;
 }
 NAPI_MODULE(NODE_GYP_MODULE_NAME, init)

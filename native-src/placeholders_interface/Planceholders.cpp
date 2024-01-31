@@ -3,6 +3,9 @@
 #include <winrt/base.h>
 #include <shlwapi.h>
 #include "SyncRootWatcher.h"
+#include <vector>
+#include <filesystem>
+#include <random>
 #pragma comment(lib, "shlwapi.lib")
 
 void Placeholders::CreateOne(
@@ -161,4 +164,87 @@ void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSync
     }
 
     CloseHandle(fileHandle);
+}
+
+CF_PLACEHOLDER_STATE Placeholders::GetPlaceholderState(const std::wstring& filePath) {
+    HANDLE fileHandle = CreateFileW(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    if (fileHandle == INVALID_HANDLE_VALUE) {
+        // Error al abrir el archivo
+        return CF_PLACEHOLDER_STATE_INVALID;
+    }
+
+    FILE_BASIC_INFO fileBasicInfo;
+    if (!GetFileInformationByHandleEx(fileHandle, FileBasicInfo, &fileBasicInfo, sizeof(fileBasicInfo))) {
+        // Error al obtener la información básica del archivo
+        CloseHandle(fileHandle);
+        return CF_PLACEHOLDER_STATE_INVALID;
+    }
+
+    CF_PLACEHOLDER_STATE placeholderState = CfGetPlaceholderStateFromFileInfo(&fileBasicInfo, FileBasicInfo);
+    CloseHandle(fileHandle);
+
+    return placeholderState;
+}
+
+CF_PLACEHOLDER_STATE GetPlaceholderStateMock(const std::wstring& filePath) {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    static std::uniform_int_distribution<int> dis(0, 1);
+
+    if (dis(gen) == 0) {
+        return CF_PLACEHOLDER_STATE_IN_SYNC;
+    } else {
+        return CF_PLACEHOLDER_STATE_SYNC_ROOT;
+    }
+}
+
+std::vector<std::wstring> Placeholders::GetPlaceholderWithStatePending(const std::wstring& directoryPath) {
+    std::vector<std::wstring> resultPaths;
+
+    for (const auto& entry : std::filesystem::directory_iterator(directoryPath)) {
+        const auto& path = entry.path().wstring();
+
+        if (entry.is_regular_file()) {
+            // Verifica el estado del placeholder y las condiciones adicionales
+            CF_PLACEHOLDER_STATE placeholderState = GetPlaceholderStateMock(path);
+            if (placeholderState == CF_PLACEHOLDER_STATE_IN_SYNC &&
+                IsFileValidForSync(path)) {
+                resultPaths.push_back(path);
+            }
+        } else if (entry.is_directory()) {
+            // Verifica el estado del directorio y las condiciones adicionales
+            CF_PLACEHOLDER_STATE folderState = GetPlaceholderStateMock(path);
+            if (folderState == CF_PLACEHOLDER_STATE_IN_SYNC) {
+                std::vector<std::wstring> subfolderPaths = GetPlaceholderWithStatePending(path);
+                resultPaths.insert(resultPaths.end(), subfolderPaths.begin(), subfolderPaths.end());
+            }
+        }
+    }
+
+    return resultPaths;
+}
+
+bool Placeholders::IsFileValidForSync(const std::wstring& filePath) {
+    // Verifica si el archivo no está vacío
+    // if (std::filesystem::file_size(filePath) == 0) {
+    //     return false;
+    // }
+    std::ifstream fileStream(filePath);
+    bool isEmpty = fileStream.peek() == std::ifstream::traits_type::eof();
+    fileStream.close();
+    if (isEmpty) {
+        return false;
+    }
+
+
+    const int64_t maxFileSize = 20 * 1024 * 1024 * 1024; // 20GB
+    if (std::filesystem::file_size(filePath) > maxFileSize) {
+        return false;
+    }
+
+    if (std::filesystem::path(filePath).extension().empty()) {
+        return false;
+    }
+
+    return true; 
 }
