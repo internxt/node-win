@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include <Callbacks.h>
 #include <Placeholders.h>
 #include <string>
