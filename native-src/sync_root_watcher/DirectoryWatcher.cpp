@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <sstream>
 #include "Logger.h"
+#include "PlaceHolderInfo.h"
 
 const size_t c_bufferSize = 32768; // sizeof(FILE_NOTIFY_INFORMATION) * 100;
 
@@ -91,18 +92,44 @@ std::uintmax_t getDirectorySize(const fs::path &directoryPath)
     return size;
 }
 
+// void deletePlaceholderInfo(char *infoBuffer)
+// {
+//     delete[] infoBuffer;
+// }
+
+void deletePlaceholderInfo(CF_PLACEHOLDER_BASIC_INFO *info)
+{
+    auto byte = reinterpret_cast<char *>(info);
+    delete[] byte;
+}
+
+DWORD convertSizeToDWORD(size_t &convertVar)
+{
+    if( convertVar > UINT_MAX ) {
+        //throw std::bad_cast();
+        convertVar = UINT_MAX; // intentionally default to wrong value here to not crash: exception handling TBD
+    }
+    return static_cast<DWORD>(convertVar);
+}
+
+DWORD sizeToDWORD(size_t size)
+{
+    return convertSizeToDWORD(size);
+}
+
 CF_PLACEHOLDER_STATE DirectoryWatcher::getPlaceholderInfo(const std::wstring &directoryPath)
 {
-    HANDLE hFile = CreateFileW(
-        directoryPath.c_str(),
-        GENERIC_READ,
-        FILE_SHARE_READ | FILE_SHARE_WRITE,
-        nullptr,
-        OPEN_EXISTING,
-        FILE_FLAG_BACKUP_SEMANTICS,
-        nullptr);
-    if (hFile != INVALID_HANDLE_VALUE)
-    {
+    // printf("PATH________:  %ls\n", directoryPath.c_str());
+    // HANDLE hFile = CreateFileW(
+    //     directoryPath.c_str(),
+    //     0,
+    //     0,
+    //     nullptr,
+    //     OPEN_EXISTING,
+    //     FILE_ATTRIBUTE_NORMAL,
+    //     nullptr);
+    // if (hFile != INVALID_HANDLE_VALUE)
+    // {
         // printf("getPlaceholderInfo: Success\n");
         // int size = sizeof(CF_PLACEHOLDER_STANDARD_INFO) + 300;
         // CF_PLACEHOLDER_STANDARD_INFO PlaceholderInfo;
@@ -121,35 +148,71 @@ CF_PLACEHOLDER_STATE DirectoryWatcher::getPlaceholderInfo(const std::wstring &di
         //     return CF_PLACEHOLDER_STANDARD_INFO{};
         // }
 
-        printf("getPlaceholderInfo 3: Success\n");
-        FILE_ATTRIBUTE_TAG_INFO fileInfo;
-        if (!GetFileInformationByHandleEx(hFile, FileAttributeTagInfo, &fileInfo, sizeof(fileInfo)))
-        {
-            DWORD error = GetLastError();  // Obtener el último error
-            printf("getPlaceholderInfo: Failed, GetFileInformationByHandleEx failed with error code %lu.\n", error);
-            // Error al obtener la información básica del archivo
-            CloseHandle(hFile);
+        printf("getPlaceholderInfo: Success\n");
+        constexpr auto fileIdMaxLength = 400;
+        const auto infoSize = sizeof(CF_PLACEHOLDER_BASIC_INFO) + fileIdMaxLength;
+        auto info = PlaceHolderInfo(reinterpret_cast<CF_PLACEHOLDER_BASIC_INFO *>(new char[infoSize]), deletePlaceholderInfo);
+
+
+        auto fileHandle = handleForPath(directoryPath);
+        if (!fileHandle) {
+            printf("Error: Invalid file handle.\n");
             return CF_PLACEHOLDER_STATE_INVALID;
         }
-        printf("getPlaceholderInfo 4: Success\n");
-        // print file_basic_info
-        printf("fileInfo.FileAttributes: %d\n", fileInfo.FileAttributes);
+
+
+        HRESULT result = CfGetPlaceholderInfo(fileHandle.get(), CF_PLACEHOLDER_INFO_BASIC, info.get(), sizeToDWORD(infoSize), nullptr);
+
+        if (result != S_OK) {
+            printf("CfGetPlaceholderInfo failed with HRESULT %lx\n", result);
+            return CF_PLACEHOLDER_STATE_INVALID;
+        }
         
+        auto pinStateOpt = info.pinState();
 
-        CF_PLACEHOLDER_STATE placeholderState = CfGetPlaceholderStateFromFileInfo(&fileInfo, FileAttributeTagInfo);
-        DWORD error = GetLastError();  // Obtener el último error
-        printf("getPlaceholderInfo: Failed, CfGetPlaceholderStateFromFileInfo failed with error code %lu.\n", error);
-            
-        // Logger::getInstance().log("placeholderState: %d" + placeholderState, LogLevel::DEBUG);
-        // printf("placeholderState: %d\n", placeholderState);
-        CloseHandle(hFile);
-
-        return placeholderState;
-    } else {
-        DWORD error = GetLastError();  // Obtener el último error
-        printf("getPlaceholderInfo: Failed, CreateFileW failed with error code %lu.\n", error);
+        // Verificar si pinStateOpt tiene un valor
+        if (pinStateOpt.has_value()) {
+            // Obtener el valor de pinState
+            PinState pinState = pinStateOpt.value();           
+            // Ahora necesitas convertir pinState a una cadena para poder imprimirlo
+            // Suponiendo que tienes una función para hacer esto, algo como pinStateToString(pinState)
+            printf("placeholderInfo.PinState: %s\n", pinStateToString(pinState).c_str());
+        } else {
+            printf("placeholderInfo.PinState: No value\n");
+        }
+        
         return CF_PLACEHOLDER_STATE_INVALID;
-    }
+        // printf("getPlaceholderInfo 3: Success\n");
+        // FILE_ATTRIBUTE_TAG_INFO fileInfo;
+        // if (!GetFileInformationByHandleEx(hFile, FileAttributeTagInfo, &fileInfo, sizeof(fileInfo)))
+        // {
+        //     DWORD error = GetLastError();  // Obtener el último error
+        //     printf("getPlaceholderInfo: Failed, GetFileInformationByHandleEx failed with error code %lu.\n", error);
+        //     // Error al obtener la información básica del archivo
+        //     CloseHandle(hFile);
+        //     return CF_PLACEHOLDER_STATE_INVALID;
+        // }
+        // printf("getPlaceholderInfo 4: Success\n");
+        // // print file_basic_info
+        // printf("fileInfo.FileAttributes: %d\n", fileInfo.FileAttributes);
+
+
+        // printf("status CF_PLACEHOLDER_STATE_IN_SYNC", fileInfo.FileAttributes & CF_PLACEHOLDER_STATE_IN_SYNC);
+
+        // CF_PLACEHOLDER_STATE placeholderState = CfGetPlaceholderStateFromFileInfo(&fileInfo, FileAttributeTagInfo);
+        // DWORD error = GetLastError();  // Obtener el último error
+        // printf("getPlaceholderInfo: Failed, CfGetPlaceholderStateFromFileInfo failed with error code %lu.\n", error);
+            
+        // // Logger::getInstance().log("placeholderState: %d" + placeholderState, LogLevel::DEBUG);
+        // // printf("placeholderState: %d\n", placeholderState);
+        // CloseHandle(hFile);
+
+        // return placeholderState;
+    // } else {
+    //     DWORD error = GetLastError();  // Obtener el último error
+    //     printf("getPlaceholderInfo: Failed, CreateFileW failed with error code %lu.\n", error);
+    //     return CF_PLACEHOLDER_STATE_INVALID;
+    // }
 }
 
 bool isFileValid(const std::wstring &fullPath, std::list<FileChange> &result, FileChange fc)

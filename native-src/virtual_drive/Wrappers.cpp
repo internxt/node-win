@@ -656,7 +656,7 @@ napi_value GetPlaceholderStateWrapper(napi_env env, napi_callback_info args)
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(widePath.get()), pathLength + 1, nullptr);
 
     // DWORD state = Placeholders::GetPlaceholderState(widePath.get());
-
+    printf("PATH_________________PATH___: %ls\n", widePath.get());
     DWORD state = DirectoryWatcher::getPlaceholderInfo(widePath.get());
 
     napi_value result;
