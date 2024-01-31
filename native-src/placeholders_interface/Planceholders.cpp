@@ -215,6 +215,13 @@ bool Placeholders::IsFileValidForSync(const std::wstring& filePath) {
     // if (std::filesystem::file_size(filePath) == 0) {
     //     return false;
     // }
+    std::ifstream fileStream(filePath);
+    bool isEmpty = fileStream.peek() == std::ifstream::traits_type::eof();
+    fileStream.close();
+    if (isEmpty) {
+        return false;
+    }
+
 
     const int64_t maxFileSize = 20 * 1024 * 1024 * 1024; // 20GB
     if (std::filesystem::file_size(filePath) > maxFileSize) {
