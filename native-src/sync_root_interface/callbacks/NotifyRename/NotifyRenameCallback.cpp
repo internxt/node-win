@@ -1,6 +1,11 @@
+#include "stdafx.h"
 #include <Callbacks.h>
 #include <Placeholders.h>
 #include <string>
+#include <filesystem>
+#include <condition_variable>
+#include <iostream>
+#include <mutex>
 #include <filesystem>
 
 napi_threadsafe_function g_notify_rename_threadsafe_callback = nullptr;

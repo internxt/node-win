@@ -634,3 +634,91 @@ napi_value addLoggerPathWrapper(napi_env env, napi_callback_info args) {
     napi_get_boolean(env, true, &result);
     return result;
 }
+
+napi_value UpdateSyncStatusWrapper(napi_env env, napi_callback_info args) {
+    size_t argc = 3;
+    napi_value argv[3];
+
+    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
+    if (argc < 3) {
+        napi_throw_error(env, nullptr, "Three arguments are required for UpdateSyncStatus");
+        return nullptr;
+    }
+
+    size_t pathLength;
+    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
+
+    std::unique_ptr<wchar_t[]> widePath(new wchar_t[pathLength + 1]);
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t*>(widePath.get()), pathLength + 1, nullptr);
+
+    bool inputSyncState;
+    napi_get_value_bool(env, argv[1], &inputSyncState);
+
+    bool isDirectory;
+    napi_get_value_bool(env, argv[2], &isDirectory);
+
+    Placeholders::UpdateSyncStatus(widePath.get(), inputSyncState, isDirectory);
+
+    napi_value result;
+    napi_get_boolean(env, true, &result);
+    return result;
+}
+
+napi_value GetPlaceholderStateWrapper(napi_env env, napi_callback_info args)
+{
+    size_t argc = 1;
+    napi_value argv[1];
+
+    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
+    if (argc < 1)
+    {
+        napi_throw_error(env, nullptr, "The path is required for GetPlaceholderState");
+        return nullptr;
+    }
+
+    size_t pathLength;
+    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
+
+    std::unique_ptr<wchar_t[]> widePath(new wchar_t[pathLength + 1]);
+
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(widePath.get()), pathLength + 1, nullptr);
+
+    DWORD state = Placeholders::GetPlaceholderState(widePath.get());
+
+    napi_value result;
+    napi_create_int32(env, static_cast<int32_t>(state), &result);
+    return result;
+}
+
+napi_value GetPlaceholderWithStatePendingWrapper(napi_env env, napi_callback_info args)
+{
+    size_t argc = 1;
+    napi_value argv[1];
+
+    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
+    if (argc < 1)
+    {
+        napi_throw_error(env, nullptr, "The path is required for GetPlaceholderWithStatePending");
+        return nullptr;
+    }
+
+    size_t pathLength;
+    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
+
+    std::unique_ptr<char16_t[]> widePath(new char16_t[pathLength + 1]);
+
+    napi_get_value_string_utf16(env, argv[0], widePath.get(), pathLength + 1, nullptr);
+
+    std::vector<std::wstring> state = Placeholders::GetPlaceholderWithStatePending(reinterpret_cast<wchar_t *>(widePath.get()));
+
+    napi_value result;
+    napi_create_array_with_length(env, state.size(), &result);
+    for (size_t i = 0; i < state.size(); ++i)
+    {
+        napi_value jsString;
+        napi_create_string_utf16(env, reinterpret_cast<const char16_t *>(state[i].c_str()), state[i].length(), &jsString);
+        napi_set_element(env, result, i, jsString);
+    }
+
+    return result;
+}
