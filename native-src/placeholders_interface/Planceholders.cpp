@@ -60,7 +60,7 @@ void Placeholders::CreateOne(
         prop.IconResource(L"shell32.dll,-44");
 
         wprintf(L"Successfully created placeholder file\n");
-        UpdateSyncStatus(fullDestPath, true);
+        UpdateSyncStatus(fullDestPath, true, false);
     }
     catch (...)
     {
@@ -177,7 +177,6 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring& fullPath, const std:
 
         HRESULT hr = CfConvertToPlaceholder(fileHandle, idStrLPCVOID, idStrByteLength, convertFlags, &convertUsn, &overlapped);
 
-        CloseHandle(fileHandle);
 
         if (FAILED(hr) || hr != S_OK)
         {
@@ -186,6 +185,19 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring& fullPath, const std:
             return false;
         }
 
+        if (isDirectory) {
+          // Si es una carpeta, establecer el estado de pinning
+          hr =  CfSetPinState(fileHandle, CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
+        }
+
+          if (FAILED(hr) || hr != S_OK)
+        {
+            // Manejar el error al convertir a marcador de posición
+            wprintf(L"Error converting to pinned, CfSetPinState failed\n");
+            return false;
+        }
+
+        CloseHandle(fileHandle);
         wprintf(L"Successfully converted to placeholder: %ls\n", fullPath.c_str());
         return true;
     }
