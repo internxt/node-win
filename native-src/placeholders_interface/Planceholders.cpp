@@ -59,6 +59,7 @@ void Placeholders::CreateOne(
         prop.IconResource(L"shell32.dll,-44");
 
         wprintf(L"Successfully created placeholder file\n");
+        UpdateSyncStatus(fullDestPath, true);
     }
     catch (...)
     {
@@ -66,12 +67,11 @@ void Placeholders::CreateOne(
     }
 }
 
-bool DirectoryExists(const wchar_t* path)
+bool DirectoryExists(const wchar_t *path)
 {
     DWORD attributes = GetFileAttributesW(path);
     return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY);
 }
-
 
 void Placeholders::CreateEntry(
     _In_ PCWSTR itemName,
@@ -98,7 +98,7 @@ void Placeholders::CreateEntry(
     cloudEntry.FsMetadata.BasicInfo.LastWriteTime = Utilities::FileTimeToLargeInteger(lastWriteTime);
     try
     {
-        //TODO: si existe o es placeholder return
+        // TODO: si existe o es placeholder return
         if (DirectoryExists(fullDestPath.c_str()))
         {
             wprintf(L"El directorio ya existe. Se omite la creación.\n");
@@ -171,9 +171,11 @@ void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSync
     CloseHandle(fileHandle);
 }
 
-CF_PLACEHOLDER_STATE Placeholders::GetPlaceholderState(const std::wstring& filePath) {
+CF_PLACEHOLDER_STATE Placeholders::GetPlaceholderState(const std::wstring &filePath)
+{
     HANDLE fileHandle = CreateFileW(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
-    if (fileHandle == INVALID_HANDLE_VALUE) {
+    if (fileHandle == INVALID_HANDLE_VALUE)
+    {
         // Error al abrir el archivo
         return CF_PLACEHOLDER_STATE_INVALID;
     }
@@ -194,35 +196,46 @@ CF_PLACEHOLDER_STATE Placeholders::GetPlaceholderState(const std::wstring& fileP
     return placeholderState;
 }
 
-CF_PLACEHOLDER_STATE GetPlaceholderStateMock(const std::wstring& filePath) {
+CF_PLACEHOLDER_STATE GetPlaceholderStateMock(const std::wstring &filePath)
+{
     static std::random_device rd;
     static std::mt19937 gen(rd());
     static std::uniform_int_distribution<int> dis(0, 1);
 
-    if (dis(gen) == 0) {
+    if (dis(gen) == 0)
+    {
         return CF_PLACEHOLDER_STATE_IN_SYNC;
-    } else {
+    }
+    else
+    {
         return CF_PLACEHOLDER_STATE_SYNC_ROOT;
     }
 }
 
-std::vector<std::wstring> Placeholders::GetPlaceholderWithStatePending(const std::wstring& directoryPath) {
+std::vector<std::wstring> Placeholders::GetPlaceholderWithStatePending(const std::wstring &directoryPath)
+{
     std::vector<std::wstring> resultPaths;
 
-    for (const auto& entry : std::filesystem::directory_iterator(directoryPath)) {
-        const auto& path = entry.path().wstring();
+    for (const auto &entry : std::filesystem::directory_iterator(directoryPath))
+    {
+        const auto &path = entry.path().wstring();
 
-        if (entry.is_regular_file()) {
+        if (entry.is_regular_file())
+        {
             // Verifica el estado del placeholder y las condiciones adicionales
             CF_PLACEHOLDER_STATE placeholderState = GetPlaceholderStateMock(path);
             if (placeholderState == CF_PLACEHOLDER_STATE_IN_SYNC &&
-                IsFileValidForSync(path)) {
+                IsFileValidForSync(path))
+            {
                 resultPaths.push_back(path);
             }
-        } else if (entry.is_directory()) {
+        }
+        else if (entry.is_directory())
+        {
             // Verifica el estado del directorio y las condiciones adicionales
             CF_PLACEHOLDER_STATE folderState = GetPlaceholderStateMock(path);
-            if (folderState == CF_PLACEHOLDER_STATE_IN_SYNC) {
+            if (folderState == CF_PLACEHOLDER_STATE_IN_SYNC)
+            {
                 std::vector<std::wstring> subfolderPaths = GetPlaceholderWithStatePending(path);
                 resultPaths.insert(resultPaths.end(), subfolderPaths.begin(), subfolderPaths.end());
             }
@@ -232,7 +245,8 @@ std::vector<std::wstring> Placeholders::GetPlaceholderWithStatePending(const std
     return resultPaths;
 }
 
-bool Placeholders::IsFileValidForSync(const std::wstring& filePath) {
+bool Placeholders::IsFileValidForSync(const std::wstring &filePath)
+{
     // Verifica si el archivo no está vacío
     // if (std::filesystem::file_size(filePath) == 0) {
     //     return false;
@@ -240,19 +254,21 @@ bool Placeholders::IsFileValidForSync(const std::wstring& filePath) {
     std::ifstream fileStream(filePath);
     bool isEmpty = fileStream.peek() == std::ifstream::traits_type::eof();
     fileStream.close();
-    if (isEmpty) {
+    if (isEmpty)
+    {
         return false;
     }
-
 
     const int64_t maxFileSize = 20 * 1024 * 1024 * 1024; // 20GB
-    if (std::filesystem::file_size(filePath) > maxFileSize) {
+    if (std::filesystem::file_size(filePath) > maxFileSize)
+    {
         return false;
     }
 
-    if (std::filesystem::path(filePath).extension().empty()) {
+    if (std::filesystem::path(filePath).extension().empty())
+    {
         return false;
     }
 
-    return true; 
+    return true;
 }
