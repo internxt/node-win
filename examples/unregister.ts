@@ -28,6 +28,7 @@ fs.promises
     }
   });
 
+
 // delete root sync file content ( IT IS NOT NECESSARY TO DO THIS IN PRODUCTION, IT IS JUST A TEMPORAL BUG FIX)
 // https://inxt.atlassian.net/browse/PB-1616?atlOrigin=eyJpIjoiMmFkZjM5MmVhNmYwNDE0MjliOTYwZDU2ODNiZmVkOGQiLCJwIjoiaiJ9
 
@@ -51,3 +52,4 @@ fs.promises
 //       console.error("Error:", error);
 //     }
 //   });
+
