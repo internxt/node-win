@@ -1,6 +1,11 @@
 #include "stdafx.h"
 #include <optional>
 
+enum class SyncState {
+    NotInSync = 0,
+    InSync = 1,
+};
+
 enum class PinState {
     /** The pin state is derived from the state of the parent folder.
      *
@@ -59,6 +64,7 @@ public:
     inline explicit operator bool() const noexcept { return static_cast<bool>(_data); }
 
     std::optional<PinState> pinState() const;
+    std::optional<SyncState> syncState() const;
 
 private:
     std::unique_ptr<CF_PLACEHOLDER_BASIC_INFO, Deleter> _data;
@@ -82,3 +88,4 @@ private:
 FileHandle handleForPath(const std::wstring &path);
 
 std::string pinStateToString(PinState state);
+std::string syncStateToString(SyncState state);

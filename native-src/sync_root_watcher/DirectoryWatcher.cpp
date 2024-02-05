@@ -169,6 +169,18 @@ CF_PLACEHOLDER_STATE DirectoryWatcher::getPlaceholderInfo(const std::wstring &di
         }
         
         auto pinStateOpt = info.pinState();
+        auto syncStateOpt = info.syncState();
+
+        // Verificar si syncStateOpt tiene un valor
+        if (syncStateOpt.has_value()) {
+            // Obtener el valor de syncState
+            SyncState syncState = syncStateOpt.value();
+            // Ahora necesitas convertir syncState a una cadena para poder imprimirlo
+            // Suponiendo que tienes una función para hacer esto, algo como syncStateToString(syncState)
+            printf("placeholderInfo.SyncState: %s\n", syncStateToString(syncState).c_str());
+        } else {
+            printf("placeholderInfo.SyncState: No value\n");
+        }
 
         // Verificar si pinStateOpt tiene un valor
         if (pinStateOpt.has_value()) {

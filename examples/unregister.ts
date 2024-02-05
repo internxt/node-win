@@ -27,26 +27,3 @@ fs.promises
       console.error("Error:", error);
     }
   });
-
-// delete root sync file content ( IT IS NOT NECESSARY TO DO THIS IN PRODUCTION, IT IS JUST A TEMPORAL BUG FIX)
-// https://inxt.atlassian.net/browse/PB-1616?atlOrigin=eyJpIjoiMmFkZjM5MmVhNmYwNDE0MjliOTYwZDU2ODNiZmVkOGQiLCJwIjoiaiJ9
-
-// const folderPath = settings.syncRootPath
-
-// fs.promises.access(folderPath, fs.constants.F_OK)
-//     .then(() => {
-//         // La carpeta existe, procede a borrarla
-//         return fs.promises.rm(folderPath, { recursive: true });
-//     })
-//     .then(() => {
-//         console.log('[EXAMPLE] Sync root deleted');
-//     })
-//     .catch(error => {
-//         if (error.code === 'ENOENT') {
-//             // La carpeta no existe, no es necesario borrarla
-//             console.log('La carpeta no existe, no es necesario eliminarla');
-//         } else {
-//             // Ocurrió otro error
-//             console.error('Error:', error);
-//         }
-//     });

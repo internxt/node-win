@@ -5,6 +5,30 @@
 #include <codecvt>
 #include <locale>
 
+SyncState cfSyncStateToSyncState(CF_IN_SYNC_STATE state)
+{
+    switch (state) {
+    case CF_IN_SYNC_STATE_NOT_IN_SYNC:
+        return SyncState::NotInSync;
+    case CF_IN_SYNC_STATE_IN_SYNC:
+        return SyncState::InSync;
+    default:
+        return SyncState::NotInSync;
+    }
+}
+
+std::string syncStateToString(SyncState state) {
+    switch (state) {
+        case SyncState::NotInSync:
+            return "NotInSync";
+        case SyncState::InSync:
+            return "InSync";
+        default:
+            return "Unknown";
+    }
+}
+
+
 PinState cfPinStateToPinState(CF_PIN_STATE state)
 {
     switch (state) {
@@ -55,6 +79,15 @@ std::optional<PinState> PlaceHolderInfo::pinState() const
     }
 
     return cfPinStateToPinState(_data->PinState);
+}
+
+std::optional<SyncState> PlaceHolderInfo::syncState() const
+{
+    if (!_data) {
+        return {};
+    }
+
+    return cfSyncStateToSyncState(_data->InSyncState);
 }
 
 FileHandle::FileHandle()
