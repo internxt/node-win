@@ -41,6 +41,7 @@ public:
     std::atomic<bool> _shouldRun;
     void Initialize(_In_ PCWSTR path, _In_ std::function<void(std::list<FileChange> &, napi_env env, InputSyncCallbacksThreadsafe input)> callback, napi_env env, InputSyncCallbacksThreadsafe input);
     winrt::Windows::Foundation::IAsyncAction ReadChangesAsync();
+    static CF_PLACEHOLDER_STATE getPlaceholderInfo(const std::wstring &directoryPath);
     void Cancel();
 
 private:
