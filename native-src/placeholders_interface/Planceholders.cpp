@@ -10,6 +10,7 @@
 #include <iostream>
 
 using namespace std;
+namespace fs = std::filesystem;
 
 #pragma comment(lib, "shlwapi.lib")
 
@@ -146,13 +147,16 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring& fullPath, const std:
         }
 
         // Obtener un handle al archivo
+         bool isDirectory = fs::is_directory(fullPath);
+
+        // Obtener un handle al archivo o carpeta
         HANDLE fileHandle = CreateFileW(
             fullPath.c_str(),
             FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES,
             FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
             nullptr,
             OPEN_EXISTING,
-            0,
+            isDirectory ? FILE_FLAG_BACKUP_SEMANTICS : 0,  // Agregar FILE_FLAG_BACKUP_SEMANTICS si es una carpeta
             nullptr);
 
         if (fileHandle == INVALID_HANDLE_VALUE)

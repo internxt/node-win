@@ -147,10 +147,17 @@ try {
  */
   const success = drive.convertToPlaceholder(
     settings.syncRootPath + "/test.txt",
-    "62654a1c-0137-4fc7-b271-dfaedfdfassdfsdf"
+    "62654a1c-0137-4fc7-b271-b2710137"
   );
 
   console.log(success);
+
+  const success2 = drive.convertToPlaceholder(
+    settings.syncRootPath + "/test",
+    "62654a1c-0137-4fc7-b271-62654a1c"
+  );
+
+  console.log(success2);
 
   drive.watchAndWait(settings.syncRootPath);
 } catch (error) {
