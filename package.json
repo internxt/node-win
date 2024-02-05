@@ -1,33 +1,35 @@
 {
-  "name": "virtual-drive",
-  "version": "1.0.1",
-  "description": "",
-  "main": "dist/index.ts",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "install": "node-gyp rebuild",
-    "clean": "node-gyp clean",
-    "build:gyp": "node-gyp configure build",
-    "build:ts": "tsc",
-    "start": "node lib/index.js",
-    "config:gyp": "python gyp.config.py",
-    "build": "python gyp.config.py && node-gyp clean && node-gyp configure build && tsc",
-    "start:example:register": "node ./dist/examples/register.js",
-    "start:example:unregister": "node ./dist/examples/unregister.js",
-    "example:disconnect": "node ./dist/examples/disconnect.js"
-  },
-  "author": "",
-  "license": "ISC",
-  "gypfile": true,
-  "devDependencies": {
-    "@types/node": "^20.5.0",
-    "node-gyp": "^9.4.0",
-    "typescript": "^5.1.6"
-  },
-  "dependencies": {
-    "dotenv": "^16.4.1",
-    "joi": "^17.12.0",
-    "tsconfig-paths": "^4.2.0"
-  }
+
+    "name": "virtual-drive",
+    "version": "1.0.1",
+    "description": "",
+    "main": "dist/index.ts",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "install": "node-gyp rebuild",
+        "clean": "node-gyp clean",
+        "build:gyp": "node-gyp configure build",
+        "build:ts": "tsc",
+        "start": "node lib/index.js",
+        "config:gyp": "python gyp.config.py",
+        "build": "python gyp.config.py && node-gyp clean && node-gyp configure build && tsc",
+        "start:example:register": "node ./dist/examples/register.js",
+        "start:example:get-state": "node ./dist/examples/get-state.js",
+        "start:example:unregister": "node ./dist/examples/unregister.js",
+        "example:disconnect": "node ./dist/examples/disconnect.js"
+    },
+    "author": "",
+    "license": "ISC",
+    "gypfile": true,
+    "devDependencies": {
+        "@types/node": "^20.5.0",
+        "node-gyp": "^9.4.0",
+        "typescript": "^5.1.6"
+    },
+    "dependencies": {
+        "dotenv": "^16.4.1",
+        "joi": "^17.12.0",
+        "tsconfig-paths": "^4.2.0"
+    }
 }

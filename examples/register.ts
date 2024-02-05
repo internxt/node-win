@@ -152,6 +152,7 @@ try {
 
   console.log(success);
 
+
   drive.watchAndWait(settings.syncRootPath);
 } catch (error) {
   drive.disconnectSyncRoot();
@@ -159,20 +160,5 @@ try {
   console.log("[EXAMPLE] error: " + error);
 }
 
-// // create items
-// drive.createItemByPath(
-//   `/item-folder/`,
-//   "fa8217c9-2dd6-4641-9189-8206e60368123",
-//   1000,
-//   folderCreatedAt,
-//   folderUpdatedAt
-// );
-// drive.createItemByPath(
-//   `/imagen-item.rar`,
-//   "fa8217c9-2dd6-4641-9180-053fe60368f1",
-//   33020,
-//   fileCreatedAt,
-//   fileUpdatedAt
-// );
 
 export default drive;
