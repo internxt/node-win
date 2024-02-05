@@ -59,7 +59,7 @@ void Placeholders::CreateOne(
         prop.IconResource(L"shell32.dll,-44");
 
         wprintf(L"Successfully created placeholder file\n");
-        UpdateSyncStatus(fullDestPath, true);
+        UpdateSyncStatus(fullDestPath, true, false);
     }
     catch (...)
     {
@@ -140,7 +140,7 @@ void Placeholders::CreateEntry(
  */
 void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSyncState, bool isDirectory = false)
 {
-
+    wprintf(L"Path: %ls\n", filePath.c_str());
     HANDLE fileHandle = CreateFileW(
         filePath.c_str(),
         FILE_WRITE_ATTRIBUTES, // permisson needed to change the state
