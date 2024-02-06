@@ -146,15 +146,15 @@ try {
  
  */
   const success = drive.convertToPlaceholder(
-    settings.syncRootPath + "/test.txt",
-    "62654a1c-0137-4fc7-b271-b2710137"
+    settings.syncRootPath + "/imagen.rar",
+    "03f7c464-3cf9-4664-9a79-078440cfac41"
   );
 
   console.log(success);
 
   const success2 = drive.convertToPlaceholder(
-    settings.syncRootPath + "/test",
-    "62654a1c-0137-4fc7-b271-62654a1c"
+    settings.syncRootPath + "/only-folder",
+    "3c598981-bca6-40ca-b016-fe2c0cdc5baf"
   );
 
   console.log(success2);
