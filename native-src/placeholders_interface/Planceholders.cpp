@@ -195,25 +195,41 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring& fullPath, const std:
         HRESULT hr = CfConvertToPlaceholder(fileHandle, idStrLPCVOID, idStrByteLength, convertFlags, &convertUsn, &overlapped);
 
 
-        if (FAILED(hr) || hr != S_OK)
+        if (FAILED(hr))
         {
-            // Manejar el error al convertir a marcador de posición
+        // Manejar el error al convertir a marcador de posición
+        wprintf(L"Error converting to placeholder, ConvertToPlaceholder failed with HRESULT 0x%X\n", hr);
 
-            wprintf(L"Error converting to placeholder, ConvertToPlaceholder failed\n", GetLastError());
-            return false;
+        // Puedes obtener información detallada sobre el error usando FormatMessage
+        LPVOID errorMsg;
+        FormatMessageW(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+            NULL,
+            hr,
+            0, // Default language
+            (LPWSTR)&errorMsg,
+            0,
+            NULL);
+
+        wprintf(L"Error details: %s\n", errorMsg);
+
+        // Liberar el buffer de mensaje de error
+        LocalFree(errorMsg);
+
+        return false;
         }
 
-        if (isDirectory) {
-          // Si es una carpeta, establecer el estado de pinning
-          hr =  CfSetPinState(fileHandle, CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
-        }
+        // if (isDirectory) {
+        //   // Si es una carpeta, establecer el estado de pinning
+        //   hr =  CfSetPinState(fileHandle, CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
+        // }
 
-          if (FAILED(hr) || hr != S_OK)
-        {
-            // Manejar el error al convertir a marcador de posición
-            wprintf(L"Error converting to pinned, CfSetPinState failed\n", GetLastError());
-            return false;
-        }
+        //   if (FAILED(hr) || hr != S_OK)
+        // {
+        //     // Manejar el error al convertir a marcador de posición
+        //     wprintf(L"Error converting to pinned, CfSetPinState failed\n", GetLastError());
+        //     return false;
+        // }
 
         CloseHandle(fileHandle);
         wprintf(L"Successfully converted to placeholder: %ls\n", fullPath.c_str());

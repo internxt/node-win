@@ -147,7 +147,7 @@ try {
  */
   const success = drive.convertToPlaceholder(
     settings.syncRootPath + "/imagen.rar",
-    "03f7c464-3cf9-4664-9a79-078440cfac41"
+    "03f7c464-3cf9-4664-9a79-sdffsd45423"
   );
 
   console.log(success);
