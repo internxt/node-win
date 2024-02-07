@@ -139,7 +139,20 @@ try {
       "62654a1c-0137-4fc7-b271-2c62f0d6f9f5": `${settings.serverRootPath}\\imagen-item.rar`,
     });
   });
-    
+
+  /*
+  /Para probar esto se tiene que crear el archivo test.txt en la carpeta de internxt, si se intenta
+  converntir un placeholder a un archivo que ya es un placeholder da error
+ 
+ */
+  const success = drive.convertToPlaceholder(
+    settings.syncRootPath + "/test.txt",
+    "62654a1c-0137-4fc7-b271-dfaedfdfassdfsdf"
+  );
+
+  console.log(success);
+
+
   drive.watchAndWait(settings.syncRootPath);
 } catch (error) {
   drive.disconnectSyncRoot();

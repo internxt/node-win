@@ -441,13 +441,12 @@ class VirtualDrive {
   updateSyncStatus(
     itemPath: string,
     isDirectory: boolean,
-    sync: boolean = true,
+    sync: boolean = true
   ): any {
-    return addon.updateSyncStatus(
-      itemPath,
-      sync,
-      isDirectory
-    );
+    return addon.updateSyncStatus(itemPath, sync, isDirectory);
+  }
+  convertToPlaceholder(itemPath: string, id: string): boolean {
+    return addon.convertToPlaceholder(itemPath, id);
   }
 }
 
