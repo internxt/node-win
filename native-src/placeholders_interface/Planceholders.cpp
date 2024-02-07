@@ -11,7 +11,16 @@
 
 using namespace std;
 
+namespace fs = std::filesystem;
+
 #pragma comment(lib, "shlwapi.lib")
+
+
+bool DirectoryExists(const wchar_t *path)
+{
+    DWORD attributes = GetFileAttributesW(path);
+    return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY);
+}
 
 void Placeholders::CreateOne(
     _In_ PCWSTR fileName,
@@ -29,6 +38,19 @@ void Placeholders::CreateOne(
         CF_PLACEHOLDER_CREATE_INFO cloudEntry = {};
 
         std::wstring fullDestPath = std::wstring(destPath) + L'\\';
+
+         wstring fullPath = std::wstring(destPath) + L'\\' + fileName;
+
+         wprintf(L"Path del archive: %s", fullPath.c_str());   
+         wprintf(L"\n");   
+
+
+        if (std::filesystem::exists(fullPath))
+        {
+            Placeholders::ConvertToPlaceholder(fullPath, fileIdentity);
+            wprintf(L"El Archivo ya existe. Se omite la creación.\n");       
+            return; // No hacer nada si ya existe
+        }
 
         std::wstring relativeName(fileIdentity);
 
@@ -59,7 +81,7 @@ void Placeholders::CreateOne(
         prop.IconResource(L"shell32.dll,-44");
 
         wprintf(L"Successfully created placeholder file\n");
-        UpdateSyncStatus(fullDestPath, true);
+        UpdateSyncStatus(fullDestPath, true, false);
     }
     catch (...)
     {
@@ -67,11 +89,6 @@ void Placeholders::CreateOne(
     }
 }
 
-bool DirectoryExists(const wchar_t *path)
-{
-    DWORD attributes = GetFileAttributesW(path);
-    return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY);
-}
 
 void Placeholders::CreateEntry(
     _In_ PCWSTR itemName,
@@ -101,6 +118,7 @@ void Placeholders::CreateEntry(
         // TODO: si existe o es placeholder return
         if (DirectoryExists(fullDestPath.c_str()))
         {
+              Placeholders::ConvertToPlaceholder(fullDestPath, itemIdentity);
             wprintf(L"El directorio ya existe. Se omite la creación.\n");
             return; // No hacer nada si ya existe
         }
@@ -129,6 +147,99 @@ void Placeholders::CreateEntry(
     catch (const winrt::hresult_error &error)
     {
         wprintf(L"Error while creating %s: %s\n", isDirectory ? L"directory" : L"file", error.message().c_str());
+    }
+}
+
+
+
+bool Placeholders::ConvertToPlaceholder(const std::wstring& fullPath, const std::wstring& serverIdentity)
+{
+    try
+    {
+        if (!std::filesystem::exists(fullPath))
+        {
+            // El archivo no existe
+            wprintf(L"File does not exist\n");
+            return false;
+        }
+
+        // Obtener un handle al archivo
+         bool isDirectory = fs::is_directory(fullPath);
+
+        // Obtener un handle al archivo o carpeta
+        HANDLE fileHandle = CreateFileW(
+            fullPath.c_str(),
+            FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES,
+            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+            nullptr,
+            OPEN_EXISTING,
+            isDirectory ? FILE_FLAG_BACKUP_SEMANTICS : 0,  // Agregar FILE_FLAG_BACKUP_SEMANTICS si es una carpeta
+            nullptr);
+
+        if (fileHandle == INVALID_HANDLE_VALUE)
+        {
+            // Manejar el error al abrir el archivo
+            wprintf(L"Error opening file: %d\n", GetLastError());
+            return false;
+        }
+
+      
+        CF_CONVERT_FLAGS convertFlags = CF_CONVERT_FLAG_MARK_IN_SYNC;
+        USN convertUsn;
+        OVERLAPPED overlapped = {};
+
+        // Convierte la cadena de la identidad del servidor a LPCVOID
+        LPCVOID idStrLPCVOID = static_cast<LPCVOID>(serverIdentity.c_str());
+        DWORD idStrByteLength = static_cast<DWORD>(serverIdentity.size() * sizeof(wchar_t));
+
+        HRESULT hr = CfConvertToPlaceholder(fileHandle, idStrLPCVOID, idStrByteLength, convertFlags, &convertUsn, &overlapped);
+
+
+        if (FAILED(hr))
+        {
+        // Manejar el error al convertir a marcador de posición
+        wprintf(L"Error converting to placeholder, ConvertToPlaceholder failed with HRESULT 0x%X\n", hr);
+
+        // Puedes obtener información detallada sobre el error usando FormatMessage
+        LPVOID errorMsg;
+        FormatMessageW(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+            NULL,
+            hr,
+            0, // Default language
+            (LPWSTR)&errorMsg,
+            0,
+            NULL);
+
+        wprintf(L"Error details: %s\n", errorMsg);
+
+        // Liberar el buffer de mensaje de error
+        LocalFree(errorMsg);
+
+        return false;
+        }
+
+        // if (isDirectory) {
+        //   // Si es una carpeta, establecer el estado de pinning
+        //   hr =  CfSetPinState(fileHandle, CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
+        // }
+
+        //   if (FAILED(hr) || hr != S_OK)
+        // {
+        //     // Manejar el error al convertir a marcador de posición
+        //     wprintf(L"Error converting to pinned, CfSetPinState failed\n", GetLastError());
+        //     return false;
+        // }
+
+        CloseHandle(fileHandle);
+        wprintf(L"Successfully converted to placeholder: %ls\n", fullPath.c_str());
+        return true;
+    }
+    catch (const winrt::hresult_error &error)
+    {
+        // Manejar excepciones desconocidas
+        wprintf(L"Unknown exception occurred\n");
+        return false;
     }
 }
 
@@ -189,8 +300,6 @@ CF_PLACEHOLDER_STATE Placeholders::GetPlaceholderState(const std::wstring &fileP
     }
 
     CF_PLACEHOLDER_STATE placeholderState = CfGetPlaceholderStateFromFileInfo(&fileBasicInfo, FileBasicInfo);
-    // Logger::getInstance().log("placeholderState: %d" + placeholderState, LogLevel::DEBUG);
-    // printf("placeholderState: %d\n", placeholderState);
     CloseHandle(fileHandle);
 
     return placeholderState;

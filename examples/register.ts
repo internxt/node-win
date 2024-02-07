@@ -139,13 +139,31 @@ try {
       "62654a1c-0137-4fc7-b271-2c62f0d6f9f5": `${settings.serverRootPath}\\imagen-item.rar`,
     });
   });
-    
+
+  /*
+  /Para probar esto se tiene que crear el archivo test.txt en la carpeta de internxt, si se intenta
+  converntir un placeholder a un archivo que ya es un placeholder da error
+ 
+ */
+  const success = drive.convertToPlaceholder(
+    settings.syncRootPath + "/imagen.rar",
+    "03f7c464-3cf9-4664-9a79-sdffsd45423"
+  );
+
+  console.log(success);
+
+  const success2 = drive.convertToPlaceholder(
+    settings.syncRootPath + "/only-folder",
+    "3c598981-bca6-40ca-b016-fe2c0cdc5baf"
+  );
+
+  console.log(success2);
+
   drive.watchAndWait(settings.syncRootPath);
 } catch (error) {
   drive.disconnectSyncRoot();
   VirtualDrive.unregisterSyncRoot(settings.syncRootPath);
   console.log("[EXAMPLE] error: " + error);
 }
-
 
 export default drive;
