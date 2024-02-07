@@ -354,30 +354,50 @@ std::vector<std::wstring> Placeholders::GetPlaceholderWithStatePending(const std
     return resultPaths;
 }
 
-bool Placeholders::IsFileValidForSync(const std::wstring &filePath)
-{
-    // Verifica si el archivo no está vacío
-    // if (std::filesystem::file_size(filePath) == 0) {
-    //     return false;
-    // }
-    std::ifstream fileStream(filePath);
-    bool isEmpty = fileStream.peek() == std::ifstream::traits_type::eof();
-    fileStream.close();
-    if (isEmpty)
-    {
+bool Placeholders::IsFileValidForSync(const std::wstring& filePath) {
+    // Obtener un handle al archivo
+    HANDLE fileHandle = CreateFileW(
+        filePath.c_str(),
+        FILE_READ_ATTRIBUTES,
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        nullptr,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,
+        nullptr
+    );
+
+    if (fileHandle == INVALID_HANDLE_VALUE) {
+        // No se pudo abrir el archivo
         return false;
     }
 
+    // Verificar si el archivo está vacío
+    LARGE_INTEGER fileSize;
+    if (!GetFileSizeEx(fileHandle, &fileSize)) {
+        CloseHandle(fileHandle);
+        return false;
+    }
+
+    if (fileSize.QuadPart == 0) {
+        CloseHandle(fileHandle);
+        return false;
+    }
+
+    // Verificar el tamaño máximo del archivo
     const int64_t maxFileSize = 20 * 1024 * 1024 * 1024; // 20GB
-    if (std::filesystem::file_size(filePath) > maxFileSize)
-    {
+    if (fileSize.QuadPart > maxFileSize) {
+        CloseHandle(fileHandle);
         return false;
     }
 
-    if (std::filesystem::path(filePath).extension().empty())
-    {
+    // Verificar la extensión del archivo
+    if (std::filesystem::path(filePath).extension().empty()) {
+        CloseHandle(fileHandle);
         return false;
     }
+
+    // Cerrar el handle del archivo
+    CloseHandle(fileHandle);
 
     return true;
 }
