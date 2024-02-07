@@ -59,7 +59,7 @@ void Placeholders::CreateOne(
         prop.IconResource(L"shell32.dll,-44");
 
         wprintf(L"Successfully created placeholder file\n");
-        UpdateSyncStatus(fullDestPath, true);
+        UpdateSyncStatus(fullDestPath, true, false);
     }
     catch (...)
     {
@@ -132,6 +132,67 @@ void Placeholders::CreateEntry(
     }
 }
 
+
+
+bool Placeholders::ConvertToPlaceholder(const std::wstring& fullPath, const std::wstring& serverIdentity)
+{
+    try
+    {
+        if (!std::filesystem::exists(fullPath))
+        {
+            // El archivo no existe
+            wprintf(L"File does not exist\n");
+            return false;
+        }
+
+        // Obtener un handle al archivo
+        HANDLE fileHandle = CreateFileW(
+            fullPath.c_str(),
+            FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES,
+            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+            nullptr,
+            OPEN_EXISTING,
+            0,
+            nullptr);
+
+        if (fileHandle == INVALID_HANDLE_VALUE)
+        {
+            // Manejar el error al abrir el archivo
+            wprintf(L"Error opening file\n");
+            return false;
+        }
+
+      
+        CF_CONVERT_FLAGS convertFlags = CF_CONVERT_FLAG_MARK_IN_SYNC;
+        USN convertUsn;
+        OVERLAPPED overlapped = {};
+
+        // Convierte la cadena de la identidad del servidor a LPCVOID
+        LPCVOID idStrLPCVOID = static_cast<LPCVOID>(serverIdentity.c_str());
+        DWORD idStrByteLength = static_cast<DWORD>(serverIdentity.size() * sizeof(wchar_t));
+
+        HRESULT hr = CfConvertToPlaceholder(fileHandle, idStrLPCVOID, idStrByteLength, convertFlags, &convertUsn, &overlapped);
+
+        CloseHandle(fileHandle);
+
+        if (FAILED(hr) || hr != S_OK)
+        {
+            // Manejar el error al convertir a marcador de posición
+            wprintf(L"Error converting to placeholder, ConvertToPlaceholder failed\n");
+            return false;
+        }
+
+        wprintf(L"Successfully converted to placeholder: %ls\n", fullPath.c_str());
+        return true;
+    }
+    catch (const winrt::hresult_error &error)
+    {
+        // Manejar excepciones desconocidas
+        wprintf(L"Unknown exception occurred\n");
+        return false;
+    }
+}
+
 /**
  * @brief Mark a file or directory as synchronized
  * @param filePath path to the file or directory
@@ -140,7 +201,7 @@ void Placeholders::CreateEntry(
  */
 void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSyncState, bool isDirectory = false)
 {
-
+    wprintf(L"Path: %ls\n", filePath.c_str());
     HANDLE fileHandle = CreateFileW(
         filePath.c_str(),
         FILE_WRITE_ATTRIBUTES, // permisson needed to change the state
@@ -189,6 +250,8 @@ CF_PLACEHOLDER_STATE Placeholders::GetPlaceholderState(const std::wstring &fileP
     }
 
     CF_PLACEHOLDER_STATE placeholderState = CfGetPlaceholderStateFromFileInfo(&fileBasicInfo, FileBasicInfo);
+    // Logger::getInstance().log("placeholderState: %d" + placeholderState, LogLevel::DEBUG);
+    // printf("placeholderState: %d\n", placeholderState);
     CloseHandle(fileHandle);
 
     return placeholderState;

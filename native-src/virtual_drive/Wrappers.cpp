@@ -5,6 +5,7 @@
 #include "SyncRootWatcher.h"
 #include "Callbacks.h"
 #include "LoggerPath.h"
+#include "DirectoryWatcher.h"
 
 napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
 {
@@ -683,7 +684,8 @@ napi_value GetPlaceholderStateWrapper(napi_env env, napi_callback_info args)
 
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(widePath.get()), pathLength + 1, nullptr);
 
-    DWORD state = Placeholders::GetPlaceholderState(widePath.get());
+    // DWORD state = Placeholders::GetPlaceholderState(widePath.get());
+    DWORD state = DirectoryWatcher::getPlaceholderInfo(widePath.get());
 
     napi_value result;
     napi_create_int32(env, static_cast<int32_t>(state), &result);
@@ -719,6 +721,44 @@ napi_value GetPlaceholderWithStatePendingWrapper(napi_env env, napi_callback_inf
         napi_create_string_utf16(env, reinterpret_cast<const char16_t *>(state[i].c_str()), state[i].length(), &jsString);
         napi_set_element(env, result, i, jsString);
     }
+
+    return result;
+}
+
+napi_value ConvertToPlaceholderWrapper(napi_env env, napi_callback_info args)
+{
+    size_t argc = 2;
+    napi_value argv[2];
+
+    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
+
+    if (argc < 2)
+    {
+        napi_throw_error(env, nullptr, "Both full path and placeholder ID are required for ConvertToPlaceholder");
+        return nullptr;
+    }
+
+    size_t pathLength;
+    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
+
+    std::unique_ptr<char16_t[]> widePath(new char16_t[pathLength + 1]);
+
+    napi_get_value_string_utf16(env, argv[0], widePath.get(), pathLength + 1, nullptr);
+
+    size_t placeholderIdLength;
+    napi_get_value_string_utf16(env, argv[1], nullptr, 0, &placeholderIdLength);
+
+    std::unique_ptr<char16_t[]> widePlaceholderId(new char16_t[placeholderIdLength + 1]);
+
+    napi_get_value_string_utf16(env, argv[1], widePlaceholderId.get(), placeholderIdLength + 1, nullptr);
+
+    bool success = Placeholders::ConvertToPlaceholder(
+        reinterpret_cast<wchar_t*>(widePath.get()),
+        reinterpret_cast<wchar_t*>(widePlaceholderId.get())
+    );
+
+    napi_value result;
+    napi_get_boolean(env, success, &result);
 
     return result;
 }
