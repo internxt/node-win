@@ -140,11 +140,6 @@ try {
     });
   });
 
-  /*
-  /Para probar esto se tiene que crear el archivo test.txt en la carpeta de internxt, si se intenta
-  converntir un placeholder a un archivo que ya es un placeholder da error
- 
- */
   const success = drive.convertToPlaceholder(
     settings.syncRootPath + "/test.txt",
     "62654a1c-0137-4fc7-b271-dfaedfdfassdfsdf"

@@ -119,36 +119,7 @@ DWORD sizeToDWORD(size_t size)
 
 CF_PLACEHOLDER_STATE DirectoryWatcher::getPlaceholderInfo(const std::wstring &directoryPath)
 {
-    // printf("PATH________:  %ls\n", directoryPath.c_str());
-    // HANDLE hFile = CreateFileW(
-    //     directoryPath.c_str(),
-    //     0,
-    //     0,
-    //     nullptr,
-    //     OPEN_EXISTING,
-    //     FILE_ATTRIBUTE_NORMAL,
-    //     nullptr);
-    // if (hFile != INVALID_HANDLE_VALUE)
-    // {
-        // printf("getPlaceholderInfo: Success\n");
-        // int size = sizeof(CF_PLACEHOLDER_STANDARD_INFO) + 300;
-        // CF_PLACEHOLDER_STANDARD_INFO PlaceholderInfo;
-        // DWORD returnlength(0);
-        // HRESULT hr = CfGetPlaceholderInfo(hFile, CF_PLACEHOLDER_INFO_STANDARD, &PlaceholderInfo, size, &returnlength);
-        // if (SUCCEEDED(hr))
-        // {
-        //     Logger::getInstance().log("getPlaceholderInfo: Success\n", LogLevel::INFO);
-        //     return PlaceholderInfo;
-        //     CloseHandle(hFile);
-        // }
-        // else
-        // {
-        //     CloseHandle(hFile);
-        //     Logger::getInstance().log("getPlaceholderInfo: Failed, CfGetPlaceholderInfo failed.\n", LogLevel::ERROR);
-        //     return CF_PLACEHOLDER_STANDARD_INFO{};
-        // }
 
-        printf("getPlaceholderInfo: Success\n");
         constexpr auto fileIdMaxLength = 400;
         const auto infoSize = sizeof(CF_PLACEHOLDER_BASIC_INFO) + fileIdMaxLength;
         auto info = PlaceHolderInfo(reinterpret_cast<CF_PLACEHOLDER_BASIC_INFO *>(new char[infoSize]), deletePlaceholderInfo);
@@ -171,60 +142,27 @@ CF_PLACEHOLDER_STATE DirectoryWatcher::getPlaceholderInfo(const std::wstring &di
         auto pinStateOpt = info.pinState();
         auto syncStateOpt = info.syncState();
 
-        // Verificar si syncStateOpt tiene un valor
+
         if (syncStateOpt.has_value()) {
-            // Obtener el valor de syncState
+
             SyncState syncState = syncStateOpt.value();
-            // Ahora necesitas convertir syncState a una cadena para poder imprimirlo
-            // Suponiendo que tienes una función para hacer esto, algo como syncStateToString(syncState)
+
             printf("placeholderInfo.SyncState: %s\n", syncStateToString(syncState).c_str());
         } else {
             printf("placeholderInfo.SyncState: No value\n");
         }
 
-        // Verificar si pinStateOpt tiene un valor
+
         if (pinStateOpt.has_value()) {
-            // Obtener el valor de pinState
+
             PinState pinState = pinStateOpt.value();           
-            // Ahora necesitas convertir pinState a una cadena para poder imprimirlo
-            // Suponiendo que tienes una función para hacer esto, algo como pinStateToString(pinState)
+
             printf("placeholderInfo.PinState: %s\n", pinStateToString(pinState).c_str());
         } else {
             printf("placeholderInfo.PinState: No value\n");
         }
         
-        return CF_PLACEHOLDER_STATE_INVALID;
-        // printf("getPlaceholderInfo 3: Success\n");
-        // FILE_ATTRIBUTE_TAG_INFO fileInfo;
-        // if (!GetFileInformationByHandleEx(hFile, FileAttributeTagInfo, &fileInfo, sizeof(fileInfo)))
-        // {
-        //     DWORD error = GetLastError();  // Obtener el último error
-        //     printf("getPlaceholderInfo: Failed, GetFileInformationByHandleEx failed with error code %lu.\n", error);
-        //     // Error al obtener la información básica del archivo
-        //     CloseHandle(hFile);
-        //     return CF_PLACEHOLDER_STATE_INVALID;
-        // }
-        // printf("getPlaceholderInfo 4: Success\n");
-        // // print file_basic_info
-        // printf("fileInfo.FileAttributes: %d\n", fileInfo.FileAttributes);
-
-
-        // printf("status CF_PLACEHOLDER_STATE_IN_SYNC", fileInfo.FileAttributes & CF_PLACEHOLDER_STATE_IN_SYNC);
-
-        // CF_PLACEHOLDER_STATE placeholderState = CfGetPlaceholderStateFromFileInfo(&fileInfo, FileAttributeTagInfo);
-        // DWORD error = GetLastError();  // Obtener el último error
-        // printf("getPlaceholderInfo: Failed, CfGetPlaceholderStateFromFileInfo failed with error code %lu.\n", error);
-            
-        // // Logger::getInstance().log("placeholderState: %d" + placeholderState, LogLevel::DEBUG);
-        // // printf("placeholderState: %d\n", placeholderState);
-        // CloseHandle(hFile);
-
-        // return placeholderState;
-    // } else {
-    //     DWORD error = GetLastError();  // Obtener el último error
-    //     printf("getPlaceholderInfo: Failed, CreateFileW failed with error code %lu.\n", error);
-    //     return CF_PLACEHOLDER_STATE_INVALID;
-    // }
+        return CF_PLACEHOLDER_STATE_INVALID; 
 }
 
 bool isFileValid(const std::wstring &fullPath, std::list<FileChange> &result, FileChange fc)
