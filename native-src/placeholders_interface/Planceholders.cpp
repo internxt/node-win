@@ -70,7 +70,7 @@ void Placeholders::CreateOne(
         try
         {
             winrt::check_hresult(CfCreatePlaceholders(fullDestPath.c_str(), &cloudEntry, 1, CF_CREATE_FLAG_NONE, NULL));
-            Placeholders::UpdatePinState(fullDestPath.c_str(), PinState::AlwaysLocal);
+            Placeholders::UpdatePinState(fullPath, PinState::OnlineOnly);
         }
         catch (const winrt::hresult_error &error)
         {
@@ -82,7 +82,7 @@ void Placeholders::CreateOne(
         prop.IconResource(L"shell32.dll,-44");
 
         wprintf(L"Successfully created placeholder file\n");
-        UpdateSyncStatus(fullDestPath, true, false);
+        // UpdateSyncStatus(fullDestPath, true, false);
     }
     catch (...)
     {
@@ -119,7 +119,7 @@ void Placeholders::CreateEntry(
         // TODO: si existe o es placeholder return
         if (DirectoryExists(fullDestPath.c_str()))
         {
-              Placeholders::ConvertToPlaceholder(fullDestPath, itemIdentity);
+            Placeholders::ConvertToPlaceholder(fullDestPath, itemIdentity);
             wprintf(L"El directorio ya existe. Se omite la creación.\n");
             return; // No hacer nada si ya existe
         }
@@ -136,11 +136,11 @@ void Placeholders::CreateEntry(
             }
             else
             {
-                Placeholders::UpdatePinState(fullDestPath.c_str(), PinState::AlwaysLocal);
                 wprintf(L"Successfully created placeholder directory\n");
             }
 
             std::wstring finalPath = std::wstring(destPath) + L"\\" + std::wstring(itemName);
+            Placeholders::UpdatePinState(finalPath, PinState::OnlineOnly);
             UpdateSyncStatus(finalPath, true, true);
         }
 
