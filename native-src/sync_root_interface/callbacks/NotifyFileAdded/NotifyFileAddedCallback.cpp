@@ -8,6 +8,7 @@ inline bool ready = false;
 inline bool callbackResult = false;
 inline std::wstring server_identity;
 #include <filesystem>
+#include <Placeholders.h>
 
 struct FetchDataArgs
 {
@@ -175,6 +176,10 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
                 {
                     Logger::getInstance().log("Error converting to placeholder, ConvertToPlaceholder failed,", LogLevel::ERROR);
                 }
+
+                if (change.type == NEW_FILE) {
+                    Placeholders::UpdatePinState(change.path.c_str(), PinState::AlwaysLocal);
+                };
                 CloseHandle(placeholder);
             }
             catch (...)
