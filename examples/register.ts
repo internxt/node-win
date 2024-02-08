@@ -141,12 +141,18 @@ try {
   });
 
   const success = drive.convertToPlaceholder(
-    settings.syncRootPath + "/test.txt",
-    "62654a1c-0137-4fc7-b271-dfaedfdfassdfsdf"
+    settings.syncRootPath + "/imagen.rar",
+    "03f7c464-3cf9-4664-9a79-sdffsd45423"
   );
 
   console.log(success);
 
+  const success2 = drive.convertToPlaceholder(
+    settings.syncRootPath + "/only-folder",
+    "3c598981-bca6-40ca-b016-fe2c0cdc5baf"
+  );
+
+  console.log(success2);
 
   drive.watchAndWait(settings.syncRootPath);
 } catch (error) {
@@ -154,6 +160,5 @@ try {
   VirtualDrive.unregisterSyncRoot(settings.syncRootPath);
   console.log("[EXAMPLE] error: " + error);
 }
-
 
 export default drive;
