@@ -32,7 +32,7 @@ def gather_files(patterns, ignored_patterns, target_name, is_directory=False):
             warn(f"No files or directories found for ignored pattern: {pattern}. It will not be configured in the target '{target_name}'.")
         ignored_paths.update(matched_paths)
 
-    return list(all_paths - ignored_paths)
+    return sorted(list(all_paths - ignored_paths))
 
 def update_gyp_file(config):
     target_name = config.get("targets", [{}])[0].get("target_name", "addon")

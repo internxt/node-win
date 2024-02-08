@@ -4,7 +4,6 @@
 #include <filesystem>
 #include <sstream>
 #include "Logger.h"
-#include "PlaceHolderInfo.h"
 
 const size_t c_bufferSize = 32768; // sizeof(FILE_NOTIFY_INFORMATION) * 100;
 
@@ -117,18 +116,21 @@ DWORD sizeToDWORD(size_t size)
     return convertSizeToDWORD(size);
 }
 
-CF_PLACEHOLDER_STATE DirectoryWatcher::getPlaceholderInfo(const std::wstring &directoryPath)
+FileState DirectoryWatcher::getPlaceholderInfo(const std::wstring &directoryPath)
 {
 
         constexpr auto fileIdMaxLength = 400;
         const auto infoSize = sizeof(CF_PLACEHOLDER_BASIC_INFO) + fileIdMaxLength;
         auto info = PlaceHolderInfo(reinterpret_cast<CF_PLACEHOLDER_BASIC_INFO *>(new char[infoSize]), deletePlaceholderInfo);
 
-
+        FileState fileState;
         auto fileHandle = handleForPath(directoryPath);
+
         if (!fileHandle) {
             printf("Error: Invalid file handle.\n");
-            return CF_PLACEHOLDER_STATE_INVALID;
+            fileState.pinstate = PinState::Unspecified;
+            fileState.syncstate = SyncState::Undefined;
+            return fileState;
         }
 
 
@@ -136,7 +138,9 @@ CF_PLACEHOLDER_STATE DirectoryWatcher::getPlaceholderInfo(const std::wstring &di
 
         if (result != S_OK) {
             printf("CfGetPlaceholderInfo failed with HRESULT %lx\n", result);
-            return CF_PLACEHOLDER_STATE_INVALID;
+            fileState.pinstate = PinState::Unspecified;
+            fileState.syncstate = SyncState::Undefined;
+            return fileState;
         }
         
         auto pinStateOpt = info.pinState();
@@ -162,7 +166,10 @@ CF_PLACEHOLDER_STATE DirectoryWatcher::getPlaceholderInfo(const std::wstring &di
             printf("placeholderInfo.PinState: No value\n");
         }
         
-        return CF_PLACEHOLDER_STATE_INVALID; 
+        fileState.pinstate = pinStateOpt.value_or(PinState::Unspecified);
+        fileState.syncstate = syncStateOpt.value_or(SyncState::Undefined);    
+
+        return fileState; 
 }
 
 bool isFileValid(const std::wstring &fullPath, std::list<FileChange> &result, FileChange fc)

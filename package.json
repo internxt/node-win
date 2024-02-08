@@ -1,5 +1,4 @@
 {
-
     "name": "virtual-drive",
     "version": "1.0.1",
     "description": "",
@@ -24,12 +23,14 @@
     "gypfile": true,
     "devDependencies": {
         "@types/node": "^20.5.0",
+        "@types/yargs": "^17.0.32",
         "node-gyp": "^9.4.0",
         "typescript": "^5.1.6"
     },
     "dependencies": {
         "dotenv": "^16.4.1",
         "joi": "^17.12.0",
-        "tsconfig-paths": "^4.2.0"
+        "tsconfig-paths": "^4.2.0",
+        "yargs": "^17.7.2"
     }
 }

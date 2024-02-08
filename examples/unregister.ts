@@ -7,7 +7,7 @@ import fs from "fs";
 VirtualDrive.unregisterSyncRoot(settings.syncRootPath);
 
 // delete persistence file
-const filePath = path.join(__dirname, "fileInfo.json");
+const filePath = path.join(__dirname, "filesInfo.json");
 
 fs.promises
   .access(filePath, fs.constants.F_OK)
