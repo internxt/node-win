@@ -30,7 +30,7 @@ public:
         _In_ PCWSTR destPath);
 
     static void UpdateSyncStatus(const std::wstring &filePath, bool syncState, bool isDirectory);
-    static void UpdatePinState(const string &path, PinState state);
+    static HRESULT UpdatePinState(const std::wstring &path, const PinState state);
     static CF_PLACEHOLDER_STATE GetPlaceholderState(const std::wstring& filePath);
     static std::vector<std::wstring> GetPlaceholderWithStatePending(const std::wstring& filePath);
     static bool IsFileValidForSync(const std::wstring& filePath);

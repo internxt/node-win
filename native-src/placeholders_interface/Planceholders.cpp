@@ -334,8 +334,9 @@ bool Placeholders::IsFileValidForSync(const std::wstring &filePath)
     return true;
 }
 
-HRESULT UpdatePinState(const wstring &path, PinState state) {
+HRESULT Placeholders::UpdatePinState(const std::wstring &path, const PinState state) {
 
-    HRESULT result = CfSetPinState(handleForPath(path).get(), state, CF_SET_PIN_FLAG_NONE, nullptr);
+    const auto cfState = pinStateToCfPinState(state);
+    HRESULT result = CfSetPinState(handleForPath(path).get(), cfState, CF_SET_PIN_FLAG_NONE, nullptr);
     return result;
 }
