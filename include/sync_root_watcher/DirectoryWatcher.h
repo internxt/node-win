@@ -1,6 +1,7 @@
 #pragma once
 
 #include <node_api.h>
+#include "PlaceHolderInfo.h"
 
 // 20GB limit
 #define FILE_SIZE_LIMIT 21474836480
@@ -30,6 +31,11 @@ struct InputCallbacks
     napi_ref notify_message_callback_ref;
 };
 
+struct FileState {
+    PinState pinstate;
+    SyncState syncstate;
+};
+
 struct InputSyncCallbacksThreadsafe
 {
     napi_threadsafe_function notify_file_added_threadsafe_callback;
@@ -41,7 +47,7 @@ public:
     std::atomic<bool> _shouldRun;
     void Initialize(_In_ PCWSTR path, _In_ std::function<void(std::list<FileChange> &, napi_env env, InputSyncCallbacksThreadsafe input)> callback, napi_env env, InputSyncCallbacksThreadsafe input);
     winrt::Windows::Foundation::IAsyncAction ReadChangesAsync();
-    static CF_PLACEHOLDER_STATE getPlaceholderInfo(const std::wstring &directoryPath);
+    static FileState getPlaceholderInfo(const std::wstring &directoryPath);
     void Cancel();
 
 private:

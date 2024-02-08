@@ -47,6 +47,24 @@ PinState cfPinStateToPinState(CF_PIN_STATE state)
     }
 }
 
+CF_PIN_STATE pinStateToCfPinState(PinState state)
+{
+    switch (state) {
+    case PinState::Unspecified:
+        return CF_PIN_STATE_UNSPECIFIED;
+    case PinState::AlwaysLocal:
+        return CF_PIN_STATE_PINNED;
+    case PinState::OnlineOnly:
+        return CF_PIN_STATE_UNPINNED;
+    case PinState::Inherited:
+        return CF_PIN_STATE_INHERIT;
+    case PinState::Excluded:
+        return CF_PIN_STATE_EXCLUDED;
+    default:
+        return CF_PIN_STATE_INHERIT;
+    }
+}
+
 std::string pinStateToString(PinState state) {
     switch (state) {
         case PinState::Inherited:

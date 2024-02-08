@@ -15,6 +15,7 @@
 #include <locale>
 #include <codecvt>
 #include <filesystem>
+#include <Placeholders.h>
 
 napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
@@ -281,6 +282,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
         load_finished = true;
         Utilities::ApplyTransferStateToFile(g_full_client_path.c_str(), g_callback_info, fileSize.QuadPart, fileSize.QuadPart);
         Sleep(CHUNKDELAYMS);
+        Placeholders::UpdatePinState(g_full_client_path.c_str(), PinState::AlwaysLocal);
     };
 
     {
