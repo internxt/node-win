@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <sstream>
 #include "Logger.h"
+#include "PlaceHolderInfo.h"
 
 const size_t c_bufferSize = 32768; // sizeof(FILE_NOTIFY_INFORMATION) * 100;
 
@@ -91,35 +92,77 @@ std::uintmax_t getDirectorySize(const fs::path &directoryPath)
     return size;
 }
 
-CF_PLACEHOLDER_STANDARD_INFO getPlaceholderInfo(const std::wstring &directoryPath)
+// void deletePlaceholderInfo(char *infoBuffer)
+// {
+//     delete[] infoBuffer;
+// }
+
+void deletePlaceholderInfo(CF_PLACEHOLDER_BASIC_INFO *info)
 {
-    HANDLE hFile = CreateFileW(
-        directoryPath.c_str(),
-        FILE_READ_ATTRIBUTES,
-        FILE_SHARE_READ | FILE_SHARE_WRITE,
-        nullptr,
-        OPEN_EXISTING,
-        FILE_FLAG_BACKUP_SEMANTICS | FILE_ATTRIBUTE_NORMAL,
-        nullptr);
-    if (hFile != INVALID_HANDLE_VALUE)
-    {
-        int size = sizeof(CF_PLACEHOLDER_STANDARD_INFO) + 300;
-        CF_PLACEHOLDER_STANDARD_INFO PlaceholderInfo;
-        DWORD returnlength(0);
-        HRESULT hr = CfGetPlaceholderInfo(hFile, CF_PLACEHOLDER_INFO_STANDARD, &PlaceholderInfo, size, &returnlength);
-        if (SUCCEEDED(hr))
-        {
-            Logger::getInstance().log("getPlaceholderInfo: Success\n", LogLevel::INFO);
-            return PlaceholderInfo;
-            CloseHandle(hFile);
-        }
-        else
-        {
-            CloseHandle(hFile);
-            Logger::getInstance().log("getPlaceholderInfo: Failed, CfGetPlaceholderInfo failed.\n", LogLevel::ERROR);
-            return CF_PLACEHOLDER_STANDARD_INFO{};
-        }
+    auto byte = reinterpret_cast<char *>(info);
+    delete[] byte;
+}
+
+DWORD convertSizeToDWORD(size_t &convertVar)
+{
+    if( convertVar > UINT_MAX ) {
+        //throw std::bad_cast();
+        convertVar = UINT_MAX; // intentionally default to wrong value here to not crash: exception handling TBD
     }
+    return static_cast<DWORD>(convertVar);
+}
+
+DWORD sizeToDWORD(size_t size)
+{
+    return convertSizeToDWORD(size);
+}
+
+CF_PLACEHOLDER_STATE DirectoryWatcher::getPlaceholderInfo(const std::wstring &directoryPath)
+{
+
+        constexpr auto fileIdMaxLength = 400;
+        const auto infoSize = sizeof(CF_PLACEHOLDER_BASIC_INFO) + fileIdMaxLength;
+        auto info = PlaceHolderInfo(reinterpret_cast<CF_PLACEHOLDER_BASIC_INFO *>(new char[infoSize]), deletePlaceholderInfo);
+
+
+        auto fileHandle = handleForPath(directoryPath);
+        if (!fileHandle) {
+            printf("Error: Invalid file handle.\n");
+            return CF_PLACEHOLDER_STATE_INVALID;
+        }
+
+
+        HRESULT result = CfGetPlaceholderInfo(fileHandle.get(), CF_PLACEHOLDER_INFO_BASIC, info.get(), sizeToDWORD(infoSize), nullptr);
+
+        if (result != S_OK) {
+            printf("CfGetPlaceholderInfo failed with HRESULT %lx\n", result);
+            return CF_PLACEHOLDER_STATE_INVALID;
+        }
+        
+        auto pinStateOpt = info.pinState();
+        auto syncStateOpt = info.syncState();
+
+
+        if (syncStateOpt.has_value()) {
+
+            SyncState syncState = syncStateOpt.value();
+
+            printf("placeholderInfo.SyncState: %s\n", syncStateToString(syncState).c_str());
+        } else {
+            printf("placeholderInfo.SyncState: No value\n");
+        }
+
+
+        if (pinStateOpt.has_value()) {
+
+            PinState pinState = pinStateOpt.value();           
+
+            printf("placeholderInfo.PinState: %s\n", pinStateToString(pinState).c_str());
+        } else {
+            printf("placeholderInfo.PinState: No value\n");
+        }
+        
+        return CF_PLACEHOLDER_STATE_INVALID; 
 }
 
 bool isFileValid(const std::wstring &fullPath, std::list<FileChange> &result, FileChange fc)

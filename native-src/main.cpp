@@ -212,6 +212,22 @@ napi_value init(napi_env env, napi_value exports)
       return nullptr;
   }
 
+  napi_property_descriptor convertToPlaceholderDesc = {
+    "convertToPlaceholder",
+    nullptr,
+    ConvertToPlaceholderWrapper,
+    nullptr,
+    nullptr,
+    nullptr,
+    napi_default,
+    nullptr
+    };
+
+  napi_status convertToPlaceholderStatus = napi_define_properties(env, exports, 1, &convertToPlaceholderDesc);
+  if (convertToPlaceholderStatus != napi_ok) {
+      napi_throw_error(env, nullptr, "Failed to define convertToPlaceholder function");
+      return nullptr;
+  }
 
   return exports;
 }

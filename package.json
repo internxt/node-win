@@ -1,4 +1,5 @@
 {
+
     "name": "virtual-drive",
     "version": "1.0.1",
     "description": "",
@@ -14,6 +15,7 @@
         "config:gyp": "python gyp.config.py",
         "build": "python gyp.config.py && node-gyp clean && node-gyp configure build && tsc",
         "start:example:register": "node ./dist/examples/register.js",
+        "start:example:get-state": "node ./dist/examples/get-state.js",
         "start:example:unregister": "node ./dist/examples/unregister.js",
         "example:disconnect": "node ./dist/examples/disconnect.js"
     },
