@@ -1,7 +1,10 @@
+#pragma once
+
 #include "stdafx.h"
 #include <optional>
 
 enum class SyncState {
+    Undefined = -1,
     NotInSync = 0,
     InSync = 1,
 };
@@ -89,3 +92,4 @@ FileHandle handleForPath(const std::wstring &path);
 
 std::string pinStateToString(PinState state);
 std::string syncStateToString(SyncState state);
+CF_PIN_STATE pinStateToCfPinState(PinState state);

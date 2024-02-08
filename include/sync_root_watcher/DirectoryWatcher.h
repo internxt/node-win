@@ -1,6 +1,7 @@
 #pragma once
 
 #include <node_api.h>
+#include "PlaceHolderInfo.h"
 
 // 20GB limit
 #define FILE_SIZE_LIMIT 21474836480
@@ -28,6 +29,11 @@ struct InputCallbacks
 {
     napi_ref notify_file_added_callback_ref;
     napi_ref notify_message_callback_ref;
+};
+
+struct FileState {
+    PinState pinstate;
+    SyncState syncstate;
 };
 
 struct InputSyncCallbacksThreadsafe
