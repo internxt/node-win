@@ -251,7 +251,7 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring& fullPath, const std:
  */
 void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSyncState, bool isDirectory = false)
 {
-
+    wprintf(L"Path: %ls\n", filePath.c_str());
     HANDLE fileHandle = CreateFileW(
         filePath.c_str(),
         FILE_WRITE_ATTRIBUTES, // permisson needed to change the state
@@ -400,4 +400,11 @@ bool Placeholders::IsFileValidForSync(const std::wstring& filePath) {
     CloseHandle(fileHandle);
 
     return true;
+}
+
+HRESULT Placeholders::UpdatePinState(const std::wstring &path, const PinState state) {
+
+    const auto cfState = pinStateToCfPinState(state);
+    HRESULT result = CfSetPinState(handleForPath(path).get(), cfState, CF_SET_PIN_FLAG_NONE, nullptr);
+    return result;
 }
