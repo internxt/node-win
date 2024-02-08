@@ -117,7 +117,12 @@ DWORD sizeToDWORD(size_t size)
     return convertSizeToDWORD(size);
 }
 
-CF_PLACEHOLDER_STATE DirectoryWatcher::getPlaceholderInfo(const std::wstring &directoryPath)
+struct FileState {
+    PinState pinstate;
+    SyncState syncstate;
+}
+
+FileState DirectoryWatcher::getPlaceholderInfo(const std::wstring &directoryPath)
 {
 
         constexpr auto fileIdMaxLength = 400;
