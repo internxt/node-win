@@ -70,6 +70,7 @@ void Placeholders::CreateOne(
         try
         {
             winrt::check_hresult(CfCreatePlaceholders(fullDestPath.c_str(), &cloudEntry, 1, CF_CREATE_FLAG_NONE, NULL));
+            Placeholders::UpdatePinState(fullDestPath.c_str(), PinState::AlwaysLocal);
         }
         catch (const winrt::hresult_error &error)
         {
@@ -135,6 +136,7 @@ void Placeholders::CreateEntry(
             }
             else
             {
+                Placeholders::UpdatePinState(fullDestPath.c_str(), PinState::AlwaysLocal);
                 wprintf(L"Successfully created placeholder directory\n");
             }
 
