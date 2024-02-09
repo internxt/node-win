@@ -337,7 +337,8 @@ std::vector<std::wstring> Placeholders::GetPlaceholderWithStatePending(const std
             // Verifica el estado del placeholder y las condiciones adicionales
              FileState placeholderState =  DirectoryWatcher::getPlaceholderInfo(path);
              bool isFileValidForSync = (placeholderState.syncstate == SyncState::Undefined || placeholderState.syncstate == SyncState::NotInSync );
-            if (isFileValidForSync)
+            if (isFileValidForSync &&
+                IsFileValidForSync(path))
             {
                 resultPaths.push_back(path);
             }
@@ -345,9 +346,11 @@ std::vector<std::wstring> Placeholders::GetPlaceholderWithStatePending(const std
         else if (entry.is_directory())
         {
             // Verifica el estado del directorio y las condiciones adicionales
-            CF_PLACEHOLDER_STATE folderState = GetPlaceholderStateMock(path);
-            if (folderState == CF_PLACEHOLDER_STATE_IN_SYNC)
+            FileState placeholderState =  DirectoryWatcher::getPlaceholderInfo(path);
+             bool isFileValidForSync = (placeholderState.syncstate == SyncState::Undefined || placeholderState.syncstate == SyncState::NotInSync );
+            if (isFileValidForSync)
             {
+                resultPaths.push_back(path);
                 std::vector<std::wstring> subfolderPaths = GetPlaceholderWithStatePending(path);
                 resultPaths.insert(resultPaths.end(), subfolderPaths.begin(), subfolderPaths.end());
             }
@@ -386,14 +389,15 @@ bool Placeholders::IsFileValidForSync(const std::wstring& filePath) {
         return false;
     }
 
-    // Verificar el tamaño máximo del archivo
-    const int64_t maxFileSize = 20 * 1024 * 1024 * 1024; // 20GB
-    if (fileSize.QuadPart > maxFileSize) {
+    LARGE_INTEGER maxFileSize;
+    maxFileSize.QuadPart = 20LL * 1024 * 1024 * 1024; // 20GB
+
+    if (fileSize.QuadPart > maxFileSize.QuadPart) {
         CloseHandle(fileHandle);
         return false;
     }
 
-    // Verificar la extensión del archivo
+    // // Verificar la extensión del archivo
     if (std::filesystem::path(filePath).extension().empty()) {
         CloseHandle(fileHandle);
         return false;
