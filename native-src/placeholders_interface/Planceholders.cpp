@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Placeholders.h"
+#include "PlaceholderInfo.h"
 #include <winrt/base.h>
 #include <shlwapi.h>
 #include "SyncRootWatcher.h"
@@ -334,8 +335,9 @@ std::vector<std::wstring> Placeholders::GetPlaceholderWithStatePending(const std
         if (entry.is_regular_file())
         {
             // Verifica el estado del placeholder y las condiciones adicionales
-            CF_PLACEHOLDER_STATE placeholderState = GetPlaceholderStateMock(path);
-            if (placeholderState == CF_PLACEHOLDER_STATE_IN_SYNC &&
+             FileState placeholderState =  DirectoryWatcher::getPlaceholderInfo(path);
+             bool isFileValidForSync = (placeholderState.syncstate == SyncState::Undefined || placeholderState.syncstate == SyncState::NotInSync );
+            if (isFileValidForSync &&
                 IsFileValidForSync(path))
             {
                 resultPaths.push_back(path);
