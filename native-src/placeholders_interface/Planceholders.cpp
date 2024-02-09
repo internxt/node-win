@@ -337,8 +337,7 @@ std::vector<std::wstring> Placeholders::GetPlaceholderWithStatePending(const std
             // Verifica el estado del placeholder y las condiciones adicionales
              FileState placeholderState =  DirectoryWatcher::getPlaceholderInfo(path);
              bool isFileValidForSync = (placeholderState.syncstate == SyncState::Undefined || placeholderState.syncstate == SyncState::NotInSync );
-            if (isFileValidForSync &&
-                IsFileValidForSync(path))
+            if (isFileValidForSync)
             {
                 resultPaths.push_back(path);
             }
