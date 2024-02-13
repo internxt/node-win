@@ -69,6 +69,7 @@ napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
 
     if (confirmation_response)
     {
+         Sleep(100);
         result = Placeholders::ConvertToPlaceholder(global_path, server_identity);
         if (global_type == NEW_FILE)
         {
