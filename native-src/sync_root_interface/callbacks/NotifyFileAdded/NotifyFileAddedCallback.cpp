@@ -7,6 +7,8 @@ inline std::condition_variable cv;
 inline bool ready = false;
 inline bool callbackResult = false;
 inline std::wstring server_identity;
+inline std::wstring global_path;
+inline ChangeType global_type;
 #include <filesystem>
 #include <Placeholders.h>
 
@@ -65,7 +67,10 @@ napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
     bool result = false;
 
     if(confirmation_response){
-        result = Placeholders::ConvertToPlaceholder(response_wstr, server_identity);
+        result = Placeholders::ConvertToPlaceholder(global_path, server_identity);
+        if (global_type == NEW_FILE) {
+        Placeholders::UpdatePinState(global_path, PinState::AlwaysLocal);
+        };
     }
 
     cv.notify_one();
@@ -136,6 +141,8 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
     std::wstring *dataToSend = new std::wstring(change.type == NEW_FILE ? change.path : (change.path + L"\\"));
     napi_status status = napi_call_threadsafe_function(input.notify_file_added_threadsafe_callback, dataToSend, napi_tsfn_blocking);
 
+    global_path = change.path;
+    global_type = change.type;
     {
         std::unique_lock<std::mutex> lock(mtx);
         while (!ready)
@@ -143,7 +150,7 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
             cv.wait(lock);
         }
     }
-    HANDLE placeholder;
+    // HANDLE placeholder;
 
     if (!std::filesystem::exists(change.path))
     {
@@ -187,8 +194,8 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
         {
             try
             {
-                Logger::getInstance().log("Convert to placeholder in sync" + Logger::fromWStringToString(change.path), LogLevel::INFO);
-                Sleep(100);
+                // Logger::getInstance().log("Convert to placeholder in sync" + Logger::fromWStringToString(change.path), LogLevel::INFO);
+                // Sleep(100);
                 // HRESULT hr = CfConvertToPlaceholder(placeholder, idStrLPCVOID, idStrByteLength, CF_CONVERT_FLAG_MARK_IN_SYNC, nullptr, nullptr);
                 // show error
                 // if (FAILED(hr) || hr != S_OK)
@@ -196,10 +203,10 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
                 //     Logger::getInstance().log("Error converting to placeholder, ConvertToPlaceholder failed,", LogLevel::ERROR);
                 // }
 
-                if (change.type == NEW_FILE) {
-                    Placeholders::UpdatePinState(change.path.c_str(), PinState::AlwaysLocal);
-                };
-                CloseHandle(placeholder);
+                // if (change.type == NEW_FILE) {
+                //     Placeholders::UpdatePinState(change.path.c_str(), PinState::AlwaysLocal);
+                // };
+                // CloseHandle(placeholder);
             }
             catch (...)
             {

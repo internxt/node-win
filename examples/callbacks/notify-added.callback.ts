@@ -2,7 +2,7 @@ function generateRandomNumber(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-type CallbackResponse = (data: boolean, path: string) => Promise<boolean>;
+type CallbackResponse = (aknowledge: boolean, id: string) => Promise<boolean>;
 
 async function onFileAddedCallback(
   filePath: string,
