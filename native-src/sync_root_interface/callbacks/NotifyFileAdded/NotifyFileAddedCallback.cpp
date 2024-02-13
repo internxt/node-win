@@ -7,8 +7,11 @@ inline std::condition_variable cv;
 inline bool ready = false;
 inline bool callbackResult = false;
 inline std::wstring server_identity;
+inline std::wstring global_path;
+inline ChangeType global_type;
 #include <filesystem>
 #include <Placeholders.h>
+#include "Logger.h"
 
 struct FetchDataArgs
 {
@@ -62,9 +65,34 @@ napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
     callbackResult = confirmation_response;
     server_identity = response_wstr.c_str();
 
+    bool result = false;
+
+    if (confirmation_response)
+    {
+         Sleep(100);
+        result = Placeholders::ConvertToPlaceholder(global_path, server_identity);
+        if (global_type == NEW_FILE)
+        {
+            Logger::getInstance().log("NEW FILE", LogLevel::INFO);
+            Placeholders::UpdatePinState(global_path, PinState::AlwaysLocal);
+        };
+    }
+
     cv.notify_one();
 
-    return nullptr;
+    napi_value result_value;
+    napi_get_boolean(env, result, &result_value);
+
+    // Crear la promesa y obtener el deferred
+    napi_value promise;
+    napi_deferred deferred;
+    napi_create_promise(env, &deferred, &promise);
+    // print result
+    Logger::getInstance().log("Result: " + std::to_string(result), LogLevel::INFO);
+    // Resolver la promesa con el resultado booleano
+    napi_resolve_deferred(env, deferred, result_value);
+
+    return promise;
 }
 
 void notify_file_added_call(napi_env env, napi_value js_callback, void *context, void *data)
@@ -117,6 +145,8 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
     std::wstring *dataToSend = new std::wstring(change.type == NEW_FILE ? change.path : (change.path + L"\\"));
     napi_status status = napi_call_threadsafe_function(input.notify_file_added_threadsafe_callback, dataToSend, napi_tsfn_blocking);
 
+    global_path = change.path;
+    global_type = change.type;
     {
         std::unique_lock<std::mutex> lock(mtx);
         while (!ready)
@@ -124,7 +154,7 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
             cv.wait(lock);
         }
     }
-    HANDLE placeholder;
+    // HANDLE placeholder;
 
     if (!std::filesystem::exists(change.path))
     {
@@ -135,52 +165,52 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
     try
     {
 
-        if (change.type == NEW_FOLDER)
-        {
-            placeholder = CreateFileW(
-                change.path.c_str(),
-                FILE_LIST_DIRECTORY | WRITE_DAC,
-                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                nullptr,
-                OPEN_EXISTING,
-                FILE_FLAG_BACKUP_SEMANTICS,
-                nullptr);
-        }
-        else if (change.type == NEW_FILE)
-        { //||  change.type == MODIFIED_FILE) {
-            placeholder = CreateFileW(
-                change.path.c_str(),
-                FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES,
-                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                nullptr,
-                OPEN_EXISTING,
-                0,
-                nullptr);
-        }
+        // if (change.type == NEW_FOLDER)
+        // {
+        //     placeholder = CreateFileW(
+        //         change.path.c_str(),
+        //         FILE_LIST_DIRECTORY | WRITE_DAC,
+        //         FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        //         nullptr,
+        //         OPEN_EXISTING,
+        //         FILE_FLAG_BACKUP_SEMANTICS,
+        //         nullptr);
+        // }
+        // else if (change.type == NEW_FILE)
+        // { //||  change.type == MODIFIED_FILE) {
+        //     placeholder = CreateFileW(
+        //         change.path.c_str(),
+        //         FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES,
+        //         FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        //         nullptr,
+        //         OPEN_EXISTING,
+        //         0,
+        //         nullptr);
+        // }
 
         // winrt::handle placeholder(CreateFileW(change.path.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
 
-        const std::wstring idStr = server_identity;
-        LPCVOID idStrLPCVOID = static_cast<LPCVOID>(idStr.c_str());
-        DWORD idStrByteLength = static_cast<DWORD>(idStr.size() * sizeof(wchar_t));
+        // const std::wstring idStr = server_identity;
+        // LPCVOID idStrLPCVOID = static_cast<LPCVOID>(idStr.c_str());
+        // DWORD idStrByteLength = static_cast<DWORD>(idStr.size() * sizeof(wchar_t));
 
         if (callbackResult)
         {
             try
             {
-                Logger::getInstance().log("Convert to placeholder in sync" + Logger::fromWStringToString(change.path), LogLevel::INFO);
-                Sleep(100);
-                HRESULT hr = CfConvertToPlaceholder(placeholder, idStrLPCVOID, idStrByteLength, CF_CONVERT_FLAG_MARK_IN_SYNC, nullptr, nullptr);
+                // Logger::getInstance().log("Convert to placeholder in sync" + Logger::fromWStringToString(change.path), LogLevel::INFO);
+                // Sleep(100);
+                // HRESULT hr = CfConvertToPlaceholder(placeholder, idStrLPCVOID, idStrByteLength, CF_CONVERT_FLAG_MARK_IN_SYNC, nullptr, nullptr);
                 // show error
-                if (FAILED(hr) || hr != S_OK)
-                {
-                    Logger::getInstance().log("Error converting to placeholder, ConvertToPlaceholder failed,", LogLevel::ERROR);
-                }
+                // if (FAILED(hr) || hr != S_OK)
+                // {
+                //     Logger::getInstance().log("Error converting to placeholder, ConvertToPlaceholder failed,", LogLevel::ERROR);
+                // }
 
-                if (change.type == NEW_FILE) {
-                    Placeholders::UpdatePinState(change.path.c_str(), PinState::AlwaysLocal);
-                };
-                CloseHandle(placeholder);
+                // if (change.type == NEW_FILE) {
+                //     Placeholders::UpdatePinState(change.path.c_str(), PinState::AlwaysLocal);
+                // };
+                // CloseHandle(placeholder);
             }
             catch (...)
             {
