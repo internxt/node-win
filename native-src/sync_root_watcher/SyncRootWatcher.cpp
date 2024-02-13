@@ -102,7 +102,6 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
                 {
                     DownloadMutexManager &mutexManager = DownloadMutexManager::getInstance();
                     mutexManager.waitReady();
-
                     Logger::getInstance().log("Hydrating file" + Logger::fromWStringToString(change.path), LogLevel::INFO);
                     CfHydratePlaceholder(placeholder.get(), offset, length, CF_HYDRATE_FLAG_NONE, NULL);
 
