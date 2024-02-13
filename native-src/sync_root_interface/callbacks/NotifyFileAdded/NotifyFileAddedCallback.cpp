@@ -11,6 +11,7 @@ inline std::wstring global_path;
 inline ChangeType global_type;
 #include <filesystem>
 #include <Placeholders.h>
+#include "Logger.h"
 
 struct FetchDataArgs
 {
@@ -66,10 +67,13 @@ napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
 
     bool result = false;
 
-    if(confirmation_response){
+    if (confirmation_response)
+    {
         result = Placeholders::ConvertToPlaceholder(global_path, server_identity);
-        if (global_type == NEW_FILE) {
-        Placeholders::UpdatePinState(global_path, PinState::AlwaysLocal);
+        if (global_type == NEW_FILE)
+        {
+            Logger::getInstance().log("NEW FILE", LogLevel::INFO);
+            Placeholders::UpdatePinState(global_path, PinState::AlwaysLocal);
         };
     }
 
@@ -82,13 +86,12 @@ napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
     napi_value promise;
     napi_deferred deferred;
     napi_create_promise(env, &deferred, &promise);
-
+    // print result
+    Logger::getInstance().log("Result: " + std::to_string(result), LogLevel::INFO);
     // Resolver la promesa con el resultado booleano
     napi_resolve_deferred(env, deferred, result_value);
 
     return promise;
-
-
 }
 
 void notify_file_added_call(napi_env env, napi_value js_callback, void *context, void *data)
