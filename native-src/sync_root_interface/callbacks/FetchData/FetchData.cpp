@@ -4,6 +4,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <FileCopierWithProgress.h>
+#include <DownloadMutexManager.h>
 #include <fstream>
 #include <vector>
 #include <utility> // para std::pai
@@ -20,8 +21,11 @@
 napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
 inline std::mutex mtx;
+inline std::mutex mtx_download;
 inline std::condition_variable cv;
+inline std::condition_variable cv_download;
 inline bool ready = false;
+inline bool ready_download = false;
 inline bool callbackResult = false;
 inline std::wstring fullServerFilePath;
 
@@ -445,6 +449,9 @@ void CALLBACK fetch_data_callback_wrapper(
     }
 
     wprintf(L"Hydration Completed\n");
+
+    DownloadMutexManager& mutexManager = DownloadMutexManager::getInstance();
+    mutexManager.setReady(true);
 
     // std::lock_guard<std::mutex> lock(mtx);
     lastReadOffset = 0;

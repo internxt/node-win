@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "SyncRootWatcher.h"
+#include "DownloadMutexManager.h"
 #include "DirectoryWatcher.h"
 #include "Callbacks.h"
 #include <windows.h>
@@ -98,6 +99,9 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
 
                 if (attrib & FILE_ATTRIBUTE_PINNED)
                 {
+                    DownloadMutexManager& mutexManager = DownloadMutexManager::getInstance();
+                    mutexManager.waitReady();
+                    
                     Sleep(500);
                     Logger::getInstance().log("Hydrating file" + Logger::fromWStringToString(change.path), LogLevel::INFO);
                     CfHydratePlaceholder(placeholder.get(), offset, length, CF_HYDRATE_FLAG_NONE, NULL);
