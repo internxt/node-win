@@ -67,7 +67,7 @@ void setup_global_tsfn_fetch_data(napi_threadsafe_function tsfn)
     g_fetch_data_threadsafe_callback = tsfn;
 }
 
-napi_value create_response(napi_env env, bool finished, int progress)
+napi_value create_response(napi_env env, bool finished, float progress)
 {
     napi_value result_object;
     napi_create_object(env, &result_object);
@@ -77,7 +77,7 @@ napi_value create_response(napi_env env, bool finished, int progress)
     napi_set_named_property(env, result_object, "finished", finished_value);
 
     napi_value progress_value;
-    napi_create_int32(env, progress, &progress_value);
+    napi_create_double(env, progress, &progress_value);
     napi_set_named_property(env, result_object, "progress", progress_value);
 
     napi_value promise;
@@ -199,7 +199,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     if (argc < 2)
     {
         Logger::getInstance().log("This function must receive at least two arguments", LogLevel::ERROR);
-        return create_response(env, false, 0);
+        return create_response(env, true, 0);
     }
 
     napi_valuetype valueType;
@@ -209,7 +209,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     if (valueType != napi_boolean)
     {
         Logger::getInstance().log("First argument should be boolean", LogLevel::ERROR);
-        return create_response(env, false, 0);
+        return create_response(env, true, 0);
     }
 
     bool response;
@@ -219,7 +219,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     if (valueType != napi_string)
     {
         Logger::getInstance().log("Second argument should be string", LogLevel::ERROR);
-        return create_response(env, false, 0);
+        return create_response(env, true, 0);
     }
 
     callbackResult = response;
@@ -238,7 +238,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
         if (callbackType != napi_function)
         {
             Logger::getInstance().log("Third argument should be a function", LogLevel::ERROR);
-            return create_response(env, false, 0);
+            return create_response(env, true, 0);
         }
     }
 
@@ -253,7 +253,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     if (!file)
     {
         Logger::getInstance().log("This file couldn't be opened in realtime.", LogLevel::ERROR);
-        return create_response(env, false, 0);
+        return create_response(env, true, 0);
     }
 
     file.seekg(0, std::ios::end);
@@ -261,6 +261,11 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     file.seekg(0, std::ios::beg);
 
     file.close();
+
+    Logger::getInstance().log("Total size: " + std::to_string(total_size), LogLevel::DEBUG);
+    Logger::getInstance().log("Last read offset: " + std::to_string(lastReadOffset), LogLevel::DEBUG);
+
+    Logger::getInstance().log("fileSize: " + std::to_string(fileSize.QuadPart), LogLevel::DEBUG);
 
     if (lastReadOffset == fileSize.QuadPart)
     {
@@ -288,7 +293,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     napi_value progress_value;
     napi_create_double(env, progress, &progress_value);
 
-    Logger::getInstance().log("fetch data result: " + std::to_string(load_finished), LogLevel::DEBUG);
+    Logger::getInstance().log("fetch data result: " + std::to_string(load_finished) + " " + std::to_string(progress) + " " + Logger::fromWStringToString(fullServerFilePath), LogLevel::DEBUG);
 
     // napi_value result_object;
     // napi_create_object(env, &result_object);
@@ -433,8 +438,8 @@ void CALLBACK fetch_data_callback_wrapper(
 
     Logger::getInstance().log("Hydration Completed\n", LogLevel::INFO);
 
-    // DownloadMutexManager& mutexManager = DownloadMutexManager::getInstance();
-    // mutexManager.setReady(true);
+    DownloadMutexManager &mutexManager = DownloadMutexManager::getInstance();
+    mutexManager.setReady(true);
 
     // std::lock_guard<std::mutex> lock(mtx);
     lastReadOffset = 0;

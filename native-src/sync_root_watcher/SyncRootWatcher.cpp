@@ -100,14 +100,19 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
 
                 if (attrib & FILE_ATTRIBUTE_PINNED)
                 {
-                    // DownloadMutexManager &mutexManager = DownloadMutexManager::getInstance();
-                    // mutexManager.waitReady();
+                    Logger::getInstance().log("Hydration file ", LogLevel::INFO);
 
-                    Logger::getInstance().log("Hydration file", LogLevel::INFO);
+                    HRESULT hr = CfHydratePlaceholder(placeholder.get(), offset, length, CF_HYDRATE_FLAG_NONE, NULL);
+                    if (FAILED(hr))
+                    {
+                        Logger::getInstance().log("Error hydrating file " + Logger::fromWStringToString(change.path), LogLevel::ERROR);
+                    }
 
-                    CfHydratePlaceholder(placeholder.get(), offset, length, CF_HYDRATE_FLAG_NONE, NULL);
+                    Logger::getInstance().log("Hydration finished " + Logger::fromWStringToString(change.path), LogLevel::INFO);
 
-                    Logger::getInstance().log("Hydration finished" + Logger::fromWStringToString(change.path), LogLevel::INFO);
+                    Logger::getInstance().log("Mutex waiting for " + Logger::fromWStringToString(change.path), LogLevel::INFO);
+                    DownloadMutexManager &mutexManager = DownloadMutexManager::getInstance();
+                    mutexManager.waitReady();
 
                     // Sleep(250);
                     // std::wstring folder = change.path.substr(0, change.path.find_last_of(L"\\"));
