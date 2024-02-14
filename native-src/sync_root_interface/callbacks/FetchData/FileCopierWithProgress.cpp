@@ -6,6 +6,8 @@
 #include "FileCopierWithProgress.h"
 #include "Utilities.h"
 #include <filesystem>
+#include "Logger.h"
+
 namespace fs = std::filesystem;
 
 // 100MB chunks
@@ -27,6 +29,7 @@ HRESULT FileCopierWithProgress::TransferData(
     _In_ LARGE_INTEGER length,
     _In_ NTSTATUS completionStatus)
 {
+        Logger::getInstance().log("TransferData", LogLevel::INFO);
         CF_OPERATION_INFO opInfo = {0};
         CF_OPERATION_PARAMETERS opParams = {0};
         // wprintf(L"[%04x:%04x] - TransferData\n", GetCurrentProcessId(), GetCurrentThreadId());

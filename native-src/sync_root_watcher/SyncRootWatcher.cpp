@@ -113,7 +113,9 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
                     Logger::getInstance().log("Mutex waiting for " + Logger::fromWStringToString(change.path), LogLevel::INFO);
                     DownloadMutexManager &mutexManager = DownloadMutexManager::getInstance();
                     mutexManager.waitReady();
-
+                    Logger::getInstance().log("Mutex ready for " + Logger::fromWStringToString(change.path), LogLevel::INFO);
+                    mutexManager.resetReady();
+                    Logger::getInstance().log("resetReady for " + Logger::fromWStringToString(change.path), LogLevel::INFO);
                     // Sleep(250);
                     // std::wstring folder = change.path.substr(0, change.path.find_last_of(L"\\"));
                     // Logger::getInstance().log("Marking folder as in sync" + Logger::fromWStringToString(folder), LogLevel::INFO);

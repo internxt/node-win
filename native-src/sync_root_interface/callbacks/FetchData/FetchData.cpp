@@ -277,16 +277,6 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
         Placeholders::UpdatePinState(g_full_client_path.c_str(), PinState::AlwaysLocal);
     };
 
-    {
-        std::lock_guard<std::mutex> lock(mtx);
-
-        if (load_finished)
-        {
-            ready = true;
-            cv.notify_one();
-        }
-    }
-
     napi_value resultBool;
     napi_get_boolean(env, load_finished, &resultBool);
 
@@ -311,6 +301,15 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     // napi_create_promise(env, &deferred, &promise);
 
     // napi_resolve_deferred(env, deferred, result_object);
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+
+        if (load_finished)
+        {
+            ready = true;
+            cv.notify_one();
+        }
+    }
 
     return create_response(env, load_finished, progress);
 }
@@ -443,5 +442,6 @@ void CALLBACK fetch_data_callback_wrapper(
 
     // std::lock_guard<std::mutex> lock(mtx);
     lastReadOffset = 0;
+    load_finished = false;
     ready = false; // Reset ready
 }
