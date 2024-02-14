@@ -154,7 +154,7 @@ try {
 
   console.log(success2);
 
-  drive.watchAndWait(settings.syncRootPath);
+  // drive.watchAndWait(settings.syncRootPath);
 } catch (error) {
   drive.disconnectSyncRoot();
   VirtualDrive.unregisterSyncRoot(settings.syncRootPath);
