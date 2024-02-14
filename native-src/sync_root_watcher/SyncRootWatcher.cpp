@@ -6,6 +6,7 @@
 #include <windows.h>
 #include <Logger.h>
 #include <PlaceHolders.h>
+
 namespace winrt
 {
     using namespace winrt::Windows::Foundation;
@@ -31,7 +32,6 @@ void SyncRootWatcher::WatcherTask(const wchar_t *syncRootPath, napi_env env, Inp
 {
     SetConsoleCtrlHandler(Stop, TRUE);
     InitDirectoryWatcher(syncRootPath, env, input);
-    ;
 
     if (syncRootPath == nullptr)
     {
@@ -102,13 +102,17 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
                 {
                     DownloadMutexManager &mutexManager = DownloadMutexManager::getInstance();
                     mutexManager.waitReady();
-                    Logger::getInstance().log("Hydrating file" + Logger::fromWStringToString(change.path), LogLevel::INFO);
+
+                    Logger::getInstance().log("Hydration file", LogLevel::INFO);
+
                     CfHydratePlaceholder(placeholder.get(), offset, length, CF_HYDRATE_FLAG_NONE, NULL);
 
+                    Logger::getInstance().log("Hydration finished" + Logger::fromWStringToString(change.path), LogLevel::INFO);
+
                     // Sleep(250);
-                    std::wstring folder = change.path.substr(0, change.path.find_last_of(L"\\"));
-                    Logger::getInstance().log("Marking folder as in sync" + Logger::fromWStringToString(folder), LogLevel::INFO);
-                    Placeholders::UpdateSyncStatus(folder, true, true);
+                    // std::wstring folder = change.path.substr(0, change.path.find_last_of(L"\\"));
+                    // Logger::getInstance().log("Marking folder as in sync" + Logger::fromWStringToString(folder), LogLevel::INFO);
+                    // Placeholders::UpdateSyncStatus(folder, true, true);
                 }
                 else if (attrib & FILE_ATTRIBUTE_UNPINNED)
                 {

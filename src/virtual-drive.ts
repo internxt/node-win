@@ -277,6 +277,10 @@ class VirtualDrive {
     addon.watchAndWait(path, this.getExtraCallbacks());
   }
 
+  watchAndWaitDetached(path: string, extraCallbacks: ExtraCallbacks): void {
+    addon.watchAndWait(path, extraCallbacks);
+  }
+
   createFileByPath(
     relativePath: string,
     itemId: string,
