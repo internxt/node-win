@@ -67,7 +67,8 @@ void setup_global_tsfn_fetch_data(napi_threadsafe_function tsfn)
     g_fetch_data_threadsafe_callback = tsfn;
 }
 
-napi_value create_response(napi_env env, bool finished, int progress) {
+napi_value create_response(napi_env env, bool finished, int progress)
+{
     napi_value result_object;
     napi_create_object(env, &result_object);
 
@@ -135,7 +136,7 @@ size_t file_incremental_reading(napi_env env, const std::string &filename, size_
 
             LARGE_INTEGER startingOffset, length;
 
-            startingOffset.QuadPart = dataSizeRead; 
+            startingOffset.QuadPart = dataSizeRead;
 
             LARGE_INTEGER chunkBufferSize;
             chunkBufferSize.QuadPart = min(datasizeAvailableUnread, CHUNK_SIZE);
@@ -174,7 +175,7 @@ size_t file_incremental_reading(napi_env env, const std::string &filename, size_
     }
     catch (...)
     {
-        Logger::getInstance().log("Error al leer el archivo.", LogLevel::ERROR);
+        Logger::getInstance().log("Error to read file.", LogLevel::ERROR);
         HRESULT hr = FileCopierWithProgress::TransferData(
             connectionKey,
             transferKey,
@@ -186,9 +187,8 @@ size_t file_incremental_reading(napi_env env, const std::string &filename, size_
 
     file.close();
     lastSize = newSize;
-    return dataSizeRead; 
+    return dataSizeRead;
 }
-
 
 napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info)
 {
@@ -256,14 +256,11 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
         return create_response(env, false, 0);
     }
 
-
     file.seekg(0, std::ios::end);
     LONG total_size = file.tellg();
     file.seekg(0, std::ios::beg);
 
-
     file.close();
-
 
     if (lastReadOffset == fileSize.QuadPart)
     {
