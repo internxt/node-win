@@ -100,8 +100,8 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
 
                 if (attrib & FILE_ATTRIBUTE_PINNED)
                 {
-                    DownloadMutexManager &mutexManager = DownloadMutexManager::getInstance();
-                    mutexManager.waitReady();
+                    // DownloadMutexManager &mutexManager = DownloadMutexManager::getInstance();
+                    // mutexManager.waitReady();
 
                     Logger::getInstance().log("Hydration file", LogLevel::INFO);
 
