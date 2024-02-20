@@ -1,9 +1,11 @@
 #include "stdafx.h"
 #include "SyncRootWatcher.h"
+#include "DownloadMutexManager.h"
 #include "DirectoryWatcher.h"
 #include "Callbacks.h"
 #include <windows.h>
 #include <Logger.h>
+#include <PlaceHolders.h>
 namespace winrt
 {
     using namespace winrt::Windows::Foundation;
@@ -98,9 +100,15 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
 
                 if (attrib & FILE_ATTRIBUTE_PINNED)
                 {
-                    Sleep(500);
+                    DownloadMutexManager &mutexManager = DownloadMutexManager::getInstance();
+                    mutexManager.waitReady();
                     Logger::getInstance().log("Hydrating file" + Logger::fromWStringToString(change.path), LogLevel::INFO);
                     CfHydratePlaceholder(placeholder.get(), offset, length, CF_HYDRATE_FLAG_NONE, NULL);
+
+                    // Sleep(250);
+                    std::wstring folder = change.path.substr(0, change.path.find_last_of(L"\\"));
+                    Logger::getInstance().log("Marking folder as in sync" + Logger::fromWStringToString(folder), LogLevel::INFO);
+                    Placeholders::UpdateSyncStatus(folder, true, true);
                 }
                 else if (attrib & FILE_ATTRIBUTE_UNPINNED)
                 {
