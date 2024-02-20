@@ -199,6 +199,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     if (argc < 2)
     {
         Logger::getInstance().log("This function must receive at least two arguments", LogLevel::ERROR);
+        load_finished = true;
         return create_response(env, true, 0);
     }
 
@@ -209,6 +210,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     if (valueType != napi_boolean)
     {
         Logger::getInstance().log("First argument should be boolean", LogLevel::ERROR);
+        load_finished = true;
         return create_response(env, true, 0);
     }
 
@@ -219,6 +221,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     if (valueType != napi_string)
     {
         Logger::getInstance().log("Second argument should be string", LogLevel::ERROR);
+        load_finished = true;
         return create_response(env, true, 0);
     }
 
@@ -238,6 +241,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
         if (callbackType != napi_function)
         {
             Logger::getInstance().log("Third argument should be a function", LogLevel::ERROR);
+            load_finished = true;
             return create_response(env, true, 0);
         }
     }
@@ -253,6 +257,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     if (!file)
     {
         Logger::getInstance().log("This file couldn't be opened in realtime.", LogLevel::ERROR);
+        load_finished = true;
         return create_response(env, true, 0);
     }
 
