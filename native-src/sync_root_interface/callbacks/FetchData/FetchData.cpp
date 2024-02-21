@@ -91,23 +91,29 @@ napi_value create_response(napi_env env, bool finished, float progress)
 
 std::string WStringToString(const std::wstring &wstr)
 {
-    if (wstr.empty())
-        return std::string();
+    try
+    {
+        if (wstr.empty())
+            return std::string();
 
-    // int sizeNeeded = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
-    // std::string strTo(sizeNeeded, 0);
-    // WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], sizeNeeded, NULL, NULL);
-    std::wstring_convert<std::codecvt<wchar_t, char, std::mbstate_t>> converter;
-    std::wstring filename = wstr;
-    std::string utf8_filename = converter.to_bytes(filename);
-    return utf8_filename;
+        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+        std::string utf8_str = converter.to_bytes(wstr);
+
+        return utf8_str;
+    }
+    catch (const std::exception &e)
+    {
+        Logger::getInstance().log("Error converting wstring to string: " + std::string(e.what()), LogLevel::ERROR);
+        return "";
+    }
 }
 
-size_t file_incremental_reading(napi_env env, const std::string &filename, size_t &dataSizeRead, bool final_step, float &progress, napi_value error_callback = nullptr)
+size_t file_incremental_reading(napi_env env, const std::wstring &filename, size_t &dataSizeRead, bool final_step, float &progress, napi_value error_callback = nullptr)
 {
     std::ifstream file;
 
     // Abre el archivo
+    // Logger::getInstance().log("filename: " + filename, LogLevel::DEBUG);
     printf("filename: %s\n", filename.c_str());
     file.open(filename, std::ios::in | std::ios::binary);
 
@@ -192,6 +198,7 @@ size_t file_incremental_reading(napi_env env, const std::string &filename, size_
 
 napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info)
 {
+    Logger::getInstance().log("response_callback_fn_fetch_data called", LogLevel::DEBUG);
     size_t argc = 3;
     napi_value argv[3];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
@@ -262,7 +269,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     std::wstring response_wstr(response_len, L'\0');
 
     napi_get_value_string_utf16(env, argv[1], (char16_t *)response_wstr.data(), response_len + 1, &response_len);
-
+    Logger::getInstance().log("response_wstr: " + Logger::fromWStringToString(response_wstr), LogLevel::DEBUG);
     if (argc == 3)
     {
         napi_valuetype callbackType;
@@ -278,7 +285,8 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     fullServerFilePath = response_wstr;
 
     float progress;
-    lastReadOffset = file_incremental_reading(env, WStringToString(fullServerFilePath), lastReadOffset, false, progress, argc == 3 ? argv[2] : nullptr);
+    Logger::getInstance().log("incremental reading", LogLevel::DEBUG);
+    lastReadOffset = file_incremental_reading(env, fullServerFilePath, lastReadOffset, false, progress, argc == 3 ? argv[2] : nullptr);
 
     std::wstring file_path = fullServerFilePath.c_str();
     std::ifstream file(file_path, std::ios::binary);
