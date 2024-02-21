@@ -6,7 +6,9 @@
 #include <windows.h>
 #include <Logger.h>
 #include <PlaceHolders.h>
+#include <filesystem>
 
+namespace fs = std::filesystem; 
 namespace winrt
 {
     using namespace winrt::Windows::Foundation;
@@ -138,7 +140,18 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
                 else if (attrib & FILE_ATTRIBUTE_UNPINNED)
                 {
                     Logger::getInstance().log("Dehydrating file" + Logger::fromWStringToString(change.path), LogLevel::INFO);
-                    CfDehydratePlaceholder(placeholder.get(), offset, length, CF_DEHYDRATE_FLAG_NONE, NULL);
+                    HRESULT hr = CfDehydratePlaceholder(placeholder.get(), offset, length, CF_DEHYDRATE_FLAG_NONE, NULL);
+                    
+                    if (FAILED(hr))
+                    {
+                        Logger::getInstance().log("Error dehydrating file " + Logger::fromWStringToString(change.path), LogLevel::ERROR);
+                    }
+                    else
+                    {
+                        Logger::getInstance().log("Dehydration finished " + Logger::fromWStringToString(change.path), LogLevel::INFO);
+                        Placeholders::UpdateSyncStatus(change.path, true, fs::is_directory(change.path));
+                        Placeholders::UpdatePinState(change.path, PinState::OnlineOnly);
+                    }
                 }
             }
 
