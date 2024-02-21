@@ -104,8 +104,9 @@ void deletePlaceholderInfo(CF_PLACEHOLDER_BASIC_INFO *info)
 
 DWORD convertSizeToDWORD(size_t &convertVar)
 {
-    if( convertVar > UINT_MAX ) {
-        //throw std::bad_cast();
+    if (convertVar > UINT_MAX)
+    {
+        // throw std::bad_cast();
         convertVar = UINT_MAX; // intentionally default to wrong value here to not crash: exception handling TBD
     }
     return static_cast<DWORD>(convertVar);
@@ -119,57 +120,62 @@ DWORD sizeToDWORD(size_t size)
 FileState DirectoryWatcher::getPlaceholderInfo(const std::wstring &directoryPath)
 {
 
-        constexpr auto fileIdMaxLength = 400;
-        const auto infoSize = sizeof(CF_PLACEHOLDER_BASIC_INFO) + fileIdMaxLength;
-        auto info = PlaceHolderInfo(reinterpret_cast<CF_PLACEHOLDER_BASIC_INFO *>(new char[infoSize]), deletePlaceholderInfo);
+    constexpr auto fileIdMaxLength = 400;
+    const auto infoSize = sizeof(CF_PLACEHOLDER_BASIC_INFO) + fileIdMaxLength;
+    auto info = PlaceHolderInfo(reinterpret_cast<CF_PLACEHOLDER_BASIC_INFO *>(new char[infoSize]), deletePlaceholderInfo);
 
-        FileState fileState;
-        auto fileHandle = handleForPath(directoryPath);
+    FileState fileState;
+    auto fileHandle = handleForPath(directoryPath);
 
-        if (!fileHandle) {
-            printf("Error: Invalid file handle.\n");
-            fileState.pinstate = PinState::Unspecified;
-            fileState.syncstate = SyncState::Undefined;
-            return fileState;
-        }
+    if (!fileHandle)
+    {
+        printf("Error: Invalid file handle.\n");
+        fileState.pinstate = PinState::Unspecified;
+        fileState.syncstate = SyncState::Undefined;
+        return fileState;
+    }
 
+    HRESULT result = CfGetPlaceholderInfo(fileHandle.get(), CF_PLACEHOLDER_INFO_BASIC, info.get(), sizeToDWORD(infoSize), nullptr);
 
-        HRESULT result = CfGetPlaceholderInfo(fileHandle.get(), CF_PLACEHOLDER_INFO_BASIC, info.get(), sizeToDWORD(infoSize), nullptr);
+    if (result != S_OK)
+    {
+        printf("CfGetPlaceholderInfo failed with HRESULT %lx\n", result);
+        fileState.pinstate = PinState::Unspecified;
+        fileState.syncstate = SyncState::Undefined;
+        return fileState;
+    }
 
-        if (result != S_OK) {
-            printf("CfGetPlaceholderInfo failed with HRESULT %lx\n", result);
-            fileState.pinstate = PinState::Unspecified;
-            fileState.syncstate = SyncState::Undefined;
-            return fileState;
-        }
-        
-        auto pinStateOpt = info.pinState();
-        auto syncStateOpt = info.syncState();
+    auto pinStateOpt = info.pinState();
+    auto syncStateOpt = info.syncState();
 
+    if (syncStateOpt.has_value())
+    {
 
-        if (syncStateOpt.has_value()) {
+        SyncState syncState = syncStateOpt.value();
 
-            SyncState syncState = syncStateOpt.value();
+        printf("placeholderInfo.SyncState: %s\n", syncStateToString(syncState).c_str());
+    }
+    else
+    {
+        printf("placeholderInfo.SyncState: No value\n");
+    }
 
-            printf("placeholderInfo.SyncState: %s\n", syncStateToString(syncState).c_str());
-        } else {
-            printf("placeholderInfo.SyncState: No value\n");
-        }
+    if (pinStateOpt.has_value())
+    {
 
+        PinState pinState = pinStateOpt.value();
 
-        if (pinStateOpt.has_value()) {
+        printf("placeholderInfo.PinState: %s\n", pinStateToString(pinState).c_str());
+    }
+    else
+    {
+        printf("placeholderInfo.PinState: No value\n");
+    }
 
-            PinState pinState = pinStateOpt.value();           
+    fileState.pinstate = pinStateOpt.value_or(PinState::Unspecified);
+    fileState.syncstate = syncStateOpt.value_or(SyncState::Undefined);
 
-            printf("placeholderInfo.PinState: %s\n", pinStateToString(pinState).c_str());
-        } else {
-            printf("placeholderInfo.PinState: No value\n");
-        }
-        
-        fileState.pinstate = pinStateOpt.value_or(PinState::Unspecified);
-        fileState.syncstate = syncStateOpt.value_or(SyncState::Undefined);    
-
-        return fileState; 
+    return fileState;
 }
 
 bool isFileValid(const std::wstring &fullPath, std::list<FileChange> &result, FileChange fc)
@@ -377,12 +383,25 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
                         if (!a_is_folder && b_is_folder)
                             return false;
                         return a.path < b.path; });
+        // ademas siempre por tamaño de primero los mas pesados
+        result.sort([](const FileChange &a, const FileChange &b)
+                    {
+                        std::uintmax_t a_size = 0;
+                        std::uintmax_t b_size = 0;
+                        if (a.type == NEW_FILE)
+                        {
+                            a_size = fs::file_size(a.path);
+                        }
+                        if (b.type == NEW_FILE)
+                        {
+                            b_size = fs::file_size(b.path);
+                        }
+                        return a_size > b_size; });
         // TODO: delete this, but it is used to Debug the results from watcher
-        // for (auto change : result)
-        //{
-        //    wprintf(L"[Log] change.path: %s\n", change.path.c_str());
-        //    wprintf(L"[Log] change.type: %d\n", change.type);
-        //}
+        // for (auto &change : result)
+        // {
+        //     Logger::getInstance().log("Change: " + Logger::fromWStringToString(change.path), LogLevel::INFO);
+        // }
         _callback(result, _env, _input);
     }
 }

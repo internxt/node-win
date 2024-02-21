@@ -200,6 +200,15 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     {
         Logger::getInstance().log("This function must receive at least two arguments", LogLevel::ERROR);
         load_finished = true;
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+
+            if (load_finished)
+            {
+                ready = true;
+                cv.notify_one();
+            }
+        }
         return create_response(env, true, 0);
     }
 
@@ -211,6 +220,16 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     {
         Logger::getInstance().log("First argument should be boolean", LogLevel::ERROR);
         load_finished = true;
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+
+            if (load_finished)
+            {
+                ready = true;
+                cv.notify_one();
+            }
+        }
+
         return create_response(env, true, 0);
     }
 
@@ -222,6 +241,16 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     {
         Logger::getInstance().log("Second argument should be string", LogLevel::ERROR);
         load_finished = true;
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+
+            if (load_finished)
+            {
+                ready = true;
+                cv.notify_one();
+            }
+        }
+
         return create_response(env, true, 0);
     }
 
@@ -256,9 +285,9 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 
     if (!file)
     {
-        Logger::getInstance().log("This file couldn't be opened in realtime.", LogLevel::ERROR);
-        load_finished = true;
-        return create_response(env, true, 0);
+        Logger::getInstance().log("This file couldn't be opened in realtime.", LogLevel::WARN);
+        // load_finished = true;
+        // return create_response(env, true, 0);
     }
 
     file.seekg(0, std::ios::end);
@@ -442,8 +471,8 @@ void CALLBACK fetch_data_callback_wrapper(
 
     Logger::getInstance().log("Hydration Completed\n", LogLevel::INFO);
 
-    DownloadMutexManager &mutexManager = DownloadMutexManager::getInstance();
-    mutexManager.setReady(true);
+    // DownloadMutexManager &mutexManager = DownloadMutexManager::getInstance();
+    // mutexManager.setReady(true);
 
     // std::lock_guard<std::mutex> lock(mtx);
     lastReadOffset = 0;

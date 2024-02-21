@@ -144,106 +144,107 @@ napi_value init(napi_env env, napi_value exports)
     napi_throw_error(env, nullptr, "Failed to define GetItemsSyncRoot function");
     return nullptr;
   }
-  
+
   napi_property_descriptor addLoggerPathDesc = {
-    "addLoggerPath",
-    nullptr,
-    addLoggerPathWrapper,
-    nullptr,
-    nullptr,
-    nullptr,
-    napi_default,
-    nullptr};
+      "addLoggerPath",
+      nullptr,
+      addLoggerPathWrapper,
+      nullptr,
+      nullptr,
+      nullptr,
+      napi_default,
+      nullptr};
 
   napi_status defineAddLoggerPathStatus = napi_define_properties(env, exports, 1, &addLoggerPathDesc);
-  if (defineAddLoggerPathStatus != napi_ok) {
-      napi_throw_error(env, nullptr, "Failed to define addLoggerPath function");
-      return nullptr;
+  if (defineAddLoggerPathStatus != napi_ok)
+  {
+    napi_throw_error(env, nullptr, "Failed to define addLoggerPath function");
+    return nullptr;
   }
 
   napi_property_descriptor updateSyncStatusDesc = {
-    "updateSyncStatus",
-    nullptr,
-    UpdateSyncStatusWrapper,
-    nullptr,
-    nullptr,
-    nullptr,
-    napi_default,
-    nullptr};
+      "updateSyncStatus",
+      nullptr,
+      UpdateSyncStatusWrapper,
+      nullptr,
+      nullptr,
+      nullptr,
+      napi_default,
+      nullptr};
 
   napi_status updateSyncStatusStatus = napi_define_properties(env, exports, 1, &updateSyncStatusDesc);
-  if (updateSyncStatusStatus != napi_ok) {
-      napi_throw_error(env, nullptr, "Failed to define updateSyncStatus function");
-      return nullptr;
+  if (updateSyncStatusStatus != napi_ok)
+  {
+    napi_throw_error(env, nullptr, "Failed to define updateSyncStatus function");
+    return nullptr;
   }
 
-    napi_property_descriptor getPlaceholderStateDesc = {
-    "getPlaceholderState",
-    nullptr,
-    GetPlaceholderStateWrapper,
-    nullptr,
-    nullptr,
-    nullptr,
-    napi_default,
-    nullptr
-    };
-
+  napi_property_descriptor getPlaceholderStateDesc = {
+      "getPlaceholderState",
+      nullptr,
+      GetPlaceholderStateWrapper,
+      nullptr,
+      nullptr,
+      nullptr,
+      napi_default,
+      nullptr};
 
   napi_status defineGetPlaceholderStateStatus = napi_define_properties(env, exports, 1, &getPlaceholderStateDesc);
-  if (defineGetPlaceholderStateStatus != napi_ok) {
-      napi_throw_error(env, nullptr, "Failed to define getPlaceholderState function");
-      return nullptr;
+  if (defineGetPlaceholderStateStatus != napi_ok)
+  {
+    napi_throw_error(env, nullptr, "Failed to define getPlaceholderState function");
+    return nullptr;
   }
 
   napi_property_descriptor getPlaceholderWithStatePendingDesc = {
-    "getPlaceholderWithStatePending",
-    nullptr,
-    GetPlaceholderWithStatePendingWrapper,
-    nullptr,
-    nullptr,
-    nullptr,
-    napi_default,
-    nullptr
-    };
+      "getPlaceholderWithStatePending",
+      nullptr,
+      GetPlaceholderWithStatePendingWrapper,
+      nullptr,
+      nullptr,
+      nullptr,
+      napi_default,
+      nullptr};
 
   napi_status defineGetPlaceholderWithStatePendingStatus = napi_define_properties(env, exports, 1, &getPlaceholderWithStatePendingDesc);
-  if (defineGetPlaceholderWithStatePendingStatus != napi_ok) {
-      napi_throw_error(env, nullptr, "Failed to define getPlaceholderWithStatePending function");
-      return nullptr;
+  if (defineGetPlaceholderWithStatePendingStatus != napi_ok)
+  {
+    napi_throw_error(env, nullptr, "Failed to define getPlaceholderWithStatePending function");
+    return nullptr;
   }
 
   napi_property_descriptor convertToPlaceholderDesc = {
-    "convertToPlaceholder",
-    nullptr,
-    ConvertToPlaceholderWrapper,
-    nullptr,
-    nullptr,
-    nullptr,
-    napi_default,
-    nullptr
-    };
+      "convertToPlaceholder",
+      nullptr,
+      ConvertToPlaceholderWrapper,
+      nullptr,
+      nullptr,
+      nullptr,
+      napi_default,
+      nullptr};
 
   napi_status convertToPlaceholderStatus = napi_define_properties(env, exports, 1, &convertToPlaceholderDesc);
-  if (convertToPlaceholderStatus != napi_ok) {
-      napi_throw_error(env, nullptr, "Failed to define convertToPlaceholder function");
-      return nullptr;
+  if (convertToPlaceholderStatus != napi_ok)
+  {
+    napi_throw_error(env, nullptr, "Failed to define convertToPlaceholder function");
+    return nullptr;
   }
 
   napi_property_descriptor closeMutexDesc = {
-    "closeMutex",
-    nullptr,
-    ConvertToPlaceholderWrapper,
-    nullptr,
-    nullptr,
-    nullptr,
-    napi_default,
-    nullptr
-    };
+      "closeMutex",
+      nullptr,
+      CloseMutexWrapper,
+      nullptr,
+      nullptr,
+      nullptr,
+      napi_default,
+      nullptr};
 
   napi_status closeMutexStatus = napi_define_properties(env, exports, 1, &closeMutexDesc);
-  if (closeMutexStatus != napi_ok) {
-      napi_throw_error(env, nullptr, "Failed to define closeMutex function");
-      return nullptr;
+  if (closeMutexStatus != napi_ok)
+  {
+    napi_throw_error(env, nullptr, "Failed to define closeMutex function");
+    return nullptr;
   }
 
   return exports;

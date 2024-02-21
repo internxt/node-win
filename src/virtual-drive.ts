@@ -445,8 +445,13 @@ class VirtualDrive {
   ): any {
     return addon.updateSyncStatus(itemPath, sync, isDirectory);
   }
+
   convertToPlaceholder(itemPath: string, id: string): boolean {
     return addon.convertToPlaceholder(itemPath, id);
+  }
+
+  closeDownloadMutex(): void {
+    return addon.closeMutex();
   }
 }
 

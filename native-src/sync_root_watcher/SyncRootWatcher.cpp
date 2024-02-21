@@ -87,6 +87,7 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
         }
         else
         {
+            // FileState fileState = DirectoryWatcher::getPlaceholderInfo(change.path);
             DWORD attrib = GetFileAttributesW(change.path.c_str());
             if (!(attrib & FILE_ATTRIBUTE_DIRECTORY) && !change.item_added)
             {
@@ -97,25 +98,38 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
                 LARGE_INTEGER length;
                 GetFileSizeEx(placeholder.get(), &length);
                 // length.QuadPart = MAXLONGLONG;
-
-                if (attrib & FILE_ATTRIBUTE_PINNED)
+                // bool isHydrated = fileState.pinstate == PinState::AlwaysLocal && fileState.syncstate == SyncState::InSync;
+                if (attrib & FILE_ATTRIBUTE_PINNED) // && !(isHydrated)
                 {
                     Logger::getInstance().log("Hydration file ", LogLevel::INFO);
 
+                    auto start = std::chrono::steady_clock::now();
+
                     HRESULT hr = CfHydratePlaceholder(placeholder.get(), offset, length, CF_HYDRATE_FLAG_NONE, NULL);
+
                     if (FAILED(hr))
                     {
                         Logger::getInstance().log("Error hydrating file " + Logger::fromWStringToString(change.path), LogLevel::ERROR);
                     }
 
-                    Logger::getInstance().log("Hydration finished " + Logger::fromWStringToString(change.path), LogLevel::INFO);
+                    auto end = std::chrono::steady_clock::now();
+                    auto elapsedMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
-                    Logger::getInstance().log("Mutex waiting for " + Logger::fromWStringToString(change.path), LogLevel::INFO);
-                    DownloadMutexManager &mutexManager = DownloadMutexManager::getInstance();
-                    mutexManager.waitReady();
-                    Logger::getInstance().log("Mutex ready for " + Logger::fromWStringToString(change.path), LogLevel::INFO);
-                    mutexManager.resetReady();
-                    Logger::getInstance().log("resetReady for " + Logger::fromWStringToString(change.path), LogLevel::INFO);
+                    if (elapsedMilliseconds < 200)
+                    {
+                        Logger::getInstance().log("Already Hydrated: " + std::to_string(elapsedMilliseconds) + " ms", LogLevel::WARN);
+                    }
+                    else
+                    {
+                        Logger::getInstance().log("Hydration finished " + Logger::fromWStringToString(change.path), LogLevel::INFO);
+                        Logger::getInstance()
+                            .log("Mutex waiting for " + Logger::fromWStringToString(change.path), LogLevel::INFO);
+                        DownloadMutexManager &mutexManager = DownloadMutexManager::getInstance();
+                        mutexManager.waitReady();
+                        Logger::getInstance().log("Mutex ready for " + Logger::fromWStringToString(change.path), LogLevel::INFO);
+                        mutexManager.resetReady();
+                        Logger::getInstance().log("resetReady for " + Logger::fromWStringToString(change.path), LogLevel::INFO);
+                    }
                     // Sleep(250);
                     // std::wstring folder = change.path.substr(0, change.path.find_last_of(L"\\"));
                     // Logger::getInstance().log("Marking folder as in sync" + Logger::fromWStringToString(folder), LogLevel::INFO);
