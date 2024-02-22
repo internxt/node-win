@@ -4,6 +4,7 @@
 #include <propvarutil.h>
 #include "Utilities.h"
 #include <ProcessTypes.h>
+#include <Logger.h>
 
 #define MSSEARCH_INDEX L"SystemIndex"
 DEFINE_PROPERTYKEY(PKEY_StorageProviderTransferProgress, 0xE77E90DF, 0x6271, 0x4F5B, 0x83, 0x4F, 0x2D, 0xD1, 0xF2, 0x45, 0xDD, 0xA4, 4);
@@ -89,6 +90,7 @@ void Utilities::AddFolderToSearchIndexer(_In_ PCWSTR folder)
 
 void Utilities::ApplyTransferStateToFile(_In_ PCWSTR fullPath, _In_ CF_CALLBACK_INFO &callbackInfo, UINT64 total, UINT64 completed)
 {
+    Logger::getInstance().log("ApplyTransferStateToFile", LogLevel::INFO);
     printf("ApplyTransferStateToFile\n");
     // Tell the Cloud File API about progress so that toasts can be displayed
 

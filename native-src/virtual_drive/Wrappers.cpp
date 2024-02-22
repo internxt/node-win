@@ -5,6 +5,7 @@
 #include "SyncRootWatcher.h"
 #include "Callbacks.h"
 #include "LoggerPath.h"
+#include "DownloadMutexManager.h"
 #include "DirectoryWatcher.h"
 
 napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
@@ -768,6 +769,18 @@ napi_value ConvertToPlaceholderWrapper(napi_env env, napi_callback_info args)
 
     napi_value result;
     napi_get_boolean(env, success, &result);
+
+    return result;
+}
+
+napi_value CloseMutexWrapper(napi_env env, napi_callback_info args)
+{
+    
+    DownloadMutexManager& mutexManager = DownloadMutexManager::getInstance();
+    mutexManager.setReady(true);
+
+    napi_value result;
+    napi_get_boolean(env, true, &result);
 
     return result;
 }

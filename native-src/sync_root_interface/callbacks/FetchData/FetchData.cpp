@@ -4,6 +4,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <FileCopierWithProgress.h>
+#include <DownloadMutexManager.h>
 #include <fstream>
 #include <vector>
 #include <utility> // para std::pai
@@ -16,12 +17,16 @@
 #include <codecvt>
 #include <filesystem>
 #include <Placeholders.h>
+#include <Logger.h>
 
 napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
 inline std::mutex mtx;
+inline std::mutex mtx_download;
 inline std::condition_variable cv;
+inline std::condition_variable cv_download;
 inline bool ready = false;
+inline bool ready_download = false;
 inline bool callbackResult = false;
 inline std::wstring fullServerFilePath;
 
@@ -62,31 +67,59 @@ void setup_global_tsfn_fetch_data(napi_threadsafe_function tsfn)
     g_fetch_data_threadsafe_callback = tsfn;
 }
 
-std::string WStringToString(const std::wstring &wstr)
+napi_value create_response(napi_env env, bool finished, float progress)
 {
-    if (wstr.empty())
-        return std::string();
+    napi_value result_object;
+    napi_create_object(env, &result_object);
 
-    // int sizeNeeded = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
-    // std::string strTo(sizeNeeded, 0);
-    // WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], sizeNeeded, NULL, NULL);
-    std::wstring_convert<std::codecvt<wchar_t, char, std::mbstate_t>> converter;
-    std::wstring filename = wstr;
-    std::string utf8_filename = converter.to_bytes(filename);
-    return utf8_filename;
+    napi_value finished_value;
+    napi_get_boolean(env, finished, &finished_value);
+    napi_set_named_property(env, result_object, "finished", finished_value);
+
+    napi_value progress_value;
+    napi_create_double(env, progress, &progress_value);
+    napi_set_named_property(env, result_object, "progress", progress_value);
+
+    napi_value promise;
+    napi_deferred deferred;
+    napi_create_promise(env, &deferred, &promise);
+
+    napi_resolve_deferred(env, deferred, result_object);
+
+    return promise;
 }
 
-size_t file_incremental_reading(napi_env env, const std::string &filename, size_t &dataSizeRead, bool final_step, float &progress, napi_value error_callback = nullptr)
+std::string WStringToString(const std::wstring &wstr)
+{
+    try
+    {
+        if (wstr.empty())
+            return std::string();
+
+        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+        std::string utf8_str = converter.to_bytes(wstr);
+
+        return utf8_str;
+    }
+    catch (const std::exception &e)
+    {
+        Logger::getInstance().log("Error converting wstring to string: " + std::string(e.what()), LogLevel::ERROR);
+        return "";
+    }
+}
+
+size_t file_incremental_reading(napi_env env, const std::wstring &filename, size_t &dataSizeRead, bool final_step, float &progress, napi_value error_callback = nullptr)
 {
     std::ifstream file;
 
     // Abre el archivo
+    // Logger::getInstance().log("filename: " + filename, LogLevel::DEBUG);
     printf("filename: %s\n", filename.c_str());
     file.open(filename, std::ios::in | std::ios::binary);
 
     if (!file.is_open())
     {
-        std::cerr << "Error al abrir el archivo." << std::endl;
+        Logger::getInstance().log("Error al abrir el archivo.", LogLevel::ERROR);
         return dataSizeRead; // Retorna el dataSizeRead sin cambios
     }
 
@@ -106,15 +139,10 @@ size_t file_incremental_reading(napi_env env, const std::string &filename, size_
             std::vector<char> buffer(CHUNK_SIZE);
             file.seekg(dataSizeRead);
             file.read(buffer.data(), CHUNK_SIZE);
-            // std::cout.write(buffer.data(), datasizeAvailableUnread);
 
             LARGE_INTEGER startingOffset, length;
 
-            startingOffset.QuadPart = dataSizeRead; // Desplazamiento desde el cual se leyeron los datos
-
-            // printf("connectionKey: %d\n", connectionKey);
-            // printf("transferKey: %d\n", transferKey);
-            // printf("startingOffset: %d\n", startingOffset.QuadPart);
+            startingOffset.QuadPart = dataSizeRead;
 
             LARGE_INTEGER chunkBufferSize;
             chunkBufferSize.QuadPart = min(datasizeAvailableUnread, CHUNK_SIZE);
@@ -141,12 +169,6 @@ size_t file_incremental_reading(napi_env env, const std::string &filename, size_
                     requiredOffset,
                     requiredLength,
                     STATUS_UNSUCCESSFUL);
-                // Sleep(CHUNKDELAYMS);
-                // if (error_callback != nullptr) {
-                //     napi_value result;
-                //     napi_value undefined_val;
-                //     napi_call_function(env, undefined_val, error_callback, 0, nullptr, &result);
-                // }
             }
             else
             {
@@ -159,6 +181,7 @@ size_t file_incremental_reading(napi_env env, const std::string &filename, size_
     }
     catch (...)
     {
+        Logger::getInstance().log("Error to read file.", LogLevel::ERROR);
         HRESULT hr = FileCopierWithProgress::TransferData(
             connectionKey,
             transferKey,
@@ -170,21 +193,30 @@ size_t file_incremental_reading(napi_env env, const std::string &filename, size_
 
     file.close();
     lastSize = newSize;
-    return dataSizeRead; // Retorna el nuevo dataSizeRead
+    return dataSizeRead;
 }
 
-// response callback fn
 napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info)
 {
+    Logger::getInstance().log("response_callback_fn_fetch_data called", LogLevel::DEBUG);
     size_t argc = 3;
     napi_value argv[3];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
 
     if (argc < 2)
     {
-        // Manejar error
-        wprintf(L"This function must receive at least two arguments");
-        return nullptr;
+        Logger::getInstance().log("This function must receive at least two arguments", LogLevel::ERROR);
+        load_finished = true;
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+
+            if (load_finished)
+            {
+                ready = true;
+                cv.notify_one();
+            }
+        }
+        return create_response(env, true, 0);
     }
 
     napi_valuetype valueType;
@@ -193,38 +225,42 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     napi_typeof(env, argv[0], &valueType);
     if (valueType != napi_boolean)
     {
-        wprintf(L"First argument should be boolean\n");
-        return nullptr;
+        Logger::getInstance().log("First argument should be boolean", LogLevel::ERROR);
+        load_finished = true;
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+
+            if (load_finished)
+            {
+                ready = true;
+                cv.notify_one();
+            }
+        }
+
+        return create_response(env, true, 0);
     }
 
     bool response;
     napi_get_value_bool(env, argv[0], &response);
 
-    // Verificar el segundo argumento: debería ser una cadenai
     napi_typeof(env, argv[1], &valueType);
     if (valueType != napi_string)
     {
-        // napi_value failed_result_bool;
-        // napi_get_boolean(env, true, &failed_result_bool);
+        Logger::getInstance().log("Second argument should be string", LogLevel::ERROR);
+        load_finished = true;
+        {
+            std::lock_guard<std::mutex> lock(mtx);
 
-        // napi_value failed_progress_value;
-        // napi_create_double(env, 0, &failed_progress_value);
+            if (load_finished)
+            {
+                ready = true;
+                cv.notify_one();
+            }
+        }
 
-        // wprintf(L"Second argument should be string\n");
-        // napi_value failed_result_object;
-        // napi_create_object(env, &failed_result_object);
-
-        // napi_set_named_property(env, failed_result_object, "finished", failed_result_bool);
-        // napi_set_named_property(env, failed_result_object, "progress", failed_progress_value);
-
-        // return failed_result_bool;
-
-        wprintf(L"Second argument should be string\n");
-        return nullptr;
+        return create_response(env, true, 0);
     }
 
-    // std::lock_guard<std::mutex> lock(mtx);
-    // ready = true;
     callbackResult = response;
 
     size_t response_len;
@@ -233,51 +269,49 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     std::wstring response_wstr(response_len, L'\0');
 
     napi_get_value_string_utf16(env, argv[1], (char16_t *)response_wstr.data(), response_len + 1, &response_len);
-
+    Logger::getInstance().log("response_wstr: " + Logger::fromWStringToString(response_wstr), LogLevel::DEBUG);
     if (argc == 3)
     {
         napi_valuetype callbackType;
         napi_typeof(env, argv[2], &callbackType);
         if (callbackType != napi_function)
         {
-            wprintf(L"Third argument should be a function\n");
-            return nullptr;
+            Logger::getInstance().log("Third argument should be a function", LogLevel::ERROR);
+            load_finished = true;
+            return create_response(env, true, 0);
         }
     }
-
-    // wprintf(L"input path: %s .\n", response_wstr.c_str());
 
     fullServerFilePath = response_wstr;
 
     float progress;
-    lastReadOffset = file_incremental_reading(env, WStringToString(fullServerFilePath), lastReadOffset, false, progress, argc == 3 ? argv[2] : nullptr);
+    Logger::getInstance().log("incremental reading", LogLevel::DEBUG);
+    lastReadOffset = file_incremental_reading(env, fullServerFilePath, lastReadOffset, false, progress, argc == 3 ? argv[2] : nullptr);
 
-    // size file in real time
     std::wstring file_path = fullServerFilePath.c_str();
     std::ifstream file(file_path, std::ios::binary);
 
     if (!file)
     {
-        wprintf(L"[Error] This file couldn't be opened in realtime.\n");
+        Logger::getInstance().log("This file couldn't be opened in realtime.", LogLevel::WARN);
+        // load_finished = true;
+        // return create_response(env, true, 0);
     }
 
-    // Obtener el tamaño del archivo
     file.seekg(0, std::ios::end);
     LONG total_size = file.tellg();
     file.seekg(0, std::ios::beg);
 
-    // Imprimir el tamaño del archivo
-    // wprintf(L"[Debug] El tamaño del archivo es: %lld bytes.\n", total_size);
-
-    // Cerrar el archivo
     file.close();
-    // end size file in real time
 
-    // tamaño_archivo != fileSize.QuadPart
+    Logger::getInstance().log("Total size: " + std::to_string(total_size), LogLevel::DEBUG);
+    Logger::getInstance().log("Last read offset: " + std::to_string(lastReadOffset), LogLevel::DEBUG);
+
+    Logger::getInstance().log("fileSize: " + std::to_string(fileSize.QuadPart), LogLevel::DEBUG);
 
     if (lastReadOffset == fileSize.QuadPart)
     {
-        printf("[Debug] File has been fully read.\n");
+        Logger::getInstance().log("File has been fully read.", LogLevel::DEBUG);
         lastReadOffset = 0;
         load_finished = true;
         Utilities::ApplyTransferStateToFile(g_full_client_path.c_str(), g_callback_info, fileSize.QuadPart, fileSize.QuadPart);
@@ -285,10 +319,33 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
         Placeholders::UpdatePinState(g_full_client_path.c_str(), PinState::AlwaysLocal);
     };
 
+    napi_value resultBool;
+    napi_get_boolean(env, load_finished, &resultBool);
+
+    napi_value progress_value;
+    napi_create_double(env, progress, &progress_value);
+
+    Logger::getInstance().log("fetch data result: " + std::to_string(load_finished) + " " + std::to_string(progress) + " " + Logger::fromWStringToString(fullServerFilePath), LogLevel::DEBUG);
+
+    // napi_value result_object;
+    // napi_create_object(env, &result_object);
+
+    // napi_set_named_property(env, result_object, "finished", resultBool);
+    // napi_set_named_property(env, result_object, "progress", progress_value);
+
+    // if (load_finished)
+    // {
+    //     load_finished = false;
+    // };
+
+    // napi_value promise;
+    // napi_deferred deferred;
+    // napi_create_promise(env, &deferred, &promise);
+
+    // napi_resolve_deferred(env, deferred, result_object);
     {
         std::lock_guard<std::mutex> lock(mtx);
 
-        // Si load_data() ha sido ejecutado 10 veces
         if (load_finished)
         {
             ready = true;
@@ -296,32 +353,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
         }
     }
 
-    napi_value resultBool;
-    napi_get_boolean(env, load_finished, &resultBool);
-
-    napi_value progress_value;
-    napi_create_double(env, progress, &progress_value);
-
-    printf("fetch data result: %d\n", load_finished);
-
-    napi_value result_object;
-    napi_create_object(env, &result_object);
-
-    napi_set_named_property(env, result_object, "finished", resultBool);
-    napi_set_named_property(env, result_object, "progress", progress_value);
-
-    if (load_finished)
-    {
-        load_finished = false;
-    };
-
-    napi_value promise;
-    napi_deferred deferred;
-    napi_create_promise(env, &deferred, &promise);
-
-    napi_resolve_deferred(env, deferred, result_object);
-
-    return promise;
+    return create_response(env, load_finished, progress);
 }
 
 void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
@@ -342,7 +374,7 @@ void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context,
     status = napi_get_undefined(env, &undefined);
     if (status != napi_ok)
     {
-        fprintf(stderr, "Failed to get undefined value.\n");
+        Logger::getInstance().log("Failed to get undefined value.\n", LogLevel::ERROR);
         return;
     }
 
@@ -357,7 +389,7 @@ void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context,
     status = napi_call_function(env, undefined, js_callback, 2, args_to_js_callback, &result);
     if (status != napi_ok)
     {
-        fprintf(stderr, "Failed to call JS function.\n");
+        Logger::getInstance().log("Failed to call JS function.", LogLevel::ERROR);
         return;
     }
 
@@ -390,7 +422,7 @@ void register_threadsafe_fetch_data_callback(const std::string &resource_name, n
 
     if (status != napi_ok)
     {
-        fprintf(stderr, "Failed to create threadsafe function.\n");
+        Logger::getInstance().log("Failed to create threadsafe function.\n", LogLevel::ERROR);
         return;
     }
     setup_global_tsfn_fetch_data(tsfn_fetch_data);
@@ -412,7 +444,7 @@ void CALLBACK fetch_data_callback_wrapper(
 
     g_full_client_path = fullClientPath;
 
-    wprintf(L"Full path: %s\n", fullClientPath.c_str());
+    Logger::getInstance().log("Full download path: " + Logger::fromWStringToString(fullClientPath), LogLevel::INFO);
 
     LPCVOID fileIdentity = callbackInfo->FileIdentity;
     DWORD fileIdentityLength = callbackInfo->FileIdentityLength;
@@ -433,20 +465,25 @@ void CALLBACK fetch_data_callback_wrapper(
 
     if (status != napi_ok)
     {
-        wprintf(L"Callback called unsuccessfully.\n");
+        Logger::getInstance().log("Callback called unsuccessfully.\n", LogLevel::ERROR);
     };
 
     {
         std::unique_lock<std::mutex> lock(mtx);
+        Logger::getInstance().log("Mutex await call.\n", LogLevel::DEBUG);
         while (!ready)
         {
             cv.wait(lock);
         }
     }
 
-    wprintf(L"Hydration Completed\n");
+    Logger::getInstance().log("Hydration Completed\n", LogLevel::INFO);
+
+    // DownloadMutexManager &mutexManager = DownloadMutexManager::getInstance();
+    // mutexManager.setReady(true);
 
     // std::lock_guard<std::mutex> lock(mtx);
     lastReadOffset = 0;
+    load_finished = false;
     ready = false; // Reset ready
 }

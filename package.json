@@ -16,7 +16,7 @@
         "start:example:register": "node ./dist/examples/register.js",
         "start:example:get-state": "node ./dist/examples/get-state.js",
         "start:example:unregister": "node ./dist/examples/unregister.js",
-        "example:disconnect": "node ./dist/examples/disconnect.js"
+        "start:example:disconnect": "node ./dist/examples/disconnect.js"
     },
     "author": "",
     "license": "ISC",
