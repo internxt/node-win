@@ -9,6 +9,8 @@
 #include <fstream>
 #include <random>
 #include <iostream>
+#include <windows.h>
+#include <cfapi.h>
 
 using namespace std;
 
@@ -413,4 +415,58 @@ HRESULT Placeholders::UpdatePinState(const std::wstring &path, const PinState st
     const auto cfState = pinStateToCfPinState(state);
     HRESULT result = CfSetPinState(handleForPath(path).get(), cfState, CF_SET_PIN_FLAG_NONE, nullptr);
     return result;
+}
+
+IconStatus Placeholders::GetIcon(const std::wstring& path) {
+    constexpr auto fileIdMaxLength = 400;
+    const auto infoSize = sizeof(CF_PLACEHOLDER_BASIC_INFO) + fileIdMaxLength;
+    auto info = std::unique_ptr<CF_PLACEHOLDER_BASIC_INFO, void(*)(CF_PLACEHOLDER_BASIC_INFO*)>(
+        reinterpret_cast<CF_PLACEHOLDER_BASIC_INFO*>(new char[infoSize]),
+        [](CF_PLACEHOLDER_BASIC_INFO* ptr) { delete[] reinterpret_cast<char*>(ptr); }
+    );
+
+    auto fileHandle = handleForPath(path);
+    if (!fileHandle) {
+        std::wcerr << L"Error: Invalid file handle." << std::endl;
+        return IconStatus::None;
+    }
+
+    HRESULT result = CfGetPlaceholderInfo(fileHandle.get(), CF_PLACEHOLDER_INFO_BASIC, info.get(), sizeToDWORD(infoSize), nullptr);
+    if (result != S_OK) {
+        std::wcerr << L"CfGetPlaceholderInfo failed with HRESULT " << std::hex << result << std::endl;
+            return IconStatus::None;
+    }
+
+    // Aquí asumimos que 'info' tiene los métodos 'pinState' y 'syncState' que devuelven un std::optional con los estados.
+    auto pinStateOpt = info->PinState;
+    auto syncStateOpt = info->InSyncState;
+
+    if (syncStateOpt) {
+        std::wcout << L"placeholderInfo.SyncState: " << syncStateOpt << std::endl;
+    } else {
+        std::wcout << L"placeholderInfo.SyncState: No value" << std::endl;
+    }
+
+    if (pinStateOpt.has_value()) {
+        std::wcout << L"placeholderInfo.PinState: " << pinStateToString(pinStateOpt.value()) << std::endl;
+    } else {
+        std::wcout << L"placeholderInfo.PinState: No value" << std::endl;
+    }
+
+    // Determinar el tipo de icono basado en los estados.
+    if (pinStateOpt == CF_PIN_STATE_PINNED && syncStateOpt == CF_SYNC_STATE_IN_SYNC) {
+        return IconStatus::FullPinned;
+    } else if (syncStateOpt == CF_SYNC_STATE_OUT_OF_SYNC) {
+        return IconStatus::SyncPending;
+    } else if (syncStateOpt == CF_SYNC_STATE_IN_SYNC) {
+        return IconStatus::InCloud;
+    }
+
+    // Devuelve un icono por defecto si no hay coincidencia
+    return IconStatus::None;
+}
+
+// Función auxiliar para convertir el tamaño a DWORD.
+DWORD sizeToDWORD(size_t size) {
+    return static_cast<DWORD>(size);
 }

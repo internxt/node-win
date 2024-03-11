@@ -84,6 +84,9 @@ class VirtualDrive {
   getPlaceholderState(path: string): any {
     return addon.getPlaceholderState(this.syncRootPath + path);
   }
+  getPlaceholderIcon(path: string): any {
+    return addon.getIcon(this.syncRootPath + path);
+  }
 
   getPlaceholderWithStatePending(): any {
     return addon.getPlaceholderWithStatePending(this.syncRootPath);

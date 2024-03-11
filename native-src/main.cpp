@@ -247,6 +247,23 @@ napi_value init(napi_env env, napi_value exports)
     return nullptr;
   }
 
+    napi_property_descriptor GetIconDesc = {
+      "getIcon",
+      nullptr,
+      GetIconWrapper,
+      nullptr,
+      nullptr,
+      nullptr,
+      napi_default,
+      nullptr};
+
+  napi_status getIconStatus = napi_define_properties(env, exports, 1, &GetIconDesc);
+  if (getIconStatus != napi_ok)
+  {
+    napi_throw_error(env, nullptr, "Failed to define closeMutex function");
+    return nullptr;
+  }
+
   return exports;
 }
 NAPI_MODULE(NODE_GYP_MODULE_NAME, init)

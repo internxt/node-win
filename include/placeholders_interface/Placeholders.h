@@ -3,6 +3,14 @@
 #include <string>
 #include <PlaceholderInfo.h>
 
+enum class IconStatus {
+    InCloud,
+    SyncPending,
+    FullPinned,
+    None,
+};
+
+
 class Placeholders
 {
 public:
@@ -35,4 +43,5 @@ public:
     static std::vector<std::wstring> GetPlaceholderWithStatePending(const std::wstring& filePath);
     static bool IsFileValidForSync(const std::wstring& filePath);
     static bool ConvertToPlaceholder(const std::wstring& fullPath, const std::wstring& serverIdentity);
+    static IconStatus GetIcon(const std::wstring &path);
 };

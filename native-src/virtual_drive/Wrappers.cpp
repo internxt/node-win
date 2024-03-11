@@ -784,3 +784,39 @@ napi_value CloseMutexWrapper(napi_env env, napi_callback_info args)
 
     return result;
 }
+
+napi_value GetIconWrapper(napi_env env, napi_callback_info args) {
+    size_t argc = 1;
+    napi_value argv[1];
+    wchar_t* path = nullptr;
+    size_t strLength = 0;
+    napi_value result;
+
+    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
+
+    if (argc < 1) {
+        napi_throw_error(env, nullptr, "Path argument is missing.");
+        return nullptr;
+    }
+
+    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &strLength);
+    path = new wchar_t[strLength + 1];
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t*>(path), strLength + 1, &strLength);
+
+    // Obtiene el icono utilizando la clase Placeholders y el método GetIcon.
+    HICON iconHandle = Placeholders::GetIcon(std::wstring(path));
+    delete[] path; // No olvides liberar la memoria del path.
+
+    // Ahora convertimos el HICON a un identificador único o nombre clave.
+    if (iconHandle) {
+        // Por ejemplo, podrías utilizar el valor numérico del HICON como identificador único.
+        // Sin embargo, recuerda que el HICON no tendrá sentido en el lado de JavaScript,
+        // ya que es simplemente un número que representa un recurso en el lado de C++.
+        napi_create_int64(env, reinterpret_cast<int64_t>(iconHandle), &result);
+        DestroyIcon(iconHandle); // Libera el icono después de obtener su identificador.
+    } else {
+        napi_get_undefined(env, &result);
+    }
+
+    return result;
+}
