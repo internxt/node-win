@@ -7,6 +7,7 @@
 #include "LoggerPath.h"
 #include "DownloadMutexManager.h"
 #include "DirectoryWatcher.h"
+#include <Logger.h>
 
 napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
 {
@@ -557,7 +558,7 @@ napi_value DisconnectSyncRootWrapper(napi_env env, napi_callback_info args)
 
 napi_value GetItemsSyncRootWrapper(napi_env env, napi_callback_info args)
 {
-    // wprintf(L"[Debug] GetItemsSyncRootWrapper\n");
+    Logger::getInstance().log("GetItemsSyncRootWrapper", LogLevel::INFO);
     size_t argc = 1;
     napi_value argv[1];
 
@@ -599,12 +600,14 @@ napi_value GetItemsSyncRootWrapper(napi_env env, napi_callback_info args)
     return jsFileIdentities;
 }
 
-napi_value addLoggerPathWrapper(napi_env env, napi_callback_info args) {
+napi_value addLoggerPathWrapper(napi_env env, napi_callback_info args)
+{
     size_t argc = 1;
     napi_value argv[1];
 
     napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
-    if (argc < 1) {
+    if (argc < 1)
+    {
         napi_throw_error(env, nullptr, "The path is required for addLoggerPath");
         return nullptr;
     }
@@ -617,7 +620,7 @@ napi_value addLoggerPathWrapper(napi_env env, napi_callback_info args) {
     std::unique_ptr<wchar_t[]> widePath(new wchar_t[pathLength + 1]);
 
     // Obtener la cadena UTF-16.
-    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t*>(widePath.get()), pathLength + 1, nullptr);
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(widePath.get()), pathLength + 1, nullptr);
 
     // Obtener la longitud necesaria para la cadena UTF-8.
     int utf8Length = WideCharToMultiByte(CP_UTF8, 0, widePath.get(), -1, nullptr, 0, nullptr, nullptr);
@@ -637,12 +640,14 @@ napi_value addLoggerPathWrapper(napi_env env, napi_callback_info args) {
     return result;
 }
 
-napi_value UpdateSyncStatusWrapper(napi_env env, napi_callback_info args) {
+napi_value UpdateSyncStatusWrapper(napi_env env, napi_callback_info args)
+{
     size_t argc = 3;
     napi_value argv[3];
 
     napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
-    if (argc < 3) {
+    if (argc < 3)
+    {
         napi_throw_error(env, nullptr, "Three arguments are required for UpdateSyncStatus");
         return nullptr;
     }
@@ -651,7 +656,7 @@ napi_value UpdateSyncStatusWrapper(napi_env env, napi_callback_info args) {
     napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
 
     std::unique_ptr<wchar_t[]> widePath(new wchar_t[pathLength + 1]);
-    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t*>(widePath.get()), pathLength + 1, nullptr);
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(widePath.get()), pathLength + 1, nullptr);
 
     bool inputSyncState;
     napi_get_value_bool(env, argv[1], &inputSyncState);
@@ -763,9 +768,8 @@ napi_value ConvertToPlaceholderWrapper(napi_env env, napi_callback_info args)
     napi_get_value_string_utf16(env, argv[1], widePlaceholderId.get(), placeholderIdLength + 1, nullptr);
 
     bool success = Placeholders::ConvertToPlaceholder(
-        reinterpret_cast<wchar_t*>(widePath.get()),
-        reinterpret_cast<wchar_t*>(widePlaceholderId.get())
-    );
+        reinterpret_cast<wchar_t *>(widePath.get()),
+        reinterpret_cast<wchar_t *>(widePlaceholderId.get()));
 
     napi_value result;
     napi_get_boolean(env, success, &result);
@@ -775,8 +779,8 @@ napi_value ConvertToPlaceholderWrapper(napi_env env, napi_callback_info args)
 
 napi_value CloseMutexWrapper(napi_env env, napi_callback_info args)
 {
-    
-    DownloadMutexManager& mutexManager = DownloadMutexManager::getInstance();
+
+    DownloadMutexManager &mutexManager = DownloadMutexManager::getInstance();
     mutexManager.setReady(true);
 
     napi_value result;
