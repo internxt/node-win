@@ -558,7 +558,8 @@ napi_value DisconnectSyncRootWrapper(napi_env env, napi_callback_info args)
 
 napi_value GetItemsSyncRootWrapper(napi_env env, napi_callback_info args)
 {
-    Logger::getInstance().log("GetItemsSyncRootWrapper", LogLevel::INFO);
+    printf("GetItemsSyncRootWrapper\n");
+    // Logger::getInstance().log("GetItemsSyncRootWrapper", LogLevel::INFO);
     size_t argc = 1;
     napi_value argv[1];
 
@@ -576,27 +577,29 @@ napi_value GetItemsSyncRootWrapper(napi_env env, napi_callback_info args)
     syncRootPath = new WCHAR[pathLength + 1];
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(syncRootPath)), pathLength + 1, nullptr);
 
-    std::vector<std::wstring> getFileIdentities;
-    HRESULT result = SyncRoot::GetItemsSyncRoot(syncRootPath, getFileIdentities);
+    std::list<std::wstring> fileIdentities = SyncRoot::GetItemsSyncRoot(syncRootPath);
+    printf("fileIdentities got\n");
+    printf("[Count] GetItemsSyncRootWrapper: %d\n", fileIdentities.size());
 
-    if (FAILED(result))
-    {
-        napi_throw_error(env, nullptr, "GetItemsSyncRoot failed");
-        return nullptr;
-    }
-    // wprintf(L"[Debug] Finish GetItemsSyncRootWrapper\n");
-    // Convert the vector to a JavaScript array of strings
-    napi_value jsFileIdentities;
+    napi_value jsFileIdentities = nullptr;
     napi_create_array(env, &jsFileIdentities);
-    for (size_t i = 0; i < getFileIdentities.size(); i++)
+    size_t index = 0;
+    for (const auto &fileIdentity : fileIdentities)
     {
+        // Convertir wstring a string UTF-16 (char16_t)
+        std::u16string utf16Str;
+        for (const auto &c : fileIdentity)
+        {
+            utf16Str.push_back(static_cast<char16_t>(c));
+        }
+        // Crear una cadena de JavaScript y agregarla al array
         napi_value jsFileIdentity;
-        napi_create_string_utf16(env, reinterpret_cast<const char16_t *>(getFileIdentities[i].c_str()), getFileIdentities[i].length(), &jsFileIdentity);
-        napi_set_element(env, jsFileIdentities, i, jsFileIdentity);
+        napi_create_string_utf16(env, utf16Str.data(), utf16Str.length(), &jsFileIdentity);
+        napi_set_element(env, jsFileIdentities, index++, jsFileIdentity);
     }
-    // Sleep(250);
-    // Delete the syncRootPath buffer
-    delete[] syncRootPath;
+
+    printf("GetItemsSyncRootWrapper completed\n");
+
     return jsFileIdentities;
 }
 

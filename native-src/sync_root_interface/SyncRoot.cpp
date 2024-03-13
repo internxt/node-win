@@ -161,61 +161,121 @@ struct FileIdentityInfo
     size_t FileIdentityLength;
 };
 
-std::vector<std::wstring> fileIdentities; // Vector para almacenar FileIdentity como strings
-
-void EnumerateAndQueryPlaceholders(const std::wstring &directoryPath)
+DWORD convertSizeToDWORDs(size_t &convertVar)
 {
+    if (convertVar > UINT_MAX)
+    {
+        // throw std::bad_cast();
+        convertVar = UINT_MAX; // intentionally default to wrong value here to not crash: exception handling TBD
+    }
+    return static_cast<DWORD>(convertVar);
+}
 
+DWORD sizeToDWORDs(size_t size)
+{
+    return convertSizeToDWORDs(size);
+}
+void deletePlaceholderInfos(CF_PLACEHOLDER_BASIC_INFO *info)
+{
+    auto byte = reinterpret_cast<char *>(info);
+    delete[] byte;
+}
+
+void EnumerateAndQueryPlaceholders(const std::wstring &directoryPath, std::list<std::wstring> &fileIds)
+{
+    int count = 0;
+    // iterator
     for (const auto &entry : std::filesystem::directory_iterator(directoryPath))
     {
-        HANDLE hFile = CreateFileW(
-            entry.path().c_str(),
-            FILE_READ_ATTRIBUTES,
-            FILE_SHARE_READ | FILE_SHARE_WRITE,
-            nullptr,
-            OPEN_EXISTING,
-            FILE_FLAG_BACKUP_SEMANTICS | FILE_ATTRIBUTE_NORMAL,
-            nullptr);
-        if (hFile != INVALID_HANDLE_VALUE)
+        printf("Entry: %ls\n", entry.path().c_str());
+        // bool isDirectory = entry.is_directory();
+        try
         {
-            int size = sizeof(CF_PLACEHOLDER_STANDARD_INFO) + 300;
-            CF_PLACEHOLDER_STANDARD_INFO PlaceholderInfo;
-            DWORD returnlength(0);
-            HRESULT hr = CfGetPlaceholderInfo(hFile, CF_PLACEHOLDER_INFO_STANDARD, &PlaceholderInfo, size, &returnlength);
-            if (SUCCEEDED(hr))
+            constexpr auto fileIdMaxLength = 1000;
+            const auto infoSize = sizeof(CF_PLACEHOLDER_BASIC_INFO) + fileIdMaxLength;
+            auto info = PlaceHolderInfo(reinterpret_cast<CF_PLACEHOLDER_BASIC_INFO *>(new char[infoSize]), deletePlaceholderInfos);
+            auto fileHandle = handleForPath(directoryPath);
+            // HRESULT result = CfGetPlaceholderInfo(fileHandle.get(), CF_PLACEHOLDER_INFO_BASIC, info.get(), sizeToDWORD(infoSize), nullptr);
+            // HANDLE hFile = CreateFileW(
+            //     entry.path().c_str(),
+            //     FILE_READ_ATTRIBUTES,
+            //     FILE_SHARE_READ,
+            //     nullptr,
+            //     OPEN_EXISTING,
+            //     isDirectory ? FILE_FLAG_BACKUP_SEMANTICS : FILE_ATTRIBUTE_NORMAL,
+            //     nullptr);
+            if (fileHandle)
             {
-                LARGE_INTEGER FileId = PlaceholderInfo.FileId;
-                BYTE *FileIdentity = PlaceholderInfo.FileIdentity;
-                // Convertir FileIdentity a una cadena wstring
-                size_t identityLength = PlaceholderInfo.FileIdentityLength / sizeof(wchar_t);
-                std::wstring fileIdentityString(reinterpret_cast<const wchar_t *>(FileIdentity), identityLength);
-                fileIdentities.push_back(fileIdentityString);
+                // int size = sizeof(CF_PLACEHOLDER_STANDARD_INFO) + 8000;
+                // CF_PLACEHOLDER_STANDARD_INFO PlaceholderInfoForIds;
+                // DWORD returnlength(0);
+                // HRESULT hr = CfGetPlaceholderInfo(fileHandle, CF_PLACEHOLDER_INFO_STANDARD, &PlaceholderInfoForIds, size, &returnlength);
+                HRESULT hr = CfGetPlaceholderInfo(fileHandle.get(), CF_PLACEHOLDER_INFO_BASIC, info.get(), sizeToDWORDs(infoSize), nullptr);
+
+                if (SUCCEEDED(hr))
+                {
+                    // LARGE_INTEGER FileId = PlaceholderInfoForIds.FileId;
+                    // BYTE *FileIdentity = PlaceholderInfoForIds.FileIdentity;
+                    // // Convertir FileIdentity a una cadena wstring
+                    // size_t identityLength = PlaceholderInfoForIds.FileIdentityLength / sizeof(wchar_t);
+                    // std::wstring fileIdentityString(reinterpret_cast<const wchar_t *>(FileIdentity), identityLength);
+                    // printf("FileIdentity: %ls\n", fileIdentityString.c_str());
+                    printf("FileIdentity: %ls\n", entry.path().c_str());
+                    BYTE *FileIdentity = info->FileIdentity;
+                    printf("FileIdentity: %ls\n", FileIdentity);
+                    size_t identityLength = info->FileIdentityLength / sizeof(wchar_t);
+                    std::wstring fileIdentityString(reinterpret_cast<const wchar_t *>(FileIdentity), identityLength);
+                    // get info info->FileId
+                    LARGE_INTEGER FileId = info->FileId;
+
+                    // print file id
+                    printf("FileIdentity: %ls\n", fileIdentityString.c_str());
+                    // fileIds.push_back(fileIdentityString);
+                }
+                else
+                {
+                    printf("Error likely not a placeholder \n");
+                }
+                // if (isDirectory)
+                // {
+                //     printf("IsDirectory: ");
+                //     EnumerateAndQueryPlaceholders(entry.path().c_str(), fileIds);
+                // }
             }
             else
             {
-                wprintf(L"La llamada a CfGetPlaceholderInfo falló con el código de error 0x%X\n", hr);
+                wprintf(L"Invalid Item: %ls\n", entry.path().c_str());
             }
-            CloseHandle(hFile);
-            if (entry.is_directory())
-            {
-                EnumerateAndQueryPlaceholders(entry.path().c_str());
-            }
+            // CloseHandle(hFile);
+            // hFile = INVALID_HANDLE_VALUE;
         }
-        else
+        catch (const std::exception &ex)
         {
-            wprintf(L"Invalid Item: %ls\n", entry.path().c_str());
+            // Manejar excepciones estándar de C++
+            printf("Exception occurred: %s\n", ex.what());
         }
+        catch (...)
+        {
+            // Manejar cualquier otra excepción
+            printf("Unknown exception occurred.\n");
+        }
+
+        count++;
     }
+    printf("Count items: %d\n", count);
+    return;
 }
 // get items sync root
-HRESULT SyncRoot::GetItemsSyncRoot(const wchar_t *syncRootPath, std::vector<std::wstring> &getFileIdentities)
+std::list<std::wstring> SyncRoot::GetItemsSyncRoot(const wchar_t *syncRootPath)
 {
     try
     {
-        EnumerateAndQueryPlaceholders(syncRootPath);
-        getFileIdentities = fileIdentities;
-        fileIdentities.clear();
-        return S_OK;
+        printf("[Start] GetItemsSyncRoot\n");
+        std::list<std::wstring> fileIds;
+        EnumerateAndQueryPlaceholders(syncRootPath, fileIds);
+        // print first file id
+        printf("[End] GetItemsSyncRoot\n");
+        return fileIds;
     }
     catch (const std::exception &e)
     {

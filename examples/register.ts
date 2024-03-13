@@ -152,6 +152,7 @@ try {
     "3c598981-bca6-40ca-b016-fe2c0cdc5baf"
   );
 
+  console.log("ITEMS: "+ JSON.stringify(drive.getItemsIds()))
   console.log(success2);
 
   drive.watchAndWait(settings.syncRootPath);

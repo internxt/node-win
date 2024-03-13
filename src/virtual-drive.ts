@@ -152,31 +152,12 @@ class VirtualDrive {
     return BigInt(jsTime) * 10000n + 116444736000000000n;
   }
 
-  async getItemsIds(): Promise<string[]> {
-    try {
-      return addon.getItemsIds(this.syncRootPath) as string[];
-    } catch (error) {
-      throw new Error("Error while getting items");
-    }
-  }
-
-  async syncItemsIds(): Promise<void> {
-    try {
-      const items = await this.getItemsIds();
-      this.itemsIds = items;
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  getItemsIdsSync(): string[] {
-    return this.itemsIds;
+  async getItemsIds(){
+    console.log("getItemsIdsSync");
+    return addon.getItemsIds(this.syncRootPath);
   }
 
   async connectSyncRoot(): Promise<any> {
-    if (this.callbacks === undefined) {
-      throw new Error("Callbacks are not defined");
-    }
     return await addon.connectSyncRoot(
       this.syncRootPath,
       this.getInputSyncCallbacks()
