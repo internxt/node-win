@@ -4,7 +4,11 @@ import { deleteAllSubfolders } from "./utils";
 import { Worker } from "worker_threads";
 
 const addon = require("../../build/Release/addon.node");
-
+interface ItemInfo {
+  path: string;
+  fileIdentity: string;
+  isPlaceholder: boolean;
+}
 interface Addon {
   connectSyncRoot(path: string): any;
   createPlaceholderFile(
@@ -152,7 +156,7 @@ class VirtualDrive {
     return BigInt(jsTime) * 10000n + 116444736000000000n;
   }
 
-  async getItemsIds(){
+  async getItemsIds() :Promise<ItemInfo[]>{
     console.log("getItemsIdsSync");
     return addon.getItemsIds(this.syncRootPath);
   }

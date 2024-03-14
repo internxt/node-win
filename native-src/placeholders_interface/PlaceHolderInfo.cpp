@@ -4,10 +4,12 @@
 #include <filesystem>
 #include <codecvt>
 #include <locale>
+#include "Logger.h"
 
 SyncState cfSyncStateToSyncState(CF_IN_SYNC_STATE state)
 {
-    switch (state) {
+    switch (state)
+    {
     case CF_IN_SYNC_STATE_NOT_IN_SYNC:
         return SyncState::NotInSync;
     case CF_IN_SYNC_STATE_IN_SYNC:
@@ -17,21 +19,23 @@ SyncState cfSyncStateToSyncState(CF_IN_SYNC_STATE state)
     }
 }
 
-std::string syncStateToString(SyncState state) {
-    switch (state) {
-        case SyncState::NotInSync:
-            return "NotInSync";
-        case SyncState::InSync:
-            return "InSync";
-        default:
-            return "Unknown";
+std::string syncStateToString(SyncState state)
+{
+    switch (state)
+    {
+    case SyncState::NotInSync:
+        return "NotInSync";
+    case SyncState::InSync:
+        return "InSync";
+    default:
+        return "Unknown";
     }
 }
 
-
 PinState cfPinStateToPinState(CF_PIN_STATE state)
 {
-    switch (state) {
+    switch (state)
+    {
     case CF_PIN_STATE_UNSPECIFIED:
         return PinState::Unspecified;
     case CF_PIN_STATE_PINNED:
@@ -49,7 +53,8 @@ PinState cfPinStateToPinState(CF_PIN_STATE state)
 
 CF_PIN_STATE pinStateToCfPinState(PinState state)
 {
-    switch (state) {
+    switch (state)
+    {
     case PinState::Unspecified:
         return CF_PIN_STATE_UNSPECIFIED;
     case PinState::AlwaysLocal:
@@ -65,34 +70,39 @@ CF_PIN_STATE pinStateToCfPinState(PinState state)
     }
 }
 
-std::string pinStateToString(PinState state) {
-    switch (state) {
-        case PinState::Inherited:
-            return "Inherited";
-        case PinState::AlwaysLocal:
-            return "AlwaysLocal";
-        case PinState::OnlineOnly:
-            return "OnlineOnly";
-        case PinState::Unspecified:
-            return "Unspecified";
-        case PinState::Excluded:
-            return "Excluded";
-        default:
-            return "Unknown";
+std::string pinStateToString(PinState state)
+{
+    switch (state)
+    {
+    case PinState::Inherited:
+        return "Inherited";
+    case PinState::AlwaysLocal:
+        return "AlwaysLocal";
+    case PinState::OnlineOnly:
+        return "OnlineOnly";
+    case PinState::Unspecified:
+        return "Unspecified";
+    case PinState::Excluded:
+        return "Excluded";
+    default:
+        return "Unknown";
     }
 }
 
 PlaceHolderInfo::PlaceHolderInfo()
     : _data(nullptr, [](CF_PLACEHOLDER_BASIC_INFO *) {})
-{}
+{
+}
 
 PlaceHolderInfo::PlaceHolderInfo(CF_PLACEHOLDER_BASIC_INFO *data, Deleter deleter)
     : _data(data, deleter)
-{}
+{
+}
 
 std::optional<PinState> PlaceHolderInfo::pinState() const
 {
-    if (!_data) {
+    if (!_data)
+    {
         return {};
     }
 
@@ -101,15 +111,37 @@ std::optional<PinState> PlaceHolderInfo::pinState() const
 
 std::optional<SyncState> PlaceHolderInfo::syncState() const
 {
-    if (!_data) {
+    if (!_data)
+    {
         return {};
     }
 
     return cfSyncStateToSyncState(_data->InSyncState);
 }
 
+std::optional<LARGE_INTEGER> PlaceHolderInfo::FileId() const
+{
+    if (!_data)
+    {
+        return {};
+    }
+    return _data->FileId;
+}
+
+std::optional<BYTE> PlaceHolderInfo::FileIdentity() const
+{
+    if (!_data)
+    {
+        return {};
+    }
+
+    printf("FILE OPTIONAL: %d\n", _data->FileIdentity[0]);
+    return _data->FileIdentity[0]; // Devuelve el primer byte del array
+}
+
 FileHandle::FileHandle()
-    : _data(nullptr, [](void *) {})
+    : _data(
+          nullptr, [](void *) {})
 {
 }
 
@@ -118,10 +150,10 @@ FileHandle::FileHandle(void *data, Deleter deleter)
 {
 }
 
-
 FileHandle handleForPath(const std::wstring &wPath)
 {
-    if (wPath.empty()) {
+    if (wPath.empty())
+    {
         return {};
     }
 
@@ -133,19 +165,27 @@ FileHandle handleForPath(const std::wstring &wPath)
     LPCSTR pPath = path.c_str();
 
     std::filesystem::path pathFs(path);
-    if (!std::filesystem::exists(pathFs)) {
+    if (!std::filesystem::exists(pathFs))
+    {
         return {};
     }
 
-    if (std::filesystem::is_directory(pathFs)) {
+    if (std::filesystem::is_directory(pathFs))
+    {
         HANDLE handle = nullptr;
         const HRESULT openResult = CfOpenFileWithOplock(wPath.c_str(), CF_OPEN_FILE_FLAG_NONE, &handle);
-        if (openResult == S_OK) {
-            return {handle, [](HANDLE h) { CfCloseHandle(h); }};
-        } else {
+        if (openResult == S_OK)
+        {
+            return {handle, [](HANDLE h)
+                    { CfCloseHandle(h); }};
+        }
+        else
+        {
             printf("Could not CfOpenFileWithOplock for path: %s with error: %ld\n", path.c_str(), openResult);
         }
-    } else if (std::filesystem::is_regular_file(pathFs)) {
+    }
+    else if (std::filesystem::is_regular_file(pathFs))
+    {
         HANDLE handle = CreateFile(
             pPath,
             FILE_READ_ATTRIBUTES,
@@ -154,9 +194,13 @@ FileHandle handleForPath(const std::wstring &wPath)
             OPEN_EXISTING,
             FILE_ATTRIBUTE_NORMAL,
             nullptr);
-        if (handle != INVALID_HANDLE_VALUE) {
-            return {handle, [](HANDLE h) { CloseHandle(h); }};
-        } else {
+        if (handle != INVALID_HANDLE_VALUE)
+        {
+            return {handle, [](HANDLE h)
+                    { CloseHandle(h); }};
+        }
+        else
+        {
             printf("Could not CreateFile for path: %s with error: %ld\n", path.c_str(), GetLastError());
         }
     }

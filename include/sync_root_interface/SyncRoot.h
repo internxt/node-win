@@ -4,6 +4,13 @@
 #include <Callbacks.h>
 #include "stdafx.h"
 
+struct ItemInfo
+{
+    std::wstring path;
+    std::wstring fileIdentity;
+    bool isPlaceholder;
+};
+
 class SyncRoot
 {
 public:
@@ -11,5 +18,5 @@ public:
     static HRESULT ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallbacks syncCallbacks, napi_env env, CF_CONNECTION_KEY *connectionKey);
     static HRESULT DisconnectSyncRoot();
     static HRESULT UnregisterSyncRoot();
-    static std::list<std::wstring> GetItemsSyncRoot(const wchar_t *syncRootPath);
+    static std::list<ItemInfo> GetItemsSyncRoot(const wchar_t *syncRootPath);
 };

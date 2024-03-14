@@ -3,14 +3,16 @@
 #include "stdafx.h"
 #include <optional>
 
-enum class SyncState {
+enum class SyncState
+{
     /* status that occurs when an error occurs while reading the status*/
     Undefined = -1,
     NotInSync = 0,
     InSync = 1,
 };
 
-enum class PinState {
+enum class PinState
+{
     /* The pin state is derived from the state of the parent folder. For example new remote files start out in this state, following the state of their parent folder. This state is used purely for resetting pin states to their derived value. The effective state for an item will never be "Inherited". */
     Inherited = 0,
     /* The file shall be available and up to date locally. Also known as "pinned". Pinned dehydrated files shall be hydrated as soon as possible. */
@@ -37,6 +39,8 @@ public:
 
     std::optional<PinState> pinState() const;
     std::optional<SyncState> syncState() const;
+    std::optional<LARGE_INTEGER> FileId() const;
+    std::optional<BYTE> FileIdentity() const;
 
 private:
     std::unique_ptr<CF_PLACEHOLDER_BASIC_INFO, Deleter> _data;
@@ -54,7 +58,7 @@ public:
     inline explicit operator bool() const noexcept { return static_cast<bool>(_data); }
 
 private:
-    std::unique_ptr<void, void(*)(void *)> _data;
+    std::unique_ptr<void, void (*)(void *)> _data;
 };
 
 FileHandle handleForPath(const std::wstring &path);

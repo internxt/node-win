@@ -577,29 +577,35 @@ napi_value GetItemsSyncRootWrapper(napi_env env, napi_callback_info args)
     syncRootPath = new WCHAR[pathLength + 1];
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(syncRootPath)), pathLength + 1, nullptr);
 
-    std::list<std::wstring> fileIdentities = SyncRoot::GetItemsSyncRoot(syncRootPath);
+    std::list<ItemInfo> fileIdentities = SyncRoot::GetItemsSyncRoot(syncRootPath);
     printf("fileIdentities got\n");
     printf("[Count] GetItemsSyncRootWrapper: %d\n", fileIdentities.size());
-
-    napi_value jsFileIdentities = nullptr;
+    // devolder json con la estructura de ItemInfo
+    napi_value jsFileIdentities;
     napi_create_array(env, &jsFileIdentities);
-    size_t index = 0;
-    for (const auto &fileIdentity : fileIdentities)
+    int i = 0;
+    for (auto &item : fileIdentities)
     {
-        // Convertir wstring a string UTF-16 (char16_t)
-        std::u16string utf16Str;
-        for (const auto &c : fileIdentity)
-        {
-            utf16Str.push_back(static_cast<char16_t>(c));
-        }
-        // Crear una cadena de JavaScript y agregarla al array
+        napi_value jsItem;
+        napi_create_object(env, &jsItem);
+
+        napi_value jsPath;
+        napi_create_string_utf16(env, reinterpret_cast<const char16_t *>(item.path.c_str()), item.path.length(), &jsPath);
+        napi_set_named_property(env, jsItem, "path", jsPath);
+
         napi_value jsFileIdentity;
-        napi_create_string_utf16(env, utf16Str.data(), utf16Str.length(), &jsFileIdentity);
-        napi_set_element(env, jsFileIdentities, index++, jsFileIdentity);
+        napi_create_string_utf16(env, reinterpret_cast<const char16_t *>(item.fileIdentity.c_str()), item.fileIdentity.length(), &jsFileIdentity);
+        napi_set_named_property(env, jsItem, "fileIdentity", jsFileIdentity);
+
+        napi_value jsIsPlaceholder;
+        napi_get_boolean(env, item.isPlaceholder, &jsIsPlaceholder);
+        napi_set_named_property(env, jsItem, "isPlaceholder", jsIsPlaceholder);
+
+        napi_set_element(env, jsFileIdentities, i, jsItem);
+        i++;
     }
 
-    printf("GetItemsSyncRootWrapper completed\n");
-
+    delete[] syncRootPath;
     return jsFileIdentities;
 }
 
