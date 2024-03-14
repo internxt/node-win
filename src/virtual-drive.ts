@@ -161,6 +161,11 @@ class VirtualDrive {
     return addon.getItemsIds(this.syncRootPath);
   }
 
+  async getFileIdentity(relativePath: string): Promise<string> {
+    const fullPath = path.join(this.syncRootPath, relativePath);
+    return addon.getFileIdentity(fullPath);
+  }
+
   async connectSyncRoot(): Promise<any> {
     return await addon.connectSyncRoot(
       this.syncRootPath,

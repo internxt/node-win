@@ -257,3 +257,54 @@ std::list<ItemInfo> SyncRoot::GetItemsSyncRoot(const wchar_t *syncRootPath)
         wprintf(L"Excepción capturada: %hs\n", e.what());
     }
 }
+
+// get fileIdentity by path
+std::wstring SyncRoot::GetFileIdentity(const wchar_t *path)
+{
+    try
+    {
+        printf("[Start] GetFileIdentity\n");
+        bool isDirectory = fs::is_directory(path);
+        HANDLE hFile = CreateFileW(
+            path,
+            FILE_READ_ATTRIBUTES,
+            FILE_SHARE_READ,
+            nullptr,
+            OPEN_EXISTING,
+            isDirectory ? FILE_FLAG_BACKUP_SEMANTICS : FILE_ATTRIBUTE_NORMAL,
+            nullptr);
+        if (hFile)
+        {
+            int size = sizeof(CF_PLACEHOLDER_STANDARD_INFO) + 5000;
+            CF_PLACEHOLDER_STANDARD_INFO *standard_info = (CF_PLACEHOLDER_STANDARD_INFO *)new BYTE[size];
+            DWORD returnlength(0);
+            HRESULT hr = CfGetPlaceholderInfo(hFile, CF_PLACEHOLDER_INFO_STANDARD, standard_info, size, &returnlength);
+
+            if (SUCCEEDED(hr))
+            {
+
+                BYTE *FileIdentity = standard_info->FileIdentity;
+                size_t identityLength = standard_info->FileIdentityLength / sizeof(wchar_t);
+
+                std::wstring fileIdentityString(reinterpret_cast<const wchar_t *>(FileIdentity), identityLength);
+
+                return fileIdentityString;
+            }
+            else
+            {
+                printf("Error likely not a placeholder \n");
+                return L"";
+            }
+            CloseHandle(hFile);
+        }
+        else
+        {
+            wprintf(L"Invalid Item: %ls\n", path);
+            return L"";
+        }
+    }
+    catch (const std::exception &e)
+    {
+        wprintf(L"Excepción capturada: %hs\n", e.what());
+    }
+}

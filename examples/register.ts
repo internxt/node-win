@@ -151,12 +151,10 @@ try {
     settings.syncRootPath + "/only-folder",
     "3c598981-bca6-40ca-b016-fe2c0cdc5baf"
   );
-
-  //  drive.getItemsIds().then((items) => {
-  //    items.forEach((item) => {
-  //      console.log(item.fileIdentity);
-  //    });
-  //  })
+  
+  drive.getFileIdentity("/folderWithFolder/F.O.L.D.E.R").then((fileIdentity) => {
+    console.log("ID " +fileIdentity);
+  })  
 
   console.log(success2);
 
