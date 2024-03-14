@@ -259,7 +259,7 @@ std::list<ItemInfo> SyncRoot::GetItemsSyncRoot(const wchar_t *syncRootPath)
 }
 
 // get fileIdentity by path
-std::wstring SyncRoot::GetFileIdentity(const wchar_t *path)
+std::string SyncRoot::GetFileIdentity(const wchar_t *path)
 {
     try
     {
@@ -284,23 +284,24 @@ std::wstring SyncRoot::GetFileIdentity(const wchar_t *path)
             {
 
                 BYTE *FileIdentity = standard_info->FileIdentity;
-                size_t identityLength = standard_info->FileIdentityLength / sizeof(wchar_t);
+                size_t identityLength = standard_info->FileIdentityLength;
 
-                std::wstring fileIdentityString(reinterpret_cast<const wchar_t *>(FileIdentity), identityLength);
+                // Crear la cadena directamente desde los datos binarios
+                std::string fileIdentityString(reinterpret_cast<const char *>(FileIdentity), identityLength);
 
                 return fileIdentityString;
             }
             else
             {
                 printf("Error likely not a placeholder \n");
-                return L"";
+                return "";
             }
             CloseHandle(hFile);
         }
         else
         {
             wprintf(L"Invalid Item: %ls\n", path);
-            return L"";
+            return "";
         }
     }
     catch (const std::exception &e)

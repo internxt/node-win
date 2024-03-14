@@ -19,5 +19,5 @@ public:
     static HRESULT DisconnectSyncRoot();
     static HRESULT UnregisterSyncRoot();
     static std::list<ItemInfo> GetItemsSyncRoot(const wchar_t *syncRootPath);
-    static std::wstring GetFileIdentity(const wchar_t *path);
+    static std::string GetFileIdentity(const wchar_t *path);
 };

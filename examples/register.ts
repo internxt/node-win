@@ -154,6 +154,7 @@ try {
   
   drive.getFileIdentity("/folderWithFolder/F.O.L.D.E.R").then((fileIdentity) => {
     console.log("ID " +fileIdentity);
+    console.log("count " + String(fileIdentity).length);
   })  
 
   console.log(success2);

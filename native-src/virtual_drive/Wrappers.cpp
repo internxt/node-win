@@ -628,13 +628,15 @@ napi_value GetFileIdentityWrapper(napi_env env, napi_callback_info args)
     fullPath = new WCHAR[pathLength + 1];
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(fullPath)), pathLength + 1, nullptr);
 
-    std::wstring fileIdentity = SyncRoot::GetFileIdentity(fullPath);
+    std::string fileIdentity = SyncRoot::GetFileIdentity(fullPath);
     printf("fileIdentity got\n");
-
-    delete[] fullPath;
+    fileIdentity.erase(std::remove(fileIdentity.begin(), fileIdentity.end(), '\0'), fileIdentity.end());
+    fileIdentity.erase(std::remove(fileIdentity.begin(), fileIdentity.end(), ' '), fileIdentity.end());
 
     napi_value jsFileIdentity;
-    napi_create_string_utf16(env, reinterpret_cast<const char16_t *>(fileIdentity.c_str()), fileIdentity.length(), &jsFileIdentity);
+    napi_create_string_utf8(env, fileIdentity.c_str(), fileIdentity.length(), &jsFileIdentity);
+
+    delete[] fullPath;
     return jsFileIdentity;
 }
 
