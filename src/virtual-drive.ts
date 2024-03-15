@@ -287,19 +287,19 @@ class VirtualDrive {
       for (let i = 0; i < splitPath.length - 1; i++) {
         // everything except last element
         const dir = splitPath[i];
-        if (fs.existsSync(currentPath)) {
-          this.createPlaceholderDirectory(
-            dir,
-            itemId,
-            true,
-            0,
-            this.PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
-            Date.now(),
-            Date.now(),
-            Date.now(),
-            currentPath
-          );
-        }
+        // if (fs.existsSync(currentPath)) {
+        //   this.createPlaceholderDirectory(
+        //     dir,
+        //     itemId,
+        //     true,
+        //     0,
+        //     this.PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
+        //     Date.now(),
+        //     Date.now(),
+        //     Date.now(),
+        //     currentPath
+        //   );
+        // }
         currentPath = path.join(currentPath, dir);
       }
       // last element is the file
@@ -329,9 +329,12 @@ class VirtualDrive {
     const splitPath = relativePath.split("/").filter((p) => p);
     const directoryPath = path.resolve(this.syncRootPath);
     let currentPath = directoryPath;
-    for (const dir of splitPath) {
-      if (fs.existsSync(currentPath)) {
-        try {
+    // solo crear el ultimo directorio
+    for (let i = 0; i < splitPath.length; i++) {
+      const dir = splitPath[i];
+      const last = i === splitPath.length - 1;
+      if (last) {
+        if (fs.existsSync(currentPath)) {
           this.createPlaceholderDirectory(
             dir,
             itemId,
@@ -343,13 +346,31 @@ class VirtualDrive {
             Date.now(),
             currentPath
           );
-        } catch (error) {
-          //@ts-ignore
-          console.error(`Error while creating directory: ${error.message}`);
         }
       }
       currentPath = path.join(currentPath, dir);
     }
+    // for (const dir of splitPath) {
+    //   if (fs.existsSync(currentPath)) {
+    //     try {
+    //       this.createPlaceholderDirectory(
+    //         dir,
+    //         itemId,
+    //         true,
+    //         size,
+    //         this.PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
+    //         creationTime,
+    //         lastWriteTime,
+    //         Date.now(),
+    //         currentPath
+    //       );
+    //     } catch (error) {
+    //       //@ts-ignore
+    //       console.error(`Error while creating directory: ${error.message}`);
+    //     }
+    //   }
+      // currentPath = path.join(currentPath, dir);
+    
   }
 
   createItemByPath(
