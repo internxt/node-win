@@ -156,7 +156,7 @@ class VirtualDrive {
     return BigInt(jsTime) * 10000n + 116444736000000000n;
   }
 
-  async getItemsIds() :Promise<ItemInfo[]>{
+  async getItemsIds(): Promise<ItemInfo[]> {
     console.log("getItemsIdsSync");
     return addon.getItemsIds(this.syncRootPath);
   }
@@ -164,6 +164,11 @@ class VirtualDrive {
   async getFileIdentity(relativePath: string): Promise<string> {
     const fullPath = path.join(this.syncRootPath, relativePath);
     return addon.getFileIdentity(fullPath);
+  }
+
+  async deleteFileSyncRoot(relativePath: string): Promise<void> {
+    const fullPath = path.join(this.syncRootPath, relativePath);
+    return addon.deleteFileSyncRoot(fullPath);
   }
 
   async connectSyncRoot(): Promise<any> {

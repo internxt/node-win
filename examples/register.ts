@@ -159,6 +159,8 @@ try {
       console.log("count " + String(fileIdentity).length);
     });
 
+  drive.deleteFileSyncRoot("/folderWithFolder/F.O.L.D.E.R");
+
   console.log(success2);
 
   drive.watchAndWait(settings.syncRootPath);

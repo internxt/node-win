@@ -316,3 +316,62 @@ std::string SyncRoot::GetFileIdentity(const wchar_t *path)
         wprintf(L"Excepción desconocida capturada\n");
     }
 }
+
+void SyncRoot::DeleteFileSyncRoot(const wchar_t* path) {
+    try {
+        // Mostrar el archivo a eliminar
+        wprintf(L"Intentando eliminar: %ls\n", path);
+
+        // Verificar si el archivo es un directorio o un archivo regular
+        bool isDirectory = fs::is_directory(path);
+        wprintf(L"Es directorio: %d\n", isDirectory);
+
+        // Abrir el archivo con permisos mínimos necesarios para la consulta
+        HANDLE hFile = CreateFileW(
+            path,
+            FILE_READ_ATTRIBUTES | DELETE,
+            FILE_SHARE_READ | FILE_SHARE_DELETE, 
+            nullptr,
+            OPEN_EXISTING,
+            isDirectory ? FILE_FLAG_BACKUP_SEMANTICS : FILE_ATTRIBUTE_NORMAL,
+            nullptr);
+
+        if (hFile == INVALID_HANDLE_VALUE) {
+            wprintf(L"No se puede abrir el archivo: %ls\n", path);
+            return;
+        }
+
+        // BYTE buffer[sizeof(CF_PLACEHOLDER_STANDARD_INFO) + 512];
+        // CF_PLACEHOLDER_STANDARD_INFO* placeholderInfo = reinterpret_cast<CF_PLACEHOLDER_STANDARD_INFO*>(buffer);
+        // DWORD returnedLength = 0;
+
+        // HRESULT hr = CfGetPlaceholderInfo(hFile, CF_PLACEHOLDER_INFO_STANDARD, placeholderInfo, sizeof(buffer), &returnedLength);
+
+        // if (SUCCEEDED(hr)) {
+        //     // Es un placeholder, proceder con la lógica específica si es necesario
+        //     wprintf(L"El archivo es un placeholder. Procediendo a eliminar...\n");
+        // } else {
+        //     wprintf(L"El archivo no es un placeholder o no se pudo obtener la información.\n");
+        // }
+
+        CloseHandle(hFile);
+
+        if (isDirectory) {
+            if (!RemoveDirectoryW(path)) {
+                wprintf(L"No se pudo eliminar el directorio: %ls\n", path);
+            } else {
+                wprintf(L"Directorio eliminado con éxito: %ls\n", path);
+            }
+        } else {
+            if (!DeleteFileW(path)) {
+                wprintf(L"No se pudo eliminar el archivo: %ls\n", path);
+            } else {
+                wprintf(L"Archivo eliminado con éxito: %ls\n", path);
+            }
+        }
+    } catch (const std::exception& e) {
+        wprintf(L"Excepción capturada: %hs\n", e.what());
+    } catch (...) {
+        wprintf(L"Excepción desconocida capturada\n");
+    }
+}

@@ -640,6 +640,32 @@ napi_value GetFileIdentityWrapper(napi_env env, napi_callback_info args)
     return jsFileIdentity;
 }
 
+napi_value DeleteFileSyncRootWrapper(napi_env env, napi_callback_info args)
+{
+    printf("DeleteFileSyncRootWrapper\n");
+    size_t argc = 1;
+    napi_value argv[1];
+    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
+
+    if (argc < 1)
+    {
+        napi_throw_error(env, nullptr, "The path is required for DeleteFileSyncRoot");
+        return nullptr;
+    }
+
+    LPCWSTR fullPath;
+    size_t pathLength;
+    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
+    fullPath = new WCHAR[pathLength + 1];
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(fullPath)), pathLength + 1, nullptr);
+
+    SyncRoot::DeleteFileSyncRoot(fullPath);
+    printf("fileIdentity got\n");
+
+    delete[] fullPath;
+    return nullptr;
+}
+
 napi_value addLoggerPathWrapper(napi_env env, napi_callback_info args)
 {
     size_t argc = 1;
