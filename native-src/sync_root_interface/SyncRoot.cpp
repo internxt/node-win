@@ -317,22 +317,6 @@ std::string SyncRoot::GetFileIdentity(const wchar_t *path)
     }
 }
 
-void DeleteFileOrDirectory(const wchar_t *path)
-{
-    if (fs::is_directory(path))
-    {
-        for (auto &entry : fs::directory_iterator(path))
-        {
-            DeleteFileOrDirectory(entry.path().c_str());
-        }
-        RemoveDirectoryW(path);
-    }
-    else
-    {
-        DeleteFileW(path);
-    }
-}
-
 void SyncRoot::DeleteFileSyncRoot(const wchar_t *path)
 {
     try
@@ -347,7 +331,7 @@ void SyncRoot::DeleteFileSyncRoot(const wchar_t *path)
         // Si es un directorio, eliminar recursivamente
         if (isDirectory)
         {
-            DeleteFileOrDirectory(path);
+            fs::remove_all(path); // Esta línea reemplaza la función personalizada DeleteFileOrDirectory
             wprintf(L"Directorio eliminado con éxito: %ls\n", path);
         }
         else

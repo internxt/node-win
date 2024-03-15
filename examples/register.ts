@@ -228,7 +228,9 @@ try {
     console.log("count " + String(fileIdentity).length);
   })  
   
-  drive.deleteFileSyncRoot("/folderWithFolder");
+  // drive.deleteFileSyncRoot("/folderWithFolder");
+  // drive.deleteFileSyncRoot("/imagen.rar");
+  // drive.deleteFileSyncRoot("/anyname");
 
   console.log(success2);
 
