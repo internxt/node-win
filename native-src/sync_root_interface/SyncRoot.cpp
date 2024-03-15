@@ -4,6 +4,7 @@
 #include <iostream>
 #include <iostream>
 #include <filesystem>
+#include <Logger.h>
 
 namespace fs = std::filesystem;
 // variable to disconect
@@ -263,8 +264,9 @@ std::string SyncRoot::GetFileIdentity(const wchar_t *path)
 {
     try
     {
-        printf("[Start] GetFileIdentity\n");
+        Logger::getInstance().log("GetFileIdentity", LogLevel::INFO);
         bool isDirectory = fs::is_directory(path);
+        Logger::getInstance().log("isDirectory" + isDirectory, LogLevel::INFO);
         HANDLE hFile = CreateFileW(
             path,
             FILE_READ_ATTRIBUTES,
@@ -275,11 +277,12 @@ std::string SyncRoot::GetFileIdentity(const wchar_t *path)
             nullptr);
         if (hFile)
         {
-            int size = sizeof(CF_PLACEHOLDER_STANDARD_INFO) + 5000;
+            Logger::getInstance().log("hFile", LogLevel::INFO);
+            int size = sizeof(CF_PLACEHOLDER_STANDARD_INFO) + 1000;
             CF_PLACEHOLDER_STANDARD_INFO *standard_info = (CF_PLACEHOLDER_STANDARD_INFO *)new BYTE[size];
             DWORD returnlength(0);
             HRESULT hr = CfGetPlaceholderInfo(hFile, CF_PLACEHOLDER_INFO_STANDARD, standard_info, size, &returnlength);
-
+            Logger::getInstance().log("CfGetPlaceholderInfo", LogLevel::INFO);
             if (SUCCEEDED(hr))
             {
 
@@ -297,6 +300,7 @@ std::string SyncRoot::GetFileIdentity(const wchar_t *path)
                 return "";
             }
             CloseHandle(hFile);
+            delete[] standard_info;
         }
         else
         {
@@ -307,5 +311,9 @@ std::string SyncRoot::GetFileIdentity(const wchar_t *path)
     catch (const std::exception &e)
     {
         wprintf(L"Excepción capturada: %hs\n", e.what());
+    }
+    catch (...)
+    {
+        wprintf(L"Excepción desconocida capturada\n");
     }
 }
