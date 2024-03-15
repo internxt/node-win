@@ -277,7 +277,7 @@ std::string SyncRoot::GetFileIdentity(const wchar_t *path)
         if (hFile)
         {
 
-            int size = sizeof(CF_PLACEHOLDER_STANDARD_INFO) + 1000;
+            int size = sizeof(CF_PLACEHOLDER_STANDARD_INFO) + 5000;
             CF_PLACEHOLDER_STANDARD_INFO *standard_info = (CF_PLACEHOLDER_STANDARD_INFO *)new BYTE[size];
             DWORD returnlength(0);
             HRESULT hr = CfGetPlaceholderInfo(hFile, CF_PLACEHOLDER_INFO_STANDARD, standard_info, size, &returnlength);
