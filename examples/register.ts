@@ -191,7 +191,7 @@ try {
   const itemsManager = ItemsInfoManager.initialize().then((itemsManager) => {
     itemsManager.add({
       "485df926-c07c-4a4c-a23b-e2b8e8d41988": `${settings.serverRootPath}\\A (5th copy).pdfs`,
-      "8bb39aa1-4791-4505-998d-7d47379d10e4": `${settings.serverRootPath}\\file1.txt`,
+      // "8bb39aa1-4791-4505-998d-7d47379d10e4": `${settings.serverRootPath}\\file1.txt`,
       "8eeadacd-6c94-40b4-b78c-067370386e95": `${settings.serverRootPath}\\file2.txt`,
       "8d2d85b1-b725-42eb-ac46-d5b2a90c57ea": `${settings.serverRootPath}\\fakefile.txt`,
       "03f7c464-3cf9-4664-9a79-078440cfac41": `${settings.serverRootPath}\\imagen.rar`,
@@ -211,22 +211,25 @@ try {
     settings.syncRootPath + "/only-folder",
     "3c598981-bca6-40ca-b016-fe2c0cdc5baf"
   );
+
   
   drive.getFileIdentity("/folderWithFolder/F.O.L.D.E.R").then((fileIdentity) => {
     console.log("ID " +fileIdentity);
     console.log("count " + String(fileIdentity).length);
   }) 
-
+  
   drive.getFileIdentity("/folderWithFolder").then((fileIdentity) => {
     console.log("ID " +fileIdentity);
     console.log("count " + String(fileIdentity).length);
   }) 
-
+  
   drive.getFileIdentity("/folderWithFolder/F.O.L.D.E.R/unaImagen.rar").then((fileIdentity) => {
     console.log("ID " +fileIdentity);
     console.log("count " + String(fileIdentity).length);
   })  
-
+  
+  drive.deleteFileSyncRoot("/folderWithFolder/F.O.L.D.E.R");
+  
   console.log(success2);
 
   drive.watchAndWait(settings.syncRootPath);
