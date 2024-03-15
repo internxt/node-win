@@ -43,15 +43,33 @@ try {
     fileCreatedAt,
     fileUpdatedAt
   );
+  
+  drive.createFolderByPath(
+    `/carpetaX`,
+    "folder-f134-4dbd-8722-8f813ec412cf",
+    1000,
+    folderCreatedAt,
+    folderUpdatedAt
+  );
+
   drive.createFileByPath(
-    `/file1.txt`,
+    `/carpetaX/file1.txt`,
     "8bb39aa1-4791-4505-998d-7d47379d10e4",
     1000,
     fileCreatedAt,
     fileUpdatedAt
   );
+
+  drive.createFolderByPath(
+    `/anyname`,
+    "192391023-4791-4505-998d-7d47379d10e4",
+    1000,
+    folderCreatedAt,
+    folderUpdatedAt
+  );
+
   drive.createFileByPath(
-    `/folderWithFile/file2.txt`,
+    `/anyname/file2.txt`,
     "8eeadacd-6c94-40b4-b78c-067370386e95",
     1000,
     fileCreatedAt,
@@ -88,12 +106,46 @@ try {
     folderUpdatedAt
   );
   drive.createFolderByPath(
+    `/folderT`,
+    "folder-f134-4dbd-8722-8f813ec412cf",
+    1000,
+    folderCreatedAt,
+    folderUpdatedAt
+  );
+
+  drive.createFolderByPath(
+    `/folderT/folderA`,
+    "folder-54343-4dbd-8722-8f813ec412cf",
+    1000,
+    folderCreatedAt,
+    folderUpdatedAt
+  );
+
+  drive.createFolderByPath(
+    `/folderT/folderA/folderB`,
+    "folder-465t-4dbd-8722-8f813ec412cf",
+    1000,
+    folderCreatedAt,
+    folderUpdatedAt
+  );
+
+  drive.createFolderByPath(
     `/F.O.L.D.E.R`,
     "2d6bce9b-d006-412d-9a98-8c5fac2ad6e5",
     1000,
     folderCreatedAt,
     folderUpdatedAt
   );
+
+  drive.createFolderByPath(
+    `/folderWithFolder`,
+    `folder-8a0e-43cb-805b-2719a686358f`,
+    1000,
+    folderCreatedAt,
+    folderUpdatedAt
+  );
+    
+    
   drive.createFolderByPath(
     `/folderWithFolder/folder2`,
     "f706369a-8a0e-43cb-805b-2719a686358f",
@@ -119,6 +171,14 @@ try {
   );
   drive.createItemByPath(
     `/imagen-item.rar`,
+    "62654a1c-0137-4fc7-b271-2c62f0d6f9f5",
+    33020,
+    fileCreatedAt,
+    fileUpdatedAt
+  );
+  // /folderWithFolder/F.O.L.D.E.R
+  drive.createFileByPath(
+    `/folderWithFolder/F.O.L.D.E.R/unaImagen.rar`,
     "62654a1c-0137-4fc7-b271-2c62f0d6f9f5",
     33020,
     fileCreatedAt,
@@ -153,6 +213,16 @@ try {
   );
   
   drive.getFileIdentity("/folderWithFolder/F.O.L.D.E.R").then((fileIdentity) => {
+    console.log("ID " +fileIdentity);
+    console.log("count " + String(fileIdentity).length);
+  }) 
+
+  drive.getFileIdentity("/folderWithFolder").then((fileIdentity) => {
+    console.log("ID " +fileIdentity);
+    console.log("count " + String(fileIdentity).length);
+  }) 
+
+  drive.getFileIdentity("/folderWithFolder/F.O.L.D.E.R/unaImagen.rar").then((fileIdentity) => {
     console.log("ID " +fileIdentity);
     console.log("count " + String(fileIdentity).length);
   })  
