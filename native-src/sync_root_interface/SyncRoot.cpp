@@ -4,7 +4,6 @@
 #include <iostream>
 #include <iostream>
 #include <filesystem>
-#include <Logger.h>
 
 namespace fs = std::filesystem;
 // variable to disconect
@@ -264,9 +263,9 @@ std::string SyncRoot::GetFileIdentity(const wchar_t *path)
 {
     try
     {
-        Logger::getInstance().log("GetFileIdentity", LogLevel::INFO);
+        printf("GetFileIdentity: %ls\n", path);
         bool isDirectory = fs::is_directory(path);
-        Logger::getInstance().log("isDirectory" + isDirectory, LogLevel::INFO);
+        printf("IsDirectory: %d\n", isDirectory);
         HANDLE hFile = CreateFileW(
             path,
             FILE_READ_ATTRIBUTES,
@@ -277,12 +276,12 @@ std::string SyncRoot::GetFileIdentity(const wchar_t *path)
             nullptr);
         if (hFile)
         {
-            Logger::getInstance().log("hFile", LogLevel::INFO);
+
             int size = sizeof(CF_PLACEHOLDER_STANDARD_INFO) + 1000;
             CF_PLACEHOLDER_STANDARD_INFO *standard_info = (CF_PLACEHOLDER_STANDARD_INFO *)new BYTE[size];
             DWORD returnlength(0);
             HRESULT hr = CfGetPlaceholderInfo(hFile, CF_PLACEHOLDER_INFO_STANDARD, standard_info, size, &returnlength);
-            Logger::getInstance().log("CfGetPlaceholderInfo", LogLevel::INFO);
+            printf("CfGetPlaceholderInfo: %d\n", hr);
             if (SUCCEEDED(hr))
             {
 
