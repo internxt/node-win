@@ -56,6 +56,7 @@ public:
 
     inline void *get() const { return _data.get(); }
     inline explicit operator bool() const noexcept { return static_cast<bool>(_data); }
+    static void deletePlaceholderInfo(CF_PLACEHOLDER_BASIC_INFO *data);
 
 private:
     std::unique_ptr<void, void (*)(void *)> _data;

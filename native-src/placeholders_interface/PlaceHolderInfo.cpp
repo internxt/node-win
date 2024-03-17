@@ -139,6 +139,12 @@ std::optional<BYTE> PlaceHolderInfo::FileIdentity() const
     return _data->FileIdentity[0]; // Devuelve el primer byte del array
 }
 
+void FileHandle::deletePlaceholderInfo(CF_PLACEHOLDER_BASIC_INFO *info)
+{
+    auto byte = reinterpret_cast<char *>(info);
+    delete[] byte;
+}
+
 FileHandle::FileHandle()
     : _data(
           nullptr, [](void *) {})

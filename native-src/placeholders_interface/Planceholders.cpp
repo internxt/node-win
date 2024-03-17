@@ -9,6 +9,7 @@
 #include <fstream>
 #include <random>
 #include <iostream>
+#include <Utilities.h>
 
 using namespace std;
 
@@ -299,6 +300,25 @@ CF_PLACEHOLDER_STATE Placeholders::GetPlaceholderState(const std::wstring &fileP
     CloseHandle(fileHandle);
 
     return placeholderState;
+}
+
+std::string Placeholders::GetFileIdentity(const std::wstring &filePath)
+{
+    constexpr auto fileIdMaxLength = 128;
+    const auto infoSize = sizeof(CF_PLACEHOLDER_BASIC_INFO) + fileIdMaxLength;
+    auto info = PlaceHolderInfo(reinterpret_cast<CF_PLACEHOLDER_BASIC_INFO *>(new char[infoSize]), FileHandle::deletePlaceholderInfo);
+
+    HRESULT result = CfGetPlaceholderInfo(handleForPath(filePath).get(), CF_PLACEHOLDER_INFO_BASIC, info.get(), Utilities::sizeToDWORD(infoSize), nullptr);
+
+    if (result == S_OK) {
+        BYTE *FileIdentity = info->FileIdentity;
+        size_t length = info->FileIdentityLength;
+
+        std::string fileIdentityString(reinterpret_cast<const char *>(FileIdentity), length);
+        return fileIdentityString;
+    } else {
+        return "";
+    }
 }
 
 CF_PLACEHOLDER_STATE GetPlaceholderStateMock(const std::wstring &filePath)
