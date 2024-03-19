@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <sstream>
 #include "Logger.h"
+#include "Utilities.h"
 
 const size_t c_bufferSize = 32768; // sizeof(FILE_NOTIFY_INFORMATION) * 100;
 
@@ -96,33 +97,12 @@ std::uintmax_t getDirectorySize(const fs::path &directoryPath)
 //     delete[] infoBuffer;
 // }
 
-void deletePlaceholderInfo(CF_PLACEHOLDER_BASIC_INFO *info)
-{
-    auto byte = reinterpret_cast<char *>(info);
-    delete[] byte;
-}
-
-DWORD convertSizeToDWORD(size_t &convertVar)
-{
-    if (convertVar > UINT_MAX)
-    {
-        // throw std::bad_cast();
-        convertVar = UINT_MAX; // intentionally default to wrong value here to not crash: exception handling TBD
-    }
-    return static_cast<DWORD>(convertVar);
-}
-
-DWORD sizeToDWORD(size_t size)
-{
-    return convertSizeToDWORD(size);
-}
-
 FileState DirectoryWatcher::getPlaceholderInfo(const std::wstring &directoryPath)
 {
 
     constexpr auto fileIdMaxLength = 400;
     const auto infoSize = sizeof(CF_PLACEHOLDER_BASIC_INFO) + fileIdMaxLength;
-    auto info = PlaceHolderInfo(reinterpret_cast<CF_PLACEHOLDER_BASIC_INFO *>(new char[infoSize]), deletePlaceholderInfo);
+    auto info = PlaceHolderInfo(reinterpret_cast<CF_PLACEHOLDER_BASIC_INFO *>(new char[infoSize]), FileHandle::deletePlaceholderInfo);
 
     FileState fileState;
     auto fileHandle = handleForPath(directoryPath);
@@ -135,7 +115,7 @@ FileState DirectoryWatcher::getPlaceholderInfo(const std::wstring &directoryPath
         return fileState;
     }
 
-    HRESULT result = CfGetPlaceholderInfo(fileHandle.get(), CF_PLACEHOLDER_INFO_BASIC, info.get(), sizeToDWORD(infoSize), nullptr);
+    HRESULT result = CfGetPlaceholderInfo(fileHandle.get(), CF_PLACEHOLDER_INFO_BASIC, info.get(), Utilities::sizeToDWORD(infoSize), nullptr);
 
     if (result != S_OK)
     {

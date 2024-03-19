@@ -35,4 +35,5 @@ public:
     static std::vector<std::wstring> GetPlaceholderWithStatePending(const std::wstring& filePath);
     static bool IsFileValidForSync(const std::wstring& filePath);
     static bool ConvertToPlaceholder(const std::wstring& fullPath, const std::wstring& serverIdentity);
+    static std::string GetFileIdentity(const std::wstring& filePath);
 };
