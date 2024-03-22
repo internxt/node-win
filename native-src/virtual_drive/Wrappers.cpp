@@ -7,6 +7,7 @@
 #include "LoggerPath.h"
 #include "DownloadMutexManager.h"
 #include "DirectoryWatcher.h"
+#include <Logger.h>
 
 napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
 {
@@ -557,7 +558,8 @@ napi_value DisconnectSyncRootWrapper(napi_env env, napi_callback_info args)
 
 napi_value GetItemsSyncRootWrapper(napi_env env, napi_callback_info args)
 {
-    // wprintf(L"[Debug] GetItemsSyncRootWrapper\n");
+    printf("GetItemsSyncRootWrapper\n");
+    // Logger::getInstance().log("GetItemsSyncRootWrapper", LogLevel::INFO);
     size_t argc = 1;
     napi_value argv[1];
 
@@ -575,36 +577,103 @@ napi_value GetItemsSyncRootWrapper(napi_env env, napi_callback_info args)
     syncRootPath = new WCHAR[pathLength + 1];
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(syncRootPath)), pathLength + 1, nullptr);
 
-    std::vector<std::wstring> getFileIdentities;
-    HRESULT result = SyncRoot::GetItemsSyncRoot(syncRootPath, getFileIdentities);
-
-    if (FAILED(result))
-    {
-        napi_throw_error(env, nullptr, "GetItemsSyncRoot failed");
-        return nullptr;
-    }
-    // wprintf(L"[Debug] Finish GetItemsSyncRootWrapper\n");
-    // Convert the vector to a JavaScript array of strings
+    std::list<ItemInfo> fileIdentities = SyncRoot::GetItemsSyncRoot(syncRootPath);
+    printf("fileIdentities got\n");
+    printf("[Count] GetItemsSyncRootWrapper: %d\n", fileIdentities.size());
+    // devolder json con la estructura de ItemInfo
     napi_value jsFileIdentities;
     napi_create_array(env, &jsFileIdentities);
-    for (size_t i = 0; i < getFileIdentities.size(); i++)
+    int i = 0;
+    for (auto &item : fileIdentities)
     {
+        napi_value jsItem;
+        napi_create_object(env, &jsItem);
+
+        napi_value jsPath;
+        napi_create_string_utf16(env, reinterpret_cast<const char16_t *>(item.path.c_str()), item.path.length(), &jsPath);
+        napi_set_named_property(env, jsItem, "path", jsPath);
+
         napi_value jsFileIdentity;
-        napi_create_string_utf16(env, reinterpret_cast<const char16_t *>(getFileIdentities[i].c_str()), getFileIdentities[i].length(), &jsFileIdentity);
-        napi_set_element(env, jsFileIdentities, i, jsFileIdentity);
+        napi_create_string_utf16(env, reinterpret_cast<const char16_t *>(item.fileIdentity.c_str()), item.fileIdentity.length(), &jsFileIdentity);
+        napi_set_named_property(env, jsItem, "fileIdentity", jsFileIdentity);
+
+        napi_value jsIsPlaceholder;
+        napi_get_boolean(env, item.isPlaceholder, &jsIsPlaceholder);
+        napi_set_named_property(env, jsItem, "isPlaceholder", jsIsPlaceholder);
+
+        napi_set_element(env, jsFileIdentities, i, jsItem);
+        i++;
     }
-    // Sleep(250);
-    // Delete the syncRootPath buffer
+
     delete[] syncRootPath;
     return jsFileIdentities;
 }
 
-napi_value addLoggerPathWrapper(napi_env env, napi_callback_info args) {
+napi_value GetFileIdentityWrapper(napi_env env, napi_callback_info args)
+{
+    printf("GetFileIdentityWrapper\n");
+    size_t argc = 1;
+    napi_value argv[1];
+    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
+
+    if (argc < 1)
+    {
+        napi_throw_error(env, nullptr, "The path is required for GetFileIdentity");
+        return nullptr;
+    }
+
+    LPCWSTR fullPath;
+    size_t pathLength;
+    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
+    fullPath = new WCHAR[pathLength + 1];
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(fullPath)), pathLength + 1, nullptr);
+
+    std::string fileIdentity = Placeholders::GetFileIdentity(fullPath);
+    printf("fileIdentity got\n");
+    fileIdentity.erase(std::remove(fileIdentity.begin(), fileIdentity.end(), '\0'), fileIdentity.end());
+    fileIdentity.erase(std::remove(fileIdentity.begin(), fileIdentity.end(), ' '), fileIdentity.end());
+
+    napi_value jsFileIdentity;
+    napi_create_string_utf8(env, fileIdentity.c_str(), fileIdentity.length(), &jsFileIdentity);
+
+    delete[] fullPath;
+    return jsFileIdentity;
+}
+
+napi_value DeleteFileSyncRootWrapper(napi_env env, napi_callback_info args)
+{
+    printf("DeleteFileSyncRootWrapper\n");
+    size_t argc = 1;
+    napi_value argv[1];
+    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
+
+    if (argc < 1)
+    {
+        napi_throw_error(env, nullptr, "The path is required for DeleteFileSyncRoot");
+        return nullptr;
+    }
+
+    LPCWSTR fullPath;
+    size_t pathLength;
+    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
+    fullPath = new WCHAR[pathLength + 1];
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(fullPath)), pathLength + 1, nullptr);
+
+    SyncRoot::DeleteFileSyncRoot(fullPath);
+    printf("fileIdentity got\n");
+
+    delete[] fullPath;
+    return nullptr;
+}
+
+napi_value addLoggerPathWrapper(napi_env env, napi_callback_info args)
+{
     size_t argc = 1;
     napi_value argv[1];
 
     napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
-    if (argc < 1) {
+    if (argc < 1)
+    {
         napi_throw_error(env, nullptr, "The path is required for addLoggerPath");
         return nullptr;
     }
@@ -617,7 +686,7 @@ napi_value addLoggerPathWrapper(napi_env env, napi_callback_info args) {
     std::unique_ptr<wchar_t[]> widePath(new wchar_t[pathLength + 1]);
 
     // Obtener la cadena UTF-16.
-    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t*>(widePath.get()), pathLength + 1, nullptr);
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(widePath.get()), pathLength + 1, nullptr);
 
     // Obtener la longitud necesaria para la cadena UTF-8.
     int utf8Length = WideCharToMultiByte(CP_UTF8, 0, widePath.get(), -1, nullptr, 0, nullptr, nullptr);
@@ -637,12 +706,14 @@ napi_value addLoggerPathWrapper(napi_env env, napi_callback_info args) {
     return result;
 }
 
-napi_value UpdateSyncStatusWrapper(napi_env env, napi_callback_info args) {
+napi_value UpdateSyncStatusWrapper(napi_env env, napi_callback_info args)
+{
     size_t argc = 3;
     napi_value argv[3];
 
     napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
-    if (argc < 3) {
+    if (argc < 3)
+    {
         napi_throw_error(env, nullptr, "Three arguments are required for UpdateSyncStatus");
         return nullptr;
     }
@@ -651,7 +722,7 @@ napi_value UpdateSyncStatusWrapper(napi_env env, napi_callback_info args) {
     napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
 
     std::unique_ptr<wchar_t[]> widePath(new wchar_t[pathLength + 1]);
-    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t*>(widePath.get()), pathLength + 1, nullptr);
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(widePath.get()), pathLength + 1, nullptr);
 
     bool inputSyncState;
     napi_get_value_bool(env, argv[1], &inputSyncState);
@@ -763,9 +834,8 @@ napi_value ConvertToPlaceholderWrapper(napi_env env, napi_callback_info args)
     napi_get_value_string_utf16(env, argv[1], widePlaceholderId.get(), placeholderIdLength + 1, nullptr);
 
     bool success = Placeholders::ConvertToPlaceholder(
-        reinterpret_cast<wchar_t*>(widePath.get()),
-        reinterpret_cast<wchar_t*>(widePlaceholderId.get())
-    );
+        reinterpret_cast<wchar_t *>(widePath.get()),
+        reinterpret_cast<wchar_t *>(widePlaceholderId.get()));
 
     napi_value result;
     napi_get_boolean(env, success, &result);
@@ -775,8 +845,8 @@ napi_value ConvertToPlaceholderWrapper(napi_env env, napi_callback_info args)
 
 napi_value CloseMutexWrapper(napi_env env, napi_callback_info args)
 {
-    
-    DownloadMutexManager& mutexManager = DownloadMutexManager::getInstance();
+
+    DownloadMutexManager &mutexManager = DownloadMutexManager::getInstance();
     mutexManager.setReady(true);
 
     napi_value result;

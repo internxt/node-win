@@ -52,4 +52,18 @@ public:
             info->ConnectionKey,
             info->TransferKey};
     }
+
+    static DWORD convertSizeToDWORD(size_t &convertVar)
+    {
+        if (convertVar > UINT_MAX)
+        {
+            convertVar = UINT_MAX;
+        }
+        return static_cast<DWORD>(convertVar);
+    }
+
+    static DWORD sizeToDWORD(size_t size)
+    {
+        return convertSizeToDWORD(size);
+    }
 };
