@@ -32,7 +32,7 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
         auto syncRootID = providerId;
 
         winrt::StorageProviderSyncRootInfo info;
-        info.Id(L"syncRootID");
+        info.Id(L"syncRootIDPcCloud");
 
         auto folder = winrt::StorageFolder::GetFolderFromPathAsync(syncRootPath).get();
         info.Path(folder);
@@ -85,7 +85,7 @@ HRESULT SyncRoot::UnregisterSyncRoot()
 {
     try
     {
-        winrt::StorageProviderSyncRootManager::Unregister(L"syncRootID");
+        winrt::StorageProviderSyncRootManager::Unregister(L"syncRootIDPcCloud");
         return S_OK;
     }
     catch (...)
