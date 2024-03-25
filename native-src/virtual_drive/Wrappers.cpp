@@ -556,59 +556,6 @@ napi_value DisconnectSyncRootWrapper(napi_env env, napi_callback_info args)
     return napiResult;
 }
 
-napi_value GetItemsSyncRootWrapper(napi_env env, napi_callback_info args)
-{
-    printf("GetItemsSyncRootWrapper\n");
-    // Logger::getInstance().log("GetItemsSyncRootWrapper", LogLevel::INFO);
-    size_t argc = 1;
-    napi_value argv[1];
-
-    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
-
-    if (argc < 1)
-    {
-        napi_throw_error(env, nullptr, "The sync root path is required for GetItems");
-        return nullptr;
-    }
-
-    LPCWSTR syncRootPath;
-    size_t pathLength;
-    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
-    syncRootPath = new WCHAR[pathLength + 1];
-    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(syncRootPath)), pathLength + 1, nullptr);
-
-    std::list<ItemInfo> fileIdentities = SyncRoot::GetItemsSyncRoot(syncRootPath);
-    printf("fileIdentities got\n");
-    printf("[Count] GetItemsSyncRootWrapper: %d\n", fileIdentities.size());
-    // devolder json con la estructura de ItemInfo
-    napi_value jsFileIdentities;
-    napi_create_array(env, &jsFileIdentities);
-    int i = 0;
-    for (auto &item : fileIdentities)
-    {
-        napi_value jsItem;
-        napi_create_object(env, &jsItem);
-
-        napi_value jsPath;
-        napi_create_string_utf16(env, reinterpret_cast<const char16_t *>(item.path.c_str()), item.path.length(), &jsPath);
-        napi_set_named_property(env, jsItem, "path", jsPath);
-
-        napi_value jsFileIdentity;
-        napi_create_string_utf16(env, reinterpret_cast<const char16_t *>(item.fileIdentity.c_str()), item.fileIdentity.length(), &jsFileIdentity);
-        napi_set_named_property(env, jsItem, "fileIdentity", jsFileIdentity);
-
-        napi_value jsIsPlaceholder;
-        napi_get_boolean(env, item.isPlaceholder, &jsIsPlaceholder);
-        napi_set_named_property(env, jsItem, "isPlaceholder", jsIsPlaceholder);
-
-        napi_set_element(env, jsFileIdentities, i, jsItem);
-        i++;
-    }
-
-    delete[] syncRootPath;
-    return jsFileIdentities;
-}
-
 napi_value GetFileIdentityWrapper(napi_env env, napi_callback_info args)
 {
     printf("GetFileIdentityWrapper\n");

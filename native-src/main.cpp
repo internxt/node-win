@@ -128,23 +128,6 @@ napi_value init(napi_env env, napi_value exports)
     return nullptr;
   }
 
-  napi_property_descriptor getItemsIdsDesc{
-      "getItemsIds",
-      nullptr,
-      GetItemsSyncRootWrapper,
-      nullptr,
-      nullptr,
-      nullptr,
-      napi_default,
-      nullptr};
-
-  napi_status defineGetItemsStatus = napi_define_properties(env, exports, 1, &getItemsIdsDesc);
-  if (defineGetItemsStatus != napi_ok)
-  {
-    napi_throw_error(env, nullptr, "Failed to define GetItemsSyncRoot function");
-    return nullptr;
-  }
-
   napi_property_descriptor getFileIdentityDesc = {
       "getFileIdentity",
       nullptr,
