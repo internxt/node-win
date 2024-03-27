@@ -12,6 +12,8 @@
     > [Visual studio downloads](https://visualstudio.microsoft.com/es/downloads/)
 - on visual studio installer add
     > Desktop development with C++
+ <img width="314" alt="image" src="https://github.com/internxt/node-win/assets/92745882/1fb8d386-0f01-4159-89cf-f7d095e28423">
+
 - install python 3.X using MS store
     > [Python ms store](https://apps.microsoft.com/detail/9nrwmjp3717k?hl=en-us&gl=US)
 
