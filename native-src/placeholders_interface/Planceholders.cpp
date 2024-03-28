@@ -279,6 +279,47 @@ void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSync
     CloseHandle(fileHandle);
 }
 
+void Placeholders::UpdateFileIdentity(const std::wstring &filePath, const std::wstring &fileIdentity, bool isDirectory)
+{
+    wprintf(L"Path: %ls\n", filePath.c_str());
+    HANDLE fileHandle = CreateFileW(
+        filePath.c_str(),
+        FILE_WRITE_ATTRIBUTES, // permisson needed to change the state
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        nullptr,
+        OPEN_EXISTING,
+        isDirectory ? FILE_FLAG_BACKUP_SEMANTICS : FILE_ATTRIBUTE_NORMAL,
+        nullptr);
+
+    if (fileHandle == INVALID_HANDLE_VALUE)
+    {
+        wprintf(L"Error al abrir el archivo: %d\n", GetLastError());
+        return;
+    }
+
+    //https://learn.microsoft.com/en-us/windows/win32/api/cfapi/nf-cfapi-cfupdateplaceholder
+    HRESULT hr = CfUpdatePlaceholder(
+        fileHandle, // Handle del archivo.
+        nullptr,    // CF_FS_METADATA opcional.
+        fileIdentity.c_str(), // Identidad del archivo.
+        static_cast<DWORD>(fileIdentity.size() * sizeof(wchar_t)), // Longitud de la identidad del archivo.
+        nullptr,    // Rango a deshidratar, opcional.
+        0,          // Conteo de rangos a deshidratar, debe ser 0 si no se usa.
+        CF_UPDATE_FLAG_NONE, // Flags de actualización.
+        nullptr,    // USN opcional.
+        nullptr     // OVERLAPPED opcional.
+    );
+
+    if (FAILED(hr))
+    {
+        wprintf(L"Error al actualizar el fileIdentity: 0x%08X\n", hr);
+    }
+
+    CloseHandle(fileHandle);
+    return;
+}
+
+
 CF_PLACEHOLDER_STATE Placeholders::GetPlaceholderState(const std::wstring &filePath)
 {
     HANDLE fileHandle = CreateFileW(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
