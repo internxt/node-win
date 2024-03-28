@@ -369,8 +369,7 @@ class VirtualDrive {
     //       console.error(`Error while creating directory: ${error.message}`);
     //     }
     //   }
-      // currentPath = path.join(currentPath, dir);
-    
+    // currentPath = path.join(currentPath, dir);
   }
 
   createItemByPath(
@@ -464,6 +463,9 @@ class VirtualDrive {
 
   convertToPlaceholder(itemPath: string, id: string): boolean {
     return addon.convertToPlaceholder(itemPath, id);
+  }
+  updateFileIdentity(itemPath: string, id: string, isDirectory: boolean): void {
+    return addon.updateFileIdentity(itemPath, id, isDirectory);
   }
 
   closeDownloadMutex(): void {
