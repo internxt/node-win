@@ -24,7 +24,6 @@
     "devDependencies": {
         "@types/node": "^20.5.0",
         "@types/yargs": "^17.0.32",
-        "node-gyp": "^9.4.0",
         "typescript": "^5.1.6"
     },
     "dependencies": {

@@ -434,6 +434,10 @@ class VirtualDrive {
   convertToPlaceholder(itemPath: string, id: string): boolean {
     return addon.convertToPlaceholder(itemPath, id);
   }
+  updateFileIdentity(itemPath: string, id: string, isDirectory: boolean): void {
+    const fullPath = path.join(this.syncRootPath, itemPath);
+    return addon.updateFileIdentity(fullPath, id, isDirectory);
+  }
 
   closeDownloadMutex(): void {
     return addon.closeMutex();
