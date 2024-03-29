@@ -43,7 +43,7 @@ try {
     fileCreatedAt,
     fileUpdatedAt
   );
-  
+
   drive.createFolderByPath(
     `/carpetaX`,
     "folder-f134-4dbd-8722-8f813ec412cf",
@@ -144,8 +144,8 @@ try {
     folderCreatedAt,
     folderUpdatedAt
   );
-    
-    
+
+
   drive.createFolderByPath(
     `/folderWithFolder/folder2`,
     "f706369a-8a0e-43cb-805b-2719a686358f",
@@ -212,25 +212,31 @@ try {
     "3c598981-bca6-40ca-b016-fe2c0cdc5baf"
   );
 
-  
+  //  [Get FileIdentity] testing function to get the file identity of a file or folder
   drive.getFileIdentity("/folderWithFolder/F.O.L.D.E.R").then((fileIdentity) => {
-    console.log("ID " +fileIdentity);
+    console.log("ID " + fileIdentity);
     console.log("count " + String(fileIdentity).length);
-  }) 
-  
+  })
+
   drive.getFileIdentity("/folderWithFolder").then((fileIdentity) => {
-    console.log("ID " +fileIdentity);
+    console.log("ID " + fileIdentity);
     console.log("count " + String(fileIdentity).length);
-  }) 
-  
+  })
+
+  //  [Get] file identity for file called unaImagen.rar
   drive.getFileIdentity("/folderWithFolder/F.O.L.D.E.R/unaImagen.rar").then((fileIdentity) => {
-    console.log("ID " +fileIdentity);
+    console.log("ID " + fileIdentity);
     console.log("count " + String(fileIdentity).length);
-  })  
-  
-  // drive.deleteFileSyncRoot("/folderWithFolder");
-  // drive.deleteFileSyncRoot("/imagen.rar");
-  // drive.deleteFileSyncRoot("/anyname");
+  })
+
+  //  [Update] file identity for file called unaImagen.rar
+  drive.updateFileIdentity("/folderWithFolder/F.O.L.D.E.R/unaImagen.rar", "otroid12312313", false);
+
+  //  [Get Updated] file identity for file called unaImagen.rar
+  drive.getFileIdentity("/folderWithFolder/F.O.L.D.E.R/unaImagen.rar").then((fileIdentity) => {
+    console.log("ID " + fileIdentity);
+    console.log("count " + String(fileIdentity).length);
+  })
 
   console.log(success2);
 
