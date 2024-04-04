@@ -21,7 +21,7 @@ fs.promises
   .catch((error) => {
     if (error.code === "ENOENT") {
       // El archivo no existe, no es necesario borrarlo
-      console.log("[EXAMPLE] fileInfo.json does not exist, no need to delete");
+      console.log("[EXAMPLE] fileInfo.json does not exist, no need to be deleted");
     } else {
       // Ocurrió otro error
       console.error("Error:", error);
