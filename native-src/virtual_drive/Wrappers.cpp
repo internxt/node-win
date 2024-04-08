@@ -557,8 +557,7 @@ napi_value DisconnectSyncRootWrapper(napi_env env, napi_callback_info args)
 
 napi_value GetItemsSyncRootWrapper(napi_env env, napi_callback_info args)
 {
-    printf("GetItemsSyncRootWrapper\n");
-    // Logger::getInstance().log("GetItemsSyncRootWrapper", LogLevel::INFO);
+    Logger::getInstance().log("GetItemsSyncRootWrapper", LogLevel::INFO);
     size_t argc = 1;
     napi_value argv[1];
 
@@ -577,8 +576,11 @@ napi_value GetItemsSyncRootWrapper(napi_env env, napi_callback_info args)
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(syncRootPath)), pathLength + 1, nullptr);
 
     std::list<ItemInfo> fileIdentities = SyncRoot::GetItemsSyncRoot(syncRootPath);
-    printf("fileIdentities got\n");
-    printf("[Count] GetItemsSyncRootWrapper: %d\n", fileIdentities.size());
+    Logger::getInstance().log("fileIdentities got\n", LogLevel::INFO);
+    std::stringstream ss;
+    ss << "[Count] GetItemsSyncRootWrapper: %d\n", fileIdentities.size();
+    std::string message = ss.str();
+    Logger::getInstance().log(message, LogLevel::INFO);
     // devolder json con la estructura de ItemInfo
     napi_value jsFileIdentities;
     napi_create_array(env, &jsFileIdentities);
@@ -610,7 +612,8 @@ napi_value GetItemsSyncRootWrapper(napi_env env, napi_callback_info args)
 
 napi_value GetFileIdentityWrapper(napi_env env, napi_callback_info args)
 {
-    printf("GetFileIdentityWrapper\n");
+    Logger::getInstance().log("GetFileIdentityWrapper\n", LogLevel::INFO);
+
     size_t argc = 1;
     napi_value argv[1];
     napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
@@ -628,7 +631,7 @@ napi_value GetFileIdentityWrapper(napi_env env, napi_callback_info args)
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(fullPath)), pathLength + 1, nullptr);
 
     std::string fileIdentity = Placeholders::GetFileIdentity(fullPath);
-    printf("fileIdentity got\n");
+    Logger::getInstance().log("fileIdentity got\n", LogLevel::INFO);
     fileIdentity.erase(std::remove(fileIdentity.begin(), fileIdentity.end(), '\0'), fileIdentity.end());
     fileIdentity.erase(std::remove(fileIdentity.begin(), fileIdentity.end(), ' '), fileIdentity.end());
 
@@ -641,7 +644,6 @@ napi_value GetFileIdentityWrapper(napi_env env, napi_callback_info args)
 
 napi_value DeleteFileSyncRootWrapper(napi_env env, napi_callback_info args)
 {
-    printf("DeleteFileSyncRootWrapper\n");
     size_t argc = 1;
     napi_value argv[1];
     napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
@@ -659,7 +661,6 @@ napi_value DeleteFileSyncRootWrapper(napi_env env, napi_callback_info args)
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(fullPath)), pathLength + 1, nullptr);
 
     SyncRoot::DeleteFileSyncRoot(fullPath);
-    printf("fileIdentity got\n");
 
     delete[] fullPath;
     return nullptr;
