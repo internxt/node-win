@@ -135,7 +135,7 @@ std::optional<BYTE> PlaceHolderInfo::FileIdentity() const
         return {};
     }
 
-    printf("FILE OPTIONAL: %d\n", _data->FileIdentity[0]);
+    Logger::getInstance().log("FILE IDENTITY: " + std::to_string(_data->FileIdentity[0]), LogLevel::DEBUG);
     return _data->FileIdentity[0]; // Devuelve el primer byte del array
 }
 
@@ -167,7 +167,7 @@ FileHandle handleForPath(const std::wstring &wPath)
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
     std::string path = converter.to_bytes(wPath);
 
-    printf("path IN HANDLERCREATOR: %s\n", path.c_str());
+    Logger::getInstance().log("path IN HANDLERCREATOR: " + path, LogLevel::DEBUG);
     LPCSTR pPath = path.c_str();
 
     std::filesystem::path pathFs(path);
@@ -187,7 +187,7 @@ FileHandle handleForPath(const std::wstring &wPath)
         }
         else
         {
-            printf("Could not CfOpenFileWithOplock for path: %s with error: %ld\n", path.c_str(), openResult);
+            Logger::getInstance().log("Could not CfOpenFileWithOplock for path: " + path + " with error: " + std::to_string(openResult), LogLevel::ERROR);
         }
     }
     else if (std::filesystem::is_regular_file(pathFs))
@@ -207,7 +207,7 @@ FileHandle handleForPath(const std::wstring &wPath)
         }
         else
         {
-            printf("Could not CreateFile for path: %s with error: %ld\n", path.c_str(), GetLastError());
+            Logger::getInstance().log("Could not CreateFile for path: " + path + " with error: " + std::to_string(GetLastError()), LogLevel::ERROR);
         }
     }
 
