@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "SyncRoot.h"
 #include "Callbacks.h"
+#include "Logger.h"
 #include <iostream>
 #include <iostream>
 #include <filesystem>
@@ -77,7 +78,10 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
     }
     catch (...)
     {
-        wprintf(L"Could not register the sync root, hr %08x\n", static_cast<HRESULT>(winrt::to_hresult()));
+        std::stringstream ss;
+        ss << "Could not register the sync root, hr %08x\n", static_cast<HRESULT>(winrt::to_hresult());
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::ERROR);
     }
 }
 
@@ -90,9 +94,10 @@ HRESULT SyncRoot::UnregisterSyncRoot()
     }
     catch (...)
     {
-        // winrt::to_hresult() will eat the exception if it is a result of winrt::check_hresult,
-        // otherwise the exception will get rethrown and this method will crash out as it should
-        wprintf(L"Could not unregister the sync root, hr %08x\n", static_cast<HRESULT>(winrt::to_hresult()));
+        std::stringstream ss;
+        ss << "Could not unregister the sync root, hr %08x\n", static_cast<HRESULT>(winrt::to_hresult());
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::ERROR);
     }
 }
 
@@ -118,18 +123,24 @@ HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallback
             nullptr, // Contexto (opcional)
             CF_CONNECT_FLAG_REQUIRE_PROCESS_INFO | CF_CONNECT_FLAG_REQUIRE_FULL_FILE_PATH,
             connectionKey);
-        wprintf(L"Connection key: %llu\n", *connectionKey);
+        std::stringstream ss;
+        ss << "Connection key: %llu\n", *connectionKey;
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::INFO);
         gloablConnectionKey = *connectionKey;
         return hr;
     }
     catch (const std::exception &e)
     {
-        wprintf(L"Excepción capturada: %hs\n", e.what());
+        std::stringstream ss;
+        ss << "Excepción capturada: %hs\n", e.what();
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::ERROR);
         // Aquí puedes decidir si retornar un código de error específico o mantener el E_FAIL.
     }
     catch (...)
     {
-        wprintf(L"Excepción desconocida capturada\n");
+         Logger::getInstance().log("Excepción capturada desconocida", LogLevel::ERROR);
         // Igualmente, puedes decidir el código de error a retornar.
     }
 }
@@ -142,14 +153,17 @@ HRESULT SyncRoot::DisconnectSyncRoot()
         HRESULT hr = CfDisconnectSyncRoot(gloablConnectionKey);
         return hr;
     }
-    catch (const std::exception &e)
+       catch (const std::exception &e)
     {
-        wprintf(L"Excepción capturada: %hs\n", e.what());
+        std::stringstream ss;
+        ss << "Excepción capturada: %hs\n", e.what();
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::ERROR);
         // Aquí puedes decidir si retornar un código de error específico o mantener el E_FAIL.
     }
     catch (...)
     {
-        wprintf(L"Excepción desconocida capturada\n");
+         Logger::getInstance().log("Excepción capturada desconocida", LogLevel::ERROR);
         // Igualmente, puedes decidir el código de error a retornar.
     }
 }
