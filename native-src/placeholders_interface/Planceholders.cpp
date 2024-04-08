@@ -10,6 +10,7 @@
 #include <random>
 #include <iostream>
 #include <Utilities.h>
+#include <Logger.h>
 
 using namespace std;
 
@@ -42,14 +43,13 @@ void Placeholders::CreateOne(
 
         wstring fullPath = std::wstring(destPath) + L'\\' + fileName;
 
-        wprintf(L"Path del archive: %s", fullPath.c_str());
-        wprintf(L"\n");
+        Logger::getInstance().log("fullPath placeholder: " + Logger::fromWStringToString(fullPath), LogLevel::DEBUG);
 
         if (std::filesystem::exists(fullPath))
         {
             Placeholders::ConvertToPlaceholder(fullPath, fileIdentity);
-            wprintf(L"El Archivo ya existe. Se omite la creación.\n");
-            return; // No hacer nada si ya existe
+            Logger::getInstance().log("El Archivo ya existe. Se omite la creación.", LogLevel::INFO);
+            return;
         }
 
         std::wstring relativeName(fileIdentity);
@@ -74,19 +74,19 @@ void Placeholders::CreateOne(
         }
         catch (const winrt::hresult_error &error)
         {
-            wprintf(L"Error al crear placeholder: %s", error.message().c_str());
+            Logger::getInstance().log("Error al crear placeholder: " + Logger::fromWStringToString(fullPath), LogLevel::ERROR);
         }
         winrt::StorageProviderItemProperty prop;
         prop.Id(1);
         prop.Value(L"Value1");
         prop.IconResource(L"shell32.dll,-44");
 
-        wprintf(L"Successfully created placeholder file\n");
+        Logger::getInstance().log("Successfully created placeholder: " + Logger::fromWStringToString(fullPath), LogLevel::INFO);
         // UpdateSyncStatus(fullDestPath, true, false);
     }
     catch (...)
     {
-        wprintf(L"Failed to create or customize placeholder with %08x\n", static_cast<HRESULT>(winrt::to_hresult()));
+        Logger::getInstance().log("Failed to create or customize placeholder\n", LogLevel::ERROR);
     }
 }
 
@@ -119,35 +119,44 @@ void Placeholders::CreateEntry(
         if (DirectoryExists(fullDestPath.c_str()))
         {
             Placeholders::ConvertToPlaceholder(fullDestPath, itemIdentity);
-            wprintf(L"El directorio ya existe. Se omite la creación.\n");
+            Logger::getInstance().log("El directorio ya existe. Se omite la creación.", LogLevel::INFO);
             return; // No hacer nada si ya existe
         }
 
         if (isDirectory) // TODO: the function createEntry is used to create only folders (directories), so this if is always true
         {
-            // wprintf(L"Create directory, full destination path: %ls, fullDestPath.c_str()");
             PathRemoveFileSpecW(&fullDestPath[0]);
             HRESULT hr = CfCreatePlaceholders(fullDestPath.c_str(), &cloudEntry, 1, CF_CREATE_FLAG_NONE, NULL);
             if (FAILED(hr))
             {
-                wprintf(L"Failed to create placeholder directory with HRESULT 0x%08x\n", hr);
+                std::stringstream ss;
+                ss << "Failed to create placeholder directory with HRESULT 0x" << std::hex << std::setw(8) << std::setfill('0') << hr;
+                std::string message = ss.str();
+
+                Logger::getInstance().log(message, LogLevel::ERROR);
+
                 throw winrt::hresult_error(hr);
             }
             else
             {
-                wprintf(L"Successfully created placeholder directory\n");
+                Logger::getInstance().log("Successfully created placeholder directory" + Logger::fromWStringToString(fullDestPath), LogLevel::INFO);
             }
 
             std::wstring finalPath = std::wstring(destPath) + L"\\" + std::wstring(itemName);
             Placeholders::UpdatePinState(finalPath, PinState::OnlineOnly);
             UpdateSyncStatus(finalPath, true, true);
         }
-
-        wprintf(L"Successfully created %s at %s\n", isDirectory ? L"directory" : L"file", fullDestPath.c_str());
+        std::stringstream ss;
+        ss << "Successfully created %s at %s\n", isDirectory ? L"directory" : L"file", fullDestPath.c_str();
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::INFO);
     }
     catch (const winrt::hresult_error &error)
-    {
-        wprintf(L"Error while creating %s: %s\n", isDirectory ? L"directory" : L"file", error.message().c_str());
+    {   
+        std::stringstream ss;
+        ss << "Error while creating %s: %s\n", isDirectory ? L"directory" : L"file", error.message().c_str();
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::INFO);
     }
 }
 
@@ -157,15 +166,12 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
     {
         if (!std::filesystem::exists(fullPath))
         {
-            // El archivo no existe
-            wprintf(L"File does not exist\n");
+             Logger::getInstance().log("File does not exist: " + Logger::fromWStringToString(fullPath), LogLevel::INFO);
             return false;
         }
 
-        // Obtener un handle al archivo
         bool isDirectory = fs::is_directory(fullPath);
 
-        // Obtener un handle al archivo o carpeta
         HANDLE fileHandle = CreateFileW(
             fullPath.c_str(),
             FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES,
@@ -178,7 +184,10 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
         if (fileHandle == INVALID_HANDLE_VALUE)
         {
             // Manejar el error al abrir el archivo
-            wprintf(L"Error opening file: %d\n", GetLastError());
+            std::stringstream ss;
+            ss << "Error opening file: %d\n", GetLastError();
+            std::string message = ss.str();
+            Logger::getInstance().log(message, LogLevel::INFO);
             return false;
         }
 
@@ -195,9 +204,12 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
         if (FAILED(hr))
         {
             // Manejar el error al convertir a marcador de posición
-            wprintf(L"Error converting to placeholder, ConvertToPlaceholder failed with HRESULT 0x%X\n", hr);
 
-            // Puedes obtener información detallada sobre el error usando FormatMessage
+            std::stringstream ss;
+            ss << "Error converting to placeholder, ConvertToPlaceholder failed with HRESULT 0x%X\n", hr;
+            std::string message = ss.str();
+            Logger::getInstance().log(message, LogLevel::INFO);
+
             LPVOID errorMsg;
             FormatMessageW(
                 FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
@@ -208,34 +220,28 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
                 0,
                 NULL);
 
-            wprintf(L"Error details: %s\n", errorMsg);
+            ss << "Error details: %s\n", errorMsg;
+            message = ss.str();
+            Logger::getInstance().log(message, LogLevel::INFO);
 
-            // Liberar el buffer de mensaje de error
             LocalFree(errorMsg);
 
             return false;
         }
 
-        // if (isDirectory) {
-        //   // Si es una carpeta, establecer el estado de pinning
-        //   hr =  CfSetPinState(fileHandle, CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
-        // }
-
-        //   if (FAILED(hr) || hr != S_OK)
-        // {
-        //     // Manejar el error al convertir a marcador de posición
-        //     wprintf(L"Error converting to pinned, CfSetPinState failed\n", GetLastError());
-        //     return false;
-        // }
-
         CloseHandle(fileHandle);
-        wprintf(L"Successfully converted to placeholder: %ls\n", fullPath.c_str());
+
+        std::stringstream ss;
+        ss << "Successfully converted to placeholder: %ls\n", fullPath.c_str();
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::INFO);
+
         return true;
     }
     catch (const winrt::hresult_error &error)
     {
         // Manejar excepciones desconocidas
-        wprintf(L"Unknown exception occurred\n");
+        Logger::getInstance().log("Unknown exception occurred", LogLevel::ERROR);
         return false;
     }
 }
@@ -248,7 +254,7 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
  */
 void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSyncState, bool isDirectory = false)
 {
-    wprintf(L"Path: %ls\n", filePath.c_str());
+    Logger::getInstance().log("Path: " + Logger::fromWStringToString(filePath), LogLevel::INFO);
     HANDLE fileHandle = CreateFileW(
         filePath.c_str(),
         FILE_WRITE_ATTRIBUTES, // permisson needed to change the state
@@ -260,20 +266,29 @@ void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSync
 
     if (fileHandle == INVALID_HANDLE_VALUE)
     {
-        wprintf(L"Error al abrir el archivo: %d\n", GetLastError());
+        std::stringstream ss;
+        ss << "Error al abrir el archivo: %d\n", GetLastError();
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::INFO);
         return;
     }
 
     // https://learn.microsoft.com/en-us/windows/win32/api/cfapi/nf-cfapi-cfsetinsyncstate
     // https://learn.microsoft.com/en-us/windows/win32/api/cfapi/ne-cfapi-cf_in_sync_state
     CF_IN_SYNC_STATE syncState = inputSyncState ? CF_IN_SYNC_STATE_IN_SYNC : CF_IN_SYNC_STATE_NOT_IN_SYNC;
-    // wprintf(L"Marking item as %s: %ls\n", inputSyncState ? L"IN_SYNC" : L"NOT_IN_SYNC", filePath.c_str());
     HRESULT hr = CfSetInSyncState(fileHandle, syncState, CF_SET_IN_SYNC_FLAG_NONE, nullptr);
     // imprimir hresult
-    wprintf(L"hr: %ld\n", hr);
+    std::stringstream ss;
+    ss << "hr: %ld\n", hr;
+    std::string message = ss.str();
+    Logger::getInstance().log(message, LogLevel::INFO);
+ 
     if (FAILED(hr))
     {
-        wprintf(L"Error al establecer el estado de sincronización: %ld\n", hr);
+        std::stringstream ss;
+        ss <<"Error al establecer el estado de sincronización: %ld\n", hr;
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::INFO);
     }
 
     CloseHandle(fileHandle);
@@ -337,35 +352,21 @@ CF_PLACEHOLDER_STATE GetPlaceholderStateMock(const std::wstring &filePath)
     }
 }
 
-std::vector<std::wstring> Placeholders::GetPlaceholderWithStatePending(const std::wstring &directoryPath)
-{
+
+std::vector<std::wstring> Placeholders::GetPlaceholderWithStatePending(const std::wstring& directoryPath) {
     std::vector<std::wstring> resultPaths;
 
-    for (const auto &entry : std::filesystem::directory_iterator(directoryPath))
-    {
-        const auto &path = entry.path().wstring();
+    for (const auto& entry : std::filesystem::directory_iterator(directoryPath)) {
+        const auto& path = entry.path().wstring();
 
-        if (entry.is_regular_file())
-        {
-            // Verifica el estado del placeholder y las condiciones adicionales
+        if (entry.is_directory()) {
+            std::vector<std::wstring> subfolderPaths = GetPlaceholderWithStatePending(path);
+            resultPaths.insert(resultPaths.end(), subfolderPaths.begin(), subfolderPaths.end());
+        } else if (entry.is_regular_file()) {
             FileState placeholderState = DirectoryWatcher::getPlaceholderInfo(path);
             bool isFileValidForSync = (placeholderState.syncstate == SyncState::Undefined || placeholderState.syncstate == SyncState::NotInSync);
-            if (isFileValidForSync &&
-                IsFileValidForSync(path))
-            {
+            if (isFileValidForSync && IsFileValidForSync(path)) {
                 resultPaths.push_back(path);
-            }
-        }
-        else if (entry.is_directory())
-        {
-            // Verifica el estado del directorio y las condiciones adicionales
-            FileState placeholderState = DirectoryWatcher::getPlaceholderInfo(path);
-            bool isFileValidForSync = (placeholderState.syncstate == SyncState::Undefined || placeholderState.syncstate == SyncState::NotInSync);
-            if (isFileValidForSync)
-            {
-                // resultPaths.push_back(path);
-                std::vector<std::wstring> subfolderPaths = GetPlaceholderWithStatePending(path);
-                resultPaths.insert(resultPaths.end(), subfolderPaths.begin(), subfolderPaths.end());
             }
         }
     }

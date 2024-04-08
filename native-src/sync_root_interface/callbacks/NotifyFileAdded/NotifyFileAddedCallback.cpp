@@ -26,7 +26,7 @@ napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
 
     if (argc < 2)
     {
-        wprintf(L"This function must receive at least two arguments");
+        Logger::getInstance().log("This function must receive at least two arguments", LogLevel::ERROR);
         return nullptr;
     }
 
@@ -36,7 +36,7 @@ napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
     napi_typeof(env, argv[0], &valueType);
     if (valueType != napi_boolean)
     {
-        wprintf(L"First argument should be boolean\n");
+        Logger::getInstance().log("First argument should be boolean\n", LogLevel::ERROR);
         return nullptr;
     }
 
@@ -47,8 +47,7 @@ napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
     napi_typeof(env, argv[1], &valueType);
     if (valueType != napi_string)
     {
-        wprintf(L"Second argument should be string\n");
-        return nullptr;
+        Logger::getInstance().log("Second argument should be string\n", LogLevel::ERROR);
     }
 
     size_t response_len;
@@ -57,8 +56,6 @@ napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
     std::wstring response_wstr(response_len, L'\0');
 
     napi_get_value_string_utf16(env, argv[1], (char16_t *)response_wstr.data(), response_len + 1, &response_len);
-
-    // wprintf(L"input path: %s .\n", response_wstr.c_str());
 
     std::lock_guard<std::mutex> lock(mtx);
     ready = true;
@@ -69,7 +66,7 @@ napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
 
     if (confirmation_response)
     {
-         Sleep(100);
+        Sleep(100);
         result = Placeholders::ConvertToPlaceholder(global_path, server_identity);
         if (global_type == NEW_FILE)
         {
@@ -87,7 +84,6 @@ napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
     napi_value promise;
     napi_deferred deferred;
     napi_create_promise(env, &deferred, &promise);
-    // print result
     Logger::getInstance().log("Result: " + std::to_string(result), LogLevel::INFO);
     // Resolver la promesa con el resultado booleano
     napi_resolve_deferred(env, deferred, result_value);
@@ -112,7 +108,7 @@ void notify_file_added_call(napi_env env, napi_value js_callback, void *context,
     status = napi_get_undefined(env, &undefined);
     if (status != napi_ok)
     {
-        fprintf(stderr, "Failed to get undefined value.\n");
+        Logger::getInstance().log("Failed to get undefined value.\n", LogLevel::ERROR);
         return;
     }
 
@@ -224,7 +220,6 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
     }
 
     // if (!callbackResult) {
-    //     wprintf(L"not in sync\n");
     //     winrt::StorageProviderItemProperty prop;
     //     prop.Id(1);
     //     prop.Value(L"Value1");

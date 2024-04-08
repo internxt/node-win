@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "SyncRoot.h"
 #include "Callbacks.h"
+#include "Logger.h"
 #include <iostream>
 #include <iostream>
 #include <filesystem>
@@ -77,7 +78,10 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
     }
     catch (...)
     {
-        wprintf(L"Could not register the sync root, hr %08x\n", static_cast<HRESULT>(winrt::to_hresult()));
+        std::stringstream ss;
+        ss << "Could not register the sync root, hr %08x\n", static_cast<HRESULT>(winrt::to_hresult());
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::ERROR);
     }
 }
 
@@ -90,9 +94,10 @@ HRESULT SyncRoot::UnregisterSyncRoot()
     }
     catch (...)
     {
-        // winrt::to_hresult() will eat the exception if it is a result of winrt::check_hresult,
-        // otherwise the exception will get rethrown and this method will crash out as it should
-        wprintf(L"Could not unregister the sync root, hr %08x\n", static_cast<HRESULT>(winrt::to_hresult()));
+        std::stringstream ss;
+        ss << "Could not unregister the sync root, hr %08x\n", static_cast<HRESULT>(winrt::to_hresult());
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::ERROR);
     }
 }
 
@@ -118,18 +123,24 @@ HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallback
             nullptr, // Contexto (opcional)
             CF_CONNECT_FLAG_REQUIRE_PROCESS_INFO | CF_CONNECT_FLAG_REQUIRE_FULL_FILE_PATH,
             connectionKey);
-        wprintf(L"Connection key: %llu\n", *connectionKey);
+        std::stringstream ss;
+        ss << "Connection key: %llu\n", *connectionKey;
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::INFO);
         gloablConnectionKey = *connectionKey;
         return hr;
     }
     catch (const std::exception &e)
     {
-        wprintf(L"Excepción capturada: %hs\n", e.what());
+        std::stringstream ss;
+        ss << "Excepción capturada: %hs\n", e.what();
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::ERROR);
         // Aquí puedes decidir si retornar un código de error específico o mantener el E_FAIL.
     }
     catch (...)
     {
-        wprintf(L"Excepción desconocida capturada\n");
+        Logger::getInstance().log("Excepción capturada desconocida", LogLevel::ERROR);
         // Igualmente, puedes decidir el código de error a retornar.
     }
 }
@@ -144,12 +155,15 @@ HRESULT SyncRoot::DisconnectSyncRoot()
     }
     catch (const std::exception &e)
     {
-        wprintf(L"Excepción capturada: %hs\n", e.what());
+        std::stringstream ss;
+        ss << "Excepción capturada: %hs\n", e.what();
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::ERROR);
         // Aquí puedes decidir si retornar un código de error específico o mantener el E_FAIL.
     }
     catch (...)
     {
-        wprintf(L"Excepción desconocida capturada\n");
+        Logger::getInstance().log("Excepción capturada desconocida", LogLevel::ERROR);
         // Igualmente, puedes decidir el código de error a retornar.
     }
 }
@@ -167,8 +181,8 @@ void EnumerateAndQueryPlaceholders(const std::wstring &directoryPath, std::list<
     // iterator
     for (const auto &entry : std::filesystem::directory_iterator(directoryPath))
     {
-        printf("Entry: %ls\n", entry.path().c_str());
-        // bool isDirectory = entry.is_directory();
+
+        Logger::getInstance().log("Entry:" + Logger::fromWStringToString(entry.path()), LogLevel::INFO);
         ItemInfo item;
         item.path = entry.path().c_str();
         try
@@ -196,14 +210,14 @@ void EnumerateAndQueryPlaceholders(const std::wstring &directoryPath, std::list<
                     // Convertir FileIdentity a una cadena wstring
                     size_t identityLength = standard_info->FileIdentityLength / sizeof(wchar_t);
                     std::wstring fileIdentityString(reinterpret_cast<const wchar_t *>(FileIdentity), identityLength);
-                    printf("FileIdentity: %ls\n", fileIdentityString.c_str());
+                    Logger::getInstance().log("FileIdentity: " + Logger::fromWStringToString(fileIdentityString), LogLevel::INFO);
                     item.fileIdentity = fileIdentityString;
                     item.isPlaceholder = true;
                     itemInfo.push_back(item);
                 }
                 else
                 {
-                    printf("Error likely not a placeholder \n");
+                    Logger::getInstance().log("Error likely not a placeholder \n", LogLevel::ERROR);
                     item.fileIdentity = L"";
                     item.isPlaceholder = false;
                 }
@@ -212,31 +226,35 @@ void EnumerateAndQueryPlaceholders(const std::wstring &directoryPath, std::list<
 
                 if (isDirectory)
                 {
-                    printf("IsDirectory: ");
+                    Logger::getInstance().log("IsDirectory:  \n", LogLevel::INFO);
                     EnumerateAndQueryPlaceholders(entry.path().c_str(), itemInfo);
                 }
             }
             else
             {
-                wprintf(L"Invalid Item: %ls\n", entry.path().c_str());
+                Logger::getInstance().log("Invalid Item: " + Logger::fromWStringToString(entry.path()), LogLevel::WARN);
             }
             // CloseHandle(hFile);
             // hFile = INVALID_HANDLE_VALUE;
         }
-        catch (const std::exception &ex)
+        catch (const std::exception &e)
         {
-            // Manejar excepciones estándar de C++
-            printf("Exception occurred: %s\n", ex.what());
+            std::stringstream ss;
+            ss << "Excepción capturada: %hs\n", e.what();
+            std::string message = ss.str();
+            Logger::getInstance().log(message, LogLevel::ERROR);
         }
         catch (...)
         {
-            // Manejar cualquier otra excepción
-            printf("Unknown exception occurred.\n");
+            Logger::getInstance().log("Excepción capturada desconocida", LogLevel::ERROR);
         }
 
         count++;
     }
-    printf("Count items: %d\n", count);
+    std::stringstream ss;
+    ss << "Count items: %d\n", count;
+    std::string message = ss.str();
+    Logger::getInstance().log(message, LogLevel::ERROR);
     return;
 }
 
@@ -245,16 +263,18 @@ std::list<ItemInfo> SyncRoot::GetItemsSyncRoot(const wchar_t *syncRootPath)
 {
     try
     {
-        printf("[Start] GetItemsSyncRoot\n");
+        Logger::getInstance().log("[Start] GetItemsSyncRoot\n", LogLevel::INFO);
         std::list<ItemInfo> itemInfo;
         EnumerateAndQueryPlaceholders(syncRootPath, itemInfo);
-        // print first file id
-        printf("[End] GetItemsSyncRoot\n");
+        Logger::getInstance().log("[End] GetItemsSyncRoot\n", LogLevel::INFO);
         return itemInfo;
     }
     catch (const std::exception &e)
     {
-        wprintf(L"Excepción capturada: %hs\n", e.what());
+        std::stringstream ss;
+        ss << "Excepción capturada: %hs\n", e.what();
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::ERROR);
     }
 }
 
@@ -263,9 +283,14 @@ std::string SyncRoot::GetFileIdentity(const wchar_t *path)
 {
     try
     {
-        printf("GetFileIdentity: %ls\n", path);
+        Logger::getInstance().log("GetFileIdentity: " + Logger::fromWStringToString(path), LogLevel::INFO);
+
         bool isDirectory = fs::is_directory(path);
-        printf("IsDirectory: %d\n", isDirectory);
+        std::stringstream ss;
+        ss << "IsDirectory: %d\n", isDirectory;
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::INFO);
+
         HANDLE hFile = CreateFileW(
             path,
             FILE_READ_ATTRIBUTES,
@@ -281,7 +306,10 @@ std::string SyncRoot::GetFileIdentity(const wchar_t *path)
             CF_PLACEHOLDER_STANDARD_INFO *standard_info = (CF_PLACEHOLDER_STANDARD_INFO *)new BYTE[size];
             DWORD returnlength(0);
             HRESULT hr = CfGetPlaceholderInfo(hFile, CF_PLACEHOLDER_INFO_STANDARD, standard_info, size, &returnlength);
-            printf("CfGetPlaceholderInfo: %d\n", hr);
+            std::stringstream ss;
+            ss << "CfGetPlaceholderInfo: %d\n", hr;
+            std::string message = ss.str();
+            Logger::getInstance().log(message, LogLevel::INFO);
             if (SUCCEEDED(hr))
             {
 
@@ -295,7 +323,7 @@ std::string SyncRoot::GetFileIdentity(const wchar_t *path)
             }
             else
             {
-                printf("Error likely not a placeholder \n");
+                Logger::getInstance().log("Error likely not a placeholder \n", LogLevel::WARN);
                 return "";
             }
             CloseHandle(hFile);
@@ -303,17 +331,20 @@ std::string SyncRoot::GetFileIdentity(const wchar_t *path)
         }
         else
         {
-            wprintf(L"Invalid Item: %ls\n", path);
+            Logger::getInstance().log("Invalid Item: " + Logger::fromWStringToString(path), LogLevel::WARN);
             return "";
         }
     }
     catch (const std::exception &e)
     {
-        wprintf(L"Excepción capturada: %hs\n", e.what());
+        std::stringstream ss;
+        ss << "Excepción capturada: %hs\n", e.what();
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::ERROR);
     }
     catch (...)
     {
-        wprintf(L"Excepción desconocida capturada\n");
+        Logger::getInstance().log("Excepción desconocida capturada\n", LogLevel::ERROR);
     }
 }
 
@@ -321,38 +352,35 @@ void SyncRoot::DeleteFileSyncRoot(const wchar_t *path)
 {
     try
     {
-        // Mostrar el archivo a eliminar
-        wprintf(L"Intentando eliminar: %ls\n", path);
-
-        // Verificar si el archivo es un directorio o un archivo regular
         bool isDirectory = fs::is_directory(path);
-        wprintf(L"Es directorio: %d\n", isDirectory);
+        Logger::getInstance().log("Intentando eliminar:" + Logger::fromWStringToString(path), LogLevel::INFO);
 
-        // Si es un directorio, eliminar recursivamente
         if (isDirectory)
         {
-            fs::remove_all(path); // Esta línea reemplaza la función personalizada DeleteFileOrDirectory
-            wprintf(L"Directorio eliminado con éxito: %ls\n", path);
+            fs::remove_all(path);
+            Logger::getInstance().log("Directorio eliminado con éxito: " + Logger::fromWStringToString(path), LogLevel::INFO);
         }
         else
         {
-            // Si es un archivo, simplemente eliminar
             if (!DeleteFileW(path))
             {
-                wprintf(L"No se pudo eliminar el archivo: %ls\n", path);
+                Logger::getInstance().log("No se pudo eliminar el archivo: " + Logger::fromWStringToString(path), LogLevel::WARN);
             }
             else
             {
-                wprintf(L"Archivo eliminado con éxito: %ls\n", path);
+                Logger::getInstance().log("Archivo eliminado con éxito: " + Logger::fromWStringToString(path), LogLevel::INFO);
             }
         }
     }
     catch (const std::exception &e)
     {
-        wprintf(L"Excepción capturada: %hs\n", e.what());
+        std::stringstream ss;
+        ss << "Excepción capturada: %hs\n", e.what();
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::ERROR);
     }
     catch (...)
     {
-        wprintf(L"Excepción desconocida capturada\n");
+        Logger::getInstance().log("Excepción desconocida capturada\n", LogLevel::ERROR);
     }
 }

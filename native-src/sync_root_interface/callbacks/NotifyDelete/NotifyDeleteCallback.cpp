@@ -1,4 +1,5 @@
 #include <Callbacks.h>
+#include <Logger.h>
 #include <string>
 #include <condition_variable>
 #include <mutex>
@@ -63,7 +64,7 @@ void notify_delete_call(napi_env env, napi_value js_callback, void *context, voi
     napi_status status = napi_call_function(env, undefined, js_callback, 2, args_to_js_callback, &result);
     if (status != napi_ok)
     {
-        fprintf(stderr, "Failed to call JS function.\n");
+        Logger::getInstance().log("Failed to call JS function.\n", LogLevel::ERROR);
         return;
     }
 
@@ -83,14 +84,12 @@ void notify_delete_call(napi_env env, napi_value js_callback, void *context, voi
 
 //     napi_status status = napi_call_function(env, undefined, js_callback, 1, &js_string, &result);
 //     if (status != napi_ok) {
-//         fprintf(stderr, "Failed to call JS function.\n");
 //         return;
 //     }
 
 //     bool js_result = false;  // Variable para almacenar el resultado booleano
 //     status = napi_get_value_bool(env, result, &js_result);  // Obtiene el valor booleano desde el objeto napi_value
 //     if (status != napi_ok) {
-//         fprintf(stderr, "Failed to convert napi_value to bool.\n");
 //         return;
 //     }
 
@@ -116,7 +115,7 @@ void register_threadsafe_notify_delete_callback(const std::string &resource_name
 
     if (notify_delete_callback == nullptr)
     {
-        fprintf(stderr, "notify_delete_callback is null\n");
+        Logger::getInstance().log("notify_delete_callback is null\n", LogLevel::WARN);
         return;
     }
 
@@ -137,9 +136,20 @@ void register_threadsafe_notify_delete_callback(const std::string &resource_name
     {
         const napi_extended_error_info *errorInfo = NULL;
         napi_get_last_error_info(env, &errorInfo);
-        fprintf(stderr, "Failed to create threadsafe function: %s\n", errorInfo->error_message);
-        fprintf(stderr, "N-API Status Code: %d\n", errorInfo->error_code);
-        fprintf(stderr, "Engine-specific error code: %u\n", errorInfo->engine_error_code);
+        std::stringstream ss;
+        ss << "Failed to create threadsafe function: %s\n", errorInfo->error_message;
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::ERROR);
+
+        ss << "N-API Status Code: %d\n", errorInfo->error_code;
+        message = ss.str();
+
+        Logger::getInstance().log(message, LogLevel::ERROR);
+
+        ss << "Engine-specific error code: %u\n", errorInfo->engine_error_code;
+        message = ss.str();
+
+        Logger::getInstance().log(message, LogLevel::ERROR);
         abort();
     }
 
@@ -162,7 +172,7 @@ void CALLBACK notify_delete_callback_wrapper(
 
     if (status != napi_ok)
     {
-        wprintf(L"Callback called unsuccessfully.\n");
+        Logger::getInstance().log("Callback called unsuccessfully.\n", LogLevel::ERROR);
     }
 
     CF_OPERATION_PARAMETERS opParams = {0};
@@ -194,7 +204,10 @@ void CALLBACK notify_delete_callback_wrapper(
     }
 
     if (FAILED(hr))
-    { 
-        wprintf(L"Error in CfExecute() delete action, HRESULT: %lx\n", hr);
+    {
+        std::stringstream ss;
+        ss << "Error in CfExecute() delete action, HRESULT: %lx\n", hr;
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::ERROR);
     }
 }

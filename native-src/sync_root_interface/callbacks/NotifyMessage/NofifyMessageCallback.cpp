@@ -1,4 +1,5 @@
 #include "Callbacks.h"
+#include "Logger.h"
 #include "DirectoryWatcher.h"
 #include "Utilities.h"
 #include "ProcessTypes.h"
@@ -30,7 +31,7 @@ napi_value response_callback_fn_nofify(napi_env env, napi_callback_info info)
 
     if (argc < 1)
     {
-        wprintf(L"[Error] This function must receive at least two arguments");
+        Logger::getInstance().log("[Error] This function must receive at least two arguments", LogLevel::ERROR);
         return nullptr;
     }
     napi_valuetype valueType;
@@ -39,7 +40,7 @@ napi_value response_callback_fn_nofify(napi_env env, napi_callback_info info)
     napi_typeof(env, argv[0], &valueType);
     if (valueType != napi_boolean)
     {
-        wprintf(L"[Error] First argument should be boolean\n");
+        Logger::getInstance().log("[Error] First argument should be boolean\n", LogLevel::ERROR);
         return nullptr;
     }
     bool confirmation_response;
@@ -69,21 +70,21 @@ void notify_message_call(napi_env env, napi_value js_callback, void *context, vo
     status = napi_create_string_utf16(env, u16_action.c_str(), u16_action.size(), &js_action);
     if (status != napi_ok)
     {
-        fprintf(stderr, "[Error] Failed to create u16_action string.\n");
+        Logger::getInstance().log("[Error] Failed to create u16_action string.\n", LogLevel::ERROR);
         return;
     }
 
     status = napi_create_string_utf16(env, u16_errorName.c_str(), u16_errorName.size(), &js_errorName);
     if (status != napi_ok)
     {
-        fprintf(stderr, "[Error] Failed to create u16_errorName string.\n");
+        Logger::getInstance().log("[Error] Failed to create u16_errorName string.\n", LogLevel::ERROR);
         return;
     }
 
     status = napi_create_string_utf16(env, u16_message.c_str(), u16_message.size(), &js_message);
     if (status != napi_ok)
     {
-        fprintf(stderr, "[Error] Failed to create u16_message string.\n");
+        Logger::getInstance().log("[Error] Failed to create u16_action string.\n", LogLevel::ERROR);
         return;
     }
 
@@ -94,7 +95,7 @@ void notify_message_call(napi_env env, napi_value js_callback, void *context, vo
     status = napi_get_undefined(env, &undefined);
     if (status != napi_ok)
     {
-        fprintf(stderr, "[Error] Failed to get undefined value.\n");
+        Logger::getInstance().log("[Error] Failed to get undefined value.\n", LogLevel::ERROR);
         return;
     }
 
@@ -106,7 +107,7 @@ void notify_message_call(napi_env env, napi_value js_callback, void *context, vo
     status = napi_call_function(env, undefined, js_callback, 4, args_to_js_callback, &result);
     if (status != napi_ok)
     {
-        fprintf(stderr, "[Error] Failed to call JS function.\n");
+        Logger::getInstance().log("[Error] Failed to call JS function.\n", LogLevel::ERROR);
         return;
     }
     delete args;
