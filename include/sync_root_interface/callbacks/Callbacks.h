@@ -32,3 +32,7 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
 // Notify message from node-win
 void notify_message_call(napi_env env, napi_value js_callback, void *context, void *data);
 void register_threadsafe_message_callback(FileChange &change, const std::string &resource_name, napi_env env, InputSyncCallbacksThreadsafe input);
+
+// Notify log from node-win
+void notify_log_call(napi_env env, napi_value js_callback, void *context, void *data);
+void register_threadsafe_notify_log_callback(const std::string &message, const std::string &level, napi_env env, napi_threadsafe_function threadsafe_function);

@@ -57,13 +57,17 @@ type ExtraCallbacks = {
 };
 
 type Callbacks = InputSyncCallbacks & ExtraCallbacks;
+
+type ConstructCallback = {
+  "notifyLogCallback": NapiCallbackFunction;
+}
 class VirtualDrive {
   PLACEHOLDER_ATTRIBUTES: { [key: string]: number };
   syncRootPath: string;
   callbacks?: Callbacks;
   private itemsIds: string[] = [];
 
-  constructor(syncRootPath: string, loggerPath?: string) {
+  constructor(syncRootPath: string, loggerPath: string, callbacks: ConstructCallback) {
     this.PLACEHOLDER_ATTRIBUTES = {
       FILE_ATTRIBUTE_READONLY: 0x1,
       FILE_ATTRIBUTE_HIDDEN: 0x2,
@@ -77,12 +81,17 @@ class VirtualDrive {
     pathElements.pop();
     let parentPath = pathElements.join("\\\\");
 
-    this.addLoggerPath(loggerPath ?? parentPath);
+    this.addLoggerPath(loggerPath ?? parentPath, callbacks ?? {
+      "notifyLogCallback": () => {
+        console.log("notifyLogCallback not defined");
+      }
+    });
   }
 
-  addLoggerPath(loggerPath: string) {
+  addLoggerPath(loggerPath: string, callbacks: ConstructCallback) {
     console.log("loggerPath: ", loggerPath);
-    addon.addLoggerPath(loggerPath);
+    console.log("callbacks: ", callbacks);
+    addon.addLoggerPath(loggerPath, callbacks);
   }
 
   getPlaceholderState(path: string): any {
@@ -287,7 +296,7 @@ class VirtualDrive {
       for (let i = 0; i < splitPath.length - 1; i++) {
         // everything except last element
         const dir = splitPath[i];
-        
+
         currentPath = path.join(currentPath, dir);
       }
       // last element is the file
@@ -338,8 +347,8 @@ class VirtualDrive {
       }
       currentPath = path.join(currentPath, dir);
     }
-    
-    
+
+
   }
 
   createItemByPath(
