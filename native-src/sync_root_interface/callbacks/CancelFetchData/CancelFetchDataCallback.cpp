@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include <Callbacks.h>
+#include <Logger.h>
 #include <cfapi.h>
 #include <condition_variable>
 #include <iostream>
@@ -18,7 +19,7 @@ struct CancelFetchDataArgs
 };
 
 void setup_global_tsfn_cancel_fetch_data(napi_threadsafe_function tsfn)
-{ 
+{
     g_cancel_delete_fetch_data_threadsafe_callback = tsfn;
 }
 
@@ -39,7 +40,7 @@ void notify_cancel_fetch_data_call(napi_env env, napi_value js_callback, void *c
     napi_status status = napi_call_function(env, undefined, js_callback, 1, args_to_js_callback_cancel_fetch, &result);
     if (status != napi_ok)
     {
-        fprintf(stderr, "Failed to call JS function.\n");
+        Logger::getInstance().log("Failed to call JS function.\n", LogLevel::ERROR);
         return;
     }
 
@@ -74,17 +75,17 @@ void register_threadsafe_cancel_fetch_data_callback(const std::string &resource_
 
     if (status != napi_ok)
     {
-        fprintf(stderr, "Failed to create threadsafe function.\n");
+        Logger::getInstance().log("Failed to call JS function.\n", LogLevel::ERROR);
         return;
     }
     setup_global_tsfn_cancel_fetch_data(tsfn_cancel_fetch_data);
 }
 
 void CALLBACK cancel_fetch_data_callback_wrapper(
-    _In_ CONST CF_CALLBACK_INFO* callbackInfo,
-    _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
-) {
-    printf("fetch_data_callback_wrapper\n");
+    _In_ CONST CF_CALLBACK_INFO *callbackInfo,
+    _In_ CONST CF_CALLBACK_PARAMETERS *callbackParameters)
+{
+    Logger::getInstance().log("fetch_data_callback_wrapper\n", LogLevel::INFO);
 
     LPCVOID fileIdentity = callbackInfo->FileIdentity;
     DWORD fileIdentityLength = callbackInfo->FileIdentityLength;
@@ -94,7 +95,7 @@ void CALLBACK cancel_fetch_data_callback_wrapper(
 
     if (g_cancel_delete_fetch_data_threadsafe_callback == nullptr)
     {
-        wprintf(L"Callback fetch_data_callback_wrapper called but g_fetch_data_threadsafe_callback is null\n");
+        Logger::getInstance().log("Callback fetch_data_callback_wrapper called but g_fetch_data_threadsafe_callback is null\n", LogLevel::WARN);
         return;
     }
 
@@ -105,7 +106,7 @@ void CALLBACK cancel_fetch_data_callback_wrapper(
 
     if (status != napi_ok)
     {
-        wprintf(L"Callback called unsuccessfully.\n");
+        Logger::getInstance().log("Callback called unsuccessfully.\n", LogLevel::ERROR);
     };
 
     {
@@ -116,5 +117,5 @@ void CALLBACK cancel_fetch_data_callback_wrapper(
         }
     }
 
-    ready = false; 
+    ready = false;
 }
