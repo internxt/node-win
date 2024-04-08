@@ -26,7 +26,7 @@ napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
 
     if (argc < 2)
     {
-        wprintf(L"This function must receive at least two arguments");
+        Logger::getInstance().log("This function must receive at least two arguments", LogLevel::ERROR);
         return nullptr;
     }
 
@@ -36,7 +36,7 @@ napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
     napi_typeof(env, argv[0], &valueType);
     if (valueType != napi_boolean)
     {
-        wprintf(L"First argument should be boolean\n");
+        Logger::getInstance().log("First argument should be boolean\n", LogLevel::ERROR);
         return nullptr;
     }
 
@@ -47,8 +47,7 @@ napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
     napi_typeof(env, argv[1], &valueType);
     if (valueType != napi_string)
     {
-        wprintf(L"Second argument should be string\n");
-        return nullptr;
+        Logger::getInstance().log("Second argument should be string\n", LogLevel::ERROR);
     }
 
     size_t response_len;
@@ -109,7 +108,7 @@ void notify_file_added_call(napi_env env, napi_value js_callback, void *context,
     status = napi_get_undefined(env, &undefined);
     if (status != napi_ok)
     {
-        fprintf(stderr, "Failed to get undefined value.\n");
+        Logger::getInstance().log("Failed to get undefined value.\n", LogLevel::ERROR);
         return;
     }
 

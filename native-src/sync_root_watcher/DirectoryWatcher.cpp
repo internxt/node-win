@@ -311,19 +311,12 @@ winrt::Windows::Foundation::IAsyncAction DirectoryWatcher::ReadChangesInternalAs
             }
 
             // else if (next->Action == FILE_ACTION_MODIFIED && fileExists  && !isTmpFile && !isDirectory && !isHidden) {
-            //     wprintf(L"modified file1: %s\n", fullPath.c_str());
             //     fc.type = MODIFIED_FILE;
             //     fc.item_added = true;
             //     result.push_back(fc);
             // }
 
             // fc.file_added =( next->Action == FILE_ACTION_ADDED || (next->Action == FILE_ACTION_MODIFIED && !fileExists)) && !isTmpFile && !isDirectory;
-
-            // wprintf(L"next->FileName: %ls\n", next->FileName);
-            // wprintf(L"next->Action: %d\n", next->Action);
-            // wprintf(L"fileExists: %d\n", fileExists);
-            // wprintf(L"isTmpFile: %d\n", isTmpFile);
-            // wprintf(L"isDirectory: %d\n", isDirectory);
 
             if (next->NextEntryOffset)
             {

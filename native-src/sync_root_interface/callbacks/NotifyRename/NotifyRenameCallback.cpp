@@ -164,8 +164,6 @@ void CALLBACK notify_rename_callback_wrapper(
     NotifyRenameArgs *args = new NotifyRenameArgs();
     args->targetPathArg = std::wstring(targetPathArg);
     args->fileIdentityArg = fileIdentityStr;
-    // wprintf(L"Callback notify_rename_callback_wrapper called\n");
-    // wprintf(L"g_notify_rename_threadsafe_callback = %s\n", g_notify_rename_threadsafe_callback);
     napi_status status = napi_call_threadsafe_function(g_notify_rename_threadsafe_callback, args, napi_tsfn_blocking);
 
     if (status != napi_ok)
@@ -212,9 +210,7 @@ void CALLBACK notify_rename_callback_wrapper(
         absolutePath = driveLetter + L"\\" + targetPathArg;
     }
     // Imprime la ruta
-    // wprintf(L"absolutePath: %ls\n", absolutePath.c_str());
     bool isDirectory = std::filesystem::is_directory(absolutePath);
-    // printf("Is directory: %d\n", isDirectory);
 
     Placeholders::UpdateSyncStatus(absolutePath, callbackResult, isDirectory);
 

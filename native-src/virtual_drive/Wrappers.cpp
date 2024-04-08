@@ -548,7 +548,6 @@ napi_value DisconnectSyncRootWrapper(napi_env env, napi_callback_info args)
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(syncRootPath)), pathLength + 1, nullptr);
 
     HRESULT result = SyncRoot::DisconnectSyncRoot();
-    // wprintf(L"DisconnectSyncRootWrapper: %08x\n", static_cast<HRESULT>(result));
     delete[] syncRootPath;
 
     napi_value napiResult;
