@@ -1,4 +1,5 @@
 #include <Callbacks.h>
+#include <Logger.h>
 #include <string>
 #include <condition_variable>
 #include <mutex>
@@ -19,5 +20,5 @@ void CALLBACK fetch_placeholders_callback_wrapper(
     _In_ CONST CF_CALLBACK_INFO *callbackInfo,
     _In_ CONST CF_CALLBACK_PARAMETERS *callbackParameters)
 {
-    wprintf(L"Callback fetch_placeholders_callback_wrapper called\n");
+    Logger::getInstance().log("Callback fetch_placeholders_callback_wrapper called\n", LogLevel::DEBUG);
 }

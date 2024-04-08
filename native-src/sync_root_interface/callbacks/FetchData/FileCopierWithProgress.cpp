@@ -32,7 +32,6 @@ HRESULT FileCopierWithProgress::TransferData(
         Logger::getInstance().log("TransferData", LogLevel::INFO);
         CF_OPERATION_INFO opInfo = {0};
         CF_OPERATION_PARAMETERS opParams = {0};
-        // wprintf(L"[%04x:%04x] - TransferData\n", GetCurrentProcessId(), GetCurrentThreadId());
         opInfo.StructSize = sizeof(opInfo);
         opInfo.Type = CF_OPERATION_TYPE_TRANSFER_DATA;
         opInfo.ConnectionKey = connectionKey;
@@ -46,9 +45,15 @@ HRESULT FileCopierWithProgress::TransferData(
         HRESULT hr = CfExecute(&opInfo, &opParams);
         if (FAILED(hr))
         {
-                wprintf(L"Error in CfExecute(), HRESULT: %lx\n", hr);
+                std::stringstream ss;
+                ss << "Error in CfExecute(), HRESULT: %lx\n", hr;
+                std::string message = ss.str();
+                Logger::getInstance().log(message, LogLevel::ERROR);
         }
-        printf("TransferData : %s\n", SUCCEEDED(hr) ? "Succeeded" : "Failed");
+        std::stringstream ss;
+        ss << "TransferData : %s\n", SUCCEEDED(hr) ? "Succeeded" : "Failed";
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::DEBUG);
 
         return hr;
 }
