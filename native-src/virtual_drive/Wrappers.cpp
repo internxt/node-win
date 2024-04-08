@@ -668,13 +668,13 @@ napi_value DeleteFileSyncRootWrapper(napi_env env, napi_callback_info args)
 
 napi_value addLoggerPathWrapper(napi_env env, napi_callback_info args)
 {
-    size_t argc = 1;
-    napi_value argv[1];
+    size_t argc = 2;
+    napi_value argv[2];
 
     napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
-    if (argc < 1)
+    if (argc < 2)
     {
-        napi_throw_error(env, nullptr, "The path is required for addLoggerPath");
+        napi_throw_error(env, nullptr, "Two arguments are required for addLoggerPath");
         return nullptr;
     }
 
@@ -697,10 +697,52 @@ napi_value addLoggerPathWrapper(napi_env env, napi_callback_info args)
     // Realizar la conversión de UTF-16 a UTF-8.
     WideCharToMultiByte(CP_UTF8, 0, widePath.get(), -1, utf8Path.get(), utf8Length, nullptr, nullptr);
 
-    // Inicializar el logger con la ruta UTF-8.
-    LoggerPath::set(std::string(utf8Path.get()));
+    
 
-    // Devolver un valor booleano verdadero.
+    //Obtain notifyLogCallback
+    napi_value notifyLogCallback;
+
+    napi_ref notify_file_log_callback_ref = nullptr;
+
+    if (napi_get_named_property(env, argv[1], "notifyLogCallback", &notifyLogCallback) == napi_ok)
+    {
+        napi_create_reference(env, notifyLogCallback, 1, &notify_file_log_callback_ref);
+    }
+
+    napi_valuetype valuetype;
+    napi_status type_status = napi_typeof(env, notifyLogCallback, &valuetype);
+    if (type_status != napi_ok || valuetype != napi_function)
+    {
+        napi_throw_error(env, nullptr, "notifyLogCallback should be a function.");
+        return nullptr;
+    }
+
+    napi_value resource_name_value;
+    std::string resource_name = "notify_file_log_callback";
+    std::u16string converted_resource_name = std::u16string(resource_name.begin(), resource_name.end());
+
+    napi_create_string_utf16(env, converted_resource_name.c_str(), NAPI_AUTO_LENGTH, &resource_name_value);
+
+    napi_value notify_file_log_callback_value;
+    napi_status status_ref = napi_get_reference_value(env, notify_file_log_callback_ref, &notify_file_log_callback_value);
+
+    napi_threadsafe_function notify_file_log_threadsafe_callback;
+
+    napi_status status_threadsafe = napi_create_threadsafe_function(
+        env,
+        notify_file_log_callback_value,
+        NULL,
+        resource_name_value,
+        0,
+        1,
+        NULL,
+        NULL,
+        NULL,
+        notify_log_call,
+        &notify_file_log_threadsafe_callback);
+
+    LoggerPath::set(std::string(utf8Path.get()), notify_file_log_threadsafe_callback);
+
     napi_value result;
     napi_get_boolean(env, true, &result);
     return result;

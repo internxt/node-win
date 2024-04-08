@@ -10,7 +10,12 @@ import {
 } from "./callbacks";
 import { ItemsInfoManager, createFilesWithSize } from "./utils";
 
-const drive = new VirtualDrive(settings.syncRootPath, settings.defaultLogPath);
+const drive = new VirtualDrive(settings.syncRootPath, settings.defaultLogPath, {
+  "notifyLogCallback": (message: string, level: number) => {
+    console.log(`[EXAMPLE] message: ${message}`);
+    console.log("[EXAMPLE] level: " + level);
+  }
+});
 
 drive.registerSyncRoot(
   settings.driveName,
@@ -43,7 +48,7 @@ try {
     fileCreatedAt,
     fileUpdatedAt
   );
-  
+
   drive.createFolderByPath(
     `/carpetaX`,
     "folder-f134-4dbd-8722-8f813ec412cf",
@@ -144,8 +149,8 @@ try {
     folderCreatedAt,
     folderUpdatedAt
   );
-    
-    
+
+
   drive.createFolderByPath(
     `/folderWithFolder/folder2`,
     "f706369a-8a0e-43cb-805b-2719a686358f",
@@ -212,22 +217,22 @@ try {
     "3c598981-bca6-40ca-b016-fe2c0cdc5baf"
   );
 
-  
+
   drive.getFileIdentity("/folderWithFolder/F.O.L.D.E.R").then((fileIdentity) => {
-    console.log("ID " +fileIdentity);
+    console.log("ID " + fileIdentity);
     console.log("count " + String(fileIdentity).length);
-  }) 
-  
+  })
+
   drive.getFileIdentity("/folderWithFolder").then((fileIdentity) => {
-    console.log("ID " +fileIdentity);
+    console.log("ID " + fileIdentity);
     console.log("count " + String(fileIdentity).length);
-  }) 
-  
+  })
+
   drive.getFileIdentity("/folderWithFolder/F.O.L.D.E.R/unaImagen.rar").then((fileIdentity) => {
-    console.log("ID " +fileIdentity);
+    console.log("ID " + fileIdentity);
     console.log("count " + String(fileIdentity).length);
-  })  
-  
+  })
+
   // drive.deleteFileSyncRoot("/folderWithFolder");
   // drive.deleteFileSyncRoot("/imagen.rar");
   // drive.deleteFileSyncRoot("/anyname");

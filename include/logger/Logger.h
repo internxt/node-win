@@ -9,6 +9,7 @@
 #include <sstream>
 #include <algorithm>
 #include <windows.h>
+#include<node_api.h>
 
 #ifdef ERROR
 #undef ERROR
@@ -31,6 +32,8 @@ public:
         return instance;
     }
 
+    void setCallback(napi_env env, napi_threadsafe_function callback);
+
     void log(const std::string &message, LogLevel level);
 
     Logger(const Logger&) = delete;
@@ -42,6 +45,9 @@ public:
 private:
     explicit Logger();
     ~Logger();
+
+    napi_env env;
+    napi_threadsafe_function threadsafe_callback;
 
     std::ofstream log_file;
     std::mutex log_mutex;

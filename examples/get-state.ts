@@ -14,7 +14,10 @@ const argv = yargs
   .help()
   .alias("help", "h").argv;
 
-const drive = new VirtualDrive(settings.syncRootPath, settings.defaultLogPath);
+const drive = new VirtualDrive(settings.syncRootPath, settings.defaultLogPath, {"notifyLogCallback": (message: string, level: number) => {
+  console.log(`[EXAMPLE] message: ${message}`);
+  console.log("[EXAMPLE] level: " + level);
+}});
 
 //@ts-ignore
 if (argv.file) {

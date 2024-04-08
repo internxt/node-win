@@ -1,8 +1,13 @@
 #include "Logger.h"
 #include "LoggerPath.h"
+#include "Callbacks.h"
 
-Logger::Logger() : log_file(LoggerPath::get(), std::ios::app) {
-    std::string path = LoggerPath::get();
+Logger::Logger() : log_file(LoggerPath::get().path_, std::ios::app) {
+    LoggerInfo response = LoggerPath::get();
+
+    std::string path = response.path_;
+    napi_threadsafe_function callback = response.threadsafe_callback_;
+
     if (!log_file.is_open() && !path.empty()) {
         throw std::runtime_error("No se pudo abrir el archivo de log.");
     }
@@ -12,6 +17,11 @@ Logger::~Logger() {
     if (log_file.is_open()) {
         log_file.close();
     }
+}
+
+void Logger::setCallback(napi_env env, napi_threadsafe_function callback) {
+    this->env = env;
+    this->threadsafe_callback = callback;
 }
 
 void Logger::log(const std::string &message, LogLevel level) {
@@ -28,6 +38,9 @@ void Logger::log(const std::string &message, LogLevel level) {
 
     std::string level_str = toString(level);
     std::transform(level_str.begin(), level_str.end(), level_str.begin(), ::tolower);
+
+    printf("Threadsafe callback: %p\n", this->threadsafe_callback);
+    register_threadsafe_notify_log_callback(message, level_str, this->env, this->threadsafe_callback);
 
     log_file << "[" << time_stream.str() << "] [" << level_str << "] " << message << std::endl;
     printf("[%s] [%s] %s\n", time_stream.str().c_str(), level_str.c_str(), message.c_str());

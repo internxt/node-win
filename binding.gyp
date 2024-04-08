@@ -28,6 +28,7 @@
         "native-src/sync_root_interface/callbacks/FetchPlaceholder/FetchPlaceholder.cpp",
         "native-src/sync_root_interface/callbacks/NotifyDelete/NotifyDeleteCallback.cpp",
         "native-src/sync_root_interface/callbacks/NotifyFileAdded/NotifyFileAddedCallback.cpp",
+        "native-src/sync_root_interface/callbacks/NotifyLog/NotifyLogCallback.cpp",
         "native-src/sync_root_interface/callbacks/NotifyMessage/NofifyMessageCallback.cpp",
         "native-src/sync_root_interface/callbacks/NotifyRename/NotifyRenameCallback.cpp",
         "native-src/sync_root_watcher/DirectoryWatcher.cpp",
