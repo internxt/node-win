@@ -109,7 +109,8 @@ FileState DirectoryWatcher::getPlaceholderInfo(const std::wstring &directoryPath
 
     if (!fileHandle)
     {
-        printf("Error: Invalid file handle.\n");
+        Logger::getInstance().log("Error: Invalid file handle.\n", LogLevel::ERROR);
+
         fileState.pinstate = PinState::Unspecified;
         fileState.syncstate = SyncState::Undefined;
         return fileState;
@@ -119,7 +120,10 @@ FileState DirectoryWatcher::getPlaceholderInfo(const std::wstring &directoryPath
 
     if (result != S_OK)
     {
-        printf("CfGetPlaceholderInfo failed with HRESULT %lx\n", result);
+        std::stringstream ss;
+        ss << "CfGetPlaceholderInfo failed with HRESULT %lx\n", result;
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::ERROR);
         fileState.pinstate = PinState::Unspecified;
         fileState.syncstate = SyncState::Undefined;
         return fileState;
@@ -133,11 +137,14 @@ FileState DirectoryWatcher::getPlaceholderInfo(const std::wstring &directoryPath
 
         SyncState syncState = syncStateOpt.value();
 
-        printf("placeholderInfo.SyncState: %s\n", syncStateToString(syncState).c_str());
+        std::stringstream ss;
+        ss << "placeholderInfo.SyncState: %s\n", syncStateToString(syncState).c_str();
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::DEBUG);
     }
     else
     {
-        printf("placeholderInfo.SyncState: No value\n");
+        Logger::getInstance().log("placeholderInfo.SyncState: No value\n", LogLevel::ERROR);
     }
 
     if (pinStateOpt.has_value())
@@ -145,11 +152,14 @@ FileState DirectoryWatcher::getPlaceholderInfo(const std::wstring &directoryPath
 
         PinState pinState = pinStateOpt.value();
 
-        printf("placeholderInfo.PinState: %s\n", pinStateToString(pinState).c_str());
+        std::stringstream ss;
+        ss << "placeholderInfo.PinState: %s\n", pinStateToString(pinState).c_str();
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::INFO);
     }
     else
     {
-        printf("placeholderInfo.PinState: No value\n");
+        Logger::getInstance().log("placeholderInfo.PinState: No value\n", LogLevel::ERROR);
     }
 
     fileState.pinstate = pinStateOpt.value_or(PinState::Unspecified);
