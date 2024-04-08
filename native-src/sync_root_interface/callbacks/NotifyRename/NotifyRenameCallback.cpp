@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <Callbacks.h>
 #include <Placeholders.h>
+#include <Logger.h>
 #include <string>
 #include <filesystem>
 #include <condition_variable>
@@ -59,14 +60,14 @@ void notify_rename_call(napi_env env, napi_value js_callback, void *context, voi
     status = napi_create_string_utf16(env, u16_targetPath.c_str(), u16_targetPath.size(), &js_targetPathArg);
     if (status != napi_ok)
     {
-        fprintf(stderr, "Failed to create targetPath string.\n");
+        Logger::getInstance().log("Failed to create targetPath string.\n", LogLevel::ERROR);
         return;
     }
 
     status = napi_create_string_utf16(env, u16_fileIdentity.c_str(), u16_fileIdentity.size(), &js_fileIdentityArg);
     if (status != napi_ok)
     {
-        fprintf(stderr, "Failed to create fileIdentity string.\n");
+        Logger::getInstance().log("Failed to create fileIdentity string.\n", LogLevel::ERROR);
         return;
     }
 
@@ -79,7 +80,7 @@ void notify_rename_call(napi_env env, napi_value js_callback, void *context, voi
     status = napi_get_undefined(env, &undefined);
     if (status != napi_ok)
     {
-        fprintf(stderr, "Failed to get undefined value.\n");
+        Logger::getInstance().log("Failed to get undefined value.\n", LogLevel::ERROR);
         return;
     }
 
@@ -91,7 +92,7 @@ void notify_rename_call(napi_env env, napi_value js_callback, void *context, voi
     status = napi_call_function(env, undefined, js_callback, 3, args_to_js_callback, &result);
     if (status != napi_ok)
     {
-        fprintf(stderr, "Failed to call JS function.\n");
+        Logger::getInstance().log("Failed to call JS function.\n", LogLevel::ERROR);
         return;
     }
 
@@ -119,7 +120,7 @@ void register_threadsafe_notify_rename_callback(const std::string &resource_name
 
     if (type_status != napi_ok || valuetype != napi_function)
     {
-        fprintf(stderr, "notify_rename_value is not a function.\n");
+        Logger::getInstance().log("notify_rename_value is not a function.\n", LogLevel::ERROR);
         abort();
     }
 
@@ -140,9 +141,20 @@ void register_threadsafe_notify_rename_callback(const std::string &resource_name
     {
         const napi_extended_error_info *errorInfo = NULL;
         napi_get_last_error_info(env, &errorInfo);
-        fprintf(stderr, "Failed to create threadsafe function: %s\n", errorInfo->error_message);
-        fprintf(stderr, "N-API Status Code: %d\n", errorInfo->error_code);
-        fprintf(stderr, "Engine-specific error code: %u\n", errorInfo->engine_error_code);
+        std::stringstream ss;
+        ss << "Failed to create threadsafe function: %s\n", errorInfo->error_message;
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::ERROR);
+
+        ss << "N-API Status Code: %d\n", errorInfo->error_code;
+        message = ss.str();
+
+        Logger::getInstance().log(message, LogLevel::ERROR);
+
+        ss << "Engine-specific error code: %u\n", errorInfo->engine_error_code;
+        message = ss.str();
+
+        Logger::getInstance().log(message, LogLevel::ERROR);
         abort();
     }
 
@@ -168,7 +180,7 @@ void CALLBACK notify_rename_callback_wrapper(
 
     if (status != napi_ok)
     {
-        wprintf(L"Callback called unsuccessfully.\n");
+        Logger::getInstance().log("Callback called unsuccessfully.\n", LogLevel::ERROR);
     };
 
     CF_OPERATION_PARAMETERS opParams = {0};
@@ -194,11 +206,18 @@ void CALLBACK notify_rename_callback_wrapper(
         &opInfo,
         &opParams);
 
-    printf("Mark item as async: %ls\n", targetPathArg);
+    std::stringstream ss;
+    ss << "Mark item as async: %ls\n", targetPathArg;
+    std::string message = ss.str();
+    Logger::getInstance().log(message, LogLevel::INFO);
+
     WCHAR systemPath[MAX_PATH];
     if (!GetWindowsDirectoryW(systemPath, sizeof(systemPath) / sizeof(WCHAR)))
     {
-        wprintf(L"Error al obtener el directorio de Windows: %d\n", GetLastError());
+        std::stringstream ss;
+        ss << "Error al obtener el directorio de Windows: %d\n", GetLastError();
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::ERROR);
         return;
     }
     // Extrae la letra de la unidad del directorio del sistema
@@ -216,7 +235,10 @@ void CALLBACK notify_rename_callback_wrapper(
 
     if (FAILED(hr))
     {
-        wprintf(L"Error in CfExecute() rename action, HRESULT: %lx\n", hr);
+        std::stringstream ss;
+        ss << "Error in CfExecute() rename action, HRESULT: %lx\n", hr;
+        std::string message = ss.str();
+        Logger::getInstance().log(message, LogLevel::ERROR);
     }
 
     {
