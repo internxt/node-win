@@ -10,6 +10,7 @@
 #include <random>
 #include <iostream>
 #include <Utilities.h>
+#include <Logger.h>
 
 using namespace std;
 
@@ -42,14 +43,13 @@ void Placeholders::CreateOne(
 
         wstring fullPath = std::wstring(destPath) + L'\\' + fileName;
 
-        wprintf(L"Path del archive: %s", fullPath.c_str());
-        wprintf(L"\n");
+        Logger::getInstance().log("fullPath placeholder: " + Logger::fromWStringToString(fullPath), LogLevel::DEBUG);
 
         if (std::filesystem::exists(fullPath))
         {
             Placeholders::ConvertToPlaceholder(fullPath, fileIdentity);
-            wprintf(L"El Archivo ya existe. Se omite la creación.\n");
-            return; // No hacer nada si ya existe
+            Logger::getInstance().log("El Archivo ya existe. Se omite la creación.", LogLevel::INFO);
+            return;
         }
 
         std::wstring relativeName(fileIdentity);
@@ -74,19 +74,20 @@ void Placeholders::CreateOne(
         }
         catch (const winrt::hresult_error &error)
         {
-            wprintf(L"Error al crear placeholder: %s", error.message().c_str());
+            Logger::getInstance().log("Error al crear placeholder: " + Logger::fromWStringToString(fullPath), LogLevel::ERROR);
         }
         winrt::StorageProviderItemProperty prop;
         prop.Id(1);
         prop.Value(L"Value1");
         prop.IconResource(L"shell32.dll,-44");
 
-        wprintf(L"Successfully created placeholder file\n");
+        Logger::getInstance().log("Successfully created placeholder: " + Logger::fromWStringToString(fullPath), LogLevel::INFO);
         // UpdateSyncStatus(fullDestPath, true, false);
     }
     catch (...)
     {
-        wprintf(L"Failed to create or customize placeholder with %08x\n", static_cast<HRESULT>(winrt::to_hresult()));
+        Logger::getInstance().log("Failed to create or customize placeholder\n", LogLevel::ERROR);
+        // wprintf(L"Failed to create or customize placeholder with %08x\n", static_cast<HRESULT>(winrt::to_hresult()));
     }
 }
 
@@ -119,7 +120,7 @@ void Placeholders::CreateEntry(
         if (DirectoryExists(fullDestPath.c_str()))
         {
             Placeholders::ConvertToPlaceholder(fullDestPath, itemIdentity);
-            wprintf(L"El directorio ya existe. Se omite la creación.\n");
+            Logger::getInstance().log("El directorio ya existe. Se omite la creación.", LogLevel::INFO);
             return; // No hacer nada si ya existe
         }
 
@@ -130,7 +131,12 @@ void Placeholders::CreateEntry(
             HRESULT hr = CfCreatePlaceholders(fullDestPath.c_str(), &cloudEntry, 1, CF_CREATE_FLAG_NONE, NULL);
             if (FAILED(hr))
             {
-                wprintf(L"Failed to create placeholder directory with HRESULT 0x%08x\n", hr);
+                std::stringstream ss;
+                ss << "Failed to create placeholder directory with HRESULT 0x" << std::hex << std::setw(8) << std::setfill('0') << hr;
+                std::string message = ss.str();
+
+                Logger::getInstance().log(message, LogLevel::ERROR);
+
                 throw winrt::hresult_error(hr);
             }
             else
