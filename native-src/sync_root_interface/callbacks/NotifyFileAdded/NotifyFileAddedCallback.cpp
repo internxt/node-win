@@ -58,8 +58,6 @@ napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
 
     napi_get_value_string_utf16(env, argv[1], (char16_t *)response_wstr.data(), response_len + 1, &response_len);
 
-    // wprintf(L"input path: %s .\n", response_wstr.c_str());
-
     std::lock_guard<std::mutex> lock(mtx);
     ready = true;
     callbackResult = confirmation_response;
@@ -69,7 +67,7 @@ napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
 
     if (confirmation_response)
     {
-         Sleep(100);
+        Sleep(100);
         result = Placeholders::ConvertToPlaceholder(global_path, server_identity);
         if (global_type == NEW_FILE)
         {
@@ -87,7 +85,6 @@ napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
     napi_value promise;
     napi_deferred deferred;
     napi_create_promise(env, &deferred, &promise);
-    // print result
     Logger::getInstance().log("Result: " + std::to_string(result), LogLevel::INFO);
     // Resolver la promesa con el resultado booleano
     napi_resolve_deferred(env, deferred, result_value);
@@ -224,7 +221,6 @@ void register_threadsafe_notify_file_added_callback(FileChange &change, const st
     }
 
     // if (!callbackResult) {
-    //     wprintf(L"not in sync\n");
     //     winrt::StorageProviderItemProperty prop;
     //     prop.Id(1);
     //     prop.Value(L"Value1");
