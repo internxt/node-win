@@ -19,7 +19,7 @@
 #include <Placeholders.h>
 #include <Logger.h>
 
-napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
+    napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
 inline std::mutex mtx;
 inline std::mutex mtx_download;
@@ -113,8 +113,8 @@ size_t file_incremental_reading(napi_env env, const std::wstring &filename, size
     std::ifstream file;
 
     // Abre el archivo
-    // Logger::getInstance().log("filename: " + filename, LogLevel::DEBUG);
-    printf("filename: %s\n", filename.c_str());
+    Logger::getInstance().log("filename: " + Logger::fromWStringToString(filename), LogLevel::DEBUG);
+
     file.open(filename, std::ios::in | std::ios::binary);
 
     if (!file.is_open())
@@ -159,7 +159,10 @@ size_t file_incremental_reading(napi_env env, const std::wstring &filename, size
 
             if (FAILED(hr))
             {
-                wprintf(L"Error in FileCopierWithProgress::TransferData(), HRESULT: %lx\n", hr);
+                std::stringstream ss;
+                ss << "Error in FileCopierWithProgress::TransferData(), HRESULT: %lx\n", hr;
+                std::string message = ss.str();
+                Logger::getInstance().log(message, LogLevel::ERROR);
                 load_finished = true;
 
                 HRESULT hr = FileCopierWithProgress::TransferData(
@@ -454,11 +457,14 @@ void CALLBACK fetch_data_callback_wrapper(
 
     FetchDataArgs *args = new FetchDataArgs();
     args->fileIdentityArg = fileIdentityStr;
-    wprintf(L"Callback fetch_data_callback_wrapper called\n");
-    wprintf(L"g_fetch_data_threadsafe_callback = %s\n", g_fetch_data_threadsafe_callback);
+    Logger::getInstance().log("Callback fetch_data_callback_wrapper called\n", LogLevel::DEBUG);
+    std::stringstream ss;
+    ss << "g_fetch_data_threadsafe_callback = %s\n", g_fetch_data_threadsafe_callback;
+    std::string message = ss.str();
+    Logger::getInstance().log(message, LogLevel::DEBUG);
     if (g_fetch_data_threadsafe_callback == nullptr)
     {
-        wprintf(L"Callback fetch_data_callback_wrapper called but g_fetch_data_threadsafe_callback is null\n");
+        Logger::getInstance().log("Callback fetch_data_callback_wrapper called but g_fetch_data_threadsafe_callback is null\n", LogLevel::WARN);
         return;
     }
     napi_status status = napi_call_threadsafe_function(g_fetch_data_threadsafe_callback, args, napi_tsfn_blocking);
