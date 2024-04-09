@@ -337,35 +337,21 @@ CF_PLACEHOLDER_STATE GetPlaceholderStateMock(const std::wstring &filePath)
     }
 }
 
-std::vector<std::wstring> Placeholders::GetPlaceholderWithStatePending(const std::wstring &directoryPath)
-{
+
+std::vector<std::wstring> Placeholders::GetPlaceholderWithStatePending(const std::wstring& directoryPath) {
     std::vector<std::wstring> resultPaths;
 
-    for (const auto &entry : std::filesystem::directory_iterator(directoryPath))
-    {
-        const auto &path = entry.path().wstring();
+    for (const auto& entry : std::filesystem::directory_iterator(directoryPath)) {
+        const auto& path = entry.path().wstring();
 
-        if (entry.is_regular_file())
-        {
-            // Verifica el estado del placeholder y las condiciones adicionales
+        if (entry.is_directory()) {
+            std::vector<std::wstring> subfolderPaths = GetPlaceholderWithStatePending(path);
+            resultPaths.insert(resultPaths.end(), subfolderPaths.begin(), subfolderPaths.end());
+        } else if (entry.is_regular_file()) {
             FileState placeholderState = DirectoryWatcher::getPlaceholderInfo(path);
             bool isFileValidForSync = (placeholderState.syncstate == SyncState::Undefined || placeholderState.syncstate == SyncState::NotInSync);
-            if (isFileValidForSync &&
-                IsFileValidForSync(path))
-            {
+            if (isFileValidForSync && IsFileValidForSync(path)) {
                 resultPaths.push_back(path);
-            }
-        }
-        else if (entry.is_directory())
-        {
-            // Verifica el estado del directorio y las condiciones adicionales
-            FileState placeholderState = DirectoryWatcher::getPlaceholderInfo(path);
-            bool isFileValidForSync = (placeholderState.syncstate == SyncState::Undefined || placeholderState.syncstate == SyncState::NotInSync);
-            if (isFileValidForSync)
-            {
-                // resultPaths.push_back(path);
-                std::vector<std::wstring> subfolderPaths = GetPlaceholderWithStatePending(path);
-                resultPaths.insert(resultPaths.end(), subfolderPaths.begin(), subfolderPaths.end());
             }
         }
     }
