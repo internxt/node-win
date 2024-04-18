@@ -844,6 +844,7 @@ napi_value ConvertToPlaceholderWrapper(napi_env env, napi_callback_info args)
 }
 napi_value UpdateFileIdentityWrapper(napi_env env, napi_callback_info args)
 {
+
     size_t argc = 3;
     napi_value argv[3];
 
@@ -875,8 +876,7 @@ napi_value UpdateFileIdentityWrapper(napi_env env, napi_callback_info args)
     Placeholders::UpdateFileIdentity(
         reinterpret_cast<wchar_t *>(widePath.get()),
         reinterpret_cast<wchar_t *>(widePlaceholderId.get()),
-        isDirectory
-        );
+        isDirectory);
 
     napi_value result;
     return result;
