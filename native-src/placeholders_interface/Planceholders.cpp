@@ -43,13 +43,14 @@ void Placeholders::CreateOne(
 
         wstring fullPath = std::wstring(destPath) + L'\\' + fileName;
 
-        wprintf(L"Path del archive: %s", fullPath.c_str());
+        wprintf(L"[CreatePlaceholder] Full path: %s", fullPath.c_str());
         wprintf(L"\n");
 
         if (std::filesystem::exists(fullPath))
         {
             Placeholders::ConvertToPlaceholder(fullPath, fileIdentity);
-            wprintf(L"El Archivo ya existe. Se omite la creación.\n");
+            wprintf(L"[CreatePlaceholder] File already exists. Skipping creation. Initializing identity maintenance...\n");
+            Placeholders::MaintainIdentity(fullPath, fileIdentity, false);
             return; // No hacer nada si ya existe
         }
 
@@ -75,20 +76,67 @@ void Placeholders::CreateOne(
         }
         catch (const winrt::hresult_error &error)
         {
-            wprintf(L"Error al crear placeholder: %s", error.message().c_str());
+            wprintf(L"[CreatePlaceholder] error: %s", error.message().c_str());
         }
         winrt::StorageProviderItemProperty prop;
         prop.Id(1);
         prop.Value(L"Value1");
         prop.IconResource(L"shell32.dll,-44");
 
-        wprintf(L"Successfully created placeholder file\n");
+        wprintf(L"[CreatePlaceholder] Successfully created placeholder file\n");
         // UpdateSyncStatus(fullDestPath, true, false);
     }
     catch (...)
     {
-        wprintf(L"Failed to create or customize placeholder with %08x\n", static_cast<HRESULT>(winrt::to_hresult()));
+        wprintf(L"[CreatePlaceholder] Failed to create or customize placeholder with %08x\n", static_cast<HRESULT>(winrt::to_hresult()));
     }
+}
+
+std::string cleanString(const std::string &str)
+{
+    std::string cleanedStr;
+    for (char ch : str)
+    {
+        if (std::isprint(static_cast<unsigned char>(ch)))
+        {
+            cleanedStr.push_back(ch);
+        }
+    }
+    return cleanedStr;
+}
+
+void Placeholders::MaintainIdentity(std::wstring &fullPath, PCWSTR itemIdentity, bool isDirectory)
+{
+    std::string identity = Placeholders::GetFileIdentity(fullPath);
+    if (!identity.empty())
+    {
+        wprintf(L"[MaintainIdentity] Identity is not empty\n");
+        int len = WideCharToMultiByte(CP_UTF8, 0, itemIdentity, -1, NULL, 0, NULL, NULL);
+        if (len > 0)
+        {
+            std::string itemIdentityStr(len, 0);
+            WideCharToMultiByte(CP_UTF8, 0, itemIdentity, -1, &itemIdentityStr[0], len, NULL, NULL);
+            std::string cleanIdentity = cleanString(identity);
+            std::string cleanItemIdentity = cleanString(itemIdentityStr);
+            printf("[MaintainIdentity] cleanCurrentIdentity: %s\n", cleanIdentity.c_str());
+            printf("[MaintainIdentity] cleanItemIdentity: %s\n", cleanItemIdentity.c_str());
+            if (cleanIdentity == cleanItemIdentity)
+            {
+                wprintf(L"[MaintainIdentity] Identity is corret not need to update\n");
+            }
+            else
+            {
+                wprintf(L"[MaintainIdentity] Identity is incorrect, updating...\n");
+                std::wstring itemIdentityStrW(itemIdentity);
+                Placeholders::UpdateFileIdentity(fullPath, itemIdentityStrW, isDirectory);
+            }
+        }
+        else
+        {
+            // Handle error as needed
+        }
+    }
+    printf("[MaintainIdentity] End Maintain Identity\n");
 }
 
 void Placeholders::CreateEntry(
@@ -120,7 +168,8 @@ void Placeholders::CreateEntry(
         if (DirectoryExists(fullDestPath.c_str()))
         {
             Placeholders::ConvertToPlaceholder(fullDestPath, itemIdentity);
-            wprintf(L"El directorio ya existe. Se omite la creación.\n");
+            wprintf(L"[CreatePlaceholder] Directory already exists. Skipping creation. Initializing identity maintenance...\n");
+            Placeholders::MaintainIdentity(fullDestPath, itemIdentity, true);
             return; // No hacer nada si ya existe
         }
 
@@ -131,12 +180,12 @@ void Placeholders::CreateEntry(
             HRESULT hr = CfCreatePlaceholders(fullDestPath.c_str(), &cloudEntry, 1, CF_CREATE_FLAG_NONE, NULL);
             if (FAILED(hr))
             {
-                wprintf(L"Failed to create placeholder directory with HRESULT 0x%08x\n", hr);
+                wprintf(L"[CreatePlaceholder] Failed to create placeholder directory with HRESULT 0x%08x\n", hr);
                 throw winrt::hresult_error(hr);
             }
             else
             {
-                wprintf(L"Successfully created placeholder directory\n");
+                wprintf(L"[CreatePlaceholder] Successfully created placeholder directory\n");
             }
 
             std::wstring finalPath = std::wstring(destPath) + L"\\" + std::wstring(itemName);
@@ -144,11 +193,11 @@ void Placeholders::CreateEntry(
             UpdateSyncStatus(finalPath, true, true);
         }
 
-        wprintf(L"Successfully created %s at %s\n", isDirectory ? L"directory" : L"file", fullDestPath.c_str());
+        wprintf(L"[CreatePlaceholder] Successfully created %s at %s\n", isDirectory ? L"directory" : L"file", fullDestPath.c_str());
     }
     catch (const winrt::hresult_error &error)
     {
-        wprintf(L"Error while creating %s: %s\n", isDirectory ? L"directory" : L"file", error.message().c_str());
+        wprintf(L"[CreatePlaceholder] Error while creating %s: %s\n", isDirectory ? L"directory" : L"file", error.message().c_str());
     }
 }
 
@@ -159,7 +208,7 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
         if (!std::filesystem::exists(fullPath))
         {
             // El archivo no existe
-            wprintf(L"File does not exist\n");
+            wprintf(L"[ConvertToPlaceholder] File does not exist\n");
             return false;
         }
 
@@ -179,7 +228,7 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
         if (fileHandle == INVALID_HANDLE_VALUE)
         {
             // Manejar el error al abrir el archivo
-            wprintf(L"Error opening file: %d\n", GetLastError());
+            wprintf(L"[ConvertToPlaceholder] Error opening file: %d\n", GetLastError());
             return false;
         }
 
@@ -196,7 +245,7 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
         if (FAILED(hr))
         {
             // Manejar el error al convertir a marcador de posición
-            wprintf(L"Error converting to placeholder, ConvertToPlaceholder failed with HRESULT 0x%X\n", hr);
+            wprintf(L"[ConvertToPlaceholder] Error converting to placeholder, ConvertToPlaceholder failed with HRESULT 0x%X\n", hr);
 
             // Puedes obtener información detallada sobre el error usando FormatMessage
             LPVOID errorMsg;
@@ -209,7 +258,7 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
                 0,
                 NULL);
 
-            wprintf(L"Error details: %s\n", errorMsg);
+            wprintf(L"[ConvertToPlaceholder] Error details: %s\n", errorMsg);
 
             // Liberar el buffer de mensaje de error
             LocalFree(errorMsg);
@@ -230,13 +279,13 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
         // }
 
         CloseHandle(fileHandle);
-        wprintf(L"Successfully converted to placeholder: %ls\n", fullPath.c_str());
+        wprintf(L"[ConvertToPlaceholder] Successfully converted to placeholder: %ls\n", fullPath.c_str());
         return true;
     }
     catch (const winrt::hresult_error &error)
     {
         // Manejar excepciones desconocidas
-        wprintf(L"Unknown exception occurred\n");
+        wprintf(L"[ConvertToPlaceholder] Unknown exception occurred\n");
         return false;
     }
 }
@@ -249,7 +298,7 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
  */
 void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSyncState, bool isDirectory = false)
 {
-    wprintf(L"Path: %ls\n", filePath.c_str());
+    wprintf(L"[UpdateSyncStatus] Path: %ls\n", filePath.c_str());
     HANDLE fileHandle = CreateFileW(
         filePath.c_str(),
         FILE_WRITE_ATTRIBUTES, // permisson needed to change the state
@@ -261,7 +310,7 @@ void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSync
 
     if (fileHandle == INVALID_HANDLE_VALUE)
     {
-        wprintf(L"Error al abrir el archivo: %d\n", GetLastError());
+        wprintf(L"[UpdateSyncStatus] Error al abrir el archivo: %d\n", GetLastError());
         return;
     }
 
@@ -274,7 +323,7 @@ void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSync
     wprintf(L"hr: %ld\n", hr);
     if (FAILED(hr))
     {
-        wprintf(L"Error al establecer el estado de sincronización: %ld\n", hr);
+        wprintf(L"[UpdateSyncStatus] Error al establecer el estado de sincronización: %ld\n", hr);
     }
 
     CloseHandle(fileHandle);
@@ -282,7 +331,7 @@ void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSync
 
 void Placeholders::UpdateFileIdentity(const std::wstring &filePath, const std::wstring &fileIdentity, bool isDirectory)
 {
-    wprintf(L"Path: %ls\n", filePath.c_str());
+    wprintf(L"[UpdateFileIdentity] Path: %ls\n", filePath.c_str());
     HANDLE fileHandle = CreateFileW(
         filePath.c_str(),
         FILE_WRITE_ATTRIBUTES, // permisson needed to change the state
@@ -295,7 +344,7 @@ void Placeholders::UpdateFileIdentity(const std::wstring &filePath, const std::w
     if (fileHandle == INVALID_HANDLE_VALUE)
     {
         DWORD errorCode = GetLastError();
-        wprintf(L"Error al abrir el archivo: %lu\n", errorCode);
+        wprintf(L"[UpdateFileIdentity] Error opening file: %d\n", errorCode);
         LPWSTR errorMessage = nullptr;
         FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
                        nullptr,
@@ -306,27 +355,27 @@ void Placeholders::UpdateFileIdentity(const std::wstring &filePath, const std::w
                        nullptr);
         if (errorMessage)
         {
-            wprintf(L"Error: %ls\n", errorMessage);
+            wprintf(L"[UpdateFileIdentity] Error: %ls\n", errorMessage);
             LocalFree(errorMessage);
         }
         return;
     }
 
     HRESULT hr = CfUpdatePlaceholder(
-        fileHandle, // Handle del archivo.
-        nullptr,    // CF_FS_METADATA opcional.
-        fileIdentity.c_str(), // Identidad del archivo.
+        fileHandle,                                                // Handle del archivo.
+        nullptr,                                                   // CF_FS_METADATA opcional.
+        fileIdentity.c_str(),                                      // Identidad del archivo.
         static_cast<DWORD>(fileIdentity.size() * sizeof(wchar_t)), // Longitud de la identidad del archivo.
-        nullptr,    // Rango a deshidratar, opcional.
-        0,          // Conteo de rangos a deshidratar, debe ser 0 si no se usa.
-        CF_UPDATE_FLAG_NONE, // Flags de actualización.
-        nullptr,    // USN opcional.
-        nullptr     // OVERLAPPED opcional.
+        nullptr,                                                   // Rango a deshidratar, opcional.
+        0,                                                         // Conteo de rangos a deshidratar, debe ser 0 si no se usa.
+        CF_UPDATE_FLAG_NONE,                                       // Flags de actualización.
+        nullptr,                                                   // USN opcional.
+        nullptr                                                    // OVERLAPPED opcional.
     );
 
     if (FAILED(hr))
     {
-        wprintf(L"Error al actualizar el fileIdentity: 0x%08X\n", hr);
+        wprintf(L"[UpdateFileIdentity] Error updating fileIdentity: 0x%08X\n", hr);
         LPWSTR errorMessage = nullptr;
         FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
                        nullptr,
@@ -337,15 +386,13 @@ void Placeholders::UpdateFileIdentity(const std::wstring &filePath, const std::w
                        nullptr);
         if (errorMessage)
         {
-            wprintf(L"Error: %ls\n", errorMessage);
+            wprintf(L"[UpdateFileIdentity] Error: %ls\n", errorMessage);
             LocalFree(errorMessage);
         }
     }
 
     CloseHandle(fileHandle);
 }
-
-
 
 CF_PLACEHOLDER_STATE Placeholders::GetPlaceholderState(const std::wstring &filePath)
 {
@@ -378,13 +425,16 @@ std::string Placeholders::GetFileIdentity(const std::wstring &filePath)
 
     HRESULT result = CfGetPlaceholderInfo(handleForPath(filePath).get(), CF_PLACEHOLDER_INFO_BASIC, info.get(), Utilities::sizeToDWORD(infoSize), nullptr);
 
-    if (result == S_OK) {
+    if (result == S_OK)
+    {
         BYTE *FileIdentity = info->FileIdentity;
         size_t length = info->FileIdentityLength;
 
         std::string fileIdentityString(reinterpret_cast<const char *>(FileIdentity), length);
         return fileIdentityString;
-    } else {
+    }
+    else
+    {
         return "";
     }
 }
@@ -405,20 +455,25 @@ CF_PLACEHOLDER_STATE GetPlaceholderStateMock(const std::wstring &filePath)
     }
 }
 
-
-std::vector<std::wstring> Placeholders::GetPlaceholderWithStatePending(const std::wstring& directoryPath) {
+std::vector<std::wstring> Placeholders::GetPlaceholderWithStatePending(const std::wstring &directoryPath)
+{
     std::vector<std::wstring> resultPaths;
 
-    for (const auto& entry : std::filesystem::directory_iterator(directoryPath)) {
-        const auto& path = entry.path().wstring();
+    for (const auto &entry : std::filesystem::directory_iterator(directoryPath))
+    {
+        const auto &path = entry.path().wstring();
 
-        if (entry.is_directory()) {
+        if (entry.is_directory())
+        {
             std::vector<std::wstring> subfolderPaths = GetPlaceholderWithStatePending(path);
             resultPaths.insert(resultPaths.end(), subfolderPaths.begin(), subfolderPaths.end());
-        } else if (entry.is_regular_file()) {
+        }
+        else if (entry.is_regular_file())
+        {
             FileState placeholderState = DirectoryWatcher::getPlaceholderInfo(path);
             bool isFileValidForSync = (placeholderState.syncstate == SyncState::Undefined || placeholderState.syncstate == SyncState::NotInSync);
-            if (isFileValidForSync && IsFileValidForSync(path)) {
+            if (isFileValidForSync && IsFileValidForSync(path))
+            {
                 resultPaths.push_back(path);
             }
         }
