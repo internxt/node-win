@@ -8,7 +8,7 @@
 #include <PlaceHolders.h>
 #include <filesystem>
 
-namespace fs = std::filesystem; 
+namespace fs = std::filesystem;
 namespace winrt
 {
     using namespace winrt::Windows::Foundation;
@@ -103,7 +103,7 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
                 // bool isHydrated = fileState.pinstate == PinState::AlwaysLocal && fileState.syncstate == SyncState::InSync;
                 if (attrib & FILE_ATTRIBUTE_PINNED) // && !(isHydrated)
                 {
-                    Logger::getInstance().log("Hydration file ", LogLevel::INFO);
+                    Logger::getInstance().log("Hydration file init", LogLevel::INFO);
 
                     auto start = std::chrono::steady_clock::now();
 
@@ -141,7 +141,7 @@ void SyncRootWatcher::OnSyncRootFileChanges(_In_ std::list<FileChange> &changes,
                 {
                     Logger::getInstance().log("Dehydrating file" + Logger::fromWStringToString(change.path), LogLevel::INFO);
                     HRESULT hr = CfDehydratePlaceholder(placeholder.get(), offset, length, CF_DEHYDRATE_FLAG_NONE, NULL);
-                    
+
                     if (FAILED(hr))
                     {
                         Logger::getInstance().log("Error dehydrating file " + Logger::fromWStringToString(change.path), LogLevel::ERROR);
