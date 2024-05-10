@@ -2,6 +2,7 @@ import path from "path";
 import fs from "fs";
 import { deleteAllSubfolders } from "./utils";
 import { Worker } from "worker_threads";
+import { Watcher } from "./watcher/watcher";
 
 const addon = require("../../build/Release/addon.node");
 interface ItemInfo {
@@ -63,12 +64,18 @@ class VirtualDrive {
   callbacks?: Callbacks;
   private itemsIds: string[] = [];
 
+  // private watcherBuilder: WatcherBuilder;
+  private watcher: Watcher;
+
   constructor(syncRootPath: string, loggerPath?: string) {
     this.PLACEHOLDER_ATTRIBUTES = {
       FILE_ATTRIBUTE_READONLY: 0x1,
       FILE_ATTRIBUTE_HIDDEN: 0x2,
       FOLDER_ATTRIBUTE_READONLY: 0x1,
     };
+
+    this.watcher = Watcher.Instance;
+    // this.watcherBuilder = new WatcherBuilder();
 
     this.syncRootPath = syncRootPath;
     this.createSyncRootFolder();
@@ -264,12 +271,42 @@ class VirtualDrive {
     return result;
   }
 
+  private test(): void {
+    console.log("Test");
+  }
+
   watchAndWait(path: string): void {
     if (this.callbacks === undefined) {
       throw new Error("Callbacks are not defined");
     }
 
-    addon.watchAndWait(path, this.getExtraCallbacks());
+    // this.watcherBuilder.syncRootPath = path;
+
+    this.watcher.syncRootPath = path;
+    this.watcher.options = {
+      ignored: /(^|[\/\\])\../,
+      persistent: true,
+      ignoreInitial: true,
+      followSymlinks: true,
+      depth: undefined,
+      awaitWriteFinish: {
+        stabilityThreshold: 2000,
+        pollInterval: 100,
+      },
+      usePolling: true,
+    };
+
+    this.watcher.virtualDriveFunctions = {
+      CfAddItem: this.test,
+      CfDehydrate: this.test,
+      CfHydrate: this.test,
+      CfNotifyMessage: this.test,
+      CfUpdateItem: this.test,
+      CfUpdateSyncStatus: this.test,
+    };
+
+    this.watcher.watchAndWait();
+    // addon.watchAndWait(path, this.getExtraCallbacks());
   }
 
   createFileByPath(
@@ -287,7 +324,7 @@ class VirtualDrive {
       for (let i = 0; i < splitPath.length - 1; i++) {
         // everything except last element
         const dir = splitPath[i];
-        
+
         currentPath = path.join(currentPath, dir);
       }
       // last element is the file
@@ -338,8 +375,6 @@ class VirtualDrive {
       }
       currentPath = path.join(currentPath, dir);
     }
-    
-    
   }
 
   createItemByPath(

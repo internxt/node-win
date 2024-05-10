@@ -14,6 +14,7 @@
         "config:gyp": "python gyp.config.py",
         "build": "python gyp.config.py && node-gyp clean && node-gyp configure build && tsc",
         "start:example:register": "node ./dist/examples/register.js",
+        "start:example:register:debug": "node --inspect-brk ./dist/examples/register.js",
         "start:example:get-state": "node ./dist/examples/get-state.js",
         "start:example:unregister": "node ./dist/examples/unregister.js",
         "start:example:disconnect": "node ./dist/examples/disconnect.js"
@@ -27,6 +28,7 @@
         "typescript": "^5.1.6"
     },
     "dependencies": {
+        "chokidar": "^3.6.0",
         "dotenv": "^16.4.1",
         "joi": "^17.12.0",
         "tsconfig-paths": "^4.2.0",
