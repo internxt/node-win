@@ -1,5 +1,7 @@
 import * as chokidar from "chokidar";
 import { IWatcher, IVirtualDriveFunctions } from "./watcher.interface";
+import { PinState, Status, SyncState } from "../types/placeholder.type";
+import { IQueueManager, typeQueue } from "../queue/queueManager";
 
 export class Watcher implements IWatcher {
   private static instance: Watcher;
@@ -9,6 +11,8 @@ export class Watcher implements IWatcher {
   private _options!: chokidar.WatchOptions;
 
   private _virtualDriveFn!: IVirtualDriveFunctions;
+
+  private _queueManager!: IQueueManager;
 
   static get Instance() {
     if (!Watcher.instance) {
@@ -21,54 +25,66 @@ export class Watcher implements IWatcher {
     this._virtualDriveFn = IVirtualDriveFunctions;
   }
 
-  private onAdd = (path: string, state: any) => {
-    console.log("onAdd", path, state);
-    this._virtualDriveFn.CfAddItem();
-  };
-  /*
-    onAdd -> () => {
-    - archivo agregado
-    - archivo encolado
-    - finalizacion
-    -> Upload() de la cola
+  set queueManager(queueManager: IQueueManager) {
+    this._queueManager = queueManager;
   }
 
-  Upload() => {
-    - archivo agregado 
-    - validaciones:  (que tenga extencion, que tenga zide, etc)
-    - evaluacion de estado:  this.virualdrive.getState(path)
-    ..
-    - CfAddItem()
-    ..
-    - notify finish
-    - finish   
-  }
-  */
+  private onAdd = (path: string, state: any) => {
+    try {
+      console.log("onAdd", path, state);
+      const ext = path.split(".").pop();
+
+      const { size } = state;
+
+      if (!ext || size === 0 || size > 20 * 1024 * 1024 * 1024) return;
+
+      const status: Status = this._virtualDriveFn.CfGetPlaceHolderState(path);
+      console.log("status", status);
+
+      if (
+        status.pinState === PinState.AlwaysLocal ||
+        status.pinState === PinState.OnlineOnly ||
+        status.syncState === SyncState.InSync
+      )
+        return;
+
+      this._queueManager.enqueue({
+        path,
+        type: typeQueue.add,
+        isFolder: false,
+      });
+    } catch (error) {
+      console.log("Error en onAdd");
+      console.error(error);
+    }
+  };
 
   private onChange = (path: string, state: any) => {
     console.log("onChange", path, state);
-    // this.virtualDriveFn.CfUpdateItem();
-  };
-  /*
-    onChange -> () => {
-    - archivo modificado path = xxx.txt
-    - archivo encolado
-    - finalizacion
-    - size update -> CfUpdateItem( path )
-    - 
-  }
-  */
-
-  private onUnlink = (path: string, state: any) => {
-    console.log("onUnlink", path, state);
   };
 
   private onAddDir = (path: string, state: any) => {
-    console.log("onAddDir", path, state);
-  };
+    try {
+      console.log("onAddDir", path, state);
+      const status: Status = this._virtualDriveFn.CfGetPlaceHolderState(path);
+      console.log("status", status);
 
-  private onUnlinkDir = (path: string) => {
-    console.log("onUnlinkDir", path);
+      if (
+        status.pinState === PinState.AlwaysLocal ||
+        status.pinState === PinState.OnlineOnly ||
+        status.syncState === SyncState.InSync
+      )
+        return;
+
+      this._queueManager.enqueue({
+        path,
+        type: typeQueue.add,
+        isFolder: true,
+      });
+    } catch (error) {
+      console.log("Error en onAddDir");
+      console.error(error);
+    }
   };
 
   private onError = (error: any) => {
@@ -98,9 +114,7 @@ export class Watcher implements IWatcher {
       watcher
         .on("add", this.onAdd)
         .on("change", this.onChange)
-        .on("unlink", this.onUnlink)
         .on("addDir", this.onAddDir)
-        .on("unlinkDir", this.onUnlinkDir)
         .on("error", this.onError)
         .on("raw", this.onRaw)
         .on("ready", this.onReady);

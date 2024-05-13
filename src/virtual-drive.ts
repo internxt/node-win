@@ -3,6 +3,9 @@ import fs from "fs";
 import { deleteAllSubfolders } from "./utils";
 import { Worker } from "worker_threads";
 import { Watcher } from "./watcher/watcher";
+import { ExtraCallbacks, InputSyncCallbacks } from "./types/callbacks.type";
+import { Status } from "./types/placeholder.type";
+import { IQueueManager } from "./queue/queueManager";
 
 const addon = require("../../build/Release/addon.node");
 interface ItemInfo {
@@ -32,30 +35,6 @@ interface Addon {
   watchAndWait(path: string): any;
   getItems(): any;
 }
-
-type NapiCallbackFunction = (...args: any[]) => any;
-
-type InputSyncCallbacks = {
-  fetchDataCallback?: NapiCallbackFunction;
-  validateDataCallback?: NapiCallbackFunction;
-  cancelFetchDataCallback?: NapiCallbackFunction;
-  fetchPlaceholdersCallback?: NapiCallbackFunction;
-  cancelFetchPlaceholdersCallback?: NapiCallbackFunction;
-  notifyFileOpenCompletionCallback?: NapiCallbackFunction;
-  notifyFileCloseCompletionCallback?: NapiCallbackFunction;
-  notifyDehydrateCallback?: NapiCallbackFunction;
-  notifyDehydrateCompletionCallback?: NapiCallbackFunction;
-  notifyDeleteCallback?: NapiCallbackFunction;
-  notifyDeleteCompletionCallback?: NapiCallbackFunction;
-  notifyRenameCallback?: NapiCallbackFunction;
-  notifyRenameCompletionCallback?: NapiCallbackFunction;
-  noneCallback?: NapiCallbackFunction;
-};
-
-type ExtraCallbacks = {
-  notifyFileAddedCallback?: NapiCallbackFunction;
-  notifyMessageCallback?: NapiCallbackFunction;
-};
 
 type Callbacks = InputSyncCallbacks & ExtraCallbacks;
 class VirtualDrive {
@@ -92,7 +71,7 @@ class VirtualDrive {
     addon.addLoggerPath(loggerPath);
   }
 
-  getPlaceholderState(path: string): any {
+  getPlaceholderState(path: string): Status {
     return addon.getPlaceholderState(this.syncRootPath + path);
   }
 
@@ -275,12 +254,12 @@ class VirtualDrive {
     console.log("Test");
   }
 
-  watchAndWait(path: string): void {
+  watchAndWait(path: string, queueManager: IQueueManager): void {
     if (this.callbacks === undefined) {
       throw new Error("Callbacks are not defined");
     }
 
-    // this.watcherBuilder.syncRootPath = path;
+    this.watcher.queueManager = queueManager;
 
     this.watcher.syncRootPath = path;
     this.watcher.options = {
@@ -303,6 +282,8 @@ class VirtualDrive {
       CfNotifyMessage: this.test,
       CfUpdateItem: this.test,
       CfUpdateSyncStatus: this.test,
+      CfGetPlaceHolderState: this.getPlaceholderState,
+      CfConverToPlaceholder: this.convertToPlaceholder,
     };
 
     this.watcher.watchAndWait();

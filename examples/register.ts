@@ -9,6 +9,8 @@ import {
   onRenameCallbackWithCallback,
 } from "./callbacks";
 import { ItemsInfoManager, createFilesWithSize } from "./utils";
+import { QueueManager } from "./queueManager";
+import { IQueueManager, QueueItem } from "src";
 
 const drive = new VirtualDrive(settings.syncRootPath, settings.defaultLogPath);
 
@@ -26,6 +28,28 @@ drive.registerSyncRoot(
   },
   settings.defaultIconPath
 );
+
+const handler = async (task: QueueItem) => {
+  try {
+    console.log("[EXAMPLE] File added in callback: " + task.path);
+    await new Promise((resolve) =>
+      setTimeout(() => {
+        resolve(undefined);
+      }, 1000)
+    );
+    const result = Math.random().toString(36).substring(2, 7);
+    await drive.convertToPlaceholder(task.path, result);
+    await drive.updateSyncStatus(task.path, true);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const queueManager: IQueueManager = new QueueManager({
+  handleAdd: handler,
+  handleHidreate: handler,
+  handleDehidreate: handler,
+});
 
 drive.connectSyncRoot();
 
@@ -145,7 +169,6 @@ try {
     folderUpdatedAt
   );
 
-
   drive.createFolderByPath(
     `/folderWithFolder/folder2`,
     "f706369a-8a0e-43cb-805b-2719a686358f",
@@ -213,47 +236,59 @@ try {
   );
 
   //  [Get FileIdentity] testing function to get the file identity of a file or folder
-  drive.getFileIdentity("/folderWithFolder/F.O.L.D.E.R").then((fileIdentity) => {
-    console.log("ID " + fileIdentity);
-    console.log("count " + String(fileIdentity).length);
-  })
+  drive
+    .getFileIdentity("/folderWithFolder/F.O.L.D.E.R")
+    .then((fileIdentity) => {
+      console.log("ID " + fileIdentity);
+      console.log("count " + String(fileIdentity).length);
+    });
 
   drive.getFileIdentity("/folderWithFolder").then((fileIdentity) => {
     console.log("ID " + fileIdentity);
     console.log("count " + String(fileIdentity).length);
-  })
+  });
 
   //  [Get] file identity for file called unaImagen.rar
-  drive.getFileIdentity("/folderWithFolder/F.O.L.D.E.R/unaImagen.rar").then((fileIdentity) => {
-    console.log("ID " + fileIdentity);
-    console.log("count " + String(fileIdentity).length);
-  })
+  drive
+    .getFileIdentity("/folderWithFolder/F.O.L.D.E.R/unaImagen.rar")
+    .then((fileIdentity) => {
+      console.log("ID " + fileIdentity);
+      console.log("count " + String(fileIdentity).length);
+    });
 
   // Sleep for 5 seconds
   console.log("Sleeping for 5 seconds");
   setTimeout(() => {
     console.log("Woke up after 5 seconds");
-    drive.getFileIdentity("/folderWithFolder/F.O.L.D.E.R/unaImagen.rar").then((fileIdentity) => {
-      console.log("ID " + fileIdentity);
-      console.log("count " + String(fileIdentity).length);
-    })
+    drive
+      .getFileIdentity("/folderWithFolder/F.O.L.D.E.R/unaImagen.rar")
+      .then((fileIdentity) => {
+        console.log("ID " + fileIdentity);
+        console.log("count " + String(fileIdentity).length);
+      });
   }, 5000);
 
   //  [Update] file identity for file called unaImagen.rar
 
   console.log("UPDATE ID ");
 
-  drive.updateFileIdentity("/folderWithFolder/F.O.L.D.E.R/unaImagen.rar", "otroid12321", false);
+  drive.updateFileIdentity(
+    "/folderWithFolder/F.O.L.D.E.R/unaImagen.rar",
+    "otroid12321",
+    false
+  );
 
   //  [Get Updated] file identity for file called unaImagen.rar
-  drive.getFileIdentity("/folderWithFolder/F.O.L.D.E.R/unaImagen.rar").then((fileIdentity) => {
-    console.log("ID " + fileIdentity);
-    console.log("count " + String(fileIdentity).length);
-  })
+  drive
+    .getFileIdentity("/folderWithFolder/F.O.L.D.E.R/unaImagen.rar")
+    .then((fileIdentity) => {
+      console.log("ID " + fileIdentity);
+      console.log("count " + String(fileIdentity).length);
+    });
 
   console.log(success2);
 
-  drive.watchAndWait(settings.syncRootPath);
+  drive.watchAndWait(settings.syncRootPath, queueManager);
 } catch (error) {
   drive.disconnectSyncRoot();
   VirtualDrive.unregisterSyncRoot(settings.syncRootPath);

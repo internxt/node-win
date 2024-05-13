@@ -1,24 +1,12 @@
 import * as chokidar from "chokidar";
+import { IQueueManager } from "src/queue/queueManager";
+import { Status } from "src/types/placeholder.type";
 
 export interface IWatcher {
-  //   onAdd(path: string, state: any): void;
-
-  //   onChange(path: string, state: any): void;
-
-  //   onUnlink(path: string, state: any): void;
-
-  //   onAddDir(path: string, state: any): void;
-
-  //   onUnlinkDir(path: string): void;
-
-  //   onError(error: any): void;
-
-  //   onRaw(event: string, path: string, details: any): void;
-
-  //   onReady(): void;
-
+  set virtualDriveFunctions(IVirtualDriveFunctions: IVirtualDriveFunctions);
+  // set notifyCallbacks(callbacks: InputSyncCallbacks & ExtraCallbacks);
+  set queueManager(queueManager: IQueueManager);
   set syncRootPath(syncRootPath: string);
-
   set options(options: chokidar.WatchOptions);
 }
 
@@ -72,4 +60,6 @@ export interface IVirtualDriveFunctions {
   CfUpdateSyncStatus?: () => void;
   UpdatePinState?: () => void;
   CfUpdateItem?: () => void;
+  CfGetPlaceHolderState: (path: string) => Status;
+  CfConverToPlaceholder: (path: string, fileIdentity: string) => void;
 }
