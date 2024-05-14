@@ -4,6 +4,7 @@
 #include <iostream>
 #include <iostream>
 #include <filesystem>
+#include "Logger.h"
 
 namespace fs = std::filesystem;
 // variable to disconect
@@ -23,6 +24,77 @@ void AddCustomState(
     customState.DisplayNameResource(displayNameResource);
     customState.Id(id);
     customStates.Append(customState);
+}
+
+HRESULT SyncRoot::HydrateFile(const std::wstring& filePath)
+{
+    DWORD attrib = GetFileAttributesW(filePath.c_str());
+    if (!(attrib & FILE_ATTRIBUTE_DIRECTORY))
+    {
+        winrt::handle placeholder(CreateFileW(filePath.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
+
+        LARGE_INTEGER offset;
+        offset.QuadPart = 0;
+        LARGE_INTEGER length;
+        GetFileSizeEx(placeholder.get(), &length);
+
+        if (attrib & FILE_ATTRIBUTE_PINNED)
+        {
+            Logger::getInstance().log("Hydration file init", LogLevel::INFO);
+
+            auto start = std::chrono::steady_clock::now();
+
+            HRESULT hr = CfHydratePlaceholder(placeholder.get(), offset, length, CF_HYDRATE_FLAG_NONE, NULL);
+
+            if (FAILED(hr))
+            {
+                Logger::getInstance().log("Error hydrating file " + Logger::fromWStringToString(filePath), LogLevel::ERROR);
+            }
+            else
+            {
+                auto end = std::chrono::steady_clock::now();
+                auto elapsedMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+                if (elapsedMilliseconds < 200)
+                {
+                    Logger::getInstance().log("Already Hydrated: " + std::to_string(elapsedMilliseconds) + " ms", LogLevel::WARN);
+                }
+                else
+                {
+                    Logger::getInstance().log("Hydration finished " + Logger::fromWStringToString(filePath), LogLevel::INFO);
+                }
+            }
+        }
+    }
+}
+
+HRESULT SyncRoot::DehydrateFile(const std::wstring& filePath)
+{
+    DWORD attrib = GetFileAttributesW(filePath.c_str());
+    if (!(attrib & FILE_ATTRIBUTE_DIRECTORY))
+    {
+        winrt::handle placeholder(CreateFileW(filePath.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
+
+        LARGE_INTEGER offset;
+        offset.QuadPart = 0;
+        LARGE_INTEGER length;
+        GetFileSizeEx(placeholder.get(), &length);
+
+        if (attrib & FILE_ATTRIBUTE_UNPINNED)
+        {
+            Logger::getInstance().log("Dehydrating file " + Logger::fromWStringToString(filePath), LogLevel::INFO);
+            HRESULT hr = CfDehydratePlaceholder(placeholder.get(), offset, length, CF_DEHYDRATE_FLAG_NONE, NULL);
+
+            if (FAILED(hr))
+            {
+                Logger::getInstance().log("Error dehydrating file " + Logger::fromWStringToString(filePath), LogLevel::ERROR);
+            }
+            else
+            {
+                Logger::getInstance().log("Dehydration finished " + Logger::fromWStringToString(filePath), LogLevel::INFO);
+            }
+        }
+    }
 }
 
 HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *providerName, const wchar_t *providerVersion, const GUID &providerId, const wchar_t *logoPath)

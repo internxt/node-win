@@ -893,3 +893,60 @@ napi_value CloseMutexWrapper(napi_env env, napi_callback_info args)
 
     return result;
 }
+
+napi_value HydrateFileWrapper(napi_env env, napi_callback_info args)
+{
+    size_t argc = 1;
+    napi_value argv[1];
+
+    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
+
+    if (argc < 1)
+    {
+        napi_throw_error(env, nullptr, "The file path is required for HydrateFile");
+        return nullptr;
+    }
+
+    LPCWSTR filePath;
+    size_t pathLength;
+    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
+    filePath = new WCHAR[pathLength + 1];
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(filePath)), pathLength + 1, nullptr);
+
+    HRESULT result = SyncRoot::HydrateFile(filePath);
+
+    delete[] filePath;
+
+    napi_value napiResult;
+    napi_create_int32(env, static_cast<int32_t>(result), &napiResult);
+    return napiResult;
+}
+
+// Wrapper for DehydrateFile
+napi_value DehydrateFileWrapper(napi_env env, napi_callback_info args)
+{
+    size_t argc = 1;
+    napi_value argv[1];
+
+    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
+
+    if (argc < 1)
+    {
+        napi_throw_error(env, nullptr, "The file path is required for DehydrateFile");
+        return nullptr;
+    }
+
+    LPCWSTR filePath;
+    size_t pathLength;
+    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
+    filePath = new WCHAR[pathLength + 1];
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(filePath)), pathLength + 1, nullptr);
+
+    HRESULT result = SyncRoot::DehydrateFile(filePath);
+
+    delete[] filePath;
+
+    napi_value napiResult;
+    napi_create_int32(env, static_cast<int32_t>(result), &napiResult);
+    return napiResult;
+}
