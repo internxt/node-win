@@ -4,6 +4,20 @@ import { PinState, Status, SyncState } from "../types/placeholder.type";
 import { IQueueManager, typeQueue } from "../queue/queueManager";
 import fs from "fs";
 
+const writeLog = (...messages: any[]) => {
+  const logMessage = `${new Date().toISOString()} - ${messages
+    .map((msg) =>
+      typeof msg === "object" ? JSON.stringify(msg, null, 2) : msg
+    )
+    .join(" ")}\n`;
+  console.log(logMessage);
+  fs.appendFile("C:\\Users\\usuario1\\Desktop\\test.txt", logMessage, (err) => {
+    if (err) {
+      console.error("Error writing to log file", err);
+    }
+  });
+};
+
 export class Watcher implements IWatcher {
   private static instance: Watcher;
 
@@ -32,7 +46,7 @@ export class Watcher implements IWatcher {
 
   private onAdd = (path: string, state: any) => {
     try {
-      console.log("onAdd", path, state);
+      writeLog("onAdd", path, state);
       const ext = path.split(".").pop();
 
       const { size } = state;
@@ -40,7 +54,7 @@ export class Watcher implements IWatcher {
       if (!ext || size === 0 || size > 20 * 1024 * 1024 * 1024) return;
 
       const status: Status = this._virtualDriveFn.CfGetPlaceHolderState(path);
-      console.log("status", status);
+      writeLog("status", status);
 
       if (
         status.pinState === PinState.AlwaysLocal ||
@@ -61,14 +75,14 @@ export class Watcher implements IWatcher {
   };
 
   private onChange = (path: string, state: any) => {
-    console.log("onChange", path, state);
+    writeLog("onChange", path, state);
   };
 
   private onAddDir = (path: string, state: any) => {
     try {
-      console.log("onAddDir", path, state);
+      writeLog("onAddDir", path, state);
       const status: Status = this._virtualDriveFn.CfGetPlaceHolderState(path);
-      console.log("status", status);
+      writeLog("status", status);
 
       if (
         status.pinState === PinState.AlwaysLocal ||
@@ -83,31 +97,27 @@ export class Watcher implements IWatcher {
         isFolder: true,
       });
     } catch (error) {
-      console.log("Error en onAddDir");
+      writeLog("Error en onAddDir");
       console.error(error);
     }
   };
 
   private onError = (error: any) => {
-    console.log("onError", error);
+    writeLog("onError", error);
   };
 
-  private onRaw = (event: string, path: string, details: any) => {
-    console.log("onRaw", event, path, details);
+  private onRaw = async (event: string, path: string, details: any) => {
+    writeLog("onRaw", event, path, details);
     if (event === "change" && details.prev && details.curr) {
-      fs.stat(path, (err, stats) => {
-        if (err) {
-          console.error(`Error getting stats for path: ${path}`, err);
-          return;
-        }
-        if (stats.isDirectory()) {
-          return;
-        }
-      });
+      const item = await fs.statSync(path);
+      if (item.isDirectory()) {
+        writeLog("Es un directorio", path);
+        return;
+      }
       const action = this.detectContextMenuAction(details, path);
 
       if (action) {
-        console.log(`Action detected: '${action}'`, path);
+        writeLog(`Action detected: '${action}'`, path);
       }
     }
   };
@@ -116,16 +126,16 @@ export class Watcher implements IWatcher {
     const { prev, curr } = details;
     const status = this._virtualDriveFn.CfGetPlaceHolderState(path);
 
-    console.log("status", status);
+    writeLog("status", status);
     if (
       prev.size === curr.size && // Tamaño no cambia
       prev.ctimeMs !== curr.ctimeMs && // ctime cambia
       prev.mtimeMs === curr.mtimeMs && // mtime no cambia
       status.pinState === PinState.AlwaysLocal // Estado es AlwaysLocal
     ) {
-      this.queueManager.enqueue({
+      this._queueManager.enqueue({
         path,
-        type: typeQueue.hidreate,
+        type: typeQueue.hydrate,
         isFolder: false,
       });
       return "Mantener siempre en el dispositivo";
@@ -133,14 +143,13 @@ export class Watcher implements IWatcher {
 
     // Verificar si es "Liberar espacio"
     if (
-      prev.size === curr.size && // Tamaño no cambia
-      prev.ctimeMs !== curr.ctimeMs && // ctime cambia
-      prev.mtimeMs === curr.mtimeMs && // mtime no cambia
-      status.pinState === PinState.OnlineOnly // Estado es OnlineOnly
+      prev.size == curr.size && // Tamaño no cambia
+      prev.ctimeMs != curr.ctimeMs && // ctime cambia
+      status.pinState == PinState.OnlineOnly // Estado es OnlineOnly
     ) {
-      this.queueManager.enqueue({
+      this._queueManager.enqueue({
         path,
-        type: typeQueue.dehidreate,
+        type: typeQueue.dehydrate,
         isFolder: false,
       });
       return "Liberar espacio";
@@ -150,7 +159,7 @@ export class Watcher implements IWatcher {
   }
 
   private onReady = () => {
-    console.log("onReady");
+    writeLog("onReady");
   };
 
   set syncRootPath(syncRootPath: string) {
@@ -173,7 +182,7 @@ export class Watcher implements IWatcher {
         .on("raw", this.onRaw)
         .on("ready", this.onReady);
     } catch (error) {
-      console.log("Error en watchAndWait");
+      writeLog("Error en watchAndWait");
       console.error(error);
     }
   }

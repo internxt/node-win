@@ -70,6 +70,7 @@ HRESULT SyncRoot::HydrateFile(const std::wstring &filePath)
 
 HRESULT SyncRoot::DehydrateFile(const std::wstring &filePath)
 {
+    Logger::getInstance().log("Dehydration file init", LogLevel::INFO);
     DWORD attrib = GetFileAttributesW(filePath.c_str());
     if (!(attrib & FILE_ATTRIBUTE_DIRECTORY))
     {

@@ -3,8 +3,8 @@ import { IQueueManager, QueueItem } from "../index";
 
 export type QueueHandler = {
   handleAdd: HandleAction;
-  handleHidreate: HandleAction;
-  handleDehidreate: HandleAction;
+  handleHydrate: HandleAction;
+  handleDehydrate: HandleAction;
   handleChange?: HandleAction;
 };
 export async function sleep(ms: number): Promise<void> {
@@ -20,8 +20,8 @@ export class QueueManager implements IQueueManager {
   constructor(handlers: QueueHandler) {
     this.actions = {
       add: handlers.handleAdd,
-      hidreate: handlers.handleHidreate,
-      dehidreate: handlers.handleDehidreate,
+      hydrate: handlers.handleHydrate,
+      dehydrate: handlers.handleDehydrate,
       change: handlers.handleChange || (() => Promise.resolve()),
     };
   }
@@ -61,10 +61,10 @@ export class QueueManager implements IQueueManager {
     switch (task.type) {
       case "add":
         return await this.actions.add(task);
-      case "hidreate":
-        return await this.actions.hidreate(task);
-      case "dehidreate":
-        return await this.actions.dehidreate(task);
+      case "hydrate":
+        return await this.actions.hydrate(task);
+      case "dehydrate":
+        return await this.actions.dehydrate(task);
       case "change":
         return await this.actions.change(task);
       default:

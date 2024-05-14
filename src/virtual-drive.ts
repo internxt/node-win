@@ -458,6 +458,14 @@ class VirtualDrive {
   closeDownloadMutex(): void {
     return addon.closeMutex();
   }
+
+  async dehydrateFile(itemPath: string): Promise<void> {
+    return addon.dehydrateFile(itemPath);
+  }
+
+  async hydrateFile(itemPath: string): Promise<void> {
+    return addon.hydrateFile(itemPath);
+  }
 }
 
 export default VirtualDrive;

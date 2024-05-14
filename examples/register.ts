@@ -29,7 +29,7 @@ drive.registerSyncRoot(
   settings.defaultIconPath
 );
 
-const handler = async (task: QueueItem) => {
+const handlerAdd = async (task: QueueItem) => {
   try {
     console.log("[EXAMPLE] File added in callback: " + task.path);
     await new Promise((resolve) =>
@@ -39,16 +39,30 @@ const handler = async (task: QueueItem) => {
     );
     const result = Math.random().toString(36).substring(2, 7);
     await drive.convertToPlaceholder(task.path, result);
-    await drive.updateSyncStatus(task.path, true);
+    await drive.updateSyncStatus(task.path, task.isFolder, true);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const handleDehydrate = async (task: QueueItem) => {
+  try {
+    console.log("[EXAMPLE] File dehydrated in callback: " + task.path);
+    await new Promise((resolve) =>
+      setTimeout(() => {
+        resolve(undefined);
+      }, 1000)
+    );
+    await drive.dehydrateFile(task.path);
   } catch (error) {
     console.error(error);
   }
 };
 
 const queueManager: IQueueManager = new QueueManager({
-  handleAdd: handler,
-  handleHidreate: handler,
-  handleDehidreate: handler,
+  handleAdd: handlerAdd,
+  handleHydrate: handleDehydrate,
+  handleDehydrate: handleDehydrate,
 });
 
 drive.connectSyncRoot();
