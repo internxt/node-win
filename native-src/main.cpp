@@ -281,6 +281,42 @@ napi_value init(napi_env env, napi_value exports)
     return nullptr;
   }
 
+  // Define HydrateFile wrapper
+  napi_property_descriptor hydrateFileDesc = {
+      "hydrateFile",
+      nullptr,
+      HydrateFileWrapper,
+      nullptr,
+      nullptr,
+      nullptr,
+      napi_default,
+      nullptr};
+
+  napi_status defineHydrateFileStatus = napi_define_properties(env, exports, 1, &hydrateFileDesc);
+  if (defineHydrateFileStatus != napi_ok)
+  {
+    napi_throw_error(env, nullptr, "Failed to define hydrateFile function");
+    return nullptr;
+  }
+
+  // Define DehydrateFile wrapper
+  napi_property_descriptor dehydrateFileDesc = {
+      "dehydrateFile",
+      nullptr,
+      DehydrateFileWrapper,
+      nullptr,
+      nullptr,
+      nullptr,
+      napi_default,
+      nullptr};
+
+  napi_status defineDehydrateFileStatus = napi_define_properties(env, exports, 1, &dehydrateFileDesc);
+  if (defineDehydrateFileStatus != napi_ok)
+  {
+    napi_throw_error(env, nullptr, "Failed to define dehydrateFile function");
+    return nullptr;
+  }
+
   return exports;
 }
 NAPI_MODULE(NODE_GYP_MODULE_NAME, init)
