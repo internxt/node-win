@@ -282,8 +282,8 @@ class VirtualDrive {
       CfNotifyMessage: this.test,
       CfUpdateItem: this.test,
       CfUpdateSyncStatus: this.test,
-      CfGetPlaceHolderState: this.getPlaceholderState,
-      CfConverToPlaceholder: this.convertToPlaceholder,
+      CfGetPlaceHolderState: addon.getPlaceholderState,
+      CfConverToPlaceholder: addon.convertToPlaceholder,
     };
 
     this.watcher.watchAndWait();

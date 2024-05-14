@@ -7,9 +7,13 @@ export type QueueHandler = {
   handleDehidreate: HandleAction;
   handleChange?: HandleAction;
 };
-
+export async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 export class QueueManager implements IQueueManager {
   private _queue: QueueItem[] = [];
+
+  private isProcessing = false;
 
   actions: HandleActions;
 
@@ -23,10 +27,12 @@ export class QueueManager implements IQueueManager {
   }
 
   public enqueue(task: QueueItem): void {
+    console.debug(`Task enqueued: ${JSON.stringify(task)}`);
     this._queue.push(task);
-    console.log(`Task enqueued: ${JSON.stringify(task)}`);
     this.sortQueue();
-    this.processAll();
+    if (!this.isProcessing) {
+      this.processAll();
+    }
   }
 
   private sortQueue(): void {
@@ -35,10 +41,10 @@ export class QueueManager implements IQueueManager {
         return 0;
       }
       if (a.isFolder) {
-        return 1;
+        return -1;
       }
       if (b.isFolder) {
-        return -1;
+        return 1;
       }
       return 0;
     });
@@ -46,33 +52,34 @@ export class QueueManager implements IQueueManager {
 
   public async processNext(): Promise<void> {
     if (this._queue.length === 0) {
-      console.log("No tasks in queue.");
+      console.debug("No tasks in queue.");
       return;
     }
-    const task = this._queue.shift()!;
-    console.log(`Processing task: ${JSON.stringify(task)}`);
+    const task = this._queue.shift();
+    if (!task) return;
+    console.debug(`Processing task: ${JSON.stringify(task)}`);
     switch (task.type) {
       case "add":
-        await this.actions.add(task);
-        break;
+        return await this.actions.add(task);
       case "hidreate":
-        await this.actions.add(task);
-        break;
+        return await this.actions.hidreate(task);
       case "dehidreate":
-        await this.actions.add(task);
-        break;
+        return await this.actions.dehidreate(task);
       case "change":
-        await this.actions.change(task);
-        break;
+        return await this.actions.change(task);
       default:
-        console.log("Unknown task type.");
+        console.debug("Unknown task type.");
         break;
     }
   }
 
   public async processAll(): Promise<void> {
+    this.isProcessing = true;
     while (this._queue.length > 0) {
+      await sleep(200);
+      console.debug("Processing all tasks. Queue length:", this._queue.length);
       await this.processNext();
     }
+    this.isProcessing = false;
   }
 }

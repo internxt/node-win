@@ -2,6 +2,7 @@ import * as chokidar from "chokidar";
 import { IWatcher, IVirtualDriveFunctions } from "./watcher.interface";
 import { PinState, Status, SyncState } from "../types/placeholder.type";
 import { IQueueManager, typeQueue } from "../queue/queueManager";
+import fs from "fs";
 
 export class Watcher implements IWatcher {
   private static instance: Watcher;
@@ -93,7 +94,60 @@ export class Watcher implements IWatcher {
 
   private onRaw = (event: string, path: string, details: any) => {
     console.log("onRaw", event, path, details);
+    if (event === "change" && details.prev && details.curr) {
+      fs.stat(path, (err, stats) => {
+        if (err) {
+          console.error(`Error getting stats for path: ${path}`, err);
+          return;
+        }
+        if (stats.isDirectory()) {
+          return;
+        }
+      });
+      const action = this.detectContextMenuAction(details, path);
+
+      if (action) {
+        console.log(`Action detected: '${action}'`, path);
+      }
+    }
   };
+
+  private detectContextMenuAction(details: any, path: string): string | null {
+    const { prev, curr } = details;
+    const status = this._virtualDriveFn.CfGetPlaceHolderState(path);
+
+    console.log("status", status);
+    if (
+      prev.size === curr.size && // Tamaño no cambia
+      prev.ctimeMs !== curr.ctimeMs && // ctime cambia
+      prev.mtimeMs === curr.mtimeMs && // mtime no cambia
+      status.pinState === PinState.AlwaysLocal // Estado es AlwaysLocal
+    ) {
+      this.queueManager.enqueue({
+        path,
+        type: typeQueue.hidreate,
+        isFolder: false,
+      });
+      return "Mantener siempre en el dispositivo";
+    }
+
+    // Verificar si es "Liberar espacio"
+    if (
+      prev.size === curr.size && // Tamaño no cambia
+      prev.ctimeMs !== curr.ctimeMs && // ctime cambia
+      prev.mtimeMs === curr.mtimeMs && // mtime no cambia
+      status.pinState === PinState.OnlineOnly // Estado es OnlineOnly
+    ) {
+      this.queueManager.enqueue({
+        path,
+        type: typeQueue.dehidreate,
+        isFolder: false,
+      });
+      return "Liberar espacio";
+    }
+
+    return null;
+  }
 
   private onReady = () => {
     console.log("onReady");
