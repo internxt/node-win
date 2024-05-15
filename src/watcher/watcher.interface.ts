@@ -18,5 +18,6 @@ export interface IVirtualDriveFunctions {
   UpdatePinState?: () => void;
   CfUpdateItem?: () => void;
   CfGetPlaceHolderState: (path: string) => Status;
+  CfGetPlaceHolderIdentity: (path: string) => string;
   CfConverToPlaceholder: (path: string, fileIdentity: string) => void;
 }

@@ -28,6 +28,7 @@ void AddCustomState(
 
 HRESULT SyncRoot::HydrateFile(const std::wstring &filePath)
 {
+    Logger::getInstance().log("Hydration file started" + Logger::getInstance().fromWStringToString(filePath), LogLevel::INFO);
     DWORD attrib = GetFileAttributesW(filePath.c_str());
     if (!(attrib & FILE_ATTRIBUTE_DIRECTORY))
     {

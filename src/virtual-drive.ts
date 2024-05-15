@@ -282,6 +282,7 @@ class VirtualDrive {
       CfNotifyMessage: this.test,
       CfUpdateItem: this.test,
       CfUpdateSyncStatus: this.test,
+      CfGetPlaceHolderIdentity: addon.getFileIdentity,
       CfGetPlaceHolderState: addon.getPlaceholderState,
       CfConverToPlaceholder: addon.convertToPlaceholder,
     };
@@ -451,8 +452,10 @@ class VirtualDrive {
     return addon.convertToPlaceholder(itemPath, id);
   }
   updateFileIdentity(itemPath: string, id: string, isDirectory: boolean): void {
-    const fullPath = path.join(this.syncRootPath, itemPath);
-    return addon.updateFileIdentity(fullPath, id, isDirectory);
+    if (!itemPath.includes(this.syncRootPath)) {
+      itemPath = path.join(this.syncRootPath, itemPath);
+    }
+    addon.updateFileIdentity(itemPath, id, isDirectory);
   }
 
   closeDownloadMutex(): void {

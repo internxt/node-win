@@ -75,7 +75,7 @@ export class Watcher implements IWatcher {
   };
 
   private onChange = (path: string, state: any) => {
-    writeLog("onChange", path, state);
+    writeLog("onChange");
   };
 
   private onAddDir = (path: string, state: any) => {
@@ -108,13 +108,17 @@ export class Watcher implements IWatcher {
 
   private onRaw = async (event: string, path: string, details: any) => {
     writeLog("onRaw", event, path, details);
+
+    let isDirectory = false;
+
     if (event === "change" && details.prev && details.curr) {
       const item = await fs.statSync(path);
       if (item.isDirectory()) {
         writeLog("Es un directorio", path);
+        isDirectory = true;
         return;
       }
-      const action = this.detectContextMenuAction(details, path);
+      const action = this.detectContextMenuAction(details, path, isDirectory);
 
       if (action) {
         writeLog(`Action detected: '${action}'`, path);
@@ -122,9 +126,15 @@ export class Watcher implements IWatcher {
     }
   };
 
-  private detectContextMenuAction(details: any, path: string): string | null {
+  private detectContextMenuAction(
+    details: any,
+    path: string,
+    isDirectory: boolean
+  ): string | null {
     const { prev, curr } = details;
     const status = this._virtualDriveFn.CfGetPlaceHolderState(path);
+
+    const itemId = this._virtualDriveFn.CfGetPlaceHolderIdentity(path);
 
     writeLog("status", status);
     if (
@@ -136,7 +146,8 @@ export class Watcher implements IWatcher {
       this._queueManager.enqueue({
         path,
         type: typeQueue.hydrate,
-        isFolder: false,
+        isFolder: isDirectory,
+        fileId: itemId,
       });
       return "Mantener siempre en el dispositivo";
     }
@@ -150,9 +161,20 @@ export class Watcher implements IWatcher {
       this._queueManager.enqueue({
         path,
         type: typeQueue.dehydrate,
-        isFolder: false,
+        isFolder: isDirectory,
+        fileId: itemId,
       });
       return "Liberar espacio";
+    }
+
+    if (prev.size != curr.size) {
+      this._queueManager.enqueue({
+        path,
+        type: typeQueue.changeSize,
+        isFolder: isDirectory,
+        fileId: itemId,
+      });
+      return "Cambio de tamaño";
     }
 
     return null;

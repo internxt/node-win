@@ -3,6 +3,7 @@ export enum typeQueue {
   hydrate = "hydrate",
   dehydrate = "dehydrate",
   change = "change",
+  changeSize = "changeSize",
 }
 
 export type QueueItem = {

@@ -6,6 +6,7 @@ export type QueueHandler = {
   handleHydrate: HandleAction;
   handleDehydrate: HandleAction;
   handleChange?: HandleAction;
+  handleChangeSize: HandleAction;
 };
 export async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -23,6 +24,7 @@ export class QueueManager implements IQueueManager {
       hydrate: handlers.handleHydrate,
       dehydrate: handlers.handleDehydrate,
       change: handlers.handleChange || (() => Promise.resolve()),
+      changeSize: handlers.handleChangeSize,
     };
   }
 
@@ -67,6 +69,8 @@ export class QueueManager implements IQueueManager {
         return await this.actions.dehydrate(task);
       case "change":
         return await this.actions.change(task);
+      case "changeSize":
+        return await this.actions.changeSize(task);
       default:
         console.debug("Unknown task type.");
         break;
