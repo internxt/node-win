@@ -266,17 +266,10 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
             return false;
         }
 
-        // if (isDirectory) {
-        //   // Si es una carpeta, establecer el estado de pinning
-        //   hr =  CfSetPinState(fileHandle, CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
-        // }
-
-        //   if (FAILED(hr) || hr != S_OK)
-        // {
-        //     // Manejar el error al convertir a marcador de posición
-        //     wprintf(L"Error converting to pinned, CfSetPinState failed\n", GetLastError());
-        //     return false;
-        // }
+        if (!isDirectory)
+        {
+            CfSetPinState(fileHandle, CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
+        }
 
         CloseHandle(fileHandle);
         wprintf(L"[ConvertToPlaceholder] Successfully converted to placeholder: %ls\n", fullPath.c_str());

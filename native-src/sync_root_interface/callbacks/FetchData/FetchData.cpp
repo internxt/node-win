@@ -378,11 +378,6 @@ void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context,
         return;
     }
 
-    // {
-    //     std::lock_guard<std::mutex> lock(mtx);
-    //     ready = false;
-    // }
-
     std::unique_lock<std::mutex> lock(mtx);
     ready = false;
 
@@ -468,6 +463,8 @@ void CALLBACK fetch_data_callback_wrapper(
         Logger::getInstance().log("Callback called unsuccessfully.\n", LogLevel::ERROR);
     };
 
+        Logger::getInstance().log("log 4.\n", LogLevel::DEBUG);
+
     {
         std::unique_lock<std::mutex> lock(mtx);
         Logger::getInstance().log("Mutex await call.\n", LogLevel::DEBUG);
@@ -482,7 +479,6 @@ void CALLBACK fetch_data_callback_wrapper(
     // DownloadMutexManager &mutexManager = DownloadMutexManager::getInstance();
     // mutexManager.setReady(true);
 
-    // std::lock_guard<std::mutex> lock(mtx);
     lastReadOffset = 0;
     load_finished = false;
     ready = false; // Reset ready

@@ -53,7 +53,23 @@ const handleDehydrate = async (task: QueueItem) => {
         resolve(undefined);
       }, 1000)
     );
+    console.log("Dehydrating file: " + task.path);
     await drive.dehydrateFile(task.path);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const handleHydrate = async (task: QueueItem) => {
+  try {
+    console.log("[EXAMPLE] File hydrated in callback: " + task.path);
+    await new Promise((resolve) =>
+      setTimeout(() => {
+        resolve(undefined);
+      }, 1000)
+    );
+    console.log("Hydrating file: " + task.path);
+    await drive.hydrateFile(task.path);
   } catch (error) {
     console.error(error);
   }
@@ -79,7 +95,7 @@ const handleChangeSize = async (task: QueueItem) => {
 
 const queueManager: IQueueManager = new QueueManager({
   handleAdd: handlerAdd,
-  handleHydrate: handleDehydrate,
+  handleHydrate: handleHydrate,
   handleDehydrate: handleDehydrate,
   handleChangeSize: handleChangeSize,
 });
@@ -321,7 +337,7 @@ try {
 
   console.log(success2);
 
-  drive.watchAndWait(settings.syncRootPath, queueManager);
+  drive.watchAndWait(settings.syncRootPath, queueManager, settings.watcherLogPath);
 } catch (error) {
   drive.disconnectSyncRoot();
   VirtualDrive.unregisterSyncRoot(settings.syncRootPath);

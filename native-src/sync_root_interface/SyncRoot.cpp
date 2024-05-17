@@ -26,13 +26,14 @@ void AddCustomState(
     customStates.Append(customState);
 }
 
-HRESULT SyncRoot::HydrateFile(const std::wstring &filePath)
+void SyncRoot::HydrateFile(const wchar_t *filePath)
 {
-    Logger::getInstance().log("Hydration file started" + Logger::getInstance().fromWStringToString(filePath), LogLevel::INFO);
-    DWORD attrib = GetFileAttributesW(filePath.c_str());
+    // Logger::getInstance().log("Hydration file started" + Logger::getInstance().fromWStringToString(filePath), LogLevel::INFO);
+    wprintf(L"Hydration file started %ls\n", filePath);
+    DWORD attrib = GetFileAttributesW(filePath);
     if (!(attrib & FILE_ATTRIBUTE_DIRECTORY))
     {
-        winrt::handle placeholder(CreateFileW(filePath.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
+        winrt::handle placeholder(CreateFileW(filePath, 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
 
         LARGE_INTEGER offset;
         offset.QuadPart = 0;
@@ -41,7 +42,8 @@ HRESULT SyncRoot::HydrateFile(const std::wstring &filePath)
 
         if (attrib & FILE_ATTRIBUTE_PINNED)
         {
-            Logger::getInstance().log("Hydration file init", LogLevel::INFO);
+            // Logger::getInstance().log("Hydration file init", LogLevel::INFO);
+            wprintf(L"Hydration file init %ls\n", filePath);
 
             auto start = std::chrono::steady_clock::now();
 
@@ -49,7 +51,8 @@ HRESULT SyncRoot::HydrateFile(const std::wstring &filePath)
 
             if (FAILED(hr))
             {
-                Logger::getInstance().log("Error hydrating file " + Logger::fromWStringToString(filePath), LogLevel::ERROR);
+                // Logger::getInstance().log("Error hydrating file " + Logger::fromWStringToString(filePath), LogLevel::ERROR);
+                wprintf(L"Error hydrating file %ls\n", filePath);
             }
             else
             {
@@ -58,24 +61,27 @@ HRESULT SyncRoot::HydrateFile(const std::wstring &filePath)
 
                 if (elapsedMilliseconds < 200)
                 {
-                    Logger::getInstance().log("Already Hydrated: " + std::to_string(elapsedMilliseconds) + " ms", LogLevel::WARN);
+                    // Logger::getInstance().log("Already Hydrated: " + std::to_string(elapsedMilliseconds) + " ms", LogLevel::WARN);
+                    wprintf(L"Already Hydrated: %d ms\n", elapsedMilliseconds);
                 }
                 else
                 {
-                    Logger::getInstance().log("Hydration finished " + Logger::fromWStringToString(filePath), LogLevel::INFO);
+                    // Logger::getInstance().log("Hydration finished " + Logger::fromWStringToString(filePath), LogLevel::INFO);
+                    wprintf(L"Hydration finished %ls\n", filePath);
                 }
             }
         }
     }
 }
 
-HRESULT SyncRoot::DehydrateFile(const std::wstring &filePath)
+void SyncRoot::DehydrateFile(const wchar_t *filePath)
 {
-    Logger::getInstance().log("Dehydration file init", LogLevel::INFO);
-    DWORD attrib = GetFileAttributesW(filePath.c_str());
+    // Logger::getInstance().log("Dehydration file init", LogLevel::INFO);
+    wprintf(L"Dehydration file init %ls\n", filePath);
+    DWORD attrib = GetFileAttributesW(filePath);
     if (!(attrib & FILE_ATTRIBUTE_DIRECTORY))
     {
-        winrt::handle placeholder(CreateFileW(filePath.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
+        winrt::handle placeholder(CreateFileW(filePath, 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
 
         LARGE_INTEGER offset;
         offset.QuadPart = 0;
@@ -84,16 +90,19 @@ HRESULT SyncRoot::DehydrateFile(const std::wstring &filePath)
 
         if (attrib & FILE_ATTRIBUTE_UNPINNED)
         {
-            Logger::getInstance().log("Dehydrating file " + Logger::fromWStringToString(filePath), LogLevel::INFO);
+            // Logger::getInstance().log("Dehydrating file " + Logger::fromWStringToString(filePath), LogLevel::INFO);
+            wprintf(L"Dehydrating file starteeed %ls\n", filePath);
             HRESULT hr = CfDehydratePlaceholder(placeholder.get(), offset, length, CF_DEHYDRATE_FLAG_NONE, NULL);
 
             if (FAILED(hr))
             {
-                Logger::getInstance().log("Error dehydrating file " + Logger::fromWStringToString(filePath), LogLevel::ERROR);
+                wprintf(L"Error dehydrating file %ls\n", filePath);
+                // Logger::getInstance().log("Error dehydrating file " + Logger::fromWStringToString(filePath), LogLevel::ERROR);
             }
             else
             {
-                Logger::getInstance().log("Dehydration finished " + Logger::fromWStringToString(filePath), LogLevel::INFO);
+                wprintf(L"Dehydration finished %ls\n", filePath);
+                // Logger::getInstance().log("Dehydration finished " + Logger::fromWStringToString(filePath), LogLevel::INFO);
             }
         }
     }
@@ -103,6 +112,7 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
 {
     try
     {
+        Logger::getInstance().log("Registering sync root.", LogLevel::INFO);
         auto syncRootID = providerId;
 
         winrt::StorageProviderSyncRootInfo info;

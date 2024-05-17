@@ -14,7 +14,11 @@ export interface IVirtualDriveFunctions {
   CfDehydrate?: () => void;
   CfAddItem: () => void;
   CfNotifyMessage?: () => void;
-  CfUpdateSyncStatus?: () => void;
+  CfUpdateSyncStatus: (
+    path: string,
+    sync: boolean,
+    isDirectory?: boolean
+  ) => void;
   UpdatePinState?: () => void;
   CfUpdateItem?: () => void;
   CfGetPlaceHolderState: (path: string) => Status;

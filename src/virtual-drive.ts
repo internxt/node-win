@@ -54,7 +54,6 @@ class VirtualDrive {
     };
 
     this.watcher = Watcher.Instance;
-    // this.watcherBuilder = new WatcherBuilder();
 
     this.syncRootPath = syncRootPath;
     this.createSyncRootFolder();
@@ -254,12 +253,18 @@ class VirtualDrive {
     console.log("Test");
   }
 
-  watchAndWait(path: string, queueManager: IQueueManager): void {
+  watchAndWait(
+    path: string,
+    queueManager: IQueueManager,
+    loggerPath: string
+  ): void {
     if (this.callbacks === undefined) {
       throw new Error("Callbacks are not defined");
     }
 
     this.watcher.queueManager = queueManager;
+
+    this.watcher.logPath = loggerPath;
 
     this.watcher.syncRootPath = path;
     this.watcher.options = {
@@ -281,7 +286,7 @@ class VirtualDrive {
       CfHydrate: this.test,
       CfNotifyMessage: this.test,
       CfUpdateItem: this.test,
-      CfUpdateSyncStatus: this.test,
+      CfUpdateSyncStatus: addon.updateSyncStatus,
       CfGetPlaceHolderIdentity: addon.getFileIdentity,
       CfGetPlaceHolderState: addon.getPlaceholderState,
       CfConverToPlaceholder: addon.convertToPlaceholder,
@@ -463,11 +468,11 @@ class VirtualDrive {
   }
 
   async dehydrateFile(itemPath: string): Promise<void> {
-    return addon.dehydrateFile(itemPath);
+    return await addon.dehydrateFile(itemPath);
   }
 
   async hydrateFile(itemPath: string): Promise<void> {
-    return addon.hydrateFile(itemPath);
+    return await addon.hydrateFile(itemPath);
   }
 }
 
