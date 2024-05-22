@@ -5,6 +5,7 @@
 #include <iostream>
 #include <filesystem>
 #include "Logger.h"
+#include "DownloadMutexManager.h"
 
 namespace fs = std::filesystem;
 // variable to disconect
@@ -51,11 +52,18 @@ void SyncRoot::HydrateFile(const wchar_t *filePath)
 
             if (FAILED(hr))
             {
-                // Logger::getInstance().log("Error hydrating file " + Logger::fromWStringToString(filePath), LogLevel::ERROR);
-                wprintf(L"Error hydrating file %ls\n", filePath);
+                Logger::getInstance().log("Error hydrating file " + Logger::fromWStringToString(filePath), LogLevel::ERROR);
             }
             else
             {
+                // Logger::getInstance()
+                //     .log("Mutex waiting for " + Logger::fromWStringToString(filePath), LogLevel::INFO);
+                // DownloadMutexManager &mutexManager = DownloadMutexManager::getInstance();
+                // mutexManager.waitReady();
+                // Logger::getInstance().log("Mutex ready for " + Logger::fromWStringToString(filePath), LogLevel::INFO);
+                // mutexManager.resetReady();
+                // Logger::getInstance().log("resetReady for " + Logger::fromWStringToString(filePath), LogLevel::INFO);
+
                 auto end = std::chrono::steady_clock::now();
                 auto elapsedMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
@@ -66,7 +74,7 @@ void SyncRoot::HydrateFile(const wchar_t *filePath)
                 }
                 else
                 {
-                    // Logger::getInstance().log("Hydration finished " + Logger::fromWStringToString(filePath), LogLevel::INFO);
+
                     wprintf(L"Hydration finished %ls\n", filePath);
                 }
             }

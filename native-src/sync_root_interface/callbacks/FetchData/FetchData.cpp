@@ -261,6 +261,24 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
         return create_response(env, true, 0);
     }
 
+    // si el primer argumento es false liberamos mutex
+    if (!response)
+    {
+        Logger::getInstance().log("Response is false", LogLevel::DEBUG);
+        load_finished = true;
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+
+            if (load_finished)
+            {
+                ready = true;
+                cv.notify_one();
+            }
+        }
+
+        return create_response(env, true, 0);
+    }
+
     callbackResult = response;
 
     size_t response_len;
@@ -463,7 +481,7 @@ void CALLBACK fetch_data_callback_wrapper(
         Logger::getInstance().log("Callback called unsuccessfully.\n", LogLevel::ERROR);
     };
 
-        Logger::getInstance().log("log 4.\n", LogLevel::DEBUG);
+    Logger::getInstance().log("log 4.\n", LogLevel::DEBUG);
 
     {
         std::unique_lock<std::mutex> lock(mtx);
@@ -474,7 +492,7 @@ void CALLBACK fetch_data_callback_wrapper(
         }
     }
 
-    Logger::getInstance().log("Hydration Completed\n", LogLevel::INFO);
+    Logger::getInstance().log("Hydration Finish\n", LogLevel::INFO);
 
     // DownloadMutexManager &mutexManager = DownloadMutexManager::getInstance();
     // mutexManager.setReady(true);

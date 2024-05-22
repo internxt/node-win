@@ -97,6 +97,8 @@ std::uintmax_t getDirectorySize(const fs::path &directoryPath)
 //     delete[] infoBuffer;
 // }
 
+
+
 FileState DirectoryWatcher::getPlaceholderInfo(const std::wstring &directoryPath)
 {
 

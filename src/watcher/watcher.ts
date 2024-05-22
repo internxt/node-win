@@ -3,6 +3,7 @@ import { IWatcher, IVirtualDriveFunctions } from "./watcher.interface";
 import { PinState, Status, SyncState } from "../types/placeholder.type";
 import { IQueueManager, typeQueue } from "../queue/queueManager";
 import fs from "fs";
+import * as Path from "path";
 
 export class Watcher implements IWatcher {
   private static instance: Watcher;
@@ -26,7 +27,7 @@ export class Watcher implements IWatcher {
     return Watcher.instance;
   }
 
-  private writeLog = (...messages: any[]) => {
+  public writeLog = (...messages: any[]) => {
     const logMessage = `${new Date().toISOString()} - ${messages
       .map((msg) =>
         typeof msg === "object" ? JSON.stringify(msg, null, 2) : msg
@@ -128,7 +129,22 @@ export class Watcher implements IWatcher {
         isDirectory = true;
         return;
       }
-      const action = this.detectContextMenuAction(details, path, isDirectory);
+      if (Path.extname(path) === "") {
+        this.writeLog("Archivo sin extensión ignorado", path);
+        return;
+      }
+
+      // Ignorar archivos vacíos
+      if (item.size === 0) {
+        this.writeLog("Archivo vacío ignorado", path);
+        return;
+      }
+
+      const action = await this.detectContextMenuAction(
+        details,
+        path,
+        isDirectory
+      );
 
       if (action) {
         this.writeLog(`Action detected: '${action}'`, path);
@@ -136,19 +152,25 @@ export class Watcher implements IWatcher {
     }
   };
 
-  private detectContextMenuAction(
+  private async detectContextMenuAction(
     details: any,
     path: string,
     isDirectory: boolean
-  ): string | null {
+  ): Promise<string | null> {
     const { prev, curr } = details;
     const status = this._virtualDriveFn.CfGetPlaceHolderState(path);
+    this.writeLog("status", status);
+
+    const attribute = await this._virtualDriveFn.CfGetPlaceHolderAttributes(
+      path
+    );
+    this.writeLog("attribute", attribute);
 
     const itemId = this._virtualDriveFn.CfGetPlaceHolderIdentity(path);
+    this.writeLog("itemId", itemId);
 
     const isInDevice = this.fileInDevice.has(path);
 
-    this.writeLog("status", status);
     if (
       prev.size === curr.size && // Tamaño no cambia
       prev.ctimeMs !== curr.ctimeMs && // ctime cambia
@@ -184,7 +206,7 @@ export class Watcher implements IWatcher {
       return "Liberar espacio";
     }
 
-    if (prev.size != curr.size) {
+    if (prev.size != curr.size && itemId) {
       this._queueManager.enqueue({
         path,
         type: typeQueue.changeSize,

@@ -23,5 +23,6 @@ export interface IVirtualDriveFunctions {
   CfUpdateItem?: () => void;
   CfGetPlaceHolderState: (path: string) => Status;
   CfGetPlaceHolderIdentity: (path: string) => string;
+  CfGetPlaceHolderAttributes: (path: string) => Promise<any>;
   CfConverToPlaceholder: (path: string, fileIdentity: string) => void;
 }

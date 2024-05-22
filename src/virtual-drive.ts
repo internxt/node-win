@@ -6,6 +6,7 @@ import { Watcher } from "./watcher/watcher";
 import { ExtraCallbacks, InputSyncCallbacks } from "./types/callbacks.type";
 import { Status } from "./types/placeholder.type";
 import { IQueueManager } from "./queue/queueManager";
+import { transferData } from "./utils/transferData";
 
 const addon = require("../../build/Release/addon.node");
 interface ItemInfo {
@@ -286,6 +287,7 @@ class VirtualDrive {
       CfHydrate: this.test,
       CfNotifyMessage: this.test,
       CfUpdateItem: this.test,
+      CfGetPlaceHolderAttributes: addon.getPlaceholderAttribute,
       CfUpdateSyncStatus: addon.updateSyncStatus,
       CfGetPlaceHolderIdentity: addon.getFileIdentity,
       CfGetPlaceHolderState: addon.getPlaceholderState,
@@ -473,6 +475,15 @@ class VirtualDrive {
 
   async hydrateFile(itemPath: string): Promise<void> {
     return await addon.hydrateFile(itemPath);
+  }
+
+  async transferData(tempPath: string, itemPath: string): Promise<void> {
+    await transferData(tempPath, itemPath);
+    return;
+  }
+
+  async getPlaceholderAttribute(itemPath: string): Promise<any> {
+    return await addon.getPlaceholderAttribute(itemPath);
   }
 }
 

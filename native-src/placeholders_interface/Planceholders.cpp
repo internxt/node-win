@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Placeholders.h"
+#include "Logger.h"
 #include "PlaceholderInfo.h"
 #include <winrt/base.h>
 #include <shlwapi.h>
@@ -535,4 +536,39 @@ HRESULT Placeholders::UpdatePinState(const std::wstring &path, const PinState st
     const auto cfState = pinStateToCfPinState(state);
     HRESULT result = CfSetPinState(handleForPath(path).get(), cfState, CF_SET_PIN_FLAG_NONE, nullptr);
     return result;
+}
+
+PlaceholderAttribute Placeholders::GetAttribute(const std::wstring &filePath)
+{
+    DWORD attrib = GetFileAttributesW(filePath.c_str());
+    if (!(attrib & FILE_ATTRIBUTE_DIRECTORY))
+    {
+        winrt::handle placeholder(CreateFileW(filePath.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
+
+        LARGE_INTEGER offset;
+        offset.QuadPart = 0;
+        LARGE_INTEGER length;
+        GetFileSizeEx(placeholder.get(), &length);
+        // length.QuadPart = MAXLONGLONG;
+        // bool isHydrated = fileState.pinstate == PinState::AlwaysLocal && fileState.syncstate == SyncState::InSync;
+        if (attrib & FILE_ATTRIBUTE_PINNED) // && !(isHydrated)
+        {
+            Logger::getInstance().log("Attribute: PINNED", LogLevel::INFO);
+            
+            return PlaceholderAttribute::PINNED;
+        }
+        else if (attrib & FILE_ATTRIBUTE_UNPINNED)
+        {
+            Logger::getInstance().log("Attribute: NO PINNED", LogLevel::INFO);
+
+            return PlaceholderAttribute::NOT_PINNED;
+        }
+        Logger::getInstance().log("Attribute: Other", LogLevel::INFO);
+
+        return PlaceholderAttribute::OTHER;
+    }
+
+    Logger::getInstance().log("Attribute: Other", LogLevel::DEBUG);
+
+    return PlaceholderAttribute::OTHER;
 }

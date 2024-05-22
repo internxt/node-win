@@ -3,6 +3,13 @@
 #include <string>
 #include <PlaceholderInfo.h>
 
+enum class PlaceholderAttribute
+{
+    OTHER = 0,
+    NOT_PINNED = 1,
+    PINNED = 2,
+};
+
 class Placeholders
 {
 public:
@@ -39,4 +46,5 @@ public:
     static bool ConvertToPlaceholder(const std::wstring &fullPath, const std::wstring &serverIdentity);
     static std::string GetFileIdentity(const std::wstring &filePath);
     static void UpdateFileIdentity(const std::wstring &filePath, const std::wstring &fileIdentity, bool isDirectory);
+    static PlaceholderAttribute GetAttribute(const std::wstring &filePath);
 };

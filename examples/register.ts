@@ -68,8 +68,21 @@ const handleHydrate = async (task: QueueItem) => {
         resolve(undefined);
       }, 1000)
     );
+
+    const tempPath = task.path.replace(
+      settings.syncRootPath,
+      settings.serverRootPath
+    );
+
     console.log("Hydrating file: " + task.path);
-    await drive.hydrateFile(task.path);
+    await drive.transferData(tempPath, task.path);
+
+    console.log("[EXAMPLE] File trasnfer in callback: " + task.path);
+    await new Promise((resolve) =>
+      setTimeout(() => {
+        resolve(undefined);
+      }, 1000)
+    );
   } catch (error) {
     console.error(error);
   }
@@ -337,7 +350,11 @@ try {
 
   console.log(success2);
 
-  drive.watchAndWait(settings.syncRootPath, queueManager, settings.watcherLogPath);
+  drive.watchAndWait(
+    settings.syncRootPath,
+    queueManager,
+    settings.watcherLogPath
+  );
 } catch (error) {
   drive.disconnectSyncRoot();
   VirtualDrive.unregisterSyncRoot(settings.syncRootPath);
