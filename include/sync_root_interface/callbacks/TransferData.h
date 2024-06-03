@@ -1,12 +1,12 @@
 
 
-#include <iostream>
-#include <fstream>
+// #include <iostream>
+// #include <fstream>
 
-#pragma once
+// #pragma once
 
-class TransferData
-{
-public:
-    static void run(const std::wstring &sourcePath, const std::wstring &destinationPath);
-};
+// class TransferData
+// {
+// public:
+//     static void run(const std::wstring &sourcePath, const std::wstring &destinationPath);
+// };
