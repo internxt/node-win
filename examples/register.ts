@@ -75,7 +75,7 @@ const handleHydrate = async (task: QueueItem) => {
     );
 
     console.log("Hydrating file: " + task.path);
-    await drive.transferData(tempPath, task.path);
+    // await drive.transferData(tempPath, task.path);
 
     console.log("[EXAMPLE] File trasnfer in callback: " + task.path);
     await new Promise((resolve) =>

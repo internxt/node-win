@@ -25,7 +25,6 @@
         "native-src/sync_root_interface/callbacks/CancelFetchData/CancelFetchDataCallback.cpp",
         "native-src/sync_root_interface/callbacks/FetchData/FetchData.cpp",
         "native-src/sync_root_interface/callbacks/FetchData/FileCopierWithProgress.cpp",
-        "native-src/sync_root_interface/callbacks/FetchData/TrasferData.cpp",
         "native-src/sync_root_interface/callbacks/FetchPlaceholder/FetchPlaceholder.cpp",
         "native-src/sync_root_interface/callbacks/NotifyDelete/NotifyDeleteCallback.cpp",
         "native-src/sync_root_interface/callbacks/NotifyFileAdded/NotifyFileAddedCallback.cpp",
