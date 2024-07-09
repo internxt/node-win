@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include <Callbacks.h>
+#include <Logger.h>
 #include <cfapi.h>
 #include <condition_variable>
 #include <iostream>
@@ -18,7 +19,7 @@ struct CancelFetchDataArgs
 };
 
 void setup_global_tsfn_cancel_fetch_data(napi_threadsafe_function tsfn)
-{ 
+{
     g_cancel_delete_fetch_data_threadsafe_callback = tsfn;
 }
 
@@ -40,6 +41,7 @@ void notify_cancel_fetch_data_call(napi_env env, napi_value js_callback, void *c
     if (status != napi_ok)
     {
         fprintf(stderr, "Failed to call JS function.\n");
+        Logger::getInstance().log("Failed to call JS function in cancelFetchCallback.", LogLevel::ERROR);
         return;
     }
 
@@ -81,9 +83,9 @@ void register_threadsafe_cancel_fetch_data_callback(const std::string &resource_
 }
 
 void CALLBACK cancel_fetch_data_callback_wrapper(
-    _In_ CONST CF_CALLBACK_INFO* callbackInfo,
-    _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters
-) {
+    _In_ CONST CF_CALLBACK_INFO *callbackInfo,
+    _In_ CONST CF_CALLBACK_PARAMETERS *callbackParameters)
+{
     printf("fetch_data_callback_wrapper\n");
 
     LPCVOID fileIdentity = callbackInfo->FileIdentity;
@@ -116,5 +118,5 @@ void CALLBACK cancel_fetch_data_callback_wrapper(
         }
     }
 
-    ready = false; 
+    ready = false;
 }

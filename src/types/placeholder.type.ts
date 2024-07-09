@@ -19,3 +19,9 @@ export type Status = {
   pinState: PinState;
   syncState: SyncState;
 };
+
+export enum Attributes {
+  OTHER = 0,
+  NOT_PINNED = 1,
+  PINNED = 2,
+}

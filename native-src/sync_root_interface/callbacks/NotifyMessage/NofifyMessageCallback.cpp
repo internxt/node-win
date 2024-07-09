@@ -1,5 +1,6 @@
 #include "Callbacks.h"
 #include "DirectoryWatcher.h"
+#include "Logger.h"
 #include "Utilities.h"
 #include "ProcessTypes.h"
 #include <condition_variable>
@@ -107,6 +108,7 @@ void notify_message_call(napi_env env, napi_value js_callback, void *context, vo
     if (status != napi_ok)
     {
         fprintf(stderr, "[Error] Failed to call JS function.\n");
+        Logger::getInstance().log("Failed to call JS function in notifyMessageCallback.", LogLevel::ERROR);
         return;
     }
     delete args;

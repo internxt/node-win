@@ -477,11 +477,6 @@ class VirtualDrive {
     return await addon.hydrateFile(itemPath);
   }
 
-  // async transferData(tempPath: string, itemPath: string): Promise<void> {
-  //   await transferData(tempPath, itemPath);
-  //   return;
-  // }
-
   async getPlaceholderAttribute(itemPath: string): Promise<any> {
     return await addon.getPlaceholderAttribute(itemPath);
   }
