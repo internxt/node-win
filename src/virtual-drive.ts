@@ -3,7 +3,7 @@ import fs from "fs";
 import { deleteAllSubfolders } from "./utils";
 import { Worker } from "worker_threads";
 
-const addon = require("../../build/Release/addon.node");
+const addon = require("../build/Release/addon.node");
 interface ItemInfo {
   path: string;
   fileIdentity: string;

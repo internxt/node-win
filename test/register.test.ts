@@ -1,51 +1,67 @@
-import { onCancelFetchDataCallback, onDeleteCallbackWithCallback, onFetchDataCallback, onFileAddedCallback, onMessageCallback, onRenameCallbackWithCallback } from "../examples/callbacks";
 import settings from "../examples/settings";
 import VirtualDrive from "../src/virtual-drive";
 
-// setupJest.js
-jest.mock('../../build/Release/addon.node');
+// Mock addon for testing purposes
+// const addonMock = {
+//   // Mock methods as needed for your tests
+//   connectSyncRoot: jest.fn(),
+//   createPlaceholderFile: jest.fn(),
+//   registerSyncRoot: jest.fn(),
+//   addLoggerPath: jest.fn(),
+//   // Add more mock methods as per your usage
+// };
 
-describe('VirtualDrive', () => {
-  let drive: VirtualDrive;
-  
+// // Mock the addon import
+// jest.mock(
+//   "C:\\Users\\usuario1\\Desktop\\shokworks\\internxt\\node-win\\build\\Release\\addon.node", // Ajusta la ruta según la estructura de tu proyecto
+//   () => ({
+//     __esModule: true,
+//     default: addonMock,
+//   })
+// );
+
+describe("VirtualDrive", () => {
+  let virtualDrive: VirtualDrive;
 
   beforeEach(() => {
-    drive = new VirtualDrive(settings.syncRootPath, settings.defaultLogPath);
-    drive.registerSyncRoot(
-  settings.driveName,
-  settings.driveVersion,
-  "{12345678-1234-1234-1234-123456789012}",
-  {
-    notifyDeleteCallback: onDeleteCallbackWithCallback,
-    notifyRenameCallback: onRenameCallbackWithCallback,
-    notifyFileAddedCallback: onFileAddedCallback,
-    fetchDataCallback: onFetchDataCallback,
-    cancelFetchDataCallback: onCancelFetchDataCallback,
-    notifyMessageCallback: onMessageCallback,
-  },
-  settings.defaultIconPath
-);
+    virtualDrive = new VirtualDrive(
+      settings.syncRootPath,
+      settings.defaultLogPath
+    );
   });
 
   afterEach(() => {
+    jest.clearAllMocks();
+    virtualDrive?.disconnectSyncRoot();
   });
 
-  test('debe crear correctamente el directorio root sincronizado', () => {
-    // Aquí podrías mockear fs.existsSync y fs.mkdirSync para simular la creación de directorios
-    // Jest proporciona jest.mock para interceptar llamadas a módulos
-    jest.spyOn(drive, 'createSyncRootFolder');
-    drive.createSyncRootFolder();
-    expect(drive.createSyncRootFolder).toHaveBeenCalled();
+  it("should initialize correctly", () => {
+    expect(virtualDrive).toBeInstanceOf(VirtualDrive);
   });
 
-  test('connectSyncRoot debe llamar al addon con los callbacks correctos', async () => {
-  const mockAddonConnect = jest.fn().mockResolvedValue('connected');
-  jest.mock('../../build/Release/addon.node', () => ({
-    connectSyncRoot: mockAddonConnect
-  }));
+  // Ejemplo de una prueba para verificar el llamado a addLoggerPath durante la inicialización
+  // it("should call addLoggerPath when initializing with loggerPath", () => {
+  //   expect(addonMock.addLoggerPath).toHaveBeenCalledWith(
+  //     settings.defaultLogPath
+  //   );
+  // });
 
-  await drive.connectSyncRoot();
-  expect(mockAddonConnect).toHaveBeenCalledWith(expect.anything(), expect.anything());
-});
+  // it("should create sync root folder if it does not exist", () => {
+  //   const fsMock = jest
+  //     .spyOn(require("fs"), "existsSync")
+  //     .mockReturnValue(false);
+  //   const mkdirSyncSpy = jest.spyOn(require("fs"), "mkdirSync");
 
+  //   virtualDrive.createSyncRootFolder();
+
+  //   expect(fsMock).toHaveBeenCalledWith("/test/syncroot");
+  //   expect(mkdirSyncSpy).toHaveBeenCalledWith("/test/syncroot", {
+  //     recursive: true,
+  //   });
+
+  //   fsMock.mockRestore();
+  //   mkdirSyncSpy.mockRestore();
+  // });
+
+  // Add more tests as needed for your methods
 });

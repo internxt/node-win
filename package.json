@@ -5,7 +5,7 @@
     "main": "dist/index.ts",
     "types": "dist/index.d.ts",
     "scripts": {
-        "test": "jest --coverage",
+        "test": "jest",
         "install": "node-gyp rebuild",
         "clean": "node-gyp clean",
         "build:gyp": "node-gyp configure build",
