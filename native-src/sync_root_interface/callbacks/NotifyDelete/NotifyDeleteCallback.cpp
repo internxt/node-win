@@ -1,4 +1,5 @@
 #include <Callbacks.h>
+#include <Logger.h>
 #include <string>
 #include <condition_variable>
 #include <mutex>
@@ -64,6 +65,7 @@ void notify_delete_call(napi_env env, napi_value js_callback, void *context, voi
     if (status != napi_ok)
     {
         fprintf(stderr, "Failed to call JS function.\n");
+        Logger::getInstance().log("Failed to call JS function in notifyDeleteCallback.", LogLevel::ERROR);
         return;
     }
 
@@ -194,7 +196,7 @@ void CALLBACK notify_delete_callback_wrapper(
     }
 
     if (FAILED(hr))
-    { 
+    {
         wprintf(L"Error in CfExecute() delete action, HRESULT: %lx\n", hr);
     }
 }

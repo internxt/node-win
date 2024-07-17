@@ -2,6 +2,11 @@ import path from "path";
 import fs from "fs";
 import { deleteAllSubfolders } from "./utils";
 import { Worker } from "worker_threads";
+import { Watcher } from "./watcher/watcher";
+import { ExtraCallbacks, InputSyncCallbacks } from "./types/callbacks.type";
+import { Status } from "./types/placeholder.type";
+import { IQueueManager } from "./queue/queueManager";
+// import { transferData } from "./utils/transferData";
 
 const addon = require("../build/Release/addon.node");
 interface ItemInfo {
@@ -32,30 +37,6 @@ interface Addon {
   getItems(): any;
 }
 
-type NapiCallbackFunction = (...args: any[]) => any;
-
-type InputSyncCallbacks = {
-  fetchDataCallback?: NapiCallbackFunction;
-  validateDataCallback?: NapiCallbackFunction;
-  cancelFetchDataCallback?: NapiCallbackFunction;
-  fetchPlaceholdersCallback?: NapiCallbackFunction;
-  cancelFetchPlaceholdersCallback?: NapiCallbackFunction;
-  notifyFileOpenCompletionCallback?: NapiCallbackFunction;
-  notifyFileCloseCompletionCallback?: NapiCallbackFunction;
-  notifyDehydrateCallback?: NapiCallbackFunction;
-  notifyDehydrateCompletionCallback?: NapiCallbackFunction;
-  notifyDeleteCallback?: NapiCallbackFunction;
-  notifyDeleteCompletionCallback?: NapiCallbackFunction;
-  notifyRenameCallback?: NapiCallbackFunction;
-  notifyRenameCompletionCallback?: NapiCallbackFunction;
-  noneCallback?: NapiCallbackFunction;
-};
-
-type ExtraCallbacks = {
-  notifyFileAddedCallback?: NapiCallbackFunction;
-  notifyMessageCallback?: NapiCallbackFunction;
-};
-
 type Callbacks = InputSyncCallbacks & ExtraCallbacks;
 class VirtualDrive {
   PLACEHOLDER_ATTRIBUTES: { [key: string]: number };
@@ -63,12 +44,17 @@ class VirtualDrive {
   callbacks?: Callbacks;
   private itemsIds: string[] = [];
 
+  // private watcherBuilder: WatcherBuilder;
+  private watcher: Watcher;
+
   constructor(syncRootPath: string, loggerPath?: string) {
     this.PLACEHOLDER_ATTRIBUTES = {
       FILE_ATTRIBUTE_READONLY: 0x1,
       FILE_ATTRIBUTE_HIDDEN: 0x2,
       FOLDER_ATTRIBUTE_READONLY: 0x1,
     };
+
+    this.watcher = Watcher.Instance;
 
     this.syncRootPath = syncRootPath;
     this.createSyncRootFolder();
@@ -85,7 +71,7 @@ class VirtualDrive {
     addon.addLoggerPath(loggerPath);
   }
 
-  getPlaceholderState(path: string): any {
+  getPlaceholderState(path: string): Status {
     return addon.getPlaceholderState(this.syncRootPath + path);
   }
 
@@ -264,12 +250,52 @@ class VirtualDrive {
     return result;
   }
 
-  watchAndWait(path: string): void {
+  private test(): void {
+    console.log("Test");
+  }
+
+  watchAndWait(
+    path: string,
+    queueManager: IQueueManager,
+    loggerPath: string
+  ): void {
     if (this.callbacks === undefined) {
       throw new Error("Callbacks are not defined");
     }
 
-    addon.watchAndWait(path, this.getExtraCallbacks());
+    this.watcher.queueManager = queueManager;
+
+    this.watcher.logPath = loggerPath;
+
+    this.watcher.syncRootPath = path;
+    this.watcher.options = {
+      ignored: /(^|[\/\\])\../,
+      persistent: true,
+      ignoreInitial: true,
+      followSymlinks: true,
+      depth: undefined,
+      awaitWriteFinish: {
+        stabilityThreshold: 2000,
+        pollInterval: 100,
+      },
+      usePolling: true,
+    };
+
+    this.watcher.virtualDriveFunctions = {
+      CfAddItem: this.test,
+      CfDehydrate: this.test,
+      CfHydrate: this.test,
+      CfNotifyMessage: this.test,
+      CfUpdateItem: this.test,
+      CfGetPlaceHolderAttributes: addon.getPlaceholderAttribute,
+      CfUpdateSyncStatus: addon.updateSyncStatus,
+      CfGetPlaceHolderIdentity: addon.getFileIdentity,
+      CfGetPlaceHolderState: addon.getPlaceholderState,
+      CfConverToPlaceholder: addon.convertToPlaceholder,
+    };
+
+    this.watcher.watchAndWait();
+    // addon.watchAndWait(path, this.getExtraCallbacks());
   }
 
   createFileByPath(
@@ -287,7 +313,7 @@ class VirtualDrive {
       for (let i = 0; i < splitPath.length - 1; i++) {
         // everything except last element
         const dir = splitPath[i];
-        
+
         currentPath = path.join(currentPath, dir);
       }
       // last element is the file
@@ -338,8 +364,6 @@ class VirtualDrive {
       }
       currentPath = path.join(currentPath, dir);
     }
-    
-    
   }
 
   createItemByPath(
@@ -435,12 +459,26 @@ class VirtualDrive {
     return addon.convertToPlaceholder(itemPath, id);
   }
   updateFileIdentity(itemPath: string, id: string, isDirectory: boolean): void {
-    const fullPath = path.join(this.syncRootPath, itemPath);
-    return addon.updateFileIdentity(fullPath, id, isDirectory);
+    if (!itemPath.includes(this.syncRootPath)) {
+      itemPath = path.join(this.syncRootPath, itemPath);
+    }
+    addon.updateFileIdentity(itemPath, id, isDirectory);
   }
 
   closeDownloadMutex(): void {
     return addon.closeMutex();
+  }
+
+  async dehydrateFile(itemPath: string): Promise<void> {
+    return await addon.dehydrateFile(itemPath);
+  }
+
+  async hydrateFile(itemPath: string): Promise<void> {
+    return await addon.hydrateFile(itemPath);
+  }
+
+  async getPlaceholderAttribute(itemPath: string): Promise<any> {
+    return await addon.getPlaceholderAttribute(itemPath);
   }
 }
 

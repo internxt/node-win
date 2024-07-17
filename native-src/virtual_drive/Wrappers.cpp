@@ -556,59 +556,6 @@ napi_value DisconnectSyncRootWrapper(napi_env env, napi_callback_info args)
     return napiResult;
 }
 
-napi_value GetItemsSyncRootWrapper(napi_env env, napi_callback_info args)
-{
-    printf("GetItemsSyncRootWrapper\n");
-    // Logger::getInstance().log("GetItemsSyncRootWrapper", LogLevel::INFO);
-    size_t argc = 1;
-    napi_value argv[1];
-
-    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
-
-    if (argc < 1)
-    {
-        napi_throw_error(env, nullptr, "The sync root path is required for GetItems");
-        return nullptr;
-    }
-
-    LPCWSTR syncRootPath;
-    size_t pathLength;
-    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
-    syncRootPath = new WCHAR[pathLength + 1];
-    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(syncRootPath)), pathLength + 1, nullptr);
-
-    std::list<ItemInfo> fileIdentities = SyncRoot::GetItemsSyncRoot(syncRootPath);
-    printf("fileIdentities got\n");
-    printf("[Count] GetItemsSyncRootWrapper: %d\n", fileIdentities.size());
-    // devolder json con la estructura de ItemInfo
-    napi_value jsFileIdentities;
-    napi_create_array(env, &jsFileIdentities);
-    int i = 0;
-    for (auto &item : fileIdentities)
-    {
-        napi_value jsItem;
-        napi_create_object(env, &jsItem);
-
-        napi_value jsPath;
-        napi_create_string_utf16(env, reinterpret_cast<const char16_t *>(item.path.c_str()), item.path.length(), &jsPath);
-        napi_set_named_property(env, jsItem, "path", jsPath);
-
-        napi_value jsFileIdentity;
-        napi_create_string_utf16(env, reinterpret_cast<const char16_t *>(item.fileIdentity.c_str()), item.fileIdentity.length(), &jsFileIdentity);
-        napi_set_named_property(env, jsItem, "fileIdentity", jsFileIdentity);
-
-        napi_value jsIsPlaceholder;
-        napi_get_boolean(env, item.isPlaceholder, &jsIsPlaceholder);
-        napi_set_named_property(env, jsItem, "isPlaceholder", jsIsPlaceholder);
-
-        napi_set_element(env, jsFileIdentities, i, jsItem);
-        i++;
-    }
-
-    delete[] syncRootPath;
-    return jsFileIdentities;
-}
-
 napi_value GetFileIdentityWrapper(napi_env env, napi_callback_info args)
 {
     printf("GetFileIdentityWrapper\n");
@@ -839,9 +786,9 @@ napi_value ConvertToPlaceholderWrapper(napi_env env, napi_callback_info args)
 
     napi_value result;
     napi_get_boolean(env, success, &result);
-
     return result;
 }
+
 napi_value UpdateFileIdentityWrapper(napi_env env, napi_callback_info args)
 {
 
@@ -890,6 +837,171 @@ napi_value CloseMutexWrapper(napi_env env, napi_callback_info args)
 
     napi_value result;
     napi_get_boolean(env, true, &result);
+
+    return result;
+}
+
+napi_value HydrateFileWrapper(napi_env env, napi_callback_info args)
+{
+    size_t argc = 1;
+    napi_value argv[1];
+    napi_value thisArg;
+    napi_get_cb_info(env, args, &argc, argv, &thisArg, nullptr);
+
+    if (argc < 1)
+    {
+        napi_throw_type_error(env, nullptr, "The file path is required for HydrateFile");
+        return nullptr;
+    }
+
+    // Obtener el argumento de JavaScript y convertirlo a una cadena de C++
+    size_t pathLength;
+    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
+    std::wstring fullPath(pathLength, L'\0');
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(&fullPath[0]), pathLength + 1, nullptr);
+
+    // Crear una promesa
+    napi_deferred deferred;
+    napi_value promise;
+    napi_create_promise(env, &deferred, &promise);
+
+    // Lanzar la operación asíncrona en un hilo separado
+    std::thread([deferred, fullPath, env]()
+                {
+        try {
+            SyncRoot::HydrateFile(fullPath.c_str());
+             Logger::getInstance().log("finish... " + Logger::fromWStringToString(fullPath.c_str()), LogLevel::INFO);
+
+            napi_value result;
+            napi_get_undefined(env, &result);
+            napi_resolve_deferred(env, deferred, result);
+        } catch (const std::exception& e) {
+            napi_value error;
+            napi_create_string_utf8(env, e.what(), NAPI_AUTO_LENGTH, &error);
+            napi_reject_deferred(env, deferred, error);
+        } catch (...) {
+            napi_value error;
+            napi_create_string_utf8(env, "Unknown error", NAPI_AUTO_LENGTH, &error);
+            napi_reject_deferred(env, deferred, error);
+        } })
+        .detach();
+
+    return promise;
+}
+// napi_value HydrateFileWrapper(napi_env env, napi_callback_info args) {
+//     size_t argc = 1;
+//     napi_value argv[1];
+//     napi_value thisArg;
+//     napi_get_cb_info(env, args, &argc, argv, &thisArg, nullptr);
+
+//     if (argc < 1) {
+//         napi_throw_type_error(env, nullptr, "The file path is required for HydrateFile");
+//         return nullptr;
+//     }
+
+//     // Obtener el argumento de JavaScript y convertirlo a una cadena de C++
+//     size_t pathLength;
+//     napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
+//     std::wstring fullPath(pathLength, L'\0');
+//     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(&fullPath[0]), pathLength + 1, nullptr);
+
+//     // Crear una promesa
+//     napi_deferred deferred;
+//     napi_value promise;
+//     napi_create_promise(env, &deferred, &promise);
+
+//     // Crear un handle scope para manejar la creación de objetos V8
+//     napi_handle_scope handleScope;
+//     napi_open_handle_scope(env, &handleScope);
+
+//     // Usar un bloque de manejo de V8
+//     {
+//         v8::Isolate* isolate = v8::Isolate::GetCurrent();
+//         v8::HandleScope scope(isolate);
+
+//         try {
+//             Logger::getInstance().log("init... " + Logger::fromWStringToString(fullPath.c_str()), LogLevel::INFO);
+//             SyncRoot::HydrateFile(fullPath.c_str());
+
+//             napi_value result;
+//             napi_get_undefined(env, &result);
+//             napi_resolve_deferred(env, deferred, result);
+//         } catch (const std::exception& e) {
+//             napi_value error;
+//             napi_create_string_utf8(env, e.what(), NAPI_AUTO_LENGTH, &error);
+//             napi_reject_deferred(env, deferred, error);
+//         } catch (...) {
+//             napi_value error;
+//             napi_create_string_utf8(env, "Unknown error", NAPI_AUTO_LENGTH, &error);
+//             napi_reject_deferred(env, deferred, error);
+//         }
+//     }
+
+//     // Cerrar el handle scope
+//     napi_close_handle_scope(env, handleScope);
+
+//     return promise;
+// }
+
+// Wrapper for DehydrateFile
+napi_value DehydrateFileWrapper(napi_env env, napi_callback_info args)
+{
+    size_t argc = 1;
+    napi_value argv[1];
+    napi_value thisArg;
+    napi_get_cb_info(env, args, &argc, argv, &thisArg, nullptr);
+
+    if (argc < 1)
+    {
+        napi_throw_type_error(env, nullptr, "The file path is required for DehydrateFile");
+        return nullptr;
+    }
+
+    // Obtener el argumento de JavaScript y convertirlo a una cadena de C++
+    LPCWSTR fullPath;
+    size_t pathLength;
+    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
+    fullPath = new WCHAR[pathLength + 1];
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(fullPath)), pathLength + 1, nullptr);
+
+    // Llamar a la función DehydrateFile
+    SyncRoot::DehydrateFile(fullPath);
+
+    napi_value result;
+    napi_get_boolean(env, true, &result);
+
+    return result;
+}
+
+napi_value GetPlaceholderAttributeWrapper(napi_env env, napi_callback_info args)
+{
+    size_t argc = 1;
+    napi_value argv[1];
+    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
+
+    if (argc < 1)
+    {
+        napi_throw_type_error(env, nullptr, "Both source and destination paths are required");
+        return nullptr;
+    }
+
+    // Obtener los argumentos de JavaScript y convertirlos a cadenas de C++
+    std::wstring sourcePath, destinationPath;
+    size_t sourcePathLength, destinationPathLength;
+
+    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &sourcePathLength);
+    sourcePath.resize(sourcePathLength);
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(&sourcePath[0]), sourcePathLength + 1, nullptr);
+
+    // Llamar a la función TransferData
+    PlaceholderAttribute attribute = Placeholders::GetAttribute(sourcePath);
+
+    napi_value result;
+    napi_create_object(env, &result);
+
+    napi_value jsAtrtibute;
+    napi_create_int32(env, static_cast<int32_t>(attribute), &jsAtrtibute);
+    napi_set_named_property(env, result, "attribute", jsAtrtibute);
 
     return result;
 }

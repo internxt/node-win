@@ -261,6 +261,24 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
         return create_response(env, true, 0);
     }
 
+    // si el primer argumento es false liberamos mutex
+    if (!response)
+    {
+        Logger::getInstance().log("Response is false", LogLevel::DEBUG);
+        load_finished = true;
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+
+            if (load_finished)
+            {
+                ready = true;
+                cv.notify_one();
+            }
+        }
+
+        return create_response(env, true, 0);
+    }
+
     callbackResult = response;
 
     size_t response_len;
@@ -378,11 +396,6 @@ void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context,
         return;
     }
 
-    // {
-    //     std::lock_guard<std::mutex> lock(mtx);
-    //     ready = false;
-    // }
-
     std::unique_lock<std::mutex> lock(mtx);
     ready = false;
 
@@ -390,6 +403,7 @@ void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context,
     if (status != napi_ok)
     {
         Logger::getInstance().log("Failed to call JS function.", LogLevel::ERROR);
+        Logger::getInstance().log("Failed to call JS function in fetchData.", LogLevel::ERROR);
         return;
     }
 
@@ -468,6 +482,8 @@ void CALLBACK fetch_data_callback_wrapper(
         Logger::getInstance().log("Callback called unsuccessfully.\n", LogLevel::ERROR);
     };
 
+    Logger::getInstance().log("log 4.\n", LogLevel::DEBUG);
+
     {
         std::unique_lock<std::mutex> lock(mtx);
         Logger::getInstance().log("Mutex await call.\n", LogLevel::DEBUG);
@@ -477,12 +493,11 @@ void CALLBACK fetch_data_callback_wrapper(
         }
     }
 
-    Logger::getInstance().log("Hydration Completed\n", LogLevel::INFO);
+    Logger::getInstance().log("Hydration Finish\n", LogLevel::INFO);
 
     // DownloadMutexManager &mutexManager = DownloadMutexManager::getInstance();
     // mutexManager.setReady(true);
 
-    // std::lock_guard<std::mutex> lock(mtx);
     lastReadOffset = 0;
     load_finished = false;
     ready = false; // Reset ready

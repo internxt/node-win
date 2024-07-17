@@ -25,6 +25,8 @@ enum class PinState
     Excluded = 4,
 };
 
+
+
 class PlaceHolderInfo
 {
 public:

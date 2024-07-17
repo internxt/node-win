@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include <Callbacks.h>
+#include <Logger.h>
 #include <Placeholders.h>
 #include <string>
 #include <filesystem>
@@ -92,6 +93,7 @@ void notify_rename_call(napi_env env, napi_value js_callback, void *context, voi
     if (status != napi_ok)
     {
         fprintf(stderr, "Failed to call JS function.\n");
+        Logger::getInstance().log("Failed to call JS function in notifyRenameCallback.", LogLevel::ERROR);
         return;
     }
 
