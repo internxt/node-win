@@ -69,7 +69,7 @@ napi_value response_callback_fn_added(napi_env env, napi_callback_info info)
 
     if (confirmation_response)
     {
-         Sleep(100);
+        Sleep(100);
         result = Placeholders::ConvertToPlaceholder(global_path, server_identity);
         if (global_type == NEW_FILE)
         {
@@ -125,6 +125,7 @@ void notify_file_added_call(napi_env env, napi_value js_callback, void *context,
     if (status != napi_ok)
     {
         Logger::getInstance().log("Failed to call JS function.", LogLevel::ERROR);
+        Logger::getInstance().log("Failed to call JS function in notifyAddedCallback.", LogLevel::ERROR);
         return;
     }
     delete args;

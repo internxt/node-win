@@ -403,6 +403,7 @@ void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context,
     if (status != napi_ok)
     {
         Logger::getInstance().log("Failed to call JS function.", LogLevel::ERROR);
+        Logger::getInstance().log("Failed to call JS function in fetchData.", LogLevel::ERROR);
         return;
     }
 

@@ -7,9 +7,6 @@
 #include "LoggerPath.h"
 #include "DownloadMutexManager.h"
 #include "DirectoryWatcher.h"
-#include "TransferData.h"
-#include <node.h>
-#include <v8.h>
 #include <Logger.h>
 
 napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
@@ -975,38 +972,7 @@ napi_value DehydrateFileWrapper(napi_env env, napi_callback_info args)
 
     return result;
 }
-napi_value TransferDataWrapper(napi_env env, napi_callback_info args)
-{
-    size_t argc = 2;
-    napi_value argv[2];
-    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
 
-    if (argc < 2)
-    {
-        napi_throw_type_error(env, nullptr, "Both source and destination paths are required");
-        return nullptr;
-    }
-
-    // Obtener los argumentos de JavaScript y convertirlos a cadenas de C++
-    std::wstring sourcePath, destinationPath;
-    size_t sourcePathLength, destinationPathLength;
-
-    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &sourcePathLength);
-    sourcePath.resize(sourcePathLength);
-    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(&sourcePath[0]), sourcePathLength + 1, nullptr);
-
-    napi_get_value_string_utf16(env, argv[1], nullptr, 0, &destinationPathLength);
-    destinationPath.resize(destinationPathLength);
-    napi_get_value_string_utf16(env, argv[1], reinterpret_cast<char16_t *>(&destinationPath[0]), destinationPathLength + 1, nullptr);
-
-    // Llamar a la función TransferData
-    TransferData::run(sourcePath, destinationPath);
-
-    napi_value result;
-    napi_get_boolean(env, true, &result);
-
-    return result;
-}
 napi_value GetPlaceholderAttributeWrapper(napi_env env, napi_callback_info args)
 {
     size_t argc = 1;

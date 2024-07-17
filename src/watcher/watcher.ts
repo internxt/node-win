@@ -1,6 +1,11 @@
 import * as chokidar from "chokidar";
 import { IWatcher, IVirtualDriveFunctions } from "./watcher.interface";
-import { PinState, Status, SyncState } from "../types/placeholder.type";
+import {
+  PinState,
+  Status,
+  SyncState,
+  Attributes,
+} from "../types/placeholder.type";
 import { IQueueManager, typeQueue } from "../queue/queueManager";
 import fs from "fs";
 import * as Path from "path";
@@ -58,13 +63,34 @@ export class Watcher implements IWatcher {
       this.writeLog("onAdd", path, state);
       const ext = path.split(".").pop();
 
-      const { size } = state;
+      const { size, birthtime, mtime } = state;
+
+      const fileIntenty = this._virtualDriveFn.CfGetPlaceHolderIdentity(path);
+
+      this.writeLog("fileIntenty in add", fileIntenty);
 
       if (!ext || size === 0 || size > 20 * 1024 * 1024 * 1024) return;
 
       const status: Status = this._virtualDriveFn.CfGetPlaceHolderState(path);
       this.writeLog("status", status);
 
+      // Verificar tiempos de creación y modificación
+      const creationTime = new Date(birthtime).getTime();
+      const modificationTime = new Date(mtime).getTime();
+      const currentTime = Date.now();
+
+      let isNewFile = false;
+      let isMovedFile = false;
+
+      if (!fileIntenty) {
+        // El archivo fue creado recientemente (dentro de los últimos 60 segundos)
+        isNewFile = true;
+      } else if (creationTime !== modificationTime) {
+        // El archivo fue movido (o modificado)
+        isMovedFile = true;
+      }
+
+      // Procesar el archivo según su estado
       if (
         status.pinState === PinState.AlwaysLocal ||
         status.pinState === PinState.OnlineOnly ||
@@ -72,13 +98,18 @@ export class Watcher implements IWatcher {
       )
         return;
 
-      this.fileInDevice.add(path);
+      if (isNewFile) {
+        this.fileInDevice.add(path);
 
-      this._queueManager.enqueue({
-        path,
-        type: typeQueue.add,
-        isFolder: false,
-      });
+        this._queueManager.enqueue({
+          path,
+          type: typeQueue.add,
+          isFolder: false,
+        });
+      } else if (isMovedFile) {
+        this.writeLog("File moved:", path);
+        // Procesar archivo movido según sea necesario
+      }
     } catch (error) {
       console.log("Error en onAdd");
       console.error(error);
@@ -134,11 +165,11 @@ export class Watcher implements IWatcher {
         return;
       }
 
-      // Ignorar archivos vacíos
-      if (item.size === 0) {
-        this.writeLog("Archivo vacío ignorado", path);
-        return;
-      }
+      // // Ignorar archivos vacíos
+      // if (item.size === 0) {
+      //   this.writeLog("Archivo vacío ignorado", path);
+      //   return;
+      // }
 
       const action = await this.detectContextMenuAction(
         details,
@@ -158,12 +189,11 @@ export class Watcher implements IWatcher {
     isDirectory: boolean
   ): Promise<string | null> {
     const { prev, curr } = details;
-    const status = this._virtualDriveFn.CfGetPlaceHolderState(path);
+    const status = await this._virtualDriveFn.CfGetPlaceHolderState(path);
     this.writeLog("status", status);
 
-    const attribute = await this._virtualDriveFn.CfGetPlaceHolderAttributes(
-      path
-    );
+    const attribute: Attributes =
+      await this._virtualDriveFn.CfGetPlaceHolderAttributes(path);
     this.writeLog("attribute", attribute);
 
     const itemId = this._virtualDriveFn.CfGetPlaceHolderIdentity(path);
@@ -172,12 +202,12 @@ export class Watcher implements IWatcher {
     const isInDevice = this.fileInDevice.has(path);
 
     if (
-      prev.size === curr.size && // Tamaño no cambia
-      prev.ctimeMs !== curr.ctimeMs && // ctime cambia
-      prev.mtimeMs === curr.mtimeMs && // mtime no cambia
-      status.pinState === PinState.AlwaysLocal && // Estado es AlwaysLocal
-      status.syncState === SyncState.InSync && // Estado es InSync
-      !isInDevice // No está en el dispositivo
+      prev.size === curr.size &&
+      prev.ctimeMs !== curr.ctimeMs &&
+      prev.mtimeMs === curr.mtimeMs &&
+      status.pinState === PinState.AlwaysLocal &&
+      status.syncState === SyncState.InSync &&
+      !isInDevice
     ) {
       this.fileInDevice.add(path);
       this._queueManager.enqueue({
@@ -213,6 +243,7 @@ export class Watcher implements IWatcher {
         isFolder: isDirectory,
         fileId: itemId,
       });
+      this.fileInDevice.add(path);
       return "Cambio de tamaño";
     }
 

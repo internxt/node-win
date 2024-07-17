@@ -29,7 +29,6 @@ void AddCustomState(
 
 void SyncRoot::HydrateFile(const wchar_t *filePath)
 {
-    // Logger::getInstance().log("Hydration file started" + Logger::getInstance().fromWStringToString(filePath), LogLevel::INFO);
     wprintf(L"Hydration file started %ls\n", filePath);
     DWORD attrib = GetFileAttributesW(filePath);
     if (!(attrib & FILE_ATTRIBUTE_DIRECTORY))
@@ -43,6 +42,8 @@ void SyncRoot::HydrateFile(const wchar_t *filePath)
 
         if (attrib & FILE_ATTRIBUTE_PINNED)
         {
+            // if (!(attrib & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS))
+            // {
             // Logger::getInstance().log("Hydration file init", LogLevel::INFO);
             wprintf(L"Hydration file init %ls\n", filePath);
 
@@ -56,28 +57,24 @@ void SyncRoot::HydrateFile(const wchar_t *filePath)
             }
             else
             {
-                // Logger::getInstance()
-                //     .log("Mutex waiting for " + Logger::fromWStringToString(filePath), LogLevel::INFO);
-                // DownloadMutexManager &mutexManager = DownloadMutexManager::getInstance();
-                // mutexManager.waitReady();
-                // Logger::getInstance().log("Mutex ready for " + Logger::fromWStringToString(filePath), LogLevel::INFO);
-                // mutexManager.resetReady();
-                // Logger::getInstance().log("resetReady for " + Logger::fromWStringToString(filePath), LogLevel::INFO);
-
                 auto end = std::chrono::steady_clock::now();
                 auto elapsedMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
                 if (elapsedMilliseconds < 200)
                 {
-                    // Logger::getInstance().log("Already Hydrated: " + std::to_string(elapsedMilliseconds) + " ms", LogLevel::WARN);
                     wprintf(L"Already Hydrated: %d ms\n", elapsedMilliseconds);
                 }
                 else
                 {
-
                     wprintf(L"Hydration finished %ls\n", filePath);
                 }
             }
+            // }
+            // else
+            // {
+            //     wprintf(L"File is already hydrated: %ls\n", filePath);
+            //     Logger::getInstance().log("File is already hydrated " + Logger::fromWStringToString(filePath), LogLevel::INFO);
+            // }
         }
     }
 }

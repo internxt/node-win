@@ -20,5 +20,4 @@ napi_value DeleteFileSyncRootWrapper(napi_env env, napi_callback_info args);
 napi_value UpdateFileIdentityWrapper(napi_env env, napi_callback_info args);
 napi_value DehydrateFileWrapper(napi_env env, napi_callback_info args);
 napi_value HydrateFileWrapper(napi_env env, napi_callback_info args);
-napi_value TransferDataWrapper(napi_env env, napi_callback_info args);
 napi_value GetPlaceholderAttributeWrapper(napi_env env, napi_callback_info args);
