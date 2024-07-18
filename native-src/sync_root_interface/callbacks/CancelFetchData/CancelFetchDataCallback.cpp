@@ -37,6 +37,7 @@ void notify_cancel_fetch_data_call(napi_env env, napi_value js_callback, void *c
     napi_get_undefined(env, &undefined);
     napi_value result;
 
+    Logger::getInstance().log("Executed to call JS function in cancelFetchCallback.", LogLevel::ERROR);
     napi_status status = napi_call_function(env, undefined, js_callback, 1, args_to_js_callback_cancel_fetch, &result);
     if (status != napi_ok)
     {
@@ -46,7 +47,6 @@ void notify_cancel_fetch_data_call(napi_env env, napi_value js_callback, void *c
     }
 
     cv.notify_one();
-
     delete args;
 }
 

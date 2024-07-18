@@ -266,6 +266,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     {
         Logger::getInstance().log("Response is false", LogLevel::DEBUG);
         load_finished = true;
+        lastReadOffset = 0;
         {
             std::lock_guard<std::mutex> lock(mtx);
 
