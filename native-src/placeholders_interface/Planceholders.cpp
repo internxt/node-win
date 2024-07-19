@@ -12,6 +12,8 @@
 #include <iostream>
 #include <Utilities.h>
 #include <winbase.h>
+#include <string>
+#include <cctype>
 
 using namespace std;
 
