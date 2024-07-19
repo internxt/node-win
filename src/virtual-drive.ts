@@ -6,7 +6,6 @@ import { Watcher } from "./watcher/watcher";
 import { ExtraCallbacks, InputSyncCallbacks } from "./types/callbacks.type";
 import { Status } from "./types/placeholder.type";
 import { IQueueManager } from "./queue/queueManager";
-// import { transferData } from "./utils/transferData";
 
 const addon = require("../../build/Release/addon.node");
 interface ItemInfo {

@@ -1,6 +1,6 @@
 #include <mutex>
 #include <condition_variable>
-#include "Logger.h"
+
 class DownloadMutexManager
 {
 public:
@@ -16,33 +16,30 @@ public:
 
     void waitReady()
     {
-        std::unique_lock<std::mutex> lock(downloadMtx);
-        while (!downloadReady)
-        {
-            Logger::getInstance().log("Waiting...", LogLevel::INFO);
-            downloadCv.wait(lock);
+        std::unique_lock<std::mutex> lock(mtx);
+        cv.wait(lock, [this]()
+                { return ready; });
         }
-    }
 
     void setReady(bool loadFinished)
     {
         if (loadFinished)
         {
-            std::lock_guard<std::mutex> lock(downloadMtx);
-            downloadReady = true;
-            downloadCv.notify_one();
+            std::lock_guard<std::mutex> lock(mtx);
+            ready = true;
+            cv.notify_one();
         }
     }
     void resetReady()
     {
-        std::lock_guard<std::mutex> lock(downloadMtx);
-        downloadReady = false;
+        std::lock_guard<std::mutex> lock(mtx);
+        ready = false;
     }
 
 private:
-    std::mutex downloadMtx;
-    std::condition_variable downloadCv;
-    bool downloadReady = false;
+    std::mutex mtx;
+    std::condition_variable cv;
+    bool ready = false;
 
     // Constructor privado
     DownloadMutexManager() = default;

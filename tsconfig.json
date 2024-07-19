@@ -13,5 +13,5 @@
       "addon": ["./build/Release/addon"]
     }
   },
-  "include": ["index.ts", "src/**/*.ts", "*.d.ts", "examples/**/*.ts"],
+  "include": ["index.ts", "src/**/*.ts", "*.d.ts", "examples/**/*.ts", "test/**/*.ts"],
 }
