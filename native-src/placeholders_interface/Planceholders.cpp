@@ -12,6 +12,8 @@
 #include <iostream>
 #include <Utilities.h>
 #include <winbase.h>
+#include <string>
+#include <cctype>
 
 using namespace std;
 
@@ -554,7 +556,7 @@ PlaceholderAttribute Placeholders::GetAttribute(const std::wstring &filePath)
         if (attrib & FILE_ATTRIBUTE_PINNED) // && !(isHydrated)
         {
             Logger::getInstance().log("Attribute: PINNED", LogLevel::INFO);
-            
+
             return PlaceholderAttribute::PINNED;
         }
         else if (attrib & FILE_ATTRIBUTE_UNPINNED)
