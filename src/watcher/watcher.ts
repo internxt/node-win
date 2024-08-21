@@ -236,7 +236,7 @@ export class Watcher implements IWatcher {
       return "Liberar espacio";
     }
 
-    if (prev.size != curr.size && itemId) {
+    if (prev.size != curr.size) {
       this._queueManager.enqueue({
         path,
         type: typeQueue.changeSize,
