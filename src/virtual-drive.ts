@@ -41,7 +41,6 @@ class VirtualDrive {
   PLACEHOLDER_ATTRIBUTES: { [key: string]: number };
   syncRootPath: string;
   callbacks?: Callbacks;
-  private itemsIds: string[] = [];
 
   // private watcherBuilder: WatcherBuilder;
   private watcher: Watcher;
@@ -446,12 +445,17 @@ class VirtualDrive {
     return addon.disconnectSyncRoot(this.syncRootPath);
   }
 
-  updateSyncStatus(
+  async updateSyncStatus(
     itemPath: string,
     isDirectory: boolean,
     sync: boolean = true
-  ): any {
-    return addon.updateSyncStatus(itemPath, sync, isDirectory);
+  ): Promise<void> {
+    const isRelative = !itemPath.includes(this.syncRootPath);
+
+    if (isRelative) {
+      itemPath = path.join(this.syncRootPath, itemPath);
+    }
+    return await addon.updateSyncStatus(itemPath, sync, isDirectory);
   }
 
   convertToPlaceholder(itemPath: string, id: string): boolean {
