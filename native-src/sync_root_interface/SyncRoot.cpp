@@ -186,6 +186,7 @@ HRESULT SyncRoot::UnregisterSyncRoot()
 
 HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallbacks syncCallbacks, napi_env env, CF_CONNECTION_KEY *connectionKey)
 {
+    wprintf(L"Deggugin path: %ls\n", syncRootPath);
     try
     {
         Utilities::AddFolderToSearchIndexer(syncRootPath);
