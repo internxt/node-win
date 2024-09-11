@@ -20,6 +20,7 @@ declare module "addon" {
     unregisterSyncRoot(path: string): any;
     watchAndWait(path: string): any;
     convertToPlaceholder(path: string): boolean;
+    isTempFile(path: string): boolean;
   }
 
   const addon: Addon;

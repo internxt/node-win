@@ -574,3 +574,21 @@ PlaceholderAttribute Placeholders::GetAttribute(const std::wstring &filePath)
 
     return PlaceholderAttribute::OTHER;
 }
+
+bool Placeholders::IsTempFile(const std::wstring &filePath)
+{
+    DWORD fileAttributes = GetFileAttributesW(filePath.c_str());
+
+    if (fileAttributes == INVALID_FILE_ATTRIBUTES)
+    {
+        Logger::getInstance().log("Error get file attribute", LogLevel::ERROR);
+        return false;
+    }
+
+    if (fileAttributes & FILE_ATTRIBUTE_TEMPORARY)
+    {
+        return true;
+    }
+
+    return false;
+}

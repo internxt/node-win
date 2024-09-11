@@ -1005,3 +1005,30 @@ napi_value GetPlaceholderAttributeWrapper(napi_env env, napi_callback_info args)
 
     return result;
 }
+
+napi_value IsTempFileWrapper(napi_env env, napi_callback_info args)
+{
+    size_t argc = 1;
+    napi_value argv[1];
+    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
+
+    if (argc < 1)
+    {
+        napi_throw_type_error(env, nullptr, "The file path is required for IsTempFile");
+        return nullptr;
+    }
+
+    // Obtener el argumento de JavaScript y convertirlo a una cadena de C++
+    size_t pathLength;
+    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
+    std::wstring fullPath(pathLength, L'\0');
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(&fullPath[0]), pathLength + 1, nullptr);
+
+    // Llamar a la función IsTempFile
+    bool isTempFile = Placeholders::IsTempFile(fullPath);
+
+    napi_value result;
+    napi_get_boolean(env, isTempFile, &result);
+
+    return result;
+}

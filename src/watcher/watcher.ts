@@ -149,37 +149,42 @@ export class Watcher implements IWatcher {
   };
 
   private onRaw = async (event: string, path: string, details: any) => {
-    this.writeLog("onRaw", event, path, details);
+    try {
+      this.writeLog("onRaw", event, path, details);
 
-    let isDirectory = false;
+      let isDirectory = false;
 
-    if (event === "change" && details.prev && details.curr) {
-      const item = await fs.statSync(path);
-      if (item.isDirectory()) {
-        this.writeLog("Es un directorio", path);
-        isDirectory = true;
-        return;
+      if (event === "change" && details.prev && details.curr) {
+        const item = await fs.statSync(path);
+        if (item.isDirectory()) {
+          this.writeLog("Es un directorio", path);
+          isDirectory = true;
+          return;
+        }
+        if (Path.extname(path) === "") {
+          this.writeLog("Archivo sin extensión ignorado", path);
+          return;
+        }
+
+        // // Ignorar archivos vacíos
+        // if (item.size === 0) {
+        //   this.writeLog("Archivo vacío ignorado", path);
+        //   return;
+        // }
+
+        const action = await this.detectContextMenuAction(
+          details,
+          path,
+          isDirectory
+        );
+
+        if (action) {
+          this.writeLog(`Action detected: '${action}'`, path);
+        }
       }
-      if (Path.extname(path) === "") {
-        this.writeLog("Archivo sin extensión ignorado", path);
-        return;
-      }
-
-      // // Ignorar archivos vacíos
-      // if (item.size === 0) {
-      //   this.writeLog("Archivo vacío ignorado", path);
-      //   return;
-      // }
-
-      const action = await this.detectContextMenuAction(
-        details,
-        path,
-        isDirectory
-      );
-
-      if (action) {
-        this.writeLog(`Action detected: '${action}'`, path);
-      }
+    } catch (error) {
+      this.writeLog("Error en onRaw");
+      console.error(error);
     }
   };
 
@@ -192,9 +197,9 @@ export class Watcher implements IWatcher {
     const status = await this._virtualDriveFn.CfGetPlaceHolderState(path);
     this.writeLog("status", status);
 
-    const attribute: Attributes =
-      await this._virtualDriveFn.CfGetPlaceHolderAttributes(path);
-    this.writeLog("attribute", attribute);
+    // const attribute: Attributes =
+    //   await this._virtualDriveFn.CfGetPlaceHolderAttributes(path);
+    // this.writeLog("attribute", attribute);
 
     const itemId = this._virtualDriveFn.CfGetPlaceHolderIdentity(path);
     this.writeLog("itemId", itemId);
@@ -236,7 +241,7 @@ export class Watcher implements IWatcher {
       return "Liberar espacio";
     }
 
-    if (prev.size != curr.size) {
+    if (prev.size !== curr.size) {
       this._queueManager.enqueue({
         path,
         type: typeQueue.changeSize,

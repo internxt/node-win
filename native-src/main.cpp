@@ -334,6 +334,23 @@ napi_value init(napi_env env, napi_value exports)
     return nullptr;
   }
 
+  napi_property_descriptor isTempFileDesc = {
+      "isTempFile",
+      nullptr,
+      IsTempFileWrapper,
+      nullptr,
+      nullptr,
+      nullptr,
+      napi_default,
+      nullptr};
+
+  napi_status isTempFileStatus = napi_define_properties(env, exports, 1, &isTempFileDesc);
+  if (isTempFileStatus != napi_ok)
+  {
+    napi_throw_error(env, nullptr, "Failed to define isTempFile function");
+    return nullptr;
+  }
+
   return exports;
 }
 NAPI_MODULE(NODE_GYP_MODULE_NAME, init)

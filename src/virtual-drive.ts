@@ -257,9 +257,9 @@ class VirtualDrive {
     queueManager: IQueueManager,
     loggerPath: string
   ): void {
-    if (this.callbacks === undefined) {
-      throw new Error("Callbacks are not defined");
-    }
+    // if (this.callbacks === undefined) {
+    //   throw new Error("Callbacks are not defined");
+    // }
 
     this.watcher.queueManager = queueManager;
 
@@ -482,6 +482,10 @@ class VirtualDrive {
 
   async getPlaceholderAttribute(itemPath: string): Promise<any> {
     return await addon.getPlaceholderAttribute(itemPath);
+  }
+
+  async isTempFile(itemPath: string): Promise<boolean> {
+    return await addon.isTempFile(itemPath);
   }
 }
 

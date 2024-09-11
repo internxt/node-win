@@ -117,7 +117,6 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
 {
     try
     {
-        Logger::getInstance().log("Registering sync root.", LogLevel::INFO);
         auto syncRootID = providerId;
 
         winrt::StorageProviderSyncRootInfo info;
