@@ -156,6 +156,7 @@ class VirtualDrive {
   }
 
   async connectSyncRoot(): Promise<any> {
+    console.log("connectSyncRoot", this.syncRootPath);
     return await addon.connectSyncRoot(
       this.syncRootPath,
       this.getInputSyncCallbacks()

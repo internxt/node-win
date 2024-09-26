@@ -113,7 +113,7 @@ const queueManager: IQueueManager = new QueueManager({
   handleChangeSize: handleChangeSize,
 });
 
-drive.connectSyncRoot();
+await drive.connectSyncRoot();
 
 const fileCreatedAt = Date.now() - 172800000;
 const fileUpdatedAt = Date.now() - 86400000;
