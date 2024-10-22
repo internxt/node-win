@@ -113,7 +113,8 @@ const queueManager: IQueueManager = new QueueManager({
   handleChangeSize: handleChangeSize,
 });
 
-await drive.connectSyncRoot();
+
+drive.connectSyncRoot().then(() => {
 
 const fileCreatedAt = Date.now() - 172800000;
 const fileUpdatedAt = Date.now() - 86400000;
@@ -355,10 +356,16 @@ try {
     queueManager,
     settings.watcherLogPath
   );
+
+
 } catch (error) {
   drive.disconnectSyncRoot();
   VirtualDrive.unregisterSyncRoot(settings.syncRootPath);
   console.log("[EXAMPLE] error: " + error);
 }
+
+}).catch((error) => {
+  console.error(error);
+});
 
 export default drive;

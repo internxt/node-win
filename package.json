@@ -2,7 +2,6 @@
     "name": "virtual-drive",
     "version": "1.0.1",
     "description": "",
-    "type": "module",
     "main": "dist/index.ts",
     "types": "dist/index.d.ts",
     "scripts": {
@@ -14,7 +13,7 @@
         "start": "node lib/index.js",
         "config:gyp": "python gyp.config.py",
         "build": "python gyp.config.py && node-gyp clean && node-gyp configure build && tsc",
-        "start:example:register": "npm run build:ts && node ./dist/examples/register.js",
+        "start:example:register": "npm run build:ts && node --experimental-specifier-resolution=node ./dist/examples/register.js",
         "start:example:register:debug": "node --inspect-brk ./dist/examples/register.js",
         "start:example:get-state": "node ./dist/examples/get-state.js",
         "start:example:unregister": "node ./dist/examples/unregister.js",

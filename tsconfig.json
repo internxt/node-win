@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "es2022",
+    "module": "CommonJS",
     "strict": true,
     "lib": ["ES2020", "DOM"],
     "esModuleInterop": true,
@@ -12,7 +12,6 @@
     "paths": {
       "addon": ["./build/Release/addon"]
     },
-    "moduleResolution": "node"
   },
   "include": ["index.ts", "src/**/*.ts", "*.d.ts", "examples/**/*.ts", "test/**/*.ts"],
 }
