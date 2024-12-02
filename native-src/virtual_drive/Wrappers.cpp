@@ -188,6 +188,12 @@ napi_value RegisterSyncRootWrapper(napi_env env, napi_callback_info args)
     logoPath = new WCHAR[logoPathLength + 1];
     napi_get_value_string_utf16(env, argv[4], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(logoPath)), logoPathLength + 1, nullptr);
 
+    wprintf(L"Registering sync root: %ls\n", syncRootPath);
+    wprintf(L"Provider name: %ls\n", providerName);
+    wprintf(L"Provider version: %ls\n", providerVersion);
+    wprintf(L"Provider ID: %ls\n", providerIdStr);
+    wprintf(L"Logo path: %ls\n", logoPath);
+
     HRESULT result = SyncRoot::RegisterSyncRoot(syncRootPath, providerName, providerVersion, providerId, logoPath);
 
     delete[] providerIdStr;

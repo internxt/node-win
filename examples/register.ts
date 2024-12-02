@@ -14,6 +14,7 @@ import { IQueueManager, QueueItem } from "src";
 
 const drive = new VirtualDrive(settings.syncRootPath, settings.defaultLogPath);
 
+console.log("settings: ", settings);
 drive.registerSyncRoot(
   settings.driveName,
   settings.driveVersion,
