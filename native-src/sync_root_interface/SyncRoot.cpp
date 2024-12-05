@@ -10,6 +10,7 @@
 namespace fs = std::filesystem;
 // variable to disconect
 CF_CONNECTION_KEY gloablConnectionKey;
+const int MAX_PARALLEL_DOWNLOADS = 4;
 
 void TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCallbacks input)
 {
@@ -188,6 +189,9 @@ HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallback
 {
     try
     {
+
+        Semaphore downloadSemaphore(MAX_PARALLEL_DOWNLOADS);
+
         Utilities::AddFolderToSearchIndexer(syncRootPath);
 
         TransformInputCallbacksToSyncCallbacks(env, syncCallbacks);
