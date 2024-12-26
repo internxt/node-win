@@ -317,6 +317,25 @@ napi_value init(napi_env env, napi_value exports)
     return nullptr;
   }
 
+  // Define GetFileIconWrapper
+  napi_property_descriptor getFileIconDesc = {
+      "getFileIcon",
+      nullptr,
+      GetFileIconWrapper,
+      nullptr,
+      nullptr,
+      nullptr,
+      napi_default,
+      nullptr};
+
+  napi_status getFileIconStatus = napi_define_properties(env, exports, 1, &getFileIconDesc);
+  if (getFileIconStatus != napi_ok)
+  {
+    napi_throw_error(env, nullptr, "Failed to define getFileIcon function");
+    return nullptr;
+  }
+  
+
   napi_property_descriptor getPlaceholderAttributeDesc = {
       "getPlaceholderAttribute",
       nullptr,

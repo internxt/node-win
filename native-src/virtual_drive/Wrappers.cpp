@@ -3,11 +3,14 @@
 #include "Placeholders.h"
 #include "SyncRoot.h"
 #include "SyncRootWatcher.h"
+#include "FileIcon.h"
 #include "Callbacks.h"
 #include "LoggerPath.h"
 #include "DownloadMutexManager.h"
 #include "DirectoryWatcher.h"
 #include <Logger.h>
+#include <string>
+
 
 napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
 {
@@ -985,7 +988,6 @@ napi_value GetPlaceholderAttributeWrapper(napi_env env, napi_callback_info args)
         return nullptr;
     }
 
-    // Obtener los argumentos de JavaScript y convertirlos a cadenas de C++
     std::wstring sourcePath, destinationPath;
     size_t sourcePathLength, destinationPathLength;
 
@@ -993,7 +995,6 @@ napi_value GetPlaceholderAttributeWrapper(napi_env env, napi_callback_info args)
     sourcePath.resize(sourcePathLength);
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(&sourcePath[0]), sourcePathLength + 1, nullptr);
 
-    // Llamar a la función TransferData
     PlaceholderAttribute attribute = Placeholders::GetAttribute(sourcePath);
 
     napi_value result;
@@ -1002,6 +1003,73 @@ napi_value GetPlaceholderAttributeWrapper(napi_env env, napi_callback_info args)
     napi_value jsAtrtibute;
     napi_create_int32(env, static_cast<int32_t>(attribute), &jsAtrtibute);
     napi_set_named_property(env, result, "attribute", jsAtrtibute);
+
+    return result;
+}
+
+napi_value GetFileIconWrapper(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+
+    size_t argc = 1;
+    napi_value args[1];
+    status = napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+    if (status != napi_ok || argc < 1)
+    {
+        napi_throw_type_error(env, nullptr, "Esperaba una ruta de archivo como argumento");
+        return nullptr;
+    }
+
+    size_t str_size;
+    size_t str_size_read;
+    status = napi_get_value_string_utf8(env, args[0], NULL, 0, &str_size);
+    if (status != napi_ok)
+    {
+        napi_throw_type_error(env, nullptr, "Ruta de archivo inválida");
+        return nullptr;
+    }
+
+    std::string filePathUtf8;
+    filePathUtf8.resize(str_size + 1);
+
+    status = napi_get_value_string_utf8(env, args[0], &filePathUtf8[0], filePathUtf8.size(), &str_size_read);
+    if (status != napi_ok)
+    {
+        napi_throw_type_error(env, nullptr, "Error al obtener la ruta del archivo");
+        return nullptr;
+    }
+
+    if (!filePathUtf8.empty() && filePathUtf8.back() == '\0')
+    {
+        filePathUtf8.pop_back();
+    }
+
+    int wideSize = MultiByteToWideChar(CP_UTF8, 0, filePathUtf8.c_str(), -1, NULL, 0);
+    if (wideSize == 0)
+    {
+        napi_throw_error(env, nullptr, "Error al convertir la ruta del archivo a wide string");
+        return nullptr;
+    }
+
+    std::wstring filePath(wideSize - 1, L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, filePathUtf8.c_str(), -1, &filePath[0], wideSize);
+
+    // Obtener el icono en base64
+    std::string base64Icon;
+    bool success = GetFileIconAsBase64(filePath, base64Icon);
+    if (!success)
+    {
+        napi_throw_error(env, nullptr, "No se pudo obtener el icono del archivo");
+        return nullptr;
+    }
+
+    napi_value result;
+    status = napi_create_string_utf8(env, base64Icon.c_str(), NAPI_AUTO_LENGTH, &result);
+    if (status != napi_ok)
+    {
+        napi_throw_error(env, nullptr, "Error al crear la cadena de resultado");
+        return nullptr;
+    }
 
     return result;
 }

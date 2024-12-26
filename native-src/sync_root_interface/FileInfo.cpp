@@ -14,14 +14,12 @@
 
 bool GetFileIconAsBase64(const std::wstring& filePath, std::string& base64Icon)
 {
-    // Inicializar GDI+
     Gdiplus::GdiplusStartupInput gdiplusStartupInput;
     ULONG_PTR gdiplusToken;
     Gdiplus::Status gdiplusStatus = Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
     if (gdiplusStatus != Gdiplus::Ok)
         return false;
 
-    // Obtener el icono con superposición (overlay)
     SHFILEINFOW sfi = { 0 };
     if (!SHGetFileInfoW(filePath.c_str(), 0, &sfi, sizeof(sfi), SHGFI_ICON | SHGFI_ADDOVERLAYS | SHGFI_SMALLICON))
     {
@@ -36,7 +34,6 @@ bool GetFileIconAsBase64(const std::wstring& filePath, std::string& base64Icon)
         return false;
     }
 
-    // Convertir HICON a GDI+ Bitmap
     Gdiplus::Bitmap* bitmap = Gdiplus::Bitmap::FromHICON(hIcon);
     if (!bitmap)
     {
@@ -45,7 +42,6 @@ bool GetFileIconAsBase64(const std::wstring& filePath, std::string& base64Icon)
         return false;
     }
 
-    // Crear un stream de memoria para guardar la imagen PNG
     IStream* stream = NULL;
     HRESULT hr = CreateStreamOnHGlobal(NULL, TRUE, &stream);
     if (FAILED(hr))
@@ -56,7 +52,6 @@ bool GetFileIconAsBase64(const std::wstring& filePath, std::string& base64Icon)
         return false;
     }
 
-    // Obtener el CLSID del codificador PNG
     CLSID pngClsid;
     UINT numEncoders = 0;
     UINT size = 0;
@@ -94,7 +89,6 @@ bool GetFileIconAsBase64(const std::wstring& filePath, std::string& base64Icon)
         return false;
     }
 
-    // Guardar el bitmap en el stream en formato PNG
     if (bitmap->Save(stream, &pngClsid, NULL) != Gdiplus::Ok)
     {
         stream->Release();
@@ -104,7 +98,6 @@ bool GetFileIconAsBase64(const std::wstring& filePath, std::string& base64Icon)
         return false;
     }
 
-    // Obtener el tamaño del stream
     STATSTG stat;
     if (stream->Stat(&stat, STATFLAG_DEFAULT) != S_OK)
     {
@@ -115,7 +108,6 @@ bool GetFileIconAsBase64(const std::wstring& filePath, std::string& base64Icon)
         return false;
     }
 
-    // Leer los datos del stream
     std::vector<BYTE> imageData(stat.cbSize.LowPart);
     ULONG bytesRead = 0;
     if (stream->Read(imageData.data(), imageData.size(), &bytesRead) != S_OK)
@@ -127,7 +119,6 @@ bool GetFileIconAsBase64(const std::wstring& filePath, std::string& base64Icon)
         return false;
     }
 
-    // Codificar los datos en base64
     DWORD base64Length = 0;
     if (!CryptBinaryToStringA(imageData.data(), bytesRead, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, NULL, &base64Length))
     {
@@ -150,7 +141,6 @@ bool GetFileIconAsBase64(const std::wstring& filePath, std::string& base64Icon)
 
     base64Icon.assign(base64Buffer.data());
 
-    // Limpieza de recursos
     stream->Release();
     delete bitmap;
     DestroyIcon(hIcon);
