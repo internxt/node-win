@@ -19,6 +19,7 @@
         "native-src/main.cpp",
         "native-src/placeholders_interface/PlaceHolderInfo.cpp",
         "native-src/placeholders_interface/Planceholders.cpp",
+        "native-src/sync_root_interface/FileInfo.cpp",
         "native-src/sync_root_interface/SyncRoot.cpp",
         "native-src/sync_root_interface/Utilities.cpp",
         "native-src/sync_root_interface/callbacks/Callbacks.cpp",
