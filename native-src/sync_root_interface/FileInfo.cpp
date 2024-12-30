@@ -17,13 +17,17 @@ bool GetFileIconAsBase64(const std::wstring& filePath, std::string& base64Icon)
     Gdiplus::GdiplusStartupInput gdiplusStartupInput;
     ULONG_PTR gdiplusToken;
     Gdiplus::Status gdiplusStatus = Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
-    if (gdiplusStatus != Gdiplus::Ok)
+    if (gdiplusStatus != Gdiplus::Ok) {
+        wprintf(L"GdiplusStartup failed: %d\n", gdiplusStatus);
         return false;
+    }
 
     SHFILEINFOW sfi = { 0 };
+    wprintf(L"File path_: %s\n", filePath.c_str());
     if (!SHGetFileInfoW(filePath.c_str(), 0, &sfi, sizeof(sfi), SHGFI_ICON | SHGFI_ADDOVERLAYS | SHGFI_SMALLICON))
     {
         Gdiplus::GdiplusShutdown(gdiplusToken);
+        wprintf(L"SHGetFileInfo failed: %d\n", GetLastError());
         return false;
     }
 
@@ -31,6 +35,7 @@ bool GetFileIconAsBase64(const std::wstring& filePath, std::string& base64Icon)
     if (!hIcon)
     {
         Gdiplus::GdiplusShutdown(gdiplusToken);
+        wprintf(L"hicon failed");
         return false;
     }
 
@@ -39,6 +44,7 @@ bool GetFileIconAsBase64(const std::wstring& filePath, std::string& base64Icon)
     {
         DestroyIcon(hIcon);
         Gdiplus::GdiplusShutdown(gdiplusToken);
+        wprintf(L"bitmap failed");
         return false;
     }
 

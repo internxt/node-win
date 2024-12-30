@@ -17,6 +17,7 @@
         "start:example:register:debug": "node --inspect-brk ./dist/examples/register.js",
         "start:example:get-state": "node ./dist/examples/get-state.js",
         "start:example:unregister": "node ./dist/examples/unregister.js",
+        "start:example:get-icon": "node ./dist/examples/get-icon.js",
         "start:example:disconnect": "node ./dist/examples/disconnect.js"
     },
     "author": "",

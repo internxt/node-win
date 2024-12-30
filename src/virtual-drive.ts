@@ -155,6 +155,10 @@ class VirtualDrive {
     return addon.deleteFileSyncRoot(fullPath);
   }
 
+  static  async getIcon(path: string): Promise<string> {
+    return addon.getFileIcon(path);
+  }
+
   async connectSyncRoot(): Promise<any> {
     return await addon.connectSyncRoot(
       this.syncRootPath,

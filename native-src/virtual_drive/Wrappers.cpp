@@ -1054,6 +1054,7 @@ napi_value GetFileIconWrapper(napi_env env, napi_callback_info info)
     std::wstring filePath(wideSize - 1, L'\0');
     MultiByteToWideChar(CP_UTF8, 0, filePathUtf8.c_str(), -1, &filePath[0], wideSize);
 
+    printf("File path: %s\n", filePathUtf8.c_str());
     // Obtener el icono en base64
     std::string base64Icon;
     bool success = GetFileIconAsBase64(filePath, base64Icon);
