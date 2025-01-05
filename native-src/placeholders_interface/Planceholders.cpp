@@ -544,7 +544,7 @@ HRESULT Placeholders::UpdatePinState(const std::wstring &path, const PinState st
 
     const auto cfState = pinStateToCfPinState(state);
     HRESULT result = CfSetPinState(handleForPath(path).get(), cfState, CF_SET_PIN_FLAG_NONE, nullptr);
-s
+    
     ForceShellRefresh(path);
 
     if (result != S_OK)
