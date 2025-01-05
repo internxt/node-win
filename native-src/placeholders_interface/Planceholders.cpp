@@ -532,11 +532,27 @@ bool Placeholders::IsFileValidForSync(const std::wstring &filePath)
     return true;
 }
 
+void Placeholders::ForceShellRefresh(const std::wstring &path)
+{
+    Logger::getInstance().log("Forcing shell refresh for path: " + Logger::fromWStringToString(path), LogLevel::INFO);
+    SHChangeNotify(SHCNE_UPDATEDIR, SHCNF_PATH, path.c_str(), nullptr);
+    SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATH, path.c_str(), nullptr);
+}
+
 HRESULT Placeholders::UpdatePinState(const std::wstring &path, const PinState state)
 {
 
     const auto cfState = pinStateToCfPinState(state);
     HRESULT result = CfSetPinState(handleForPath(path).get(), cfState, CF_SET_PIN_FLAG_NONE, nullptr);
+
+    // call to force shell refresh
+    ForceShellRefresh(path);
+
+    if (result != S_OK)
+    {
+        Logger::getInstance().log("[UpdatePinState] Error updating pin state.", LogLevel::WARN);
+    }
+
     return result;
 }
 

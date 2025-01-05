@@ -38,6 +38,7 @@ public:
         FILETIME lastAccessTime,
         _In_ PCWSTR destPath);
 
+    static void ForceShellRefresh(const std::wstring &path);
     static void UpdateSyncStatus(const std::wstring &filePath, bool syncState, bool isDirectory);
     static HRESULT UpdatePinState(const std::wstring &path, const PinState state);
     static CF_PLACEHOLDER_STATE GetPlaceholderState(const std::wstring &filePath);

@@ -346,22 +346,6 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 
     Logger::getInstance().log("fetch data result: " + std::to_string(load_finished) + " " + std::to_string(progress) + " " + Logger::fromWStringToString(fullServerFilePath), LogLevel::DEBUG);
 
-    // napi_value result_object;
-    // napi_create_object(env, &result_object);
-
-    // napi_set_named_property(env, result_object, "finished", resultBool);
-    // napi_set_named_property(env, result_object, "progress", progress_value);
-
-    // if (load_finished)
-    // {
-    //     load_finished = false;
-    // };
-
-    // napi_value promise;
-    // napi_deferred deferred;
-    // napi_create_promise(env, &deferred, &promise);
-
-    // napi_resolve_deferred(env, deferred, result_object);
     {
         std::lock_guard<std::mutex> lock(mtx);
 
