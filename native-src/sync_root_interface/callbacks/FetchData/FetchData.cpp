@@ -112,8 +112,6 @@ size_t file_incremental_reading(napi_env env, const std::wstring &filename, size
 {
     std::ifstream file;
 
-    // Abre el archivo
-    // Logger::getInstance().log("filename: " + filename, LogLevel::DEBUG);
     printf("filename: %s\n", filename.c_str());
     file.open(filename, std::ios::in | std::ios::binary);
 

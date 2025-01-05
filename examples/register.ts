@@ -119,12 +119,12 @@ const queueManager: IQueueManager = new QueueManager({
 drive.connectSyncRoot();
 
 const fileGenerationOptions = {
-  rootPath: settings.serverRootPath,
+  rootPath: '',
   depth: 3,
   filesPerFolder: 3,
   foldersPerLevel: 3,
-  meanSize: 5,
-  stdDev: 6,
+  meanSize: 5000000,
+  stdDev: 6000000,
 };
 
 (async () => {
@@ -133,7 +133,13 @@ const fileGenerationOptions = {
 
     createFilesWithSize(settings.syncRootPath, settings.serverRootPath);
 
-    const itemsManager = await ItemsInfoManager.initialize();
+    const itemsManager = await ItemsInfoManager.initialize()
+
+    for (const key in fileMap) {
+      const value = fileMap[key];
+      fileMap[key] = settings.serverRootPath + value.replace("/", "\\");
+    }
+    
     await itemsManager.add(fileMap);
 
     drive.watchAndWait(
