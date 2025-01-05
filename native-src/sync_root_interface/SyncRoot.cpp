@@ -44,8 +44,7 @@ void SyncRoot::HydrateFile(const wchar_t *filePath)
         {
             // if (!(attrib & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS))
             // {
-            // Logger::getInstance().log("Hydration file init", LogLevel::INFO);
-            wprintf(L"Hydration file init %ls\n", filePath);
+            Logger::getInstance().log("Hydration file init", LogLevel::INFO);
 
             auto start = std::chrono::steady_clock::now();
 
@@ -117,7 +116,6 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
 {
     try
     {
-        Logger::getInstance().log("Registering sync root.", LogLevel::INFO);
         auto syncRootID = providerId;
 
         winrt::StorageProviderSyncRootInfo info;
@@ -127,6 +125,7 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
         info.Path(folder);
 
         // The string can be in any form acceptable to SHLoadIndirectString.
+
         info.DisplayNameResource(providerName);
 
         std::wstring completeIconResource = std::wstring(logoPath) + L",0";

@@ -1,5 +1,14 @@
 import "dotenv/config";
 import Joi from "joi";
+import path from "path";
+
+function sanitizePath(filePath: string): string {
+  return filePath.replace(/\n/g, '\\n');
+}
+
+function normalizePath(filePath: string) {
+  return sanitizePath(filePath.replace(/\\n/g, "\\n").replace(/\\/g, path.sep));
+}
 
 const envVarsSchema = Joi.object({
   EXAMPLE_DRIVE_NAME: Joi.string().required(),
@@ -20,11 +29,11 @@ if (error) {
 const settings = {
   driveName: envVars.EXAMPLE_DRIVE_NAME,
   driveVersion: envVars.EXAMPLE_DRIVE_VERSION,
-  syncRootPath: envVars.EXAMPLE_SYNC_ROOT_PATH,
-  defaultLogPath: envVars.EXAMPLE_DEFAULT_LOG_PATH,
-  defaultIconPath: envVars.EXAMPLE_DEFAULT_ICON_PATH,
-  serverRootPath: envVars.EXAMPLE_SERVER_ROOT_PATH,
-  watcherLogPath: envVars.EXAMPLE_WATCHER_LOG_PATH,
+  syncRootPath: normalizePath(envVars.EXAMPLE_SYNC_ROOT_PATH),
+  defaultLogPath: normalizePath(envVars.EXAMPLE_DEFAULT_LOG_PATH),
+  defaultIconPath: normalizePath(envVars.EXAMPLE_DEFAULT_ICON_PATH),
+  serverRootPath: normalizePath(envVars.EXAMPLE_SERVER_ROOT_PATH),
+  watcherLogPath: normalizePath(envVars.EXAMPLE_WATCHER_LOG_PATH),
 };
 
 export default settings;

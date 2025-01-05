@@ -2,6 +2,9 @@
 #include "LoggerPath.h"
 
 Logger::Logger() : log_file(LoggerPath::get(), std::ios::app) {
+    std::wstring widePath = fromUtf8ToWide(LoggerPath::get());
+    wprintf(L"Logger path: %ls\n", widePath.c_str());
+
     std::string path = LoggerPath::get();
     if (!log_file.is_open() && !path.empty()) {
         throw std::runtime_error("No se pudo abrir el archivo de log.");
@@ -12,6 +15,18 @@ Logger::~Logger() {
     if (log_file.is_open()) {
         log_file.close();
     }
+}
+
+std::wstring Logger::fromUtf8ToWide(const std::string& utf8Str) {
+    if (utf8Str.empty()) return std::wstring();
+
+    int wideSize = MultiByteToWideChar(CP_UTF8, 0, utf8Str.c_str(), -1, nullptr, 0);
+    if (wideSize <= 0) return std::wstring();
+
+    std::unique_ptr<wchar_t[]> wideStr(new wchar_t[wideSize]);
+    MultiByteToWideChar(CP_UTF8, 0, utf8Str.c_str(), -1, wideStr.get(), wideSize);
+
+    return std::wstring(wideStr.get());
 }
 
 void Logger::log(const std::string &message, LogLevel level) {

@@ -37,6 +37,8 @@ public:
     Logger& operator=(const Logger&) = delete;
 
     std::string toString(LogLevel level);
+    
+    static std::wstring fromUtf8ToWide(const std::string& utf8Str);
 
     static std::string fromWStringToString(const std::wstring wstr);
 private:
