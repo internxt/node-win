@@ -32,8 +32,8 @@ function createFilesWithSize(sourceFolder: string, destFolder: string): void {
     
     files.forEach(file => {
         const relativePath = path.relative(file.baseDir, file.path);
-        const destFilePath = path.join(destFolder, relativePath);
-        const destFileDir = path.dirname(destFilePath);
+        const destFilePath = path.join(file.baseDir.replace(sourceFolder, destFolder), relativePath);//path.join(destFolder, relativePath);
+        const destFileDir = file.baseDir.replace(sourceFolder, destFolder);//path.dirname(destFilePath);
 
         if (!fs.existsSync(destFileDir)){
             fs.mkdirSync(destFileDir, { recursive: true });
