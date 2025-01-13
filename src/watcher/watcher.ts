@@ -1,11 +1,6 @@
 import * as chokidar from "chokidar";
 import { IWatcher, IVirtualDriveFunctions } from "./watcher.interface";
-import {
-  PinState,
-  Status,
-  SyncState,
-  Attributes,
-} from "../types/placeholder.type";
+import { PinState, Status, SyncState, Attributes } from "../types/placeholder.type";
 import { IQueueManager, typeQueue } from "../queue/queueManager";
 import fs from "fs";
 import * as Path from "path";
@@ -14,15 +9,10 @@ export class Watcher implements IWatcher {
   private static instance: Watcher;
 
   private _syncRootPath: string = "";
-
   private _options!: chokidar.WatchOptions;
-
   private _virtualDriveFn!: IVirtualDriveFunctions;
-
   private _queueManager!: IQueueManager;
-
   private fileInDevice = new Set<string>();
-
   private _logPath!: string;
 
   static get Instance() {
@@ -32,13 +22,16 @@ export class Watcher implements IWatcher {
     return Watcher.instance;
   }
 
+  /**
+   * Logs a message to both console and file.
+   */
   public writeLog = (...messages: any[]) => {
     const logMessage = `${new Date().toISOString()} - ${messages
-      .map((msg) =>
-        typeof msg === "object" ? JSON.stringify(msg, null, 2) : msg
-      )
+      .map((msg) => (typeof msg === "object" ? JSON.stringify(msg, null, 2) : msg))
       .join(" ")}\n`;
+
     console.log(logMessage);
+
     fs.appendFile(this._logPath, logMessage, (err) => {
       if (err) {
         console.error("Error writing to log file", err);
@@ -50,79 +43,91 @@ export class Watcher implements IWatcher {
     this._logPath = logPath;
   }
 
-  set virtualDriveFunctions(IVirtualDriveFunctions: IVirtualDriveFunctions) {
-    this._virtualDriveFn = IVirtualDriveFunctions;
+  set virtualDriveFunctions(virtualDriveFn: IVirtualDriveFunctions) {
+    this._virtualDriveFn = virtualDriveFn;
   }
 
   set queueManager(queueManager: IQueueManager) {
     this._queueManager = queueManager;
   }
 
-  private onAdd = (path: string, state: any) => {
+  set syncRootPath(syncRootPath: string) {
+    this._syncRootPath = syncRootPath;
+  }
+
+  set options(options: chokidar.WatchOptions) {
+    this._options = options;
+  }
+
+  /**
+   * Fired when a new file is added.
+   */
+  private onAdd = (path: string, stats: fs.Stats) => {
     try {
-      this.writeLog("onAdd", path, state);
-      const ext = path.split(".").pop();
+      this.writeLog("onAdd", path, stats);
 
-      const { size, birthtime, mtime } = state;
-
-      const fileIntenty = this._virtualDriveFn.CfGetPlaceHolderIdentity(path);
-
-      this.writeLog("fileIntenty in add", fileIntenty);
-
-      if (!ext || size === 0 || size > 20 * 1024 * 1024 * 1024) return;
-
+      const ext = Path.extname(path);
+      const { size, birthtime, mtime } = stats;
+      const fileIdentity = this._virtualDriveFn.CfGetPlaceHolderIdentity(path);
       const status: Status = this._virtualDriveFn.CfGetPlaceHolderState(path);
+
+      this.writeLog("fileIdentity in add", fileIdentity);
       this.writeLog("status", status);
 
-      // Verificar tiempos de creación y modificación
+      // Ignore files without an extension, empty, or larger than 20GB
+      if (!ext || size === 0 || size > 20 * 1024 * 1024 * 1024) {
+        return;
+      }
+
       const creationTime = new Date(birthtime).getTime();
       const modificationTime = new Date(mtime).getTime();
-      const currentTime = Date.now();
 
       let isNewFile = false;
       let isMovedFile = false;
 
-      if (!fileIntenty) {
-        // El archivo fue creado recientemente (dentro de los últimos 60 segundos)
+      // Determine if the file is new or moved
+      if (!fileIdentity) {
         isNewFile = true;
       } else if (creationTime !== modificationTime) {
-        // El archivo fue movido (o modificado)
         isMovedFile = true;
       }
 
-      // Procesar el archivo según su estado
+      // If already AlwaysLocal, OnlineOnly, or InSync, do nothing
       if (
         status.pinState === PinState.AlwaysLocal ||
         status.pinState === PinState.OnlineOnly ||
         status.syncState === SyncState.InSync
-      )
+      ) {
         return;
+      }
 
       if (isNewFile) {
         this.fileInDevice.add(path);
-
-        this._queueManager.enqueue({
-          path,
-          type: typeQueue.add,
-          isFolder: false,
-        });
+        this._queueManager.enqueue({ path, type: typeQueue.add, isFolder: false });
       } else if (isMovedFile) {
         this.writeLog("File moved:", path);
-        // Procesar archivo movido según sea necesario
+        // Additional logic for moved files can be added here if needed
       }
     } catch (error) {
-      console.log("Error en onAdd");
-      console.error(error);
+      this.writeLog("Error in onAdd", error);
     }
   };
 
-  private onChange = (path: string, state: any) => {
-    this.writeLog("onChange");
+  /**
+   * Fired when an existing file changes.
+   */
+  private onChange = (path: string, stats: fs.Stats) => {
+    this.writeLog("onChange", path, stats);
+    // Additional logic for handling changes can be added if required
   };
 
-  private onAddDir = (path: string, state: any) => {
+  /**
+   * Fired when a directory is added.
+   */
+  private onAddDir = (path: string, stats: fs.Stats) => {
     try {
-      this.writeLog("onAddDir", path, state);
+      this.writeLog("onAddDir", path, stats);
+
       const status: Status = this._virtualDriveFn.CfGetPlaceHolderState(path);
       this.writeLog("status", status);
 
@@ -130,59 +135,58 @@ export class Watcher implements IWatcher {
         status.pinState === PinState.AlwaysLocal ||
         status.pinState === PinState.OnlineOnly ||
         status.syncState === SyncState.InSync
-      )
+      ) {
         return;
+      }
 
-      this._queueManager.enqueue({
-        path,
-        type: typeQueue.add,
-        isFolder: true,
-      });
+      this._queueManager.enqueue({ path, type: typeQueue.add, isFolder: true });
     } catch (error) {
-      this.writeLog("Error en onAddDir");
-      console.error(error);
+      this.writeLog("Error in onAddDir", error);
     }
   };
 
+  /**
+   * Error event from the watcher.
+   */
   private onError = (error: any) => {
     this.writeLog("onError", error);
   };
 
+  /**
+   * Raw event handler that can capture low-level events.
+   */
   private onRaw = async (event: string, path: string, details: any) => {
     this.writeLog("onRaw", event, path, details);
 
-    let isDirectory = false;
+    if (event !== "change" || !details.prev || !details.curr) return;
 
-    if (event === "change" && details.prev && details.curr) {
-      const item = await fs.statSync(path);
-      if (item.isDirectory()) {
-        this.writeLog("Es un directorio", path);
-        isDirectory = true;
+    try {
+      const item = fs.statSync(path);
+      const isDirectory = item.isDirectory();
+
+      if (isDirectory) {
+        this.writeLog("It's a directory, ignoring raw change:", path);
         return;
       }
+
+      // Ignore files without extension
       if (Path.extname(path) === "") {
-        this.writeLog("Archivo sin extensión ignorado", path);
+        this.writeLog("File without extension ignored", path);
         return;
       }
 
-      // // Ignorar archivos vacíos
-      // if (item.size === 0) {
-      //   this.writeLog("Archivo vacío ignorado", path);
-      //   return;
-      // }
-
-      const action = await this.detectContextMenuAction(
-        details,
-        path,
-        isDirectory
-      );
-
+      const action = await this.detectContextMenuAction(details, path, isDirectory);
       if (action) {
         this.writeLog(`Action detected: '${action}'`, path);
       }
+    } catch (error) {
+      this.writeLog("Error in onRaw", error);
     }
   };
 
+  /**
+   * Detects actions triggered by context menu operations (e.g., "Always keep on this device", "Free up space").
+   */
   private async detectContextMenuAction(
     details: any,
     path: string,
@@ -190,17 +194,15 @@ export class Watcher implements IWatcher {
   ): Promise<string | null> {
     const { prev, curr } = details;
     const status = await this._virtualDriveFn.CfGetPlaceHolderState(path);
-    this.writeLog("status", status);
-
-    const attribute: Attributes =
-      await this._virtualDriveFn.CfGetPlaceHolderAttributes(path);
-    this.writeLog("attribute", attribute);
-
+    const attribute: Attributes = await this._virtualDriveFn.CfGetPlaceHolderAttributes(path);
     const itemId = this._virtualDriveFn.CfGetPlaceHolderIdentity(path);
-    this.writeLog("itemId", itemId);
-
     const isInDevice = this.fileInDevice.has(path);
 
+    this.writeLog("status", status);
+    this.writeLog("attribute", attribute);
+    this.writeLog("itemId", itemId);
+
+    // Case: "Always keep on this device"
     if (
       prev.size === curr.size &&
       prev.ctimeMs !== curr.ctimeMs &&
@@ -216,15 +218,15 @@ export class Watcher implements IWatcher {
         isFolder: isDirectory,
         fileId: itemId,
       });
-      return "Mantener siempre en el dispositivo";
+      return "Always keep on this device";
     }
 
-    // Verificar si es "Liberar espacio"
+    // Case: "Free up space"
     if (
-      prev.size == curr.size && // Tamaño no cambia
-      prev.ctimeMs != curr.ctimeMs && // ctime cambia
-      status.pinState == PinState.OnlineOnly && // Estado es OnlineOnly
-      status.syncState == SyncState.InSync // Estado es InSync
+      prev.size === curr.size &&
+      prev.ctimeMs !== curr.ctimeMs &&
+      status.pinState === PinState.OnlineOnly &&
+      status.syncState === SyncState.InSync
     ) {
       this.fileInDevice.delete(path);
       this._queueManager.enqueue({
@@ -233,35 +235,34 @@ export class Watcher implements IWatcher {
         isFolder: isDirectory,
         fileId: itemId,
       });
-      return "Liberar espacio";
+      return "Free up space";
     }
 
-    if (prev.size != curr.size) {
+    // Case: Size change
+    if (prev.size !== curr.size) {
+      this.fileInDevice.add(path);
       this._queueManager.enqueue({
         path,
         type: typeQueue.changeSize,
         isFolder: isDirectory,
         fileId: itemId,
       });
-      this.fileInDevice.add(path);
-      return "Cambio de tamaño";
+      return "Size change";
     }
 
     return null;
   }
 
+  /**
+   * Fired when the watcher is ready.
+   */
   private onReady = () => {
     this.writeLog("onReady");
   };
 
-  set syncRootPath(syncRootPath: string) {
-    this._syncRootPath = syncRootPath;
-  }
-
-  set options(options: chokidar.WatchOptions) {
-    this._options = options;
-  }
-
+  /**
+   * Starts watching the configured directory.
+   */
   public watchAndWait() {
     try {
       const watcher = chokidar.watch(this._syncRootPath, this._options);
@@ -274,8 +275,7 @@ export class Watcher implements IWatcher {
         .on("raw", this.onRaw)
         .on("ready", this.onReady);
     } catch (error) {
-      this.writeLog("Error en watchAndWait");
-      console.error(error);
+      this.writeLog("Error in watchAndWait", error);
     }
   }
 }

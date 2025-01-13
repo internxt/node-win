@@ -2,6 +2,7 @@
 
 #include <CallbacksContext.h>
 #include "DirectoryWatcher.h"
+#include "Semaphore.h"
 
 void register_threadsafe_callbacks(napi_env env, InputSyncCallbacks input);
 
