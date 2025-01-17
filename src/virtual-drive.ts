@@ -50,6 +50,7 @@ class VirtualDrive {
       FILE_ATTRIBUTE_READONLY: 0x1,
       FILE_ATTRIBUTE_HIDDEN: 0x2,
       FOLDER_ATTRIBUTE_READONLY: 0x1,
+      FILE_ATTRIBUTE_NORMAL: 0x1
     };
 
     this.watcher = Watcher.Instance;
@@ -65,7 +66,6 @@ class VirtualDrive {
   }
 
   addLoggerPath(loggerPath: string) {
-    console.log("loggerPath: ", loggerPath);
     addon.addLoggerPath(loggerPath);
   }
 
@@ -314,6 +314,7 @@ class VirtualDrive {
 
         currentPath = path.join(currentPath, dir);
       }
+
       // last element is the file
       this.createPlaceholderFile(
         path.basename(fullPath),

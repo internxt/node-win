@@ -32,13 +32,16 @@ export class Watcher implements IWatcher {
     return Watcher.instance;
   }
 
+  public get currentOptions() {
+    return this._options;
+  }
+
   public writeLog = (...messages: any[]) => {
     const logMessage = `${new Date().toISOString()} - ${messages
       .map((msg) =>
         typeof msg === "object" ? JSON.stringify(msg, null, 2) : msg
       )
       .join(" ")}\n`;
-    console.log(logMessage);
     fs.appendFile(this._logPath, logMessage, (err) => {
       if (err) {
         console.error("Error writing to log file", err);

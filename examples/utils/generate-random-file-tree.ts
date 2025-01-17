@@ -22,8 +22,9 @@ function randomNormal(mean: number, stdDev: number): number {
 
   const value = z0 * stdDev + mean;
 
-  return Math.max(value, 0);
+  return Math.max(value * 1024 * 1024, 0);
 }
+
 
 function getRandomExtension(): string {
   const extensions = [
