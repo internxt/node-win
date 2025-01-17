@@ -39,21 +39,17 @@ describe('generateRandomFilesAndFolders', () => {
 
     const result = await generateRandomFilesAndFolders(mockDrive as unknown as VirtualDrive, options);
 
-    // Verifica que los archivos fueron creados
     const files = mockDrive.getFiles();
     expect(Object.keys(files).length).toBeGreaterThan(0);
 
-    // Extraemos los tamaños
-    const sizes = Object.values(files).map(file => file.size / (1024 * 1024)); // Convertimos a MB
+    const sizes = Object.values(files).map(file => file.size / (1024 * 1024)); 
 
-    // Calculamos el rango esperado (3 desviaciones estándar)
     const lowerBound = meanSizeMB - 3 * stdDevMB;
     const upperBound = meanSizeMB + 3 * stdDevMB;
 
-    // Verifica que la mayoría de los valores estén dentro del rango esperado
     const withinRange = sizes.filter(size => size >= lowerBound && size <= upperBound);
     const percentageWithinRange = (withinRange.length / sizes.length) * 100;
 
-    expect(percentageWithinRange).toBeGreaterThanOrEqual(99); // Al menos el 99% debe estar en el rango
+    expect(percentageWithinRange).toBeGreaterThanOrEqual(99);
   });
 });
