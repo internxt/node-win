@@ -1,13 +1,8 @@
-/**
- * virtualDrive.test.ts
- * Este archivo unifica varios tests unitarios para la clase VirtualDrive.
- */
-
 jest.mock('../build/Release/addon.node');
 jest.mock('fs');
 
 import fs from 'fs';
-import { VirtualDrive } from '../dist/index'; 
+import { VirtualDrive } from '../dist/index';
 export type NapiCallbackFunction = (...args: any[]) => any;
 
 export type InputSyncCallbacks = {
@@ -41,8 +36,8 @@ describe('VirtualDrive Tests', () => {
     jest.clearAllMocks();
   });
 
-  describe('Constructor y creación del syncRootPath', () => {
-    it('Debe crear la carpeta syncRootPath si no existe', () => {
+  describe('Constructor and syncRootPath creation', () => {
+    it('should create the syncRootPath folder if it does not exist', () => {
       (fs.existsSync as jest.Mock).mockReturnValue(false);
 
       new VirtualDrive('C:\\test-drive');
@@ -50,7 +45,7 @@ describe('VirtualDrive Tests', () => {
       expect(fs.mkdirSync).toHaveBeenCalledWith('C:\\test-drive', { recursive: true });
     });
 
-    it('No crea la carpeta si ya existe', () => {
+    it('should not create the folder if it already exists', () => {
       (fs.existsSync as jest.Mock).mockReturnValue(true);
 
       new VirtualDrive('C:\\test-drive');
@@ -60,7 +55,7 @@ describe('VirtualDrive Tests', () => {
   });
 
   describe('addLoggerPath', () => {
-    it('Debe llamar a addon.addLoggerPath con la ruta de logs', () => {
+    it('should call addon.addLoggerPath with the log path', () => {
       (fs.existsSync as jest.Mock).mockReturnValue(true);
 
       new VirtualDrive('C:\\test-drive', 'C:\\mis-logs');
@@ -69,7 +64,7 @@ describe('VirtualDrive Tests', () => {
   });
 
   describe('createFileByPath', () => {
-    it('Debe invocar createPlaceholderFile con los argumentos correctos', () => {
+    it('should invoke createPlaceholderFile with the correct arguments', () => {
       (fs.existsSync as jest.Mock).mockReturnValue(true);
 
       const drive = new VirtualDrive('C:\\test-drive');
@@ -82,20 +77,20 @@ describe('VirtualDrive Tests', () => {
       );
 
       expect(mockAddon.createPlaceholderFile).toHaveBeenCalledWith(
-        'file.txt',               // Nombre del archivo
-        'file-id',                // FileId
-        1234,                     // Tamaño
-        1,                        // FILE_ATTRIBUTE_NORMAL (0x1) u otro valor que uses
-        expect.any(String),       // creationTimeStr (en formato Windows)
-        expect.any(String),       // lastWriteTimeStr
-        expect.any(String),       // lastAccessTimeStr
-        expect.stringContaining('C:\\test-drive\\folder\\subfolder') // basePath
+        'file.txt',
+        'file-id',
+        1234,
+        1,
+        expect.any(String),
+        expect.any(String),
+        expect.any(String),
+        expect.stringContaining('C:\\test-drive\\folder\\subfolder')
       );
     });
   });
 
   describe('registerSyncRoot', () => {
-    it('Debe llamar a addon.registerSyncRoot y asignar callbacks', async () => {
+    it('should call addon.registerSyncRoot and assign callbacks', async () => {
       const drive = new VirtualDrive('C:\\test-drive');
       const myCallbacks: Callbacks = {
         notifyDeleteCallback: jest.fn(),
@@ -111,20 +106,19 @@ describe('VirtualDrive Tests', () => {
       );
 
       expect(mockAddon.registerSyncRoot).toHaveBeenCalledWith(
-        'C:\\test-drive', // ruta
-        'MyProvider',     // providerName
-        '1.0.0',          // providerVersion
-        'provider-id',    // providerId
-        'C:\\iconPath'    // logoPath
+        'C:\\test-drive',
+        'MyProvider',
+        '1.0.0',
+        'provider-id',
+        'C:\\iconPath'
       );
 
-      // Verificamos que se haya guardado en el drive
       expect(drive.callbacks).toBe(myCallbacks);
     });
   });
 
   describe('connectSyncRoot', () => {
-    it('Debe invocar addon.connectSyncRoot con los callbacks de entrada', async () => {
+    it('should invoke addon.connectSyncRoot with the input callbacks', async () => {
       const drive = new VirtualDrive('C:\\test-drive');
       const myCallbacks: Callbacks = {
         fetchDataCallback: jest.fn(),
@@ -145,5 +139,4 @@ describe('VirtualDrive Tests', () => {
       );
     });
   });
-
 });
