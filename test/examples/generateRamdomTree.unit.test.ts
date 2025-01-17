@@ -30,7 +30,7 @@ describe('generateRandomFilesAndFolders', () => {
     const options = {
       rootPath: '/root',
       depth: 2,
-      filesPerFolder: 10, 
+      filesPerFolder: 100, 
       foldersPerLevel: 2,
       meanSize: meanSizeMB,
       stdDev: stdDevMB,
