@@ -17,7 +17,7 @@ export interface IVirtualDriveFunctions {
   CfUpdateSyncStatus: (
     path: string,
     sync: boolean,
-    isDirectory?: boolean
+    isDirectory: boolean
   ) => void;
   UpdatePinState?: () => void;
   CfUpdateItem?: () => void;

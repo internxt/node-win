@@ -1,5 +1,4 @@
-import VirtualDrive from "../src/virtual-drive";
-import settings from "./settings";
+import { drive } from "./drive";
 import yargs from "yargs";
 
 // Configura yargs
@@ -13,8 +12,6 @@ const argv = yargs
   })
   .help()
   .alias("help", "h").argv;
-
-const drive = new VirtualDrive(settings.syncRootPath, settings.defaultLogPath);
 
 //@ts-ignore
 if (argv.file) {

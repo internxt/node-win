@@ -7,7 +7,8 @@ import { ExtraCallbacks, InputSyncCallbacks } from "./types/callbacks.type";
 import { Status } from "./types/placeholder.type";
 import { IQueueManager } from "./queue/queueManager";
 
-const addon = require("../../build/Release/addon.node");
+import { addon } from "./addon";
+
 interface ItemInfo {
   path: string;
   fileIdentity: string;
