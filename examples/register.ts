@@ -1,4 +1,4 @@
-import VirtualDrive from "../src/virtual-drive";
+import { drive } from "./drive";
 import settings from "./settings";
 import {
   onCancelFetchDataCallback,
@@ -10,10 +10,8 @@ import {
 } from "./callbacks";
 import { ItemsInfoManager, createFilesWithSize } from "./utils";
 import { QueueManager } from "./queueManager";
-import { IQueueManager, QueueItem } from "src";
+import { IQueueManager, QueueItem, VirtualDrive } from "src";
 import { generateRandomFilesAndFolders } from "./utils/generate-random-file-tree";
-
-const drive = new VirtualDrive(settings.syncRootPath, settings.defaultLogPath);
 
 console.log("Registering sync root: " + settings.syncRootPath);
 

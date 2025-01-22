@@ -1,3 +1,3 @@
-//@ts-ignore
-import drive from './register';
+import { drive } from "./drive";
+
 drive.disconnectSyncRoot();
