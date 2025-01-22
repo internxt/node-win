@@ -1,10 +1,11 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  testMatch: ['**/test/**/*.test.ts'],
+  testMatch: ['**/test/**/*.e2e.test.ts'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
    moduleNameMapper: {
     "^examples/(.*)$": "<rootDir>/examples/$1",
+    "^@/(.*)$": "<rootDir>/src/$1",
   },
   coverageThreshold: {
     global: {

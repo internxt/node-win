@@ -14,30 +14,9 @@ interface ItemInfo {
   fileIdentity: string;
   isPlaceholder: boolean;
 }
-interface Addon {
-  connectSyncRoot(path: string): any;
-  createPlaceholderFile(
-    fileName: string,
-    fileId: string,
-    fileSize: number,
-    combinedAttributes: number,
-    creationTime: string,
-    lastWriteTime: string,
-    lastAccessTime: string,
-    path: string
-  ): any;
-  registerSyncRootWindowsStorageProvider(
-    path: string,
-    providerName: string,
-    providerVersion: string,
-    providerId: string
-  ): any;
-  unregisterSyncRoot(path: string): any;
-  watchAndWait(path: string): any;
-  getItems(): any;
-}
 
-type Callbacks = InputSyncCallbacks & ExtraCallbacks;
+export type Callbacks = InputSyncCallbacks & ExtraCallbacks;
+
 class VirtualDrive {
   PLACEHOLDER_ATTRIBUTES: { [key: string]: number };
   syncRootPath: string;
@@ -51,6 +30,7 @@ class VirtualDrive {
       FILE_ATTRIBUTE_READONLY: 0x1,
       FILE_ATTRIBUTE_HIDDEN: 0x2,
       FOLDER_ATTRIBUTE_READONLY: 0x1,
+      FILE_ATTRIBUTE_NORMAL: 0x1,
     };
 
     this.watcher = Watcher.Instance;
@@ -66,7 +46,6 @@ class VirtualDrive {
   }
 
   addLoggerPath(loggerPath: string) {
-    console.log("loggerPath: ", loggerPath);
     addon.addLoggerPath(loggerPath);
   }
 

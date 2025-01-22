@@ -32,6 +32,10 @@ export class Watcher implements IWatcher {
     return Watcher.instance;
   }
 
+  public get currentOptions() {
+    return this._options;
+  }
+
   public writeLog = (...messages: any[]) => {
     const logMessage = `${new Date().toISOString()} - ${messages
       .map((msg) =>
