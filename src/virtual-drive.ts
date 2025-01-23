@@ -94,7 +94,6 @@ class VirtualDrive {
     lastAccessTime: number,
     basePath: string
   ): any {
-    const combinedAttributes = fileAttributes;
     const creationTimeStr = this.convertToWindowsTime(creationTime).toString();
     const lastWriteTimeStr =
       this.convertToWindowsTime(lastWriteTime).toString();
@@ -105,7 +104,7 @@ class VirtualDrive {
       fileName,
       fileId,
       fileSize,
-      combinedAttributes,
+      fileAttributes,
       creationTimeStr,
       lastWriteTimeStr,
       lastAccessTimeStr,
