@@ -5,4 +5,5 @@
 /dist
 /examples/filesInfo.json
 /node_modules
+/test-files
 /venv

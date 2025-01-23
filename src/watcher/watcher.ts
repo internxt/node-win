@@ -7,7 +7,7 @@ import {
   Attributes,
 } from "../types/placeholder.type";
 import { IQueueManager, typeQueue } from "../queue/queueManager";
-import fs from "fs";
+import fs, { Stats } from "fs";
 import * as Path from "path";
 import { inspect } from "util";
 
@@ -39,7 +39,7 @@ export class Watcher {
 
   public writeLog = (...messages: unknown[]) => {
     const date = new Date().toISOString();
-    const parsedMessages = inspect(messages, { colors: true, depth: Infinity });
+    const parsedMessages = inspect(messages, { depth: Infinity });
     const logMessage = `${date} - ${parsedMessages}`;
 
     fs.appendFile(this.logPath, logMessage, (err) => {
@@ -50,6 +50,7 @@ export class Watcher {
   };
 
   private onAdd = (path: string, state: any) => {
+    console.log("onAdd")
     try {
       this.writeLog("onAdd", path, state);
       const ext = path.split(".").pop();
@@ -111,7 +112,9 @@ export class Watcher {
     this.writeLog("onChange");
   };
 
-  private onAddDir = (path: string, state: any) => {
+  private onAddDir = (path: string, state: Stats) => {
+    console.log("🚀 ~ Watcher ~ state:", state)
+    console.log("🚀 ~ Watcher ~ path:", path)
     try {
       this.writeLog("onAddDir", path, state);
       const status: Status = this.virtualDriveFn.CfGetPlaceHolderState(path);
@@ -247,6 +250,7 @@ export class Watcher {
 
   public watchAndWait() {
     try {
+      console.log("🚀 ~ Watcher ~ watchAndWait ~ this.syncRootPath:", this.syncRootPath)
       const watcher = chokidar.watch(this.syncRootPath, this.options);
 
       watcher
