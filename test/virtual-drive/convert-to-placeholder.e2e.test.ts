@@ -34,10 +34,7 @@ describe("Convert to placeholder", () => {
 
     // Assert
     expect(isCreated).toBe(false);
-    expect(status).toEqual({
-      pinState: PinState.Unspecified,
-      syncState: SyncState.Undefined,
-    });
+    expect(status).toEqual({ pinState: PinState.Unspecified, syncState: SyncState.Undefined });
   });
 
   describe("Convert file to placeholder", () => {
@@ -53,10 +50,7 @@ describe("Convert to placeholder", () => {
 
       // Assert
       expect(isCreated).toBe(true);
-      expect(status).toEqual({
-        pinState: PinState.AlwaysLocal,
-        syncState: SyncState.InSync,
-      });
+      expect(status).toEqual({ pinState: PinState.AlwaysLocal, syncState: SyncState.InSync });
     });
 
     it("When trying to convert to placeholder two times it ignores the second time", async () => {
@@ -73,10 +67,7 @@ describe("Convert to placeholder", () => {
       // Assert
       expect(isCreated1).toBe(true);
       expect(isCreated2).toBe(false);
-      expect(status).toEqual({
-        pinState: PinState.AlwaysLocal,
-        syncState: SyncState.InSync,
-      });
+      expect(status).toEqual({ pinState: PinState.AlwaysLocal, syncState: SyncState.InSync });
     });
   });
 
@@ -93,10 +84,7 @@ describe("Convert to placeholder", () => {
 
       // Assert
       expect(isCreated).toBe(true);
-      expect(status).toEqual({
-        pinState: PinState.Unspecified,
-        syncState: SyncState.InSync,
-      });
+      expect(status).toEqual({ pinState: PinState.Unspecified, syncState: SyncState.InSync });
     });
 
     it("When trying to convert to placeholder two times it ignores the second time", async () => {
@@ -113,10 +101,7 @@ describe("Convert to placeholder", () => {
       // Assert
       expect(isCreated1).toBe(true);
       expect(isCreated2).toBe(false);
-      expect(status).toEqual({
-        pinState: PinState.Unspecified,
-        syncState: SyncState.InSync,
-      });
+      expect(status).toEqual({ pinState: PinState.Unspecified, syncState: SyncState.InSync });
     });
 
     it("Creates the placeholders and sets the sync state just for the folder", async () => {
@@ -134,14 +119,8 @@ describe("Convert to placeholder", () => {
 
       // Assert
       expect(isCreated).toBe(true);
-      expect(folderStatus).toEqual({
-        pinState: PinState.Unspecified,
-        syncState: SyncState.InSync,
-      });
-      expect(fileStatus).toEqual({
-        pinState: PinState.Unspecified,
-        syncState: SyncState.Undefined,
-      });
+      expect(folderStatus).toEqual({ pinState: PinState.Unspecified, syncState: SyncState.InSync });
+      expect(fileStatus).toEqual({ pinState: PinState.Unspecified, syncState: SyncState.Undefined });
     });
   });
 });

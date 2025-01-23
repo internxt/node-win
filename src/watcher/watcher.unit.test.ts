@@ -1,6 +1,5 @@
 import * as chokidar from "chokidar";
 import { QueueManager } from "examples/queueManager";
-import { Mock } from "vitest";
 import { mockDeep } from "vitest-mock-extended";
 
 import { typeQueue } from "@/queue/queueManager";
@@ -16,8 +15,6 @@ vi.mock("chokidar", () => ({
   }),
 }));
 
-const chockidarWatch = chokidar.watch as Mock;
-
 describe("Watcher", () => {
   const virtualDriveFn = mockDeep<IVirtualDriveFunctions>();
   const queueManager = mockDeep<QueueManager>();
@@ -32,19 +29,20 @@ describe("Watcher", () => {
     vi.clearAllMocks();
   });
 
-  describe("watchAndWait", () => {
-    it.only("should configure chokidar with the correct path and options", () => {
+  describe("When call watchAndWait", () => {
+    it("Then configure chokidar with the correct path and options", () => {
       // Act
       watcher.watchAndWait();
 
       // Assert
       expect(chokidar.watch).toHaveBeenCalledWith(syncRootPath, options);
-      expect(chockidarWatch).toHaveBeenCalledWith("add", expect.any(Function));
-      expect(chockidarWatch).toHaveBeenCalledWith("change", expect.any(Function));
-      expect(chockidarWatch).toHaveBeenCalledWith("addDir", expect.any(Function));
-      expect(chockidarWatch).toHaveBeenCalledWith("error", expect.any(Function));
-      expect(chockidarWatch).toHaveBeenCalledWith("raw", expect.any(Function));
-      expect(chockidarWatch).toHaveBeenCalledWith("ready", expect.any(Function));
+      const on = chokidar.watch("").on;
+      expect(on).toHaveBeenCalledWith("add", expect.any(Function));
+      expect(on).toHaveBeenCalledWith("change", expect.any(Function));
+      expect(on).toHaveBeenCalledWith("addDir", expect.any(Function));
+      expect(on).toHaveBeenCalledWith("error", expect.any(Function));
+      expect(on).toHaveBeenCalledWith("raw", expect.any(Function));
+      expect(on).toHaveBeenCalledWith("ready", expect.any(Function));
     });
   });
 
@@ -64,15 +62,13 @@ describe("Watcher", () => {
         mtime: new Date(),
       };
 
+      // Act
       (watcher as any).onAdd(path, stats);
 
+      // Assert
       expect(virtualDriveFn.CfGetPlaceHolderIdentity).toHaveBeenCalledWith(path);
       expect(virtualDriveFn.CfGetPlaceHolderState).toHaveBeenCalledWith(path);
-      expect(queueManager.enqueue).toHaveBeenCalledWith({
-        path,
-        type: typeQueue.add,
-        isFolder: false,
-      });
+      expect(queueManager.enqueue).toHaveBeenCalledWith({ path, type: typeQueue.add, isFolder: false });
     });
 
     it("should not enqueue if the file is already in AlwaysLocal and InSync states", () => {
@@ -89,8 +85,10 @@ describe("Watcher", () => {
         mtime: new Date(),
       };
 
+      // Act
       (watcher as any).onAdd(path, stats);
 
+      // Assert
       expect(queueManager.enqueue).not.toHaveBeenCalled();
     });
   });

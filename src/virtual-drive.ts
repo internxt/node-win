@@ -70,9 +70,8 @@ class VirtualDrive {
     return addon.getFileIdentity(this.fixPath(path));
   }
 
-  async deleteFileSyncRoot(relativePath: string): Promise<void> {
-    const fullPath = join(this.syncRootPath, relativePath);
-    return addon.deleteFileSyncRoot(fullPath);
+  async deleteFileSyncRoot(path: string): Promise<void> {
+    return addon.deleteFileSyncRoot(this.fixPath(path));
   }
 
   async connectSyncRoot(): Promise<any> {
