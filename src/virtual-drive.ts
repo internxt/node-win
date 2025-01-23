@@ -4,8 +4,8 @@ import { Watcher } from "./watcher/watcher";
 import { Callbacks } from "./types/callbacks.type";
 import { Status } from "./types/placeholder.type";
 import { IQueueManager } from "./queue/queueManager";
-
 import { addon } from "./addon";
+import { IVirtualDriveFunctions } from "./watcher/watcher.interface";
 
 interface ItemInfo {
   path: string;
@@ -24,10 +24,9 @@ class VirtualDrive {
   syncRootPath: string;
   callbacks?: Callbacks;
 
-  private watcher: Watcher;
+  private watcher = new Watcher();
 
   constructor(syncRootPath: string, loggerPath: string) {
-    this.watcher = Watcher.Instance;
     this.syncRootPath = syncRootPath;
     this.createSyncRootFolder();
     this.addLoggerPath(loggerPath);
@@ -166,10 +165,7 @@ class VirtualDrive {
     queueManager: IQueueManager,
     loggerPath: string
   ): void {
-    this.watcher.queueManager = queueManager;
-    this.watcher.logPath = loggerPath;
-    this.watcher.syncRootPath = path;
-    this.watcher.options = {
+    const options: Watcher.TOptions = {
       ignored: /(^|[\/\\])\../,
       persistent: true,
       ignoreInitial: true,
@@ -182,7 +178,7 @@ class VirtualDrive {
       usePolling: true,
     };
 
-    this.watcher.virtualDriveFunctions = {
+    const virtualDriveFunctions: IVirtualDriveFunctions = {
       CfAddItem: console.log,
       CfDehydrate: console.log,
       CfHydrate: console.log,
@@ -194,6 +190,14 @@ class VirtualDrive {
       CfGetPlaceHolderState: addon.getPlaceholderState,
       CfConverToPlaceholder: addon.convertToPlaceholder,
     };
+
+    this.watcher.init(
+      queueManager,
+      path,
+      options,
+      loggerPath,
+      virtualDriveFunctions
+    );
 
     this.watcher.watchAndWait();
     // addon.watchAndWait(path, this.getExtraCallbacks());

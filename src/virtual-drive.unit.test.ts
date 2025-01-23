@@ -18,7 +18,7 @@ describe("VirtualDrive", () => {
   const mockExistsSync = fs.existsSync as Mock;
 
   const syncRootPath = "C:\\test-drive";
-  const logPath = "C:\\mis-logs";
+  const logPath = "C:\\test-logs";
 
   beforeEach(() => {
     vi.clearAllMocks();

@@ -1,5 +1,5 @@
 import * as chokidar from "chokidar";
-import { IWatcher, IVirtualDriveFunctions } from "./watcher.interface";
+import { IVirtualDriveFunctions } from "./watcher.interface";
 import {
   PinState,
   Status,
@@ -11,30 +11,30 @@ import fs from "fs";
 import * as Path from "path";
 import { inspect } from "util";
 
-export class Watcher implements IWatcher {
-  private static instance: Watcher;
+export namespace Watcher {
+  export type TOptions = chokidar.WatchOptions;
+}
 
-  private _syncRootPath: string = "";
-
-  private _options!: chokidar.WatchOptions;
-
-  private _virtualDriveFn!: IVirtualDriveFunctions;
-
-  private _queueManager!: IQueueManager;
-
+export class Watcher {
+  private syncRootPath!: string;
+  private options!: Watcher.TOptions;
+  private virtualDriveFn!: IVirtualDriveFunctions;
+  private queueManager!: IQueueManager;
+  private logPath!: string;
   private fileInDevice = new Set<string>();
 
-  private _logPath!: string;
-
-  static get Instance() {
-    if (!Watcher.instance) {
-      Watcher.instance = new Watcher();
-    }
-    return Watcher.instance;
-  }
-
-  public get currentOptions() {
-    return this._options;
+  init(
+    queueManager: IQueueManager,
+    syncRootPath: string,
+    options: chokidar.WatchOptions,
+    logPath: string,
+    virtualDriveFn: IVirtualDriveFunctions
+  ) {
+    this.queueManager = queueManager;
+    this.syncRootPath = syncRootPath;
+    this.options = options;
+    this.logPath = logPath;
+    this.virtualDriveFn = virtualDriveFn;
   }
 
   public writeLog = (...messages: unknown[]) => {
@@ -42,24 +42,12 @@ export class Watcher implements IWatcher {
     const parsedMessages = inspect(messages, { colors: true, depth: Infinity });
     const logMessage = `${date} - ${parsedMessages}`;
 
-    fs.appendFile(this._logPath, logMessage, (err) => {
+    fs.appendFile(this.logPath, logMessage, (err) => {
       if (err) {
         console.error("Error writing to log file", err);
       }
     });
   };
-
-  set logPath(logPath: string) {
-    this._logPath = logPath;
-  }
-
-  set virtualDriveFunctions(IVirtualDriveFunctions: IVirtualDriveFunctions) {
-    this._virtualDriveFn = IVirtualDriveFunctions;
-  }
-
-  set queueManager(queueManager: IQueueManager) {
-    this._queueManager = queueManager;
-  }
 
   private onAdd = (path: string, state: any) => {
     try {
@@ -68,13 +56,13 @@ export class Watcher implements IWatcher {
 
       const { size, birthtime, mtime } = state;
 
-      const fileIntenty = this._virtualDriveFn.CfGetPlaceHolderIdentity(path);
+      const fileIntenty = this.virtualDriveFn.CfGetPlaceHolderIdentity(path);
 
       this.writeLog("fileIntenty in add", fileIntenty);
 
       if (!ext || size === 0 || size > 20 * 1024 * 1024 * 1024) return;
 
-      const status: Status = this._virtualDriveFn.CfGetPlaceHolderState(path);
+      const status: Status = this.virtualDriveFn.CfGetPlaceHolderState(path);
       this.writeLog("status", status);
 
       // Verificar tiempos de creación y modificación
@@ -104,7 +92,7 @@ export class Watcher implements IWatcher {
       if (isNewFile) {
         this.fileInDevice.add(path);
 
-        this._queueManager.enqueue({
+        this.queueManager.enqueue({
           path,
           type: typeQueue.add,
           isFolder: false,
@@ -126,7 +114,7 @@ export class Watcher implements IWatcher {
   private onAddDir = (path: string, state: any) => {
     try {
       this.writeLog("onAddDir", path, state);
-      const status: Status = this._virtualDriveFn.CfGetPlaceHolderState(path);
+      const status: Status = this.virtualDriveFn.CfGetPlaceHolderState(path);
       this.writeLog("status", status);
 
       if (
@@ -136,7 +124,7 @@ export class Watcher implements IWatcher {
       )
         return;
 
-      this._queueManager.enqueue({
+      this.queueManager.enqueue({
         path,
         type: typeQueue.add,
         isFolder: true,
@@ -192,14 +180,14 @@ export class Watcher implements IWatcher {
     isDirectory: boolean
   ): Promise<string | null> {
     const { prev, curr } = details;
-    const status = await this._virtualDriveFn.CfGetPlaceHolderState(path);
+    const status = await this.virtualDriveFn.CfGetPlaceHolderState(path);
     this.writeLog("status", status);
 
     const attribute: Attributes =
-      await this._virtualDriveFn.CfGetPlaceHolderAttributes(path);
+      await this.virtualDriveFn.CfGetPlaceHolderAttributes(path);
     this.writeLog("attribute", attribute);
 
-    const itemId = this._virtualDriveFn.CfGetPlaceHolderIdentity(path);
+    const itemId = this.virtualDriveFn.CfGetPlaceHolderIdentity(path);
     this.writeLog("itemId", itemId);
 
     const isInDevice = this.fileInDevice.has(path);
@@ -213,7 +201,7 @@ export class Watcher implements IWatcher {
       !isInDevice
     ) {
       this.fileInDevice.add(path);
-      this._queueManager.enqueue({
+      this.queueManager.enqueue({
         path,
         type: typeQueue.hydrate,
         isFolder: isDirectory,
@@ -230,7 +218,7 @@ export class Watcher implements IWatcher {
       status.syncState == SyncState.InSync // Estado es InSync
     ) {
       this.fileInDevice.delete(path);
-      this._queueManager.enqueue({
+      this.queueManager.enqueue({
         path,
         type: typeQueue.dehydrate,
         isFolder: isDirectory,
@@ -240,7 +228,7 @@ export class Watcher implements IWatcher {
     }
 
     if (prev.size != curr.size) {
-      this._queueManager.enqueue({
+      this.queueManager.enqueue({
         path,
         type: typeQueue.changeSize,
         isFolder: isDirectory,
@@ -257,17 +245,9 @@ export class Watcher implements IWatcher {
     this.writeLog("onReady");
   };
 
-  set syncRootPath(syncRootPath: string) {
-    this._syncRootPath = syncRootPath;
-  }
-
-  set options(options: chokidar.WatchOptions) {
-    this._options = options;
-  }
-
   public watchAndWait() {
     try {
-      const watcher = chokidar.watch(this._syncRootPath, this._options);
+      const watcher = chokidar.watch(this.syncRootPath, this.options);
 
       watcher
         .on("add", this.onAdd)
