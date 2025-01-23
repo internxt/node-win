@@ -3,7 +3,7 @@ import fs from "fs";
 import { deleteAllSubfolders } from "./utils";
 import { Worker } from "worker_threads";
 import { Watcher } from "./watcher/watcher";
-import { Callbacks, ExtraCallbacks, InputSyncCallbacks } from "./types/callbacks.type";
+import { ExtraCallbacks, InputSyncCallbacks } from "./types/callbacks.type";
 import { Status } from "./types/placeholder.type";
 import { IQueueManager } from "./queue/queueManager";
 
@@ -14,7 +14,30 @@ interface ItemInfo {
   fileIdentity: string;
   isPlaceholder: boolean;
 }
+interface Addon {
+  connectSyncRoot(path: string): any;
+  createPlaceholderFile(
+    fileName: string,
+    fileId: string,
+    fileSize: number,
+    combinedAttributes: number,
+    creationTime: string,
+    lastWriteTime: string,
+    lastAccessTime: string,
+    path: string
+  ): any;
+  registerSyncRootWindowsStorageProvider(
+    path: string,
+    providerName: string,
+    providerVersion: string,
+    providerId: string
+  ): any;
+  unregisterSyncRoot(path: string): any;
+  watchAndWait(path: string): any;
+  getItems(): any;
+}
 
+type Callbacks = InputSyncCallbacks & ExtraCallbacks;
 class VirtualDrive {
   PLACEHOLDER_ATTRIBUTES: { [key: string]: number };
   syncRootPath: string;
