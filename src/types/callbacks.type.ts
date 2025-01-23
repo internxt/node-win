@@ -21,3 +21,5 @@ export type ExtraCallbacks = {
   notifyFileAddedCallback?: NapiCallbackFunction;
   notifyMessageCallback?: NapiCallbackFunction;
 };
+
+export type Callbacks = InputSyncCallbacks & ExtraCallbacks;

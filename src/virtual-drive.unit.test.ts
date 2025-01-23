@@ -14,12 +14,12 @@ vi.mock("@/addon", () => ({
   },
 }));
 
-const mockExistsSync = fs.existsSync as Mock;
-
-const syncRootPath = "C:\\test-drive";
-const logPath = "C:\\mis-logs";
-
 describe("VirtualDrive", () => {
+  const mockExistsSync = fs.existsSync as Mock;
+
+  const syncRootPath = "C:\\test-drive";
+  const logPath = "C:\\mis-logs";
+
   beforeEach(() => {
     vi.clearAllMocks();
   });

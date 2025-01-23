@@ -1,4 +1,4 @@
-import VirtualDrive, { Callbacks } from "@/virtual-drive";
+import VirtualDrive from "@/virtual-drive";
 import settings from "examples/settings";
 import { mockDeep } from "jest-mock-extended";
 import { mkdir, writeFile } from "fs/promises";
@@ -6,6 +6,7 @@ import { join } from "path";
 import { v4 } from "uuid";
 import { PinState, SyncState } from "@/types/placeholder.type";
 import { clearFolder } from "../utils/clear-folder.helper.test";
+import { Callbacks } from "@/types/callbacks.type";
 
 describe("Convert to placeholder", () => {
   const drive = new VirtualDrive(
@@ -37,9 +38,14 @@ describe("Convert to placeholder", () => {
 
     // Act
     const isCreated = drive.convertToPlaceholder(path, id);
+    const status = drive.getPlaceholderState(path);
 
     // Assert
     expect(isCreated).toBe(false);
+    expect(status).toEqual({
+      pinState: PinState.Unspecified,
+      syncState: SyncState.Undefined,
+    });
   });
 
   describe("Convert file to placeholder", () => {
@@ -51,7 +57,6 @@ describe("Convert to placeholder", () => {
 
       // Act
       const isCreated = drive.convertToPlaceholder(path, id);
-      const status = drive.getPlaceholderState(path);
 
       // Assert
       expect(isCreated).toBe(true);
@@ -70,7 +75,6 @@ describe("Convert to placeholder", () => {
       // Act
       const isCreated1 = drive.convertToPlaceholder(path, id);
       const isCreated2 = drive.convertToPlaceholder(path, id);
-      const status = drive.getPlaceholderState(path);
 
       // Assert
       expect(isCreated1).toBe(true);
@@ -91,7 +95,6 @@ describe("Convert to placeholder", () => {
 
       // Act
       const isCreated = drive.convertToPlaceholder(path, id);
-      const status = drive.getPlaceholderState(path);
 
       // Assert
       expect(isCreated).toBe(true);
@@ -110,7 +113,6 @@ describe("Convert to placeholder", () => {
       // Act
       const isCreated1 = drive.convertToPlaceholder(path, id);
       const isCreated2 = drive.convertToPlaceholder(path, id);
-      const status = drive.getPlaceholderState(path);
 
       // Assert
       expect(isCreated1).toBe(true);

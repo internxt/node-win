@@ -9,6 +9,7 @@ import {
 import { IQueueManager, typeQueue } from "../queue/queueManager";
 import fs from "fs";
 import * as Path from "path";
+import { inspect } from "util";
 
 export class Watcher implements IWatcher {
   private static instance: Watcher;
@@ -36,13 +37,11 @@ export class Watcher implements IWatcher {
     return this._options;
   }
 
-  public writeLog = (...messages: any[]) => {
-    const logMessage = `${new Date().toISOString()} - ${messages
-      .map((msg) =>
-        typeof msg === "object" ? JSON.stringify(msg, null, 2) : msg
-      )
-      .join(" ")}\n`;
-    console.log(logMessage);
+  public writeLog = (...messages: unknown[]) => {
+    const date = new Date().toISOString();
+    const parsedMessages = inspect(messages, { colors: true, depth: Infinity });
+    const logMessage = `${date} - ${parsedMessages}`;
+
     fs.appendFile(this._logPath, logMessage, (err) => {
       if (err) {
         console.error("Error writing to log file", err);

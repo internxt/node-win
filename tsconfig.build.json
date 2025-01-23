@@ -3,5 +3,6 @@
     "types": []
   },
   "extends": "./tsconfig.json",
-  "include": ["src", "examples"]
+  "include": ["src", "examples"],
+  "exclude": ["**/*.test.ts"]
 }
