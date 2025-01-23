@@ -27,6 +27,7 @@ export type Addon = {
   ): any;
   closeMutex(): any;
   hydrateFile(path: string): Promise<void>;
+  getPlaceholderAttribute(path: string): Promise<any>;
   dehydrateFile(path: string): Promise<void>;
   connectSyncRoot(path: string, callbacks: InputSyncCallbacks): any;
   convertToPlaceholder(path: string, id: string): boolean;
@@ -35,9 +36,8 @@ export type Addon = {
   disconnectSyncRoot(path: string): any;
   getInputSyncCallbacks(): any;
   getItemsIds(path: string): any;
-  getPlaceholderAttribute(path: string): Promise<any>;
   getPlaceholderState(path: string): any;
-  getPlaceholderWithStatePending(path: string): string[];
+  getPlaceholderWithStatePending(path: string): any;
   registerSyncRoot(
     providerName: string,
     providerVersion: string,
@@ -53,6 +53,6 @@ export type Addon = {
   ): any;
   unregisterSyncRoot(path: string): any;
   watchAndWait(path: string): any;
-  updateSyncStatus(path: string, sync: boolean, isDirectory: boolean): Promise<void>;
+  updateSyncStatus(path: string, sync: boolean, isDirectory: boolean): any;
   updateFileIdentity(itemPath: string, id: string, isDirectory: boolean): any;
 };
