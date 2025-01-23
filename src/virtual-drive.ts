@@ -3,7 +3,7 @@ import fs from "fs";
 import { deleteAllSubfolders } from "./utils";
 import { Worker } from "worker_threads";
 import { Watcher } from "./watcher/watcher";
-import { ExtraCallbacks, InputSyncCallbacks } from "./types/callbacks.type";
+import { Callbacks, ExtraCallbacks, InputSyncCallbacks } from "./types/callbacks.type";
 import { Status } from "./types/placeholder.type";
 import { IQueueManager } from "./queue/queueManager";
 
@@ -14,8 +14,6 @@ interface ItemInfo {
   fileIdentity: string;
   isPlaceholder: boolean;
 }
-
-export type Callbacks = InputSyncCallbacks & ExtraCallbacks;
 
 class VirtualDrive {
   PLACEHOLDER_ATTRIBUTES: { [key: string]: number };
@@ -46,6 +44,7 @@ class VirtualDrive {
   }
 
   addLoggerPath(loggerPath: string) {
+    console.log("loggerPath: ", loggerPath);
     addon.addLoggerPath(loggerPath);
   }
 
