@@ -1,27 +1,16 @@
-import VirtualDrive from "@/virtual-drive";
 import { generateRandomFilesAndFolders } from "examples/utils/generate-random-file-tree";
+
+import VirtualDrive from "@/virtual-drive";
 
 class MockVirtualDrive implements Partial<VirtualDrive> {
   private files: Record<string, any> = {};
   private folders: Record<string, any> = {};
 
-  createFileByPath(
-    path: string,
-    id: string,
-    size: number,
-    createdAt: number,
-    updatedAt: number
-  ): void {
+  createFileByPath(path: string, id: string, size: number, createdAt: number, updatedAt: number): void {
     this.files[path] = { id, size, createdAt, updatedAt };
   }
 
-  createFolderByPath(
-    path: string,
-    id: string,
-    size: number,
-    createdAt: number,
-    updatedAt: number
-  ): void {
+  createFolderByPath(path: string, id: string, size: number, createdAt: number, updatedAt: number): void {
     this.folders[path] = { id, size, createdAt, updatedAt };
   }
 
@@ -47,10 +36,7 @@ describe("When call generateRandomFilesAndFolders", () => {
     };
 
     // Act
-    await generateRandomFilesAndFolders(
-      mockDrive as unknown as VirtualDrive,
-      options
-    );
+    await generateRandomFilesAndFolders(mockDrive as unknown as VirtualDrive, options);
 
     // Assert
     const files = mockDrive.getFiles();
@@ -61,9 +47,7 @@ describe("When call generateRandomFilesAndFolders", () => {
     const lowerBound = meanSizeMB - 3 * stdDevMB;
     const upperBound = meanSizeMB + 3 * stdDevMB;
 
-    const withinRange = sizes.filter(
-      (size) => size >= lowerBound && size <= upperBound
-    );
+    const withinRange = sizes.filter((size) => size >= lowerBound && size <= upperBound);
     const percentageWithinRange = (withinRange.length / sizes.length) * 100;
 
     expect(percentageWithinRange).toBeGreaterThanOrEqual(99);
