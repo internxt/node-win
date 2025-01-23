@@ -1,18 +1,17 @@
-import VirtualDrive from "@/virtual-drive";
 import settings from "examples/settings";
-import { mockDeep } from "jest-mock-extended";
 import { mkdir, writeFile } from "fs/promises";
+import { mockDeep } from "jest-mock-extended";
 import { join } from "path";
 import { v4 } from "uuid";
-import { PinState, SyncState } from "@/types/placeholder.type";
-import { clearFolder } from "../utils/clear-folder.helper.test";
+
 import { Callbacks } from "@/types/callbacks.type";
+import { PinState, SyncState } from "@/types/placeholder.type";
+import VirtualDrive from "@/virtual-drive";
+
+import { clearFolder } from "../utils/clear-folder.helper.test";
 
 describe("Convert to placeholder", () => {
-  const drive = new VirtualDrive(
-    settings.syncRootPath,
-    settings.defaultLogPath
-  );
+  const drive = new VirtualDrive(settings.syncRootPath, settings.defaultLogPath);
 
   const callbacks = mockDeep<Callbacks>();
 
@@ -20,14 +19,7 @@ describe("Convert to placeholder", () => {
     await clearFolder(settings.syncRootPath);
 
     const providerId = "{12345678-1234-1234-1234-123456789012}";
-    await drive.registerSyncRoot(
-      settings.driveName,
-      settings.driveVersion,
-      providerId,
-      callbacks,
-      settings.defaultIconPath
-    );
-
+    await drive.registerSyncRoot(settings.driveName, settings.driveVersion, providerId, callbacks, settings.defaultIconPath);
     await drive.connectSyncRoot();
   });
 

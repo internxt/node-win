@@ -1,18 +1,22 @@
 import * as chokidar from "chokidar";
+import { QueueManager } from "examples/queueManager";
 import { Mock } from "vitest";
 import { mockDeep } from "vitest-mock-extended";
-import { QueueManager } from "examples/queueManager";
+
+import { typeQueue } from "@/queue/queueManager";
+import { PinState, SyncState } from "@/types/placeholder.type";
+
 import { Watcher } from "./watcher";
 import { IVirtualDriveFunctions } from "./watcher.interface";
-import { PinState, SyncState } from "@/types/placeholder.type";
-import { typeQueue } from "@/queue/queueManager";
 
 vi.mock("fs");
 vi.mock("chokidar", () => ({
   watch: vi.fn().mockReturnValue({
-    on: vi.fn(),
+    on: vi.fn().mockReturnThis(),
   }),
 }));
+
+const chockidarWatch = chokidar.watch as Mock;
 
 describe("Watcher", () => {
   const virtualDriveFn = mockDeep<IVirtualDriveFunctions>();
@@ -35,29 +39,12 @@ describe("Watcher", () => {
 
       // Assert
       expect(chokidar.watch).toHaveBeenCalledWith(syncRootPath, options);
-
-      console.log(chokidar.watch as Mock);
-
-      const chockidarWatch = chokidar.watch as Mock;
-      // console.log("🚀 ~ it ~ chockidarWatch:", chockidarWatch);
       expect(chockidarWatch).toHaveBeenCalledWith("add", expect.any(Function));
-      expect(chockidarWatch).toHaveBeenCalledWith(
-        "change",
-        expect.any(Function)
-      );
-      expect(chockidarWatch).toHaveBeenCalledWith(
-        "addDir",
-        expect.any(Function)
-      );
-      expect(chockidarWatch).toHaveBeenCalledWith(
-        "error",
-        expect.any(Function)
-      );
+      expect(chockidarWatch).toHaveBeenCalledWith("change", expect.any(Function));
+      expect(chockidarWatch).toHaveBeenCalledWith("addDir", expect.any(Function));
+      expect(chockidarWatch).toHaveBeenCalledWith("error", expect.any(Function));
       expect(chockidarWatch).toHaveBeenCalledWith("raw", expect.any(Function));
-      expect(chockidarWatch).toHaveBeenCalledWith(
-        "ready",
-        expect.any(Function)
-      );
+      expect(chockidarWatch).toHaveBeenCalledWith("ready", expect.any(Function));
     });
   });
 
@@ -79,9 +66,7 @@ describe("Watcher", () => {
 
       (watcher as any).onAdd(path, stats);
 
-      expect(virtualDriveFn.CfGetPlaceHolderIdentity).toHaveBeenCalledWith(
-        path
-      );
+      expect(virtualDriveFn.CfGetPlaceHolderIdentity).toHaveBeenCalledWith(path);
       expect(virtualDriveFn.CfGetPlaceHolderState).toHaveBeenCalledWith(path);
       expect(queueManager.enqueue).toHaveBeenCalledWith({
         path,
@@ -91,9 +76,7 @@ describe("Watcher", () => {
     });
 
     it("should not enqueue if the file is already in AlwaysLocal and InSync states", () => {
-      virtualDriveFn.CfGetPlaceHolderIdentity.mockReturnValue(
-        "existing-file-id"
-      );
+      virtualDriveFn.CfGetPlaceHolderIdentity.mockReturnValue("existing-file-id");
       virtualDriveFn.CfGetPlaceHolderState.mockReturnValue({
         pinState: PinState.AlwaysLocal,
         syncState: SyncState.InSync,

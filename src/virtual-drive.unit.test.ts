@@ -1,8 +1,10 @@
-import VirtualDrive from "./virtual-drive";
 import fs from "fs";
-import { addon } from "@/addon";
-import { Mock } from "vitest";
 import { v4 } from "uuid";
+import { Mock } from "vitest";
+
+import { addon } from "@/addon";
+
+import VirtualDrive from "./virtual-drive";
 
 vi.mock("fs");
 vi.mock("@/addon", () => ({
@@ -65,13 +67,7 @@ describe("VirtualDrive", () => {
       const drive = new VirtualDrive(syncRootPath, logPath);
 
       // Act
-      drive.createFileByPath(
-        "folder/subfolder/file.txt",
-        "file-id",
-        1234,
-        1660000000000,
-        1660000001000
-      );
+      drive.createFileByPath("folder/subfolder/file.txt", "file-id", 1234, 1660000000000, 1660000001000);
 
       // Assert
       expect(addon.createPlaceholderFile).toHaveBeenCalledWith(
@@ -82,7 +78,7 @@ describe("VirtualDrive", () => {
         expect.any(String),
         expect.any(String),
         expect.any(String),
-        expect.stringContaining("C:\\test-drive\\folder\\subfolder")
+        expect.stringContaining("C:\\test-drive\\folder\\subfolder"),
       );
     });
   });
@@ -98,23 +94,11 @@ describe("VirtualDrive", () => {
       const callbacks = {};
 
       // Act
-      await drive.registerSyncRoot(
-        providerName,
-        providerVersion,
-        providerId,
-        callbacks,
-        logoPath
-      );
+      await drive.registerSyncRoot(providerName, providerVersion, providerId, callbacks, logoPath);
 
       // Assert
       expect(drive.callbacks).toBe(callbacks);
-      expect(addon.registerSyncRoot).toHaveBeenCalledWith(
-        syncRootPath,
-        providerName,
-        providerVersion,
-        providerId,
-        logoPath
-      );
+      expect(addon.registerSyncRoot).toHaveBeenCalledWith(syncRootPath, providerName, providerVersion, providerId, logoPath);
     });
   });
 });
