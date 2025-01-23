@@ -57,12 +57,13 @@ describe("Convert to placeholder", () => {
 
       // Act
       const isCreated = drive.convertToPlaceholder(path, id);
+      const status = drive.getPlaceholderState(path);
 
       // Assert
       expect(isCreated).toBe(true);
       expect(status).toEqual({
-        pinState: PinState.Unspecified,
-        syncState: SyncState.Undefined,
+        pinState: PinState.AlwaysLocal,
+        syncState: SyncState.InSync,
       });
     });
 
@@ -75,13 +76,14 @@ describe("Convert to placeholder", () => {
       // Act
       const isCreated1 = drive.convertToPlaceholder(path, id);
       const isCreated2 = drive.convertToPlaceholder(path, id);
+      const status = drive.getPlaceholderState(path);
 
       // Assert
       expect(isCreated1).toBe(true);
       expect(isCreated2).toBe(false);
       expect(status).toEqual({
-        pinState: PinState.Unspecified,
-        syncState: SyncState.Undefined,
+        pinState: PinState.AlwaysLocal,
+        syncState: SyncState.InSync,
       });
     });
   });
@@ -95,12 +97,13 @@ describe("Convert to placeholder", () => {
 
       // Act
       const isCreated = drive.convertToPlaceholder(path, id);
+      const status = drive.getPlaceholderState(path);
 
       // Assert
       expect(isCreated).toBe(true);
       expect(status).toEqual({
         pinState: PinState.Unspecified,
-        syncState: SyncState.Undefined,
+        syncState: SyncState.InSync,
       });
     });
 
@@ -113,17 +116,18 @@ describe("Convert to placeholder", () => {
       // Act
       const isCreated1 = drive.convertToPlaceholder(path, id);
       const isCreated2 = drive.convertToPlaceholder(path, id);
+      const status = drive.getPlaceholderState(path);
 
       // Assert
       expect(isCreated1).toBe(true);
       expect(isCreated2).toBe(false);
       expect(status).toEqual({
         pinState: PinState.Unspecified,
-        syncState: SyncState.Undefined,
+        syncState: SyncState.InSync,
       });
     });
 
-    it("Creates the placeholders and sets the sync state for both to undefined", async () => {
+    it("Creates the placeholders and sets the sync state just for the folder", async () => {
       // Arrange
       const id = v4();
       const folderPath = join(settings.syncRootPath, id);
@@ -140,7 +144,7 @@ describe("Convert to placeholder", () => {
       expect(isCreated).toBe(true);
       expect(folderStatus).toEqual({
         pinState: PinState.Unspecified,
-        syncState: SyncState.Undefined,
+        syncState: SyncState.InSync,
       });
       expect(fileStatus).toEqual({
         pinState: PinState.Unspecified,
