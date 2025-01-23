@@ -26,12 +26,7 @@ export class DetectContextMenuActionService {
       !isInDevice
     ) {
       self.fileInDevice.add(path);
-      self.queueManager.enqueue({
-        path,
-        type: typeQueue.hydrate,
-        isFolder: isDirectory,
-        fileId: itemId,
-      });
+      self.queueManager.enqueue({ path, type: typeQueue.hydrate, isFolder: isDirectory, fileId: itemId });
       return "Mantener siempre en el dispositivo";
     }
 
@@ -43,22 +38,12 @@ export class DetectContextMenuActionService {
       status.syncState == SyncState.InSync // Estado es InSync
     ) {
       self.fileInDevice.delete(path);
-      self.queueManager.enqueue({
-        path,
-        type: typeQueue.dehydrate,
-        isFolder: isDirectory,
-        fileId: itemId,
-      });
+      self.queueManager.enqueue({ path, type: typeQueue.dehydrate, isFolder: isDirectory, fileId: itemId });
       return "Liberar espacio";
     }
 
     if (prev.size != curr.size) {
-      self.queueManager.enqueue({
-        path,
-        type: typeQueue.changeSize,
-        isFolder: isDirectory,
-        fileId: itemId,
-      });
+      self.queueManager.enqueue({ path, type: typeQueue.changeSize, isFolder: isDirectory, fileId: itemId });
       self.fileInDevice.add(path);
       return "Cambio de tamaño";
     }
