@@ -1,32 +1,35 @@
-import settings from "examples/settings";
 import { mkdir, writeFile } from "fs/promises";
 import { mockDeep } from "jest-mock-extended";
 import { join } from "path";
+import { cwd } from "process";
 import { v4 } from "uuid";
 
 import { Callbacks } from "@/types/callbacks.type";
 import { PinState, SyncState } from "@/types/placeholder.type";
 import VirtualDrive from "@/virtual-drive";
 
-import { clearFolder } from "../utils/clear-folder.helper.test";
+import { TEST_FILES } from "../utils/setup.helper.test";
 
 describe("Convert to placeholder", () => {
-  const drive = new VirtualDrive(settings.syncRootPath, settings.defaultLogPath);
+  const syncRootPath = join(TEST_FILES, v4());
+  const defaultLogPath = join(TEST_FILES, `${v4()}.log`);
+  const drive = new VirtualDrive(syncRootPath, defaultLogPath);
 
   const callbacks = mockDeep<Callbacks>();
 
   beforeAll(async () => {
-    await clearFolder(settings.syncRootPath);
-
+    const driveName = "Internxt";
+    const driveVersion = "2.0.4";
+    const defaultIconPath = join(cwd(), "assets", "icon.ico");
     const providerId = "{12345678-1234-1234-1234-123456789012}";
-    await drive.registerSyncRoot(settings.driveName, settings.driveVersion, providerId, callbacks, settings.defaultIconPath);
+    await drive.registerSyncRoot(driveName, driveVersion, providerId, callbacks, defaultIconPath);
     await drive.connectSyncRoot();
   });
 
-  it("When file/folder does not exist should not create placeholder", () => {
+  it("When file/folder does not exist, then not create placeholder", () => {
     // Arrange
     const id = v4();
-    const path = join(settings.syncRootPath, id);
+    const path = join(syncRootPath, id);
 
     // Act
     const isCreated = drive.convertToPlaceholder(path, id);
@@ -41,7 +44,7 @@ describe("Convert to placeholder", () => {
     it("Creates the placeholder and sets the sync state to undefined", async () => {
       // Arrange
       const id = v4();
-      const path = join(settings.syncRootPath, `${id}.txt`);
+      const path = join(syncRootPath, `${id}.txt`);
       await writeFile(path, Buffer.alloc(1000));
 
       // Act
@@ -56,7 +59,7 @@ describe("Convert to placeholder", () => {
     it("When trying to convert to placeholder two times it ignores the second time", async () => {
       // Arrange
       const id = v4();
-      const path = join(settings.syncRootPath, `${id}.txt`);
+      const path = join(syncRootPath, `${id}.txt`);
       await writeFile(path, Buffer.alloc(1000));
 
       // Act
@@ -75,7 +78,7 @@ describe("Convert to placeholder", () => {
     it("Creates the placeholder and sets the sync state to undefined", async () => {
       // Arrange
       const id = v4();
-      const path = join(settings.syncRootPath, id);
+      const path = join(syncRootPath, id);
       await mkdir(path);
 
       // Act
@@ -90,7 +93,7 @@ describe("Convert to placeholder", () => {
     it("When trying to convert to placeholder two times it ignores the second time", async () => {
       // Arrange
       const id = v4();
-      const path = join(settings.syncRootPath, id);
+      const path = join(syncRootPath, id);
       await mkdir(path);
 
       // Act
@@ -107,7 +110,7 @@ describe("Convert to placeholder", () => {
     it("Creates the placeholders and sets the sync state just for the folder", async () => {
       // Arrange
       const id = v4();
-      const folderPath = join(settings.syncRootPath, id);
+      const folderPath = join(syncRootPath, id);
       const filePath = join(folderPath, `${id}.txt`);
       await mkdir(folderPath);
       await writeFile(filePath, Buffer.alloc(1000));
