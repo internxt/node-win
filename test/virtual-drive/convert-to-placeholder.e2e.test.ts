@@ -107,7 +107,7 @@ describe("Convert to placeholder", () => {
       expect(status).toEqual({ pinState: PinState.Unspecified, syncState: SyncState.InSync });
     });
 
-    it("Creates the placeholders and sets the sync state just for the folder", async () => {
+    it("When create folder placeholder with a file inside, then set the sync state just for the folder", async () => {
       // Arrange
       const id = v4();
       const folderPath = join(syncRootPath, id);
