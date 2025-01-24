@@ -9,7 +9,7 @@
     "outDir": "./dist",
     "baseUrl": ".",
     "resolveJsonModule": true,
-    "types": ["jest"],
+    "types": ["jest", "vitest/globals"],
     "paths": {
       "@/*": ["./src/*"],
     }

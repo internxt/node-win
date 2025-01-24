@@ -1,4 +1,4 @@
-import path from "path";
+import path, { join } from "path";
 import fs from "fs";
 import { deleteAllSubfolders } from "./utils";
 import { Worker } from "worker_threads";
@@ -51,9 +51,10 @@ class VirtualDrive {
       FILE_ATTRIBUTE_READONLY: 0x1,
       FILE_ATTRIBUTE_HIDDEN: 0x2,
       FOLDER_ATTRIBUTE_READONLY: 0x1,
+      FILE_ATTRIBUTE_NORMAL: 0x1,
     };
 
-    this.watcher = Watcher.Instance;
+    this.watcher = new Watcher();
 
     this.syncRootPath = syncRootPath;
     this.createSyncRootFolder();
@@ -70,8 +71,16 @@ class VirtualDrive {
     addon.addLoggerPath(loggerPath);
   }
 
+  private fixPath(path: string) {
+    if (path.includes(this.syncRootPath)) {
+      return path;
+    } else {
+      return join(this.syncRootPath, path);
+    }
+  }
+
   getPlaceholderState(path: string): Status {
-    return addon.getPlaceholderState(this.syncRootPath + path);
+    return addon.getPlaceholderState(this.fixPath(path));
   }
 
   getPlaceholderWithStatePending(): any {
@@ -280,7 +289,7 @@ class VirtualDrive {
       usePolling: true,
     };
 
-    this.watcher.virtualDriveFunctions = {
+    this.watcher.virtualDriveFn = {
       CfAddItem: this.test,
       CfDehydrate: this.test,
       CfHydrate: this.test,
