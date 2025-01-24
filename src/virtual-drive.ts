@@ -1,4 +1,4 @@
-import path from "path";
+import path, { join } from "path";
 import fs from "fs";
 import { deleteAllSubfolders } from "./utils";
 import { Worker } from "worker_threads";
@@ -71,8 +71,16 @@ class VirtualDrive {
     addon.addLoggerPath(loggerPath);
   }
 
+  private fixPath(path: string) {
+    if (path.includes(this.syncRootPath)) {
+      return path;
+    } else {
+      return join(this.syncRootPath, path);
+    }
+  }
+
   getPlaceholderState(path: string): Status {
-    return addon.getPlaceholderState(this.syncRootPath + path);
+    return addon.getPlaceholderState(this.fixPath(path));
   }
 
   getPlaceholderWithStatePending(): any {
