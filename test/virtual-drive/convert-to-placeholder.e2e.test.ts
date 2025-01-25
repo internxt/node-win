@@ -17,14 +17,12 @@ describe("Convert to placeholder", () => {
 
   const callbacks = mockDeep<Callbacks>();
 
-  beforeAll(async () => {
-    const driveName = "Internxt";
-    const driveVersion = "2.0.4";
-    const defaultIconPath = join(cwd(), "assets", "icon.ico");
-    const providerId = "{12345678-1234-1234-1234-123456789012}";
-    await drive.registerSyncRoot(driveName, driveVersion, providerId, callbacks, defaultIconPath);
-    await drive.connectSyncRoot();
-  });
+  const driveName = "Internxt";
+  const driveVersion = "2.0.4";
+  const defaultIconPath = join(cwd(), "assets", "icon.ico");
+  const providerId = "{12345678-1234-1234-1234-123456789012}";
+  drive.registerSyncRoot(driveName, driveVersion, providerId, callbacks, defaultIconPath);
+  drive.connectSyncRoot();
 
   it("When file/folder does not exist, then not create placeholder", () => {
     // Arrange

@@ -1,26 +1,26 @@
 import "dotenv/config";
-import Joi from "joi";
-import path from "path";
+import path, { join } from "path";
+import { cwd } from "process";
+import { z } from "zod";
 
 function sanitizePath(filePath: string): string {
-  return filePath.replace(/\n/g, '\\n');
+  return filePath.replace(/\n/g, "\\n");
 }
 
 function normalizePath(filePath: string) {
   return sanitizePath(filePath.replace(/\\n/g, "\\n").replace(/\\/g, path.sep));
 }
 
-const envVarsSchema = Joi.object({
-  EXAMPLE_DRIVE_NAME: Joi.string().required(),
-  EXAMPLE_DRIVE_VERSION: Joi.string().required(),
-  EXAMPLE_SYNC_ROOT_PATH: Joi.string().required(),
-  EXAMPLE_DEFAULT_LOG_PATH: Joi.string().required(),
-  EXAMPLE_DEFAULT_ICON_PATH: Joi.string().required(),
-  EXAMPLE_SERVER_ROOT_PATH: Joi.string().required(),
-  EXAMPLE_WATCHER_LOG_PATH: Joi.string().required(),
-}).unknown();
+const envVarsSchema = z.object({
+  EXAMPLE_DRIVE_NAME: z.string().min(1),
+  EXAMPLE_DRIVE_VERSION: z.string().min(1),
+  EXAMPLE_SYNC_ROOT_PATH: z.string().min(1),
+  EXAMPLE_DEFAULT_LOG_PATH: z.string().min(1),
+  EXAMPLE_SERVER_ROOT_PATH: z.string().min(1),
+  EXAMPLE_WATCHER_LOG_PATH: z.string().min(1),
+});
 
-const { value: envVars, error } = envVarsSchema.validate(process.env);
+const { data: envVars, error } = envVarsSchema.safeParse(process.env);
 
 if (error) {
   throw new Error(`Error de configuración: ${error.message}`);
@@ -31,7 +31,7 @@ const settings = {
   driveVersion: envVars.EXAMPLE_DRIVE_VERSION,
   syncRootPath: normalizePath(envVars.EXAMPLE_SYNC_ROOT_PATH),
   defaultLogPath: normalizePath(envVars.EXAMPLE_DEFAULT_LOG_PATH),
-  defaultIconPath: normalizePath(envVars.EXAMPLE_DEFAULT_ICON_PATH),
+  defaultIconPath: join(cwd(), "assets", "icon.ico"),
   serverRootPath: normalizePath(envVars.EXAMPLE_SERVER_ROOT_PATH),
   watcherLogPath: normalizePath(envVars.EXAMPLE_WATCHER_LOG_PATH),
 };

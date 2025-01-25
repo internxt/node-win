@@ -2,7 +2,6 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   testMatch: ['**/test/**/*.e2e.test.ts'],
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   setupFiles: ["<rootDir>/test/utils/setup.helper.test.ts"],
    moduleNameMapper: {
     "^examples/(.*)$": "<rootDir>/examples/$1",
