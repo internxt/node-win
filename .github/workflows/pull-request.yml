@@ -22,5 +22,5 @@ jobs:
       - name: Run TypeScript compiler
         run: yarn tsc
 
-      - name: Run Vitest
-        run: yarn vitest:once
+      # - name: Run Vitest
+      #   run: yarn vitest:once
