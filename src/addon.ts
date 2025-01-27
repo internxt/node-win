@@ -1,9 +1,12 @@
+import { z } from "zod";
+
+import { addonZod } from "./addon/addon-zod";
 import { InputSyncCallbacks } from "./types/callbacks.type";
 
-export const addon: Addon = require("../addon.node");
+export const addon: TAddon = require("../addon.node");
 
-export type Addon = {
-  addLoggerPath(path: string): any;
+export type TAddon = {
+  addLoggerPath(path: string): z.infer<typeof addonZod.addLoggerPath>;
   createPlaceholderFile(
     fileName: string,
     fileId: string,
@@ -12,7 +15,7 @@ export type Addon = {
     creationTime: string,
     lastWriteTime: string,
     lastAccessTime: string,
-    path: string
+    path: string,
   ): any;
   createEntry(
     itemName: string,
@@ -23,36 +26,34 @@ export type Addon = {
     creationTime: string,
     lastWriteTime: string,
     lastAccessTime: number,
-    path: string
+    path: string,
   ): any;
   closeMutex(): any;
   hydrateFile(path: string): Promise<void>;
-  getPlaceholderAttribute(path: string): Promise<any>;
+  getPlaceholderAttribute(path: string): z.infer<typeof addonZod.getPlaceholderAttribute>;
   dehydrateFile(path: string): Promise<void>;
-  connectSyncRoot(path: string, callbacks: InputSyncCallbacks): any;
-  convertToPlaceholder(path: string, id: string): boolean;
+  connectSyncRoot(path: string, callbacks: InputSyncCallbacks): z.infer<typeof addonZod.connectSyncRoot>;
+  convertToPlaceholder(path: string, id: string): z.infer<typeof addonZod.convertToPlaceholder>;
   deleteFileSyncRoot(path: string): any;
-  getFileIdentity(path: string): any;
-  disconnectSyncRoot(path: string): any;
-  getInputSyncCallbacks(): any;
-  getItemsIds(path: string): any;
-  getPlaceholderState(path: string): any;
-  getPlaceholderWithStatePending(path: string): any;
+  getFileIdentity(path: string): z.infer<typeof addonZod.getFileIdentity>;
+  /**
+   * TODO: Not all paths return value
+   */
+  disconnectSyncRoot(path: string): unknown;
+  getPlaceholderState(path: string): z.infer<typeof addonZod.getPlaceholderState>;
+  getPlaceholderWithStatePending(path: string): z.infer<typeof addonZod.getPlaceholderWithStatePending>;
   registerSyncRoot(
     providerName: string,
     providerVersion: string,
     providerId: string,
     callbacks: any,
-    logoPath: string
-  ): any;
-  registerSyncRootWindowsStorageProvider(
-    path: string,
-    providerName: string,
-    providerVersion: string,
-    providerId: string
-  ): any;
-  unregisterSyncRoot(path: string): any;
-  watchAndWait(path: string): any;
+    logoPath: string,
+  ): z.infer<typeof addonZod.registerSyncRoot>;
+  registerSyncRootWindowsStorageProvider(path: string, providerName: string, providerVersion: string, providerId: string): any;
+  unregisterSyncRoot(path: string): z.infer<typeof addonZod.unregisterSyncRoot>;
   updateSyncStatus(path: string, sync: boolean, isDirectory: boolean): any;
+  /**
+   * TODO: Returns a type in c++ that is not initialized
+   */
   updateFileIdentity(itemPath: string, id: string, isDirectory: boolean): any;
 };
