@@ -9,6 +9,7 @@
     "outDir": "./dist",
     "baseUrl": ".",
     "resolveJsonModule": true,
+    "skipLibCheck": true,
     "types": ["vitest/globals"],
     "paths": {
       "@/*": ["./src/*"],
