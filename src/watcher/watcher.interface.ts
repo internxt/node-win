@@ -1,4 +1,6 @@
+import { addonZod } from "@/addon/addon-zod";
 import { Status } from "src/types/placeholder.type";
+import { z } from "zod";
 
 export interface IVirtualDriveFunctions {
   CfHydrate?: () => void;
@@ -14,6 +16,6 @@ export interface IVirtualDriveFunctions {
   CfUpdateItem?: () => void;
   CfGetPlaceHolderState: (path: string) => Status;
   CfGetPlaceHolderIdentity: (path: string) => string;
-  CfGetPlaceHolderAttributes: (path: string) => Promise<any>;
+  CfGetPlaceHolderAttributes: (path: string) => z.infer<typeof addonZod.getPlaceholderAttribute>;
   CfConverToPlaceholder: (path: string, fileIdentity: string) => void;
 }

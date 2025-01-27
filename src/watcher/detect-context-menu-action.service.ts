@@ -9,7 +9,7 @@ export class DetectContextMenuActionService {
     const status = await self.virtualDriveFn.CfGetPlaceHolderState(path);
     self.writeLog("status", status);
 
-    const attribute: Attributes = await self.virtualDriveFn.CfGetPlaceHolderAttributes(path);
+    const attribute = await self.virtualDriveFn.CfGetPlaceHolderAttributes(path);
     self.writeLog("attribute", attribute);
 
     const itemId = self.virtualDriveFn.CfGetPlaceHolderIdentity(path);
