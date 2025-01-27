@@ -32,6 +32,23 @@ drive.registerSyncRoot(
   settings.defaultIconPath
 );
 
+process.on('SIGINT', () => {
+  console.log("\n[EXAMPLE] Received SIGINT. Cleaning up...");
+  
+  (async () => {
+    try {
+      await drive.disconnectSyncRoot();
+      await VirtualDrive.unregisterSyncRoot(settings.syncRootPath);
+      console.log("[EXAMPLE] Clean up completed. Exiting...");
+      process.exit(0); // Salir limpiamente
+    } catch (error) {
+      console.error("[EXAMPLE] Error during cleanup:", error);
+      process.exit(1); // Salir con error
+    }
+  })();
+});
+
+
 const handlerAdd = async (task: QueueItem) => {
   try {
     console.log("[EXAMPLE] File added in callback: " + task.path);
@@ -120,9 +137,9 @@ drive.connectSyncRoot();
 
 const fileGenerationOptions = {
   rootPath: '',
-  depth: 3,
-  filesPerFolder: 3,
-  foldersPerLevel: 3,
+  depth: 1,
+  filesPerFolder: 1,
+  foldersPerLevel: 1,
   meanSize: 5000000,
   stdDev: 6000000,
 };

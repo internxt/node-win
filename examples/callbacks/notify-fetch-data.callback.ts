@@ -1,15 +1,17 @@
 import { ItemsInfoManager } from "../utils";
 
 async function onFetchData(fileId: string): Promise<boolean> {
-    console.log("[EXAMPLE] downloading file: " + fileId);
-    // simulating a download from a real server
+    console.log("[EXAMPLE] downloading file_: " + fileId);
+
     const a = await (new Promise<boolean>((resolve, reject) => {
         try {
-
+            console.log("[EXAMPLE] try downloading file: " + fileId);
             setTimeout(() => {
+                console.log("[EXAMPLE] after timeout:")
                 resolve(true);
             }, 1000)
         } catch (err) {
+            console.log("[EXAMPLE] error: " + err);
             reject(err);
         }
     }));
@@ -26,13 +28,17 @@ async function onFetchDataCallback(fileId: string, callback: CallbackResponse ) 
     onFetchData(fileId).then(async (response) => {
         while (!finish) {
             const itemsManager = await ItemsInfoManager.initialize('dist/examples/filesInfo.json')
+            console.log("[EXAMPLE] itemsManager: " + itemsManager);
             const itemPath = itemsManager.get(fileId.replace(/\x00/g, ''))
+            console.log("[EXAMPLE] itemPath: " + itemPath);
 
             if (!itemPath) {
                 console.log("[EXAMPLE] error: file not found");
                 finish = true;
                 break;
             }
+
+            console.log("[EXAMPLE] downloaded file out: " + itemPath);
 
             const callbackResponse = await callback(response, itemPath);
             finish = callbackResponse.finished;
