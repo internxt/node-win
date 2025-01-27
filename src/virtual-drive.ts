@@ -150,11 +150,6 @@ class VirtualDrive {
     return BigInt(jsTime) * 10000n + 116444736000000000n;
   }
 
-  async getItemsIds(): Promise<ItemInfo[]> {
-    console.log("getItemsIdsSync");
-    return addon.getItemsIds(this.syncRootPath);
-  }
-
   async getFileIdentity(relativePath: string): Promise<string> {
     const fullPath = path.join(this.syncRootPath, relativePath);
     return addon.getFileIdentity(fullPath);
