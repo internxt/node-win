@@ -1,3 +1,4 @@
+import { execSync } from "child_process";
 import { QueueManager } from "examples/queueManager";
 import { existsSync } from "fs";
 import { mkdir, writeFile } from "fs/promises";
@@ -36,6 +37,10 @@ describe("Watcher", () => {
     watcher.watchAndWait();
   };
 
+  const getEvents = () => {
+    return onAll.execute.mock.calls.map((call) => call[0].event);
+  };
+
   beforeEach(async () => {
     vi.clearAllMocks();
   });
@@ -51,7 +56,7 @@ describe("Watcher", () => {
       await sleep(50);
 
       // Assert
-      expect(onAll.execute).toHaveBeenCalledTimes(1);
+      expect(getEvents()).toEqual(["addDir"]);
       expect(onAddDir.execute).toHaveBeenCalledWith(expect.objectContaining({ path: syncRootPath }));
     });
 
@@ -67,7 +72,7 @@ describe("Watcher", () => {
       await sleep(50);
 
       // Assert
-      expect(onAll.execute).toHaveBeenCalledTimes(2);
+      expect(getEvents()).toEqual(["addDir", "add"]);
       expect(onAdd.execute).toHaveBeenCalledWith(expect.objectContaining({ path: file }));
       expect(onAddDir.execute).toHaveBeenCalledWith(expect.objectContaining({ path: syncRootPath }));
     });
@@ -81,11 +86,11 @@ describe("Watcher", () => {
       await setupWatcher(syncRootPath);
 
       // Act
-      await mkdir(folder);
+      execSync(`mkdir ${folder}`);
       await sleep(50);
 
       // Assert
-      expect(onAll.execute).toHaveBeenCalledTimes(2);
+      expect(getEvents()).toEqual(["addDir", "addDir"]);
       expect(onAddDir.execute).toHaveBeenCalledWith(expect.objectContaining({ path: folder }));
     });
 
@@ -96,15 +101,15 @@ describe("Watcher", () => {
       await setupWatcher(syncRootPath);
 
       // Act
-      await writeFile(file, Buffer.alloc(1000));
+      execSync(`echo. 2>${file}`);
       await sleep(50);
 
       // Assert
-      expect(onAll.execute).toHaveBeenCalledTimes(2);
+      expect(getEvents()).toEqual(["addDir", "add"]);
       expect(onAdd.execute).toHaveBeenCalledWith(expect.objectContaining({ path: file }));
     });
 
-    it("When add a folder and a file inside, then emit one addDir and one add events", async () => {
+    it("When add a folder and a file inside, then emit one addDir and one add event", async () => {
       // Arrange
       const syncRootPath = join(TEST_FILES, v4());
       const folder = join(syncRootPath, v4());
@@ -112,14 +117,122 @@ describe("Watcher", () => {
       await setupWatcher(syncRootPath);
 
       // Act
-      await mkdir(folder);
-      await writeFile(file, Buffer.alloc(1000));
+      execSync(`mkdir ${folder}`);
+      execSync(`echo. 2>${file}`);
       await sleep(50);
 
       // Assert
-      expect(onAll.execute).toHaveBeenCalledTimes(3);
+      expect(getEvents()).toEqual(["addDir", "addDir", "add"]);
       expect(onAdd.execute).toHaveBeenCalledWith(expect.objectContaining({ path: file }));
       expect(onAddDir.execute).toHaveBeenCalledWith(expect.objectContaining({ path: folder }));
+    });
+  });
+
+  describe("When rename items", () => {
+    it("When rename a file, then do not emit any event", async () => {
+      // Arrange
+      const syncRootPath = join(TEST_FILES, v4());
+      const fileName1 = `${v4()}.txt`;
+      const fileName2 = `${v4()}.txt`;
+      const file1 = join(syncRootPath, fileName1);
+      await setupWatcher(syncRootPath);
+      await writeFile(file1, Buffer.alloc(1000));
+
+      // Act
+      execSync(`ren ${fileName1} ${fileName2}`, { cwd: syncRootPath });
+      await sleep(50);
+
+      // Assert
+      expect(getEvents()).toEqual(["addDir", "add"]);
+    });
+
+    it("When rename a folder, then do not emit any event", async () => {
+      // Arrange
+      const syncRootPath = join(TEST_FILES, v4());
+      const folderName1 = v4();
+      const folderName2 = v4();
+      const folder1 = join(syncRootPath, folderName1);
+      await setupWatcher(syncRootPath);
+      await mkdir(folder1);
+
+      // Act
+      execSync(`ren ${folderName1} ${folderName2}`, { cwd: syncRootPath });
+      await sleep(50);
+
+      // Assert
+      expect(getEvents()).toEqual(["addDir", "addDir"]);
+    });
+  });
+
+  describe("When move items", () => {
+    it("When move a file to a folder, then do not emit any event", async () => {
+      // Arrange
+      const syncRootPath = join(TEST_FILES, v4());
+      const folder = join(syncRootPath, v4());
+      const file = join(syncRootPath, `${v4()}.txt`);
+      await setupWatcher(syncRootPath);
+      await mkdir(folder);
+      await writeFile(file, Buffer.alloc(1000));
+
+      // Act
+      execSync(`mv ${file} ${folder}`);
+      await sleep(50);
+
+      // Assert
+      expect(getEvents()).toEqual(["addDir", "addDir", "add"]);
+    });
+
+    it("When move a folder to a folder, then do not emit any event", async () => {
+      // Arrange
+      const syncRootPath = join(TEST_FILES, v4());
+      const folder = join(syncRootPath, v4());
+      const folderName = v4();
+      const folder1 = join(syncRootPath, folderName);
+      const folder2 = join(folder, folderName);
+      await setupWatcher(syncRootPath);
+
+      // Act
+      await mkdir(folder);
+      await mkdir(folder1);
+      execSync(`mv ${folder1} ${folder2}`);
+      await sleep(50);
+
+      // Assert
+      expect(getEvents()).toEqual(["addDir", "addDir", "addDir"]);
+    });
+  });
+
+  describe("When delete items", () => {
+    it("When delete a file, then emit one unlink event", async () => {
+      // Arrange
+      const syncRootPath = join(TEST_FILES, v4());
+      const file = join(syncRootPath, `${v4()}.txt`);
+      await setupWatcher(syncRootPath);
+      await writeFile(file, Buffer.alloc(1000));
+
+      // Act
+      await sleep(50);
+      execSync(`rm ${file}`);
+      await sleep(150);
+
+      // Assert
+      expect(getEvents()).toEqual(["addDir", "add", "unlink"]);
+    });
+
+    it("When delete a folder, then emit one unlinkDir event", async () => {
+      // Arrange
+      const syncRootPath = join(TEST_FILES, v4());
+      const folder = join(syncRootPath, v4());
+      await setupWatcher(syncRootPath);
+      await mkdir(folder);
+
+      // Act
+      await sleep(50);
+      execSync(`rmdir ${folder}`);
+      await sleep(150);
+
+      // Assert
+      expect(getEvents()).toEqual(["addDir", "addDir", "unlinkDir"]);
     });
   });
 });
