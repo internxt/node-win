@@ -1,5 +1,4 @@
 import { execSync } from "child_process";
-import { QueueManager } from "examples/queueManager";
 import { existsSync } from "fs";
 import { mkdir, writeFile } from "fs/promises";
 import { join } from "path";
@@ -8,6 +7,8 @@ import { sleep } from "test/utils/sleep.helper.test";
 import { v4 } from "uuid";
 import { beforeEach } from "vitest";
 import { mockDeep } from "vitest-mock-extended";
+
+import { QueueManager } from "@/queue/queue-manager";
 
 import { OnAddDirService } from "./events/on-add-dir.service";
 import { OnAddService } from "./events/on-add.service";
