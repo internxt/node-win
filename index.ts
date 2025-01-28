@@ -1,17 +1,6 @@
-import VirtualDrive from "./src/virtual-drive";
-import {
-  IQueueManager,
-  QueueItem,
-  typeQueue,
-  HandleAction,
-  HandleActions,
-} from "./src/queue/queueManager";
+import { QueueManager } from "@/queue/queue-manager";
 
-export {
-  VirtualDrive,
-  QueueItem,
-  typeQueue,
-  IQueueManager,
-  HandleAction,
-  HandleActions,
-};
+import { IQueueManager, QueueItem, typeQueue, HandleAction, HandleActions } from "./src/queue/queueManager";
+import VirtualDrive from "./src/virtual-drive";
+
+export { VirtualDrive, QueueItem, typeQueue, IQueueManager, HandleAction, HandleActions, QueueManager };
