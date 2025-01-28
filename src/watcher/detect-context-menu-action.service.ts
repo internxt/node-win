@@ -1,21 +1,38 @@
+import { Stats } from "fs";
+
 import { typeQueue } from "@/queue/queueManager";
-import { Attributes, PinState, SyncState } from "@/types/placeholder.type";
+import { PinState, SyncState } from "@/types/placeholder.type";
 
 import { Watcher } from "./watcher";
 
 export class DetectContextMenuActionService {
-  async execute({ self, details, path, isDirectory }: TProps) {
+  async execute({ self, details, path, isFolder }: TProps) {
     const { prev, curr } = details;
-    const status = await self.virtualDriveFn.CfGetPlaceHolderState(path);
-    self.writeLog("status", status);
 
-    const attribute = await self.virtualDriveFn.CfGetPlaceHolderAttributes(path);
-    self.writeLog("attribute", attribute);
-
+    const status = self.virtualDriveFn.CfGetPlaceHolderState(path);
+    const attribute = self.virtualDriveFn.CfGetPlaceHolderAttributes(path);
     const itemId = self.virtualDriveFn.CfGetPlaceHolderIdentity(path);
-    self.writeLog("itemId", itemId);
-
     const isInDevice = self.fileInDevice.has(path);
+
+    self.writeLog({
+      event: "onRaw",
+      path,
+      status,
+      attribute,
+      itemId,
+      isInDevice,
+      prev: {
+        size: prev.size,
+        ctimeMs: prev.ctimeMs,
+        mtimeMs: prev.mtimeMs,
+      },
+      curr: {
+        size: curr.size,
+        ctimeMs: curr.ctimeMs,
+        mtimeMs: curr.mtimeMs,
+        blocks: curr.blocks,
+      },
+    });
 
     if (
       prev.size === curr.size &&
@@ -26,35 +43,45 @@ export class DetectContextMenuActionService {
       !isInDevice
     ) {
       self.fileInDevice.add(path);
-      self.queueManager.enqueue({ path, type: typeQueue.hydrate, isFolder: isDirectory, fileId: itemId });
+
+      if (curr.blocks !== 0) {
+        // This event is triggered from the addon
+        return "Doble click en el archivo";
+      }
+
+      self.queueManager.enqueue({ path, type: typeQueue.hydrate, isFolder, fileId: itemId });
       return "Mantener siempre en el dispositivo";
     }
 
-    // Verificar si es "Liberar espacio"
     if (
-      prev.size == curr.size && // Tamaño no cambia
-      prev.ctimeMs != curr.ctimeMs && // ctime cambia
-      status.pinState == PinState.OnlineOnly && // Estado es OnlineOnly
-      status.syncState == SyncState.InSync // Estado es InSync
+      prev.size === curr.size &&
+      prev.ctimeMs !== curr.ctimeMs &&
+      status.pinState == PinState.OnlineOnly &&
+      status.syncState == SyncState.InSync
     ) {
+      if (curr.blocks === 0) {
+        return "Liberando espacio";
+      }
+
       self.fileInDevice.delete(path);
-      self.queueManager.enqueue({ path, type: typeQueue.dehydrate, isFolder: isDirectory, fileId: itemId });
+      self.queueManager.enqueue({ path, type: typeQueue.dehydrate, isFolder, fileId: itemId });
       return "Liberar espacio";
     }
 
-    if (prev.size != curr.size) {
-      self.queueManager.enqueue({ path, type: typeQueue.changeSize, isFolder: isDirectory, fileId: itemId });
+    if (prev.size !== curr.size) {
+      self.queueManager.enqueue({ path, type: typeQueue.changeSize, isFolder, fileId: itemId });
       self.fileInDevice.add(path);
       return "Cambio de tamaño";
     }
-
-    return null;
   }
 }
 
 type TProps = {
   self: Watcher;
-  details: any;
+  details: {
+    prev: Stats;
+    curr: Stats;
+  };
   path: string;
-  isDirectory: boolean;
+  isFolder: boolean;
 };

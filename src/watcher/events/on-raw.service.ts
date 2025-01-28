@@ -1,4 +1,4 @@
-import { statSync } from "fs";
+import { stat } from "fs/promises";
 import { extname } from "path";
 
 import { DetectContextMenuActionService } from "../detect-context-menu-action.service";
@@ -8,21 +8,15 @@ export class OnRawService {
   constructor(private readonly detectContextMenuAction: DetectContextMenuActionService = new DetectContextMenuActionService()) {}
 
   async execute({ self, event, path, details }: TProps) {
-    self.writeLog("onRaw", event, path, details);
-
-    let isDirectory = false;
-
     if (event === "change" && details.prev && details.curr) {
-      const item = statSync(path);
-
-      if (item.isDirectory()) {
-        self.writeLog("Es un directorio", path);
-        isDirectory = true;
+      if (extname(path) === "") {
+        self.writeLog({ event: "onRaw", path, details: "No extension" });
         return;
       }
 
-      if (extname(path) === "") {
-        self.writeLog("Archivo sin extensión ignorado", path);
+      const item = await stat(path);
+      if (item.isDirectory()) {
+        self.writeLog({ event: "onRaw", path, details: "Is directory" });
         return;
       }
 
@@ -32,10 +26,10 @@ export class OnRawService {
       //   return;
       // }
 
-      const action = await this.detectContextMenuAction.execute({ self, details, path, isDirectory });
+      const action = await this.detectContextMenuAction.execute({ self, details, path, isFolder: false });
 
       if (action) {
-        self.writeLog(`Action detected: '${action}'`, path);
+        self.writeLog({ event: "onRaw", path, action });
       }
     }
   }

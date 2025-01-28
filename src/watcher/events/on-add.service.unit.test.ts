@@ -17,8 +17,7 @@ describe("Watcher onAdd", () => {
 
   it('Should enqueue an "add" task if the file is new', () => {
     // Arrange
-    // @ts-ignore
-    watcher.virtualDriveFn.CfGetPlaceHolderIdentity.mockReturnValue(null);
+    watcher.virtualDriveFn.CfGetPlaceHolderIdentity.mockReturnValue("");
     watcher.virtualDriveFn.CfGetPlaceHolderState.mockReturnValue({
       pinState: PinState.Unspecified,
       syncState: SyncState.NotInSync,
