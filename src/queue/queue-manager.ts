@@ -1,5 +1,5 @@
 import fs from "fs";
-import _ from "lodash";
+import lodashChunk from "lodash.chunk";
 
 import { logger } from "@/logger";
 
@@ -160,7 +160,7 @@ export class QueueManager implements IQueueManager {
   }
 
   private async processInChunks(type: typeQueue, chunkSize: number): Promise<void> {
-    const chunks = _.chunk(this.queues[type], chunkSize);
+    const chunks = lodashChunk(this.queues[type], chunkSize);
 
     for (const chunk of chunks) {
       await this.notify.onTaskProcessing();
