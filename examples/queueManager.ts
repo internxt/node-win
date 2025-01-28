@@ -1,4 +1,8 @@
 import { HandleAction, HandleActions } from "src/queue/queueManager";
+
+import { logger } from "@/logger";
+import { sleep } from "@/utils";
+
 import { IQueueManager, QueueItem } from "../index";
 
 export type QueueHandler = {
@@ -8,9 +12,7 @@ export type QueueHandler = {
   handleChange?: HandleAction;
   handleChangeSize: HandleAction;
 };
-export async function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+
 export class QueueManager implements IQueueManager {
   private _queue: QueueItem[] = [];
 
@@ -29,7 +31,7 @@ export class QueueManager implements IQueueManager {
   }
 
   public enqueue(task: QueueItem): void {
-    console.debug(`Task enqueued: ${JSON.stringify(task)}`);
+    logger.debug({ fn: "enqueue", task });
     this._queue.push(task);
     this.sortQueue();
     if (!this.isProcessing) {
@@ -53,13 +55,11 @@ export class QueueManager implements IQueueManager {
   }
 
   public async processNext(): Promise<void> {
-    if (this._queue.length === 0) {
-      console.debug("No tasks in queue.");
-      return;
-    }
     const task = this._queue.shift();
     if (!task) return;
-    console.debug(`Processing task: ${JSON.stringify(task)}`);
+
+    logger.debug({ fn: "processNext", task });
+
     switch (task.type) {
       case "add":
         return await this.actions.add(task);
@@ -78,12 +78,14 @@ export class QueueManager implements IQueueManager {
   }
 
   public async processAll(): Promise<void> {
+    logger.debug({ fn: "processAll", queueLength: this._queue.length });
+
     this.isProcessing = true;
     while (this._queue.length > 0) {
-      await sleep(200);
-      console.debug("Processing all tasks. Queue length:", this._queue.length);
       await this.processNext();
+      await sleep(200);
     }
+
     this.isProcessing = false;
   }
 }

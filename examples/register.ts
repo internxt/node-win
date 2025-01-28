@@ -1,123 +1,85 @@
+import { QueueItem, VirtualDrive } from "src";
+
+import { logger } from "@/logger";
+
+import { onCancelFetchDataCallback, onMessageCallback, onRenameCallbackWithCallback } from "./callbacks";
+import { onDeleteCallback } from "./callbacks/notify-delete.callback";
+import { onFetchDataCallback } from "./callbacks/notify-fetch-data.callback";
 import { drive } from "./drive";
-import settings from "./settings";
-import {
-  onCancelFetchDataCallback,
-  onDeleteCallbackWithCallback,
-  onFetchDataCallback,
-  onFileAddedCallback,
-  onMessageCallback,
-  onRenameCallbackWithCallback,
-} from "./callbacks";
-import { ItemsInfoManager, createFilesWithSize } from "./utils";
+import { addInfoItem, initInfoItems } from "./info-items-manager";
 import { QueueManager } from "./queueManager";
-import { IQueueManager, QueueItem, VirtualDrive } from "src";
+import settings from "./settings";
 import { generateRandomFilesAndFolders } from "./utils/generate-random-file-tree";
 
-console.log("Registering sync root: " + settings.syncRootPath);
+logger.info("Registering sync root: " + settings.syncRootPath);
 
 drive.registerSyncRoot(
   settings.driveName,
   settings.driveVersion,
   "{12345678-1234-1234-1234-123456789012}",
   {
-    notifyDeleteCallback: onDeleteCallbackWithCallback,
+    notifyDeleteCallback: onDeleteCallback,
     notifyRenameCallback: onRenameCallbackWithCallback,
-    notifyFileAddedCallback: onFileAddedCallback,
     fetchDataCallback: onFetchDataCallback,
     cancelFetchDataCallback: onCancelFetchDataCallback,
     notifyMessageCallback: onMessageCallback,
   },
-  settings.defaultIconPath
+  settings.defaultIconPath,
 );
 
-const handlerAdd = async (task: QueueItem) => {
+const handleAdd = async (task: QueueItem) => {
   try {
-    console.log("[EXAMPLE] File added in callback: " + task.path);
-    await new Promise((resolve) =>
-      setTimeout(() => {
-        resolve(undefined);
-      }, 1000)
-    );
-    const result = Math.random().toString(36).substring(2, 7);
-    await drive.convertToPlaceholder(task.path, result);
-    await drive.updateSyncStatus(task.path, task.isFolder, true);
+    logger.info({ fn: "handleAdd", path: task.path });
+    const id = await addInfoItem(task.path);
+    drive.convertToPlaceholder(task.path, id);
+    // await drive.updateSyncStatus(task.path, task.isFolder, true);
   } catch (error) {
-    console.error(error);
+    logger.error(error, "handleAdd");
   }
 };
 
 const handleDehydrate = async (task: QueueItem) => {
   try {
-    console.log("[EXAMPLE] File dehydrated in callback: " + task.path);
-    await new Promise((resolve) =>
-      setTimeout(() => {
-        resolve(undefined);
-      }, 1000)
-    );
-    console.log("Dehydrating file: " + task.path);
-    await drive.dehydrateFile(task.path);
+    logger.info({ fn: "handleDehydrate", path: task.path });
+    drive.dehydrateFile(task.path);
   } catch (error) {
-    console.error(error);
+    logger.error(error, "handleDehydrate");
   }
 };
 
 const handleHydrate = async (task: QueueItem) => {
   try {
-    console.log("[EXAMPLE] File hydrated in callback: " + task.path);
-    await new Promise((resolve) =>
-      setTimeout(() => {
-        resolve(undefined);
-      }, 1000)
-    );
-
-    const tempPath = task.path.replace(
-      settings.syncRootPath,
-      settings.serverRootPath
-    );
-
-    console.log("Hydrating file: " + task.path);
-    // await drive.transferData(tempPath, task.path);
-
-    console.log("[EXAMPLE] File trasnfer in callback: " + task.path);
-    await new Promise((resolve) =>
-      setTimeout(() => {
-        resolve(undefined);
-      }, 1000)
-    );
+    logger.info({ fn: "handleHydrate", path: task.path });
+    await drive.hydrateFile(task.path);
   } catch (error) {
-    console.error(error);
+    logger.error(error, "handleHydrate");
   }
 };
 
 const handleChangeSize = async (task: QueueItem) => {
   try {
-    console.log("[EXAMPLE] File size changed in callback: " + task.path);
-    await new Promise((resolve) =>
-      setTimeout(() => {
-        resolve(undefined);
-      }, 1000)
-    );
+    logger.info({ fn: "handleChangeSize", path: task.path });
     const result = Math.random().toString(36).substring(2, 7);
-    await drive.convertToPlaceholder(task.path, result);
-    await drive.updateFileIdentity(task.path, result, false);
+    drive.convertToPlaceholder(task.path, result);
+    drive.updateFileIdentity(task.path, result, false);
     await drive.updateSyncStatus(task.path, task.isFolder, true);
     // await drive.updateFileSize(task.path);
   } catch (error) {
-    console.error(error);
+    logger.error(error, "handleChangeSize");
   }
 };
 
-const queueManager: IQueueManager = new QueueManager({
-  handleAdd: handlerAdd,
-  handleHydrate: handleHydrate,
-  handleDehydrate: handleDehydrate,
-  handleChangeSize: handleChangeSize,
+const queueManager = new QueueManager({
+  handleAdd,
+  handleHydrate,
+  handleDehydrate,
+  handleChangeSize,
 });
 
 drive.connectSyncRoot();
 
 const fileGenerationOptions = {
-  rootPath: '',
+  rootPath: "",
   depth: 3,
   filesPerFolder: 3,
   foldersPerLevel: 3,
@@ -127,26 +89,9 @@ const fileGenerationOptions = {
 
 (async () => {
   try {
-    const fileMap = await generateRandomFilesAndFolders(drive, fileGenerationOptions);
-
-    createFilesWithSize(settings.syncRootPath, settings.serverRootPath);
-
-    const itemsManager = await ItemsInfoManager.initialize()
-
-    for (const key in fileMap) {
-      const value = fileMap[key];
-      fileMap[key] = settings.serverRootPath + value.replace("/", "\\");
-    }
-    
-    await itemsManager.add(fileMap);
-
-    drive.watchAndWait(
-      settings.syncRootPath,
-      queueManager,
-      settings.watcherLogPath
-    );
-
-    console.log("Proceso de generación y vigilancia completado.");
+    await initInfoItems();
+    // const fileMap = await generateRandomFilesAndFolders(drive, fileGenerationOptions);
+    drive.watchAndWait(settings.syncRootPath, queueManager, settings.watcherLogPath);
   } catch (error) {
     drive.disconnectSyncRoot();
     VirtualDrive.unregisterSyncRoot(settings.syncRootPath);

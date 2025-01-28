@@ -1,6 +1,5 @@
 import path, { join } from "path";
 import fs from "fs";
-import { deleteAllSubfolders } from "./utils";
 import { Worker } from "worker_threads";
 import { Watcher } from "./watcher/watcher";
 import { ExtraCallbacks, InputSyncCallbacks } from "./types/callbacks.type";
@@ -477,8 +476,8 @@ class VirtualDrive {
     return addon.closeMutex();
   }
 
-  async dehydrateFile(itemPath: string): Promise<void> {
-    return await addon.dehydrateFile(itemPath);
+  async dehydrateFile(itemPath: string) {
+    return addon.dehydrateFile(itemPath);
   }
 
   async hydrateFile(itemPath: string): Promise<void> {
