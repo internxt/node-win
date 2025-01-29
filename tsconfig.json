@@ -9,8 +9,10 @@
     "outDir": "./dist",
     "baseUrl": ".",
     "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "types": ["vitest/globals"],
     "paths": {
-      "addon": ["./build/Release/addon"]
+      "@/*": ["./src/*"],
     }
   },
   "include": ["index.ts", "src/**/*.ts", "*.d.ts", "examples/**/*.ts", "test/**/*.ts"],

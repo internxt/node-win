@@ -1,28 +1,17 @@
-import * as chokidar from "chokidar";
-import { IQueueManager } from "src/queue/queueManager";
-import { Status } from "src/types/placeholder.type";
+import { z } from "zod";
 
-export interface IWatcher {
-  set virtualDriveFunctions(IVirtualDriveFunctions: IVirtualDriveFunctions);
-  set queueManager(queueManager: IQueueManager);
-  set syncRootPath(syncRootPath: string);
-  set options(options: chokidar.WatchOptions);
-}
+import { addonZod } from "@/addon/addon-zod";
 
 export interface IVirtualDriveFunctions {
   CfHydrate?: () => void;
   CfDehydrate?: () => void;
   CfAddItem: () => void;
   CfNotifyMessage?: () => void;
-  CfUpdateSyncStatus: (
-    path: string,
-    sync: boolean,
-    isDirectory?: boolean
-  ) => void;
+  CfUpdateSyncStatus: (path: string, sync: boolean, isDirectory: boolean) => void;
   UpdatePinState?: () => void;
   CfUpdateItem?: () => void;
-  CfGetPlaceHolderState: (path: string) => Status;
-  CfGetPlaceHolderIdentity: (path: string) => string;
-  CfGetPlaceHolderAttributes: (path: string) => Promise<any>;
-  CfConverToPlaceholder: (path: string, fileIdentity: string) => void;
+  CfGetPlaceHolderState: (path: string) => z.infer<typeof addonZod.getPlaceholderState>;
+  CfGetPlaceHolderIdentity: (path: string) => z.infer<typeof addonZod.getFileIdentity>;
+  CfGetPlaceHolderAttributes: (path: string) => z.infer<typeof addonZod.getPlaceholderAttribute>;
+  CfConverToPlaceholder: (path: string, fileIdentity: string) => z.infer<typeof addonZod.convertToPlaceholder>;
 }

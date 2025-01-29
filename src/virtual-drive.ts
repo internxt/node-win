@@ -1,13 +1,13 @@
-import path from "path";
+import path, { join } from "path";
 import fs from "fs";
-import { deleteAllSubfolders } from "./utils";
 import { Worker } from "worker_threads";
 import { Watcher } from "./watcher/watcher";
 import { ExtraCallbacks, InputSyncCallbacks } from "./types/callbacks.type";
 import { Status } from "./types/placeholder.type";
 import { IQueueManager } from "./queue/queueManager";
 
-const addon = require("../../build/Release/addon.node");
+import { addon } from "./addon";
+
 interface ItemInfo {
   path: string;
   fileIdentity: string;
@@ -50,9 +50,10 @@ class VirtualDrive {
       FILE_ATTRIBUTE_READONLY: 0x1,
       FILE_ATTRIBUTE_HIDDEN: 0x2,
       FOLDER_ATTRIBUTE_READONLY: 0x1,
+      FILE_ATTRIBUTE_NORMAL: 0x1,
     };
 
-    this.watcher = Watcher.Instance;
+    this.watcher = new Watcher();
 
     this.syncRootPath = syncRootPath;
     this.createSyncRootFolder();
@@ -69,8 +70,16 @@ class VirtualDrive {
     addon.addLoggerPath(loggerPath);
   }
 
+  private fixPath(path: string) {
+    if (path.includes(this.syncRootPath)) {
+      return path;
+    } else {
+      return join(this.syncRootPath, path);
+    }
+  }
+
   getPlaceholderState(path: string): Status {
-    return addon.getPlaceholderState(this.syncRootPath + path);
+    return addon.getPlaceholderState(this.fixPath(path));
   }
 
   getPlaceholderWithStatePending(): any {
@@ -138,11 +147,6 @@ class VirtualDrive {
 
   convertToWindowsTime(jsTime: number): bigint {
     return BigInt(jsTime) * 10000n + 116444736000000000n;
-  }
-
-  async getItemsIds(): Promise<ItemInfo[]> {
-    console.log("getItemsIdsSync");
-    return addon.getItemsIds(this.syncRootPath);
   }
 
   async getFileIdentity(relativePath: string): Promise<string> {
@@ -279,7 +283,7 @@ class VirtualDrive {
       usePolling: true,
     };
 
-    this.watcher.virtualDriveFunctions = {
+    this.watcher.virtualDriveFn = {
       CfAddItem: this.test,
       CfDehydrate: this.test,
       CfHydrate: this.test,
@@ -472,8 +476,8 @@ class VirtualDrive {
     return addon.closeMutex();
   }
 
-  async dehydrateFile(itemPath: string): Promise<void> {
-    return await addon.dehydrateFile(itemPath);
+  async dehydrateFile(itemPath: string) {
+    return addon.dehydrateFile(itemPath);
   }
 
   async hydrateFile(itemPath: string): Promise<void> {

@@ -49,6 +49,27 @@
         "-lCldApi.lib",
         "-lPropsys.lib"
       ]
+    },
+    {
+      "target_name": "after_build",
+      "type": "none",
+      "dependencies": [
+        "addon"
+      ],
+      "copies": [
+        {
+          "destination": ".",
+          "files": [
+            "<(PRODUCT_DIR)/addon.node"
+          ]
+        },
+        {
+          "destination": "dist",
+          "files": [
+            "<(PRODUCT_DIR)/addon.node"
+          ]
+        }
+      ]
     }
   ]
 }
