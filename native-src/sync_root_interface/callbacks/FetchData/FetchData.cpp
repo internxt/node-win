@@ -394,13 +394,6 @@ static void notify_fetch_data_call(napi_env env, napi_value js_callback, void *c
         return;
     }
 
-    {
-        std::unique_lock<std::mutex> lock(ctx->mtx);
-        while (!ctx->ready) {
-            ctx->cv.wait(lock);
-        }
-    }
-
     Logger::getInstance().log("Hydration concluded or user signaled to finish in notify_fetch_data_call.", LogLevel::INFO);
 
     ctx->lastReadOffset = 0;
