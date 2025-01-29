@@ -1,7 +1,8 @@
-import { drive } from "./drive";
 import yargs from "yargs";
+import z from "zod";
 
-// Configura yargs
+import { drive } from "./drive";
+
 const argv = yargs
   .command("file", "El path del archivo para obtener el estado", {
     path: {
@@ -13,14 +14,14 @@ const argv = yargs
   .help()
   .alias("help", "h").argv;
 
-//@ts-ignore
-if (argv.file) {
-  //@ts-ignore
-  const path = argv.file;
+const { data } = z.object({ file: z.string() }).safeParse(argv);
+
+if (data) {
+  const path = data.file;
   const state = drive.getPlaceholderState(path);
-  console.log(`${path} state:`, state);
+  console.log("State:", state);
   const states = drive.getPlaceholderWithStatePending();
-  console.log(`states:`, states);
+  console.log("Pending states:", states);
 } else {
   console.log("Por favor especifica un archivo con --file <path>");
 }

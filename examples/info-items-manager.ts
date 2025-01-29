@@ -1,44 +1,44 @@
-import { existsSync } from "fs";
-import { copyFile, mkdir, readFile, writeFile } from "fs/promises";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { basename, join } from "path";
 import { v4 } from "uuid";
+
 import { TMP_PATH } from "./settings";
 
 const infoItemsPath = join(TMP_PATH, "info-items.json");
 const serverPath = join(TMP_PATH, "fake-server");
 
-export const initInfoItems = async () => {
+export const initInfoItems = () => {
   if (!existsSync(infoItemsPath)) {
-    await writeFile(infoItemsPath, JSON.stringify({}));
+    writeFileSync(infoItemsPath, JSON.stringify({}));
   }
 
   if (!existsSync(serverPath)) {
-    await mkdir(serverPath);
+    mkdirSync(serverPath);
   }
 };
 
-export const getInfoItems = async () => {
-  return JSON.parse(await readFile(infoItemsPath, "utf8"));
+export const getInfoItems = () => {
+  return JSON.parse(readFileSync(infoItemsPath, "utf8"));
 };
 
-export const deleteInfoItems = async () => {
-  await writeFile(infoItemsPath, JSON.stringify({}));
+export const deleteInfoItems = () => {
+  writeFileSync(infoItemsPath, JSON.stringify({}));
 };
 
-export const addInfoItem = async (itemPath: string) => {
+export const addInfoItem = (itemPath: string) => {
   const fileName = basename(itemPath);
   const serverItemPath = join(serverPath, fileName);
-  await copyFile(itemPath, serverItemPath);
-  
+  copyFileSync(itemPath, serverItemPath);
+
   const id = v4();
-  const infoItems = await getInfoItems();
+  const infoItems = getInfoItems();
   infoItems[id] = serverItemPath;
-  
-  await writeFile(infoItemsPath, JSON.stringify(infoItems, null, 2));
+
+  writeFileSync(infoItemsPath, JSON.stringify(infoItems, null, 2));
   return id;
 };
 
-export const getInfoItem = async (id: string) => {
-  const infoItems = await getInfoItems();
+export const getInfoItem = (id: string) => {
+  const infoItems = getInfoItems();
   return infoItems[id];
 };
