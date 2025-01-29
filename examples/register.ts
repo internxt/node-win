@@ -15,8 +15,6 @@ import { handleHydrate } from "./handlers/handle-hydrate";
 import { initInfoItems } from "./info-items-manager";
 import settings from "./settings";
 
-logger.info("Registering sync root: " + settings.syncRootPath);
-
 const callbacks = { notifyDeleteCallback, notifyRenameCallback, fetchDataCallback, cancelFetchDataCallback, notifyMessageCallback };
 const handlers = { handleAdd, handleHydrate, handleDehydrate, handleChangeSize };
 
@@ -30,7 +28,7 @@ try {
   initInfoItems();
   drive.watchAndWait(settings.syncRootPath, queueManager, settings.watcherLogPath);
 } catch (error) {
-  console.error(error);
+  logger.error(error);
   drive.disconnectSyncRoot();
   VirtualDrive.unregisterSyncRoot(settings.syncRootPath);
 }

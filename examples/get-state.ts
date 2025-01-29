@@ -1,6 +1,8 @@
 import yargs from "yargs";
 import z from "zod";
 
+import { logger } from "@/logger";
+
 import { drive } from "./drive";
 
 const argv = yargs
@@ -19,9 +21,8 @@ const { data } = z.object({ file: z.string() }).safeParse(argv);
 if (data) {
   const path = data.file;
   const state = drive.getPlaceholderState(path);
-  console.log("State:", state);
-  const states = drive.getPlaceholderWithStatePending();
-  console.log("Pending states:", states);
+  const pendingStates = drive.getPlaceholderWithStatePending();
+  logger.info({ state, pendingStates });
 } else {
-  console.log("Por favor especifica un archivo con --file <path>");
+  console.error("Por favor especifica un archivo con --file <path>");
 }
