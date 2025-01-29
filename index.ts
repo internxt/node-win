@@ -1,5 +1,4 @@
-import { QueueManager } from "@/queue/queue-manager";
-
+import { QueueManager } from "./src/queue/queue-manager";
 import { IQueueManager, QueueItem, typeQueue, HandleAction, HandleActions } from "./src/queue/queueManager";
 import VirtualDrive from "./src/virtual-drive";
 
