@@ -7,7 +7,7 @@ import { v4 } from "uuid";
 
 export const handleAdd = async (task: QueueItem) => {
   try {
-    logger.info({ fn: "handleAdd", path: task.path });
+    logger.info({ fn: "handleAdd", task });
     const id = task.isFolder ? v4() : addInfoItem(task.path);
     drive.convertToPlaceholder(task.path, id);
   } catch (error) {
