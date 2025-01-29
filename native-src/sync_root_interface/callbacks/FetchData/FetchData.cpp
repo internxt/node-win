@@ -7,7 +7,7 @@
 #include <DownloadMutexManager.h>
 #include <fstream>
 #include <vector>
-#include <utility> // para std::pai
+#include <utility>
 #include <cfapi.h>
 #include <windows.h>
 #include <iostream>
@@ -141,7 +141,6 @@ static size_t file_incremental_reading(napi_env env,
             if (FAILED(hr)) {
                 wprintf(L"Error en TransferData(). HRESULT: %lx\n", hr);
                 ctx.loadFinished = true;
-                // Reportamos error a Cf
                 FileCopierWithProgress::TransferData(
                     ctx.connectionKey,
                     ctx.transferKey,
