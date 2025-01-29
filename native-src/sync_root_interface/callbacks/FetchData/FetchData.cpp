@@ -26,12 +26,8 @@ inline std::mutex mtx;
 inline std::mutex mtx_download;
 inline std::condition_variable cv;
 inline std::condition_variable cv_download;
-// inline bool ready = false;
 inline bool ready_download = false;
 inline bool callbackResult = false;
-// inline std::wstring fullServerFilePath;
-
-// inline size_t lastSize;
 
 #define FIELD_SIZE(type, field) (sizeof(((type *)0)->field))
 
@@ -43,16 +39,8 @@ inline bool callbackResult = false;
 
 #define CHUNKDELAYMS 250
 
-// CF_CONNECTION_KEY connectionKey;
-// CF_TRANSFER_KEY transferKey;
-// LARGE_INTEGER fileSize; 
-// LARGE_INTEGER requiredLength;
-// LARGE_INTEGER requiredOffset;
-// CF_CALLBACK_INFO g_callback_info;
 std::wstring g_full_client_path;
 
-// inline bool load_finished = false;
-// inline size_t lastReadOffset = 0;
 struct FetchDataArgs
 {
     std::wstring fileIdentityArg;
@@ -191,22 +179,19 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
 {
     Logger::getInstance().log("response_callback_fn_fetch_data called", LogLevel::DEBUG);
 
-    // Obtener los argumentos de JS
     size_t argc = 3;
     napi_value argv[3];
     napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     if (status != napi_ok) {
         Logger::getInstance().log("Failed to get callback info", LogLevel::ERROR);
-        return create_response(env, true, 0); // Retorna "error" genérico
+        return create_response(env, true, 0); 
     }
 
-    // Validar que al menos tengamos 2 argumentos
     if (argc < 2) {
         Logger::getInstance().log("This function must receive at least two arguments", LogLevel::ERROR);
         return create_response(env, true, 0);
     }
 
-    // Verificar que el primer argumento sea boolean
     napi_valuetype valueType;
     status = napi_typeof(env, argv[0], &valueType);
     if (status != napi_ok || valueType != napi_boolean) {
@@ -217,14 +202,12 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
     bool response = false;
     napi_get_value_bool(env, argv[0], &response);
 
-    // Verificar que el segundo argumento sea string
     status = napi_typeof(env, argv[1], &valueType);
     if (status != napi_ok || valueType != napi_string) {
         Logger::getInstance().log("Second argument should be string", LogLevel::ERROR);
         return create_response(env, true, 0);
     }
 
-    // Recuperar nuestro puntero a TransferContext desde data
     TransferContext* ctxPtr = nullptr;
     napi_value thisArg = nullptr;
     status = napi_get_cb_info(env, info, nullptr, nullptr, &thisArg, reinterpret_cast<void**>(&ctxPtr));
@@ -233,11 +216,9 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
         return create_response(env, true, 0);
     }
 
-    // Caso: el usuario NO desea continuar la hidratación
     if (!response) {
         Logger::getInstance().log("JS responded with false; we cancel hydration.", LogLevel::DEBUG);
 
-        // Marcamos como finalizado y notificamos al hilo nativo que espera
         ctxPtr->loadFinished   = true;
         ctxPtr->lastReadOffset = 0;
         {
@@ -246,11 +227,9 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
             ctxPtr->cv.notify_one();
         }
 
-        // Retorna un "Promise" con finished=true, progress=0
         return create_response(env, true, 0);
     }
 
-    // Caso: el usuario responde con true e indica la ruta en el servidor
     size_t response_len = 0;
     napi_get_value_string_utf16(env, argv[1], nullptr, 0, &response_len);
 
@@ -261,14 +240,11 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
         LogLevel::DEBUG
     );
 
-    // Guardamos la ruta recibida en el contexto
     ctxPtr->fullServerFilePath = response_wstr;
 
-    // Procesamos la lectura incremental
     float progress = 0.0f;
     ctxPtr->lastReadOffset = file_incremental_reading(env, *ctxPtr, /*final_step=*/false, progress);
 
-    // Verificamos si ya se leyó todo el archivo
     if (ctxPtr->lastReadOffset == (size_t)ctxPtr->fileSize.QuadPart) {
         Logger::getInstance().log("File fully read.", LogLevel::DEBUG);
         ctxPtr->lastReadOffset = 0;
@@ -285,7 +261,6 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
         Placeholders::UpdatePinState(ctxPtr->fullClientPath.c_str(), PinState::AlwaysLocal);
     }
 
-    // Si terminó, notificamos al hilo nativo
     {
         std::lock_guard<std::mutex> lock(ctxPtr->mtx);
         if (ctxPtr->loadFinished) {
@@ -300,18 +275,15 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
         LogLevel::DEBUG
     );
 
-    // Retorna el objeto JS con { finished, progress } envuelto en una Promise
     return create_response(env, ctxPtr->loadFinished, progress);
 }
 
-// Función auxiliar para manejar errores
 static napi_value create_error_response(napi_env env)
 {
     Logger::getInstance().log("An error occurred during callback execution", LogLevel::ERROR);
     return create_response(env, true, 0);
 }
 
-// Función auxiliar para manejar la cancelación
 static void handle_cancellation(TransferContext* ctxPtr)
 {
     ctxPtr->loadFinished = true;
@@ -323,7 +295,6 @@ static void handle_cancellation(TransferContext* ctxPtr)
     }
 }
 
-// Función auxiliar para notificar la finalización
 static void notify_completion(TransferContext* ctxPtr, float progress)
 {
     std::lock_guard<std::mutex> lock(ctxPtr->mtx);
@@ -337,7 +308,7 @@ static void notify_completion(TransferContext* ctxPtr, float progress)
 
 static void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
 {
-    Logger::getInstance().log("notify_fetch_data_call called", LogLevel::DEBUG);
+    Logger::getInstance().log("notify_fetch_data_call called context isolated", LogLevel::DEBUG);
     napi_status status;
     TransferContext *ctx = static_cast<TransferContext *>(data);
     Logger::getInstance().log("notify_fetch_data_call: ctx->fullClientPath = " + Logger::fromWStringToString(ctx->fullClientPath), LogLevel::DEBUG);
