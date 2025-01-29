@@ -1,16 +1,6 @@
-async function onMessageCallback(
-    message: string, 
-    action: string, 
-    errorName: string, 
-    callback: (response: boolean) => void) {
-    try {
-        console.log("[EXAMPLE] Message received: ", message);
-        console.log("[EXAMPLE] Action: ", action);
-        console.log("[EXAMPLE] Error name: ", errorName);
-        await callback(true);
-    } catch (error) {
-        callback(false);
-    }
-}
+import { logger } from "@/logger";
 
-export default onMessageCallback;
+export const notifyMessageCallback = (message: string, action: string, errorName: string, callback: (response: boolean) => void) => {
+  logger.info({ event: "notifyMessageCallback", message, action, errorName });
+  callback(true);
+};
