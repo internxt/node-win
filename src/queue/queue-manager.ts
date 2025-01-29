@@ -1,7 +1,7 @@
 import fs from "fs";
 import lodashChunk from "lodash.chunk";
 
-import { logger } from "@/logger";
+// import { logger } from "@/logger";
 
 import { HandleAction, HandleActions, IQueueManager, QueueItem, typeQueue } from "./queueManager";
 
@@ -79,7 +79,7 @@ export class QueueManager implements IQueueManager {
   }
 
   private loadQueueStateFromFile(): void {
-    logger.debug("Loading queue state from file:" + this.persistPath);
+    console.debug("Loading queue state from file:" + this.persistPath);
     if (this.persistPath) {
       if (!fs.existsSync(this.persistPath)) {
         this.saveQueueStateToFile();
@@ -105,10 +105,10 @@ export class QueueManager implements IQueueManager {
   }
 
   public enqueue(task: QueueItem): void {
-    logger.debug(`Task enqueued: ${JSON.stringify(task)}`);
+    console.debug(`Task enqueued: ${JSON.stringify(task)}`);
     const existingTask = this.queues[task.type].find((item) => item.path === task.path && item.type === task.type);
     if (existingTask) {
-      logger.debug("Task already exists in queue. Skipping.");
+      console.debug("Task already exists in queue. Skipping.");
       return;
     }
 
@@ -125,7 +125,7 @@ export class QueueManager implements IQueueManager {
 
     // Inicia el temporizador de espera
     this.enqueueTimeout = setTimeout(() => {
-      logger.debug("Processing all tasks");
+      console.debug("Processing all tasks");
       this.processAll();
     }, this.enqueueDelay);
   }
@@ -182,11 +182,11 @@ export class QueueManager implements IQueueManager {
   }
 
   private async processTask(type: typeQueue, task: QueueItem): Promise<void> {
-    logger.debug(`Processing ${type} task: ${JSON.stringify(task)}`);
+    console.debug(`Processing ${type} task: ${JSON.stringify(task)}`);
     try {
       await this.actions[task.type](task);
     } catch (error) {
-      logger.error(`Failed to process ${type} task:`, task, error);
+      console.error(`Failed to process ${type} task:`, task, error);
     }
   }
 
