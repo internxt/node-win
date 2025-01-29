@@ -5,7 +5,6 @@
 #include <iostream>
 #include <filesystem>
 #include "Logger.h"
-#include "DownloadMutexManager.h"
 
 namespace fs = std::filesystem;
 // variable to disconect

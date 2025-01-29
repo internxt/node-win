@@ -28,11 +28,7 @@
         "native-src/sync_root_interface/callbacks/FetchData/TransferContext.cpp",
         "native-src/sync_root_interface/callbacks/FetchPlaceholder/FetchPlaceholder.cpp",
         "native-src/sync_root_interface/callbacks/NotifyDelete/NotifyDeleteCallback.cpp",
-        "native-src/sync_root_interface/callbacks/NotifyFileAdded/NotifyFileAddedCallback.cpp",
-        "native-src/sync_root_interface/callbacks/NotifyMessage/NofifyMessageCallback.cpp",
         "native-src/sync_root_interface/callbacks/NotifyRename/NotifyRenameCallback.cpp",
-        "native-src/sync_root_watcher/DirectoryWatcher.cpp",
-        "native-src/sync_root_watcher/SyncRootWatcher.cpp",
         "native-src/virtual_drive/Wrappers.cpp"
       ],
       "include_dirs": [
@@ -41,7 +37,6 @@
         "include/placeholders_interface",
         "include/sync_root_interface",
         "include/sync_root_interface/callbacks",
-        "include/sync_root_watcher",
         "include/types",
         "include/virtual_drive"
       ],

@@ -119,26 +119,6 @@ class VirtualDrive {
     return result;
   }
 
-  getExtraCallbacks(): ExtraCallbacks {
-    const extraCallbackKeys: (keyof ExtraCallbacks)[] = [
-      "notifyFileAddedCallback",
-      "notifyMessageCallback",
-    ];
-
-    const result: ExtraCallbacks = {};
-    if (this.callbacks === undefined) {
-      throw new Error("Callbacks are not defined");
-    }
-
-    for (const key of extraCallbackKeys) {
-      if (this.callbacks[key] !== undefined) {
-        result[key] = this.callbacks[key];
-      }
-    }
-
-    return result;
-  }
-
   createSyncRootFolder() {
     if (!fs.existsSync(this.syncRootPath)) {
       fs.mkdirSync(this.syncRootPath, { recursive: true });
@@ -297,7 +277,6 @@ class VirtualDrive {
     };
 
     this.watcher.watchAndWait();
-    // addon.watchAndWait(path, this.getExtraCallbacks());
   }
 
   createFileByPath(
@@ -470,10 +449,6 @@ class VirtualDrive {
       itemPath = path.join(this.syncRootPath, itemPath);
     }
     addon.updateFileIdentity(itemPath, id, isDirectory);
-  }
-
-  closeDownloadMutex(): void {
-    return addon.closeMutex();
   }
 
   async dehydrateFile(itemPath: string) {

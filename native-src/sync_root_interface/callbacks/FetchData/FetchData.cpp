@@ -4,7 +4,6 @@
 #include <condition_variable>
 #include <mutex>
 #include <FileCopierWithProgress.h>
-#include <DownloadMutexManager.h>
 #include <fstream>
 #include <vector>
 #include <utility>

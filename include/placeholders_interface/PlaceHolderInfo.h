@@ -25,7 +25,10 @@ enum class PinState
     Excluded = 4,
 };
 
-
+struct FileState {
+    PinState pinstate;
+    SyncState syncstate;
+};
 
 class PlaceHolderInfo
 {

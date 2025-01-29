@@ -1,13 +1,10 @@
 #include "stdafx.h"
 #include <sstream>
 #include "Placeholders.h"
-#include "SyncRoot.h"
-#include "SyncRootWatcher.h"
 #include "Callbacks.h"
 #include "LoggerPath.h"
-#include "DownloadMutexManager.h"
-#include "DirectoryWatcher.h"
 #include <Logger.h>
+#include <SyncRoot.h>
 
 napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
 {
@@ -314,121 +311,6 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args)
     }
 }
 
-napi_value WatchAndWaitWrapper(napi_env env, napi_callback_info args)
-{
-    size_t argc = 2;
-    napi_value argv[2];
-
-    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
-
-    if (argc < 2)
-    {
-        napi_throw_error(env, nullptr, "Se requieren más argumentos para WatchAndWait");
-        return nullptr;
-    }
-
-    InputCallbacks input = {};
-
-    // [CALLBACKS] file_added
-    napi_value notifyFileAddedCallback;
-
-    if (napi_get_named_property(env, argv[1], "notifyFileAddedCallback", &notifyFileAddedCallback) == napi_ok)
-    {
-        napi_create_reference(env, notifyFileAddedCallback, 1, &input.notify_file_added_callback_ref);
-    }
-
-    napi_valuetype valuetype;
-    napi_status type_status = napi_typeof(env, notifyFileAddedCallback, &valuetype);
-    if (type_status != napi_ok || valuetype != napi_function)
-    {
-        napi_throw_error(env, nullptr, "notifyFileAddedCallback should be a function.");
-        return nullptr;
-    }
-
-    napi_value resource_name_value;
-
-    std::string resource_name = "notify_file_added_callback";
-    std::u16string converted_resource_name = std::u16string(resource_name.begin(), resource_name.end());
-
-    napi_create_string_utf16(env, converted_resource_name.c_str(), NAPI_AUTO_LENGTH, &resource_name_value);
-
-    napi_value notify_file_added_callback_value;
-    napi_status status_ref = napi_get_reference_value(env, input.notify_file_added_callback_ref, &notify_file_added_callback_value);
-
-    napi_threadsafe_function notify_file_added_threadsafe_callback;
-
-    napi_status status_threadsafe = napi_create_threadsafe_function(
-        env,
-        notify_file_added_callback_value,
-        NULL,
-        resource_name_value,
-        0,
-        1,
-        NULL,
-        NULL,
-        NULL,
-        notify_file_added_call,
-        &notify_file_added_threadsafe_callback);
-
-    // [CALLBACKS] notify_message
-    napi_value notifyMessageCallback;
-
-    if (napi_get_named_property(env, argv[1], "notifyMessageCallback", &notifyMessageCallback) == napi_ok)
-    {
-        napi_create_reference(env, notifyMessageCallback, 1, &input.notify_message_callback_ref);
-    }
-
-    napi_valuetype valuetype_message;
-    napi_status type_status_message = napi_typeof(env, notifyMessageCallback, &valuetype_message);
-    if (type_status_message != napi_ok || valuetype_message != napi_function)
-    {
-        napi_throw_error(env, nullptr, "notifyMessageCallback should be a function.");
-        return nullptr;
-    }
-
-    napi_value resource_name_value_message;
-
-    std::string resource_name_message = "notify_message_callback";
-    std::u16string converted_resource_name_message = std::u16string(resource_name_message.begin(), resource_name_message.end());
-
-    napi_create_string_utf16(env, converted_resource_name_message.c_str(), NAPI_AUTO_LENGTH, &resource_name_value_message);
-
-    napi_value notify_message_callback_value;
-    napi_status status_ref_message = napi_get_reference_value(env, input.notify_message_callback_ref, &notify_message_callback_value);
-
-    napi_threadsafe_function notify_message_threadsafe_callback;
-
-    napi_status status_threadsafe_message = napi_create_threadsafe_function(
-        env,
-        notify_message_callback_value,
-        NULL,
-        resource_name_value_message,
-        0,
-        1,
-        NULL,
-        NULL,
-        NULL,
-        notify_message_call,
-        &notify_message_threadsafe_callback);
-
-    InputSyncCallbacksThreadsafe inputThreadsafe = {};
-    inputThreadsafe.notify_file_added_threadsafe_callback = notify_file_added_threadsafe_callback;
-    inputThreadsafe.notify_message_threadsafe_callback = notify_message_threadsafe_callback;
-
-    LPCWSTR syncRootPath;
-    size_t pathLength;
-    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
-    syncRootPath = new WCHAR[pathLength + 1];
-    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(syncRootPath)), pathLength + 1, nullptr);
-
-    SyncRootWatcher watcher;
-    watcher.WatchAndWait(syncRootPath, env, inputThreadsafe);
-
-    delete[] syncRootPath;
-
-    return nullptr;
-}
-
 napi_value CreateEntryWrapper(napi_env env, napi_callback_info args)
 {
     size_t argc = 9;
@@ -704,7 +586,7 @@ napi_value GetPlaceholderStateWrapper(napi_env env, napi_callback_info args)
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(widePath.get()), pathLength + 1, nullptr);
 
     // DWORD state = Placeholders::GetPlaceholderState(widePath.get());
-    FileState state = DirectoryWatcher::getPlaceholderInfo(widePath.get());
+    FileState state = Placeholders::GetPlaceholderInfo(widePath.get());
 
     napi_value result;
     napi_create_object(env, &result);
@@ -826,18 +708,6 @@ napi_value UpdateFileIdentityWrapper(napi_env env, napi_callback_info args)
         isDirectory);
 
     napi_value result;
-    return result;
-}
-
-napi_value CloseMutexWrapper(napi_env env, napi_callback_info args)
-{
-
-    DownloadMutexManager &mutexManager = DownloadMutexManager::getInstance();
-    mutexManager.setReady(true);
-
-    napi_value result;
-    napi_get_boolean(env, true, &result);
-
     return result;
 }
 
