@@ -1,5 +1,5 @@
-async function onCancelFetchDataCallback(fileId: string) {
-    console.log("[EXAMPLE] cancel fetch data: ", fileId);
-}
+import { logger } from "@/logger";
 
-export default onCancelFetchDataCallback;
+export const cancelFetchDataCallback = (fileId: string) => {
+  logger.info({ event: "cancelFetchDataCallback", fileId });
+};

@@ -2,9 +2,11 @@ import { logger } from "@/logger";
 import { QueueManager } from "@/queue/queue-manager";
 import VirtualDrive from "@/virtual-drive";
 
-import { onCancelFetchDataCallback, onMessageCallback, onRenameCallbackWithCallback } from "./callbacks";
+import { cancelFetchDataCallback } from "./callbacks/cancel-fetch-data.callback";
 import { notifyDeleteCallback } from "./callbacks/notify-delete.callback";
 import { fetchDataCallback } from "./callbacks/notify-fetch-data.callback";
+import { notifyMessageCallback } from "./callbacks/notify-message.callback";
+import { notifyRenameCallback } from "./callbacks/notify-rename.callback";
 import { drive } from "./drive";
 import { handleAdd } from "./handlers/handle-add";
 import { handleChangeSize } from "./handlers/handle-change-size";
@@ -15,15 +17,9 @@ import settings from "./settings";
 
 logger.info("Registering sync root: " + settings.syncRootPath);
 
-const callbacks = {
-  notifyDeleteCallback,
-  notifyRenameCallback: onRenameCallbackWithCallback,
-  fetchDataCallback,
-  cancelFetchDataCallback: onCancelFetchDataCallback,
-  notifyMessageCallback: onMessageCallback,
-};
-
+const callbacks = { notifyDeleteCallback, notifyRenameCallback, fetchDataCallback, cancelFetchDataCallback, notifyMessageCallback };
 const handlers = { handleAdd, handleHydrate, handleDehydrate, handleChangeSize };
+
 const notify = { onTaskSuccess: async () => undefined, onTaskProcessing: async () => undefined };
 const queueManager = new QueueManager(handlers, notify, settings.queuePersistPath);
 

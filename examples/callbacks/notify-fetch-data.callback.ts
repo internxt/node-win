@@ -2,9 +2,9 @@ import { getInfoItem } from "examples/info-items-manager";
 
 import { sleep } from "@/utils";
 
-type CallbackResponse = (data: boolean, path: string, errorHandler?: () => void) => Promise<{ finished: boolean; progress: number }>;
+type TCallback = (data: boolean, path: string, errorHandler?: () => void) => Promise<{ finished: boolean; progress: number }>;
 
-export const fetchDataCallback = async (id: string, callback: CallbackResponse) => {
+export const fetchDataCallback = async (id: string, callback: TCallback) => {
   const path = await getInfoItem(id);
 
   let finish = false;
