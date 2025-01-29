@@ -1,8 +1,11 @@
 {
   "compilerOptions": {
+    "declaration": true,
+    "noEmit": false,
+    "outDir": "./dist",
     "types": []
   },
+  "exclude": ["**/*.test.ts"],
   "extends": "./tsconfig.json",
-  "include": ["src", "examples"],
-  "exclude": ["**/*.test.ts"]
+  "include": ["index.ts", "src", "examples"]
 }

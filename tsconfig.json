@@ -1,19 +1,18 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "CommonJS",
-    "strict": true,
-    "lib": ["ES2020", "DOM"],
-    "esModuleInterop": true,
-    "declaration": true,
-    "outDir": "./dist",
     "baseUrl": ".",
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "types": ["vitest/globals"],
+    "esModuleInterop": true,
+    "lib": ["ES2023"],
+    "module": "Node16",
+    "moduleResolution": "node16",
+    "noEmit": true,
     "paths": {
-      "@/*": ["./src/*"],
-    }
+      "@/*": ["./src/*"]
+    },
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022",
+    "types": ["vitest/globals"]
   },
-  "include": ["index.ts", "src/**/*.ts", "*.d.ts", "examples/**/*.ts", "test/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }

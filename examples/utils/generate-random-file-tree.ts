@@ -1,4 +1,4 @@
-import { VirtualDrive } from 'src';
+import VirtualDrive from '@/virtual-drive';
 import { v4 as uuidv4 } from 'uuid';
 
 interface GenerateOptions {

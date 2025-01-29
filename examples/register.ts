@@ -1,13 +1,13 @@
-import { QueueItem, VirtualDrive } from "src";
-
 import { logger } from "@/logger";
+import { QueueManager } from "@/queue/queue-manager";
+import { QueueItem } from "@/queue/queueManager";
+import VirtualDrive from "@/virtual-drive";
 
 import { onCancelFetchDataCallback, onMessageCallback, onRenameCallbackWithCallback } from "./callbacks";
-import { onDeleteCallback } from "./callbacks/notify-delete.callback";
-import { onFetchDataCallback } from "./callbacks/notify-fetch-data.callback";
+import { notifyDeleteCallback } from "./callbacks/notify-delete.callback";
+import { fetchDataCallback } from "./callbacks/notify-fetch-data.callback";
 import { drive } from "./drive";
 import { addInfoItem, initInfoItems } from "./info-items-manager";
-import { QueueManager } from "./queueManager";
 import settings from "./settings";
 import { generateRandomFilesAndFolders } from "./utils/generate-random-file-tree";
 
@@ -18,13 +18,13 @@ drive.registerSyncRoot(
   settings.driveVersion,
   "{12345678-1234-1234-1234-123456789012}",
   {
-    notifyDeleteCallback: onDeleteCallback,
+    notifyDeleteCallback,
     notifyRenameCallback: onRenameCallbackWithCallback,
-    fetchDataCallback: onFetchDataCallback,
+    fetchDataCallback,
     cancelFetchDataCallback: onCancelFetchDataCallback,
     notifyMessageCallback: onMessageCallback,
   },
-  settings.defaultIconPath,
+  settings.iconPath,
 );
 
 const handleAdd = async (task: QueueItem) => {
@@ -32,7 +32,6 @@ const handleAdd = async (task: QueueItem) => {
     logger.info({ fn: "handleAdd", path: task.path });
     const id = await addInfoItem(task.path);
     drive.convertToPlaceholder(task.path, id);
-    // await drive.updateSyncStatus(task.path, task.isFolder, true);
   } catch (error) {
     logger.error(error, "handleAdd");
   }
@@ -69,12 +68,19 @@ const handleChangeSize = async (task: QueueItem) => {
   }
 };
 
-const queueManager = new QueueManager({
+const handlers = {
   handleAdd,
   handleHydrate,
   handleDehydrate,
   handleChangeSize,
-});
+};
+
+const notify = {
+  onTaskSuccess: async () => logger.info({ fn: "onTaskSuccess" }),
+  onTaskProcessing: async () => logger.info({ fn: "onTaskProcessing" }),
+};
+
+const queueManager = new QueueManager(handlers, notify, settings.queuePersistPath);
 
 drive.connectSyncRoot();
 
@@ -98,5 +104,3 @@ const fileGenerationOptions = {
     console.log("[EXAMPLE] error: " + error);
   }
 })();
-
-export default drive;

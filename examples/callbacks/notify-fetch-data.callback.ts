@@ -4,7 +4,7 @@ import { sleep } from "@/utils";
 
 type CallbackResponse = (data: boolean, path: string, errorHandler?: () => void) => Promise<{ finished: boolean; progress: number }>;
 
-export const onFetchDataCallback = async (id: string, callback: CallbackResponse) => {
+export const fetchDataCallback = async (id: string, callback: CallbackResponse) => {
   const path = await getInfoItem(id);
 
   let finish = false;
