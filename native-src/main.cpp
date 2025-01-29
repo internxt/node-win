@@ -3,24 +3,6 @@
 
 napi_value init(napi_env env, napi_value exports)
 {
-  // Watcher
-  napi_property_descriptor watchAndWaitDesc = {
-      "watchAndWait", // nombre de la función en JS
-      nullptr,
-      WatchAndWaitWrapper, // nombre de tu función en C++
-      nullptr,
-      nullptr,
-      nullptr,
-      napi_default,
-      nullptr};
-
-  napi_status defineWatchAndWaitStatus = napi_define_properties(env, exports, 1, &watchAndWaitDesc);
-  if (defineWatchAndWaitStatus != napi_ok)
-  {
-    napi_throw_error(env, nullptr, "Failed to define WatchAndWait function");
-    return nullptr;
-  }
-
   // CreatePlaceholderFileWrapper
   napi_property_descriptor desc = {
       "createPlaceholderFile",
@@ -244,23 +226,6 @@ napi_value init(napi_env env, napi_value exports)
   if (convertToPlaceholderStatus != napi_ok)
   {
     napi_throw_error(env, nullptr, "Failed to define convertToPlaceholder function");
-    return nullptr;
-  }
-
-  napi_property_descriptor closeMutexDesc = {
-      "closeMutex",
-      nullptr,
-      CloseMutexWrapper,
-      nullptr,
-      nullptr,
-      nullptr,
-      napi_default,
-      nullptr};
-
-  napi_status closeMutexStatus = napi_define_properties(env, exports, 1, &closeMutexDesc);
-  if (closeMutexStatus != napi_ok)
-  {
-    napi_throw_error(env, nullptr, "Failed to define closeMutex function");
     return nullptr;
   }
 

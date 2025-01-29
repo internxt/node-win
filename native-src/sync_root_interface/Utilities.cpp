@@ -160,6 +160,37 @@ void Utilities::ApplyTransferStateToFile(_In_ PCWSTR fullPath, _In_ CF_CALLBACK_
     }
 }
 
+
+bool Utilities::IsTemporaryFile(const std::wstring &fullPath)
+{
+    size_t fileNameStart = fullPath.find_last_of(L'\\') + 1;
+    if (fullPath.size() >= fileNameStart + 2 && fullPath.compare(fileNameStart, 2, L"~$") == 0)
+    {
+        return true;
+    }
+
+    std::array<std::wstring, 7> tempExtensions = {
+        L".tmp",
+        L".laccdb",
+        L".ldb",
+        L".bak",
+        L".sv$",
+        L".psdtmp",
+        L".~tmp"
+    };
+
+    for (const auto &ext : tempExtensions)
+    {
+        if (fullPath.size() >= ext.size() &&
+            fullPath.compare(fullPath.size() - ext.size(), ext.size(), ext) == 0)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 std::wstring Utilities::ProcessErrorNameToWString(ProcessErrorName error)
 {
     switch (error)

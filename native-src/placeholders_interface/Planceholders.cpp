@@ -4,7 +4,6 @@
 #include "PlaceholderInfo.h"
 #include <winrt/base.h>
 #include <shlwapi.h>
-#include "SyncRootWatcher.h"
 #include <vector>
 #include <filesystem>
 #include <fstream>
@@ -451,6 +450,68 @@ CF_PLACEHOLDER_STATE GetPlaceholderStateMock(const std::wstring &filePath)
     }
 }
 
+
+FileState Placeholders::GetPlaceholderInfo(const std::wstring &directoryPath)
+{
+
+    constexpr auto fileIdMaxLength = 400;
+    const auto infoSize = sizeof(CF_PLACEHOLDER_BASIC_INFO) + fileIdMaxLength;
+    auto info = PlaceHolderInfo(reinterpret_cast<CF_PLACEHOLDER_BASIC_INFO *>(new char[infoSize]), FileHandle::deletePlaceholderInfo);
+
+    FileState fileState;
+    auto fileHandle = handleForPath(directoryPath);
+
+    if (!fileHandle)
+    {
+        printf("Error: Invalid file handle.\n");
+        fileState.pinstate = PinState::Unspecified;
+        fileState.syncstate = SyncState::Undefined;
+        return fileState;
+    }
+
+    HRESULT result = CfGetPlaceholderInfo(fileHandle.get(), CF_PLACEHOLDER_INFO_BASIC, info.get(), Utilities::sizeToDWORD(infoSize), nullptr);
+
+    if (result != S_OK)
+    {
+        printf("CfGetPlaceholderInfo failed with HRESULT %lx\n", result);
+        fileState.pinstate = PinState::Unspecified;
+        fileState.syncstate = SyncState::Undefined;
+        return fileState;
+    }
+
+    auto pinStateOpt = info.pinState();
+    auto syncStateOpt = info.syncState();
+
+    if (syncStateOpt.has_value())
+    {
+
+        SyncState syncState = syncStateOpt.value();
+
+        printf("placeholderInfo.SyncState: %s\n", syncStateToString(syncState).c_str());
+    }
+    else
+    {
+        printf("placeholderInfo.SyncState: No value\n");
+    }
+
+    if (pinStateOpt.has_value())
+    {
+
+        PinState pinState = pinStateOpt.value();
+
+        printf("placeholderInfo.PinState: %s\n", pinStateToString(pinState).c_str());
+    }
+    else
+    {
+        printf("placeholderInfo.PinState: No value\n");
+    }
+
+    fileState.pinstate = pinStateOpt.value_or(PinState::Unspecified);
+    fileState.syncstate = syncStateOpt.value_or(SyncState::Undefined);
+
+    return fileState;
+}
+
 std::vector<std::wstring> Placeholders::GetPlaceholderWithStatePending(const std::wstring &directoryPath)
 {
     std::vector<std::wstring> resultPaths;
@@ -466,7 +527,7 @@ std::vector<std::wstring> Placeholders::GetPlaceholderWithStatePending(const std
         }
         else if (entry.is_regular_file())
         {
-            FileState placeholderState = DirectoryWatcher::getPlaceholderInfo(path);
+            FileState placeholderState = Placeholders::GetPlaceholderInfo(path);
             bool isFileValidForSync = (placeholderState.syncstate == SyncState::Undefined || placeholderState.syncstate == SyncState::NotInSync);
             if (isFileValidForSync && IsFileValidForSync(path))
             {

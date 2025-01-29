@@ -28,7 +28,6 @@ export type TAddon = {
     lastAccessTime: number,
     path: string,
   ): any;
-  closeMutex(): any;
   hydrateFile(path: string): Promise<z.infer<typeof addonZod.hydrateFile>>;
   getPlaceholderAttribute(path: string): z.infer<typeof addonZod.getPlaceholderAttribute>;
   dehydrateFile(path: string): z.infer<typeof addonZod.dehydrateFile>;
