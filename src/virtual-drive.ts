@@ -7,6 +7,7 @@ import { Status } from "./types/placeholder.type";
 import { IQueueManager } from "./queue/queueManager";
 
 import { addon } from "./addon";
+import { createLogger } from "./logger";
 
 interface ItemInfo {
   path: string;
@@ -247,7 +248,7 @@ class VirtualDrive {
 
     this.watcher.queueManager = queueManager;
 
-    this.watcher.logPath = loggerPath;
+    this.watcher.logger = createLogger(loggerPath);
 
     this.watcher.syncRootPath = path;
     this.watcher.options = {

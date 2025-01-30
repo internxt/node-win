@@ -3,6 +3,7 @@ import { Stats } from "fs";
 import { Logger } from "winston";
 
 import { QueueManager } from "@/queue/queue-manager";
+import { IQueueManager } from "@/queue/queueManager";
 
 import { OnAddDirService } from "./events/on-add-dir.service";
 import { OnAddService } from "./events/on-add.service";
@@ -18,7 +19,7 @@ export class Watcher {
   syncRootPath!: string;
   options!: Watcher.TOptions;
   virtualDriveFn!: IVirtualDriveFunctions;
-  queueManager!: QueueManager;
+  queueManager!: IQueueManager;
   logger!: Logger;
   fileInDevice = new Set<string>();
 
