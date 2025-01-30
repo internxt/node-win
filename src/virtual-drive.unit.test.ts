@@ -9,10 +9,10 @@ import VirtualDrive from "./virtual-drive";
 vi.mock("fs");
 vi.mock("@/addon", () => ({
   addon: {
-    addLoggerPath: vi.fn(),
+    addLoggerPath: vi.fn().mockReturnValue(true),
     connectSyncRoot: vi.fn(),
     createPlaceholderFile: vi.fn(),
-    registerSyncRoot: vi.fn(),
+    registerSyncRoot: vi.fn().mockReturnValue(0),
   },
 }));
 
@@ -26,6 +26,38 @@ describe("VirtualDrive", () => {
     vi.clearAllMocks();
   });
 
+  describe("When convertToWindowsPath is called", () => {
+    it("When unix path, then convert to windows path", () => {
+      // Arrange
+      const drive = new VirtualDrive(syncRootPath, logPath);
+
+      // Assert
+      const result = drive.convertToWindowsPath("C:/test-drive/test.txt");
+      expect(result).toBe("C:\\test-drive\\test.txt");
+    });
+
+    it("When windows path, then do not modify it", () => {
+      // Arrange
+      const drive = new VirtualDrive(syncRootPath, logPath);
+
+      // Assert
+      const result = drive.convertToWindowsPath("C:\\test-drive\\test.txt");
+      expect(result).toBe("C:\\test-drive\\test.txt");
+    });
+  });
+
+  it("When fix path is called", () => {
+    // Arrange
+    const drive = new VirtualDrive(syncRootPath, logPath);
+
+    // Assert
+    expect(drive.fixPath("C:\\test-drive\\test.txt")).toBe("C:\\test-drive\\test.txt");
+    expect(drive.fixPath("C:/test-drive/test.txt")).toBe("C:\\test-drive\\test.txt");
+    expect(drive.fixPath("test.txt")).toBe("C:\\test-drive\\test.txt");
+    expect(drive.fixPath("\\test.txt")).toBe("C:\\test-drive\\test.txt");
+    expect(drive.fixPath("/test.txt")).toBe("C:\\test-drive\\test.txt");
+  });
+
   describe("When VirtualDrive is created", () => {
     it("When syncRootPath does not exist, then it creates it", () => {
       // Arrange
@@ -35,9 +67,7 @@ describe("VirtualDrive", () => {
       new VirtualDrive(syncRootPath, logPath);
 
       // Assert
-      expect(fs.mkdirSync).toHaveBeenCalledWith(syncRootPath, {
-        recursive: true,
-      });
+      expect(fs.mkdirSync).toHaveBeenCalledWith(syncRootPath, { recursive: true });
     });
 
     it("When syncRootPath exists, then it doesn't create it", () => {
@@ -94,7 +124,7 @@ describe("VirtualDrive", () => {
       const callbacks = {};
 
       // Act
-      await drive.registerSyncRoot(providerName, providerVersion, providerId, callbacks, logoPath);
+      drive.registerSyncRoot(providerName, providerVersion, providerId, callbacks, logoPath);
 
       // Assert
       expect(drive.callbacks).toBe(callbacks);
