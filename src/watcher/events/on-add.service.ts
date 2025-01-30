@@ -8,19 +8,16 @@ import { Watcher } from "../watcher";
 export class OnAddService {
   execute({ self, path, stats }: TProps) {
     try {
-      self.writeLog("onAdd", path, stats);
       const ext = path.split(".").pop();
-
       const { size, birthtime, mtime } = stats;
-
       const fileIntenty = self.virtualDriveFn.CfGetPlaceHolderIdentity(path);
 
-      self.writeLog("fileIntenty in add", fileIntenty);
+      self.logger.info({ fn: "onAdd", path, ext, size, birthtime, mtime, fileIntenty });
 
       if (!ext || size === 0 || size > 20 * 1024 * 1024 * 1024) return;
 
       const status = self.virtualDriveFn.CfGetPlaceHolderState(path);
-      self.writeLog("status", status);
+      self.logger.info({ fn: "onAdd", path, status });
 
       // Verificar tiempos de creación y modificación
       const creationTime = new Date(birthtime).getTime();
@@ -47,12 +44,11 @@ export class OnAddService {
         self.fileInDevice.add(path);
         self.queueManager.enqueue({ path, type: typeQueue.add, isFolder: false });
       } else if (isMovedFile) {
-        self.writeLog("File moved:", path);
+        self.logger.info({ fn: "onAdd", msg: "File moved", path });
         // Procesar archivo movido según sea necesario
       }
     } catch (error) {
-      console.log("Error en onAdd");
-      console.error(error);
+      self.logger.error("onAddService", error);
     }
   }
 }

@@ -1,20 +1,26 @@
-import pino from "pino";
-import { cwd } from "process";
+import { resolve } from "path";
+import { inspect } from "util";
+import winston from "winston";
 
-const transport = pino.transport({
-  targets: [
-    {
-      target: "pino/file",
-      options: { destination: `${cwd()}/node-win.log` },
-    },
-    {
-      target: "pino-pretty",
-      options: {
-        colorize: true,
-        singleLine: true,
-      },
-    },
-  ],
-});
+const { format, transports } = winston;
 
-export const logger = pino({}, transport);
+export const createLogger = (path: string) => {
+  return winston.createLogger({
+    format: format.errors({ stack: true }),
+    transports: [
+      new transports.File({
+        filename: resolve(path),
+        format: format.combine(format.timestamp(), format.json()),
+      }),
+      new transports.Console({
+        format: format.combine(
+          format.printf(({ level, message, stack }) => {
+            const object: any = { level, message };
+            if (stack) object.stack = stack;
+            return inspect(object, { colors: true, depth: Infinity, breakLength: Infinity });
+          }),
+        ),
+      }),
+    ],
+  });
+};

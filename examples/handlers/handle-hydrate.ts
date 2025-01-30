@@ -1,6 +1,5 @@
-import { drive } from "examples/drive";
+import { drive, logger } from "examples/drive";
 
-import { logger } from "@/logger";
 import { QueueItem } from "@/queue/queueManager";
 
 export const handleHydrate = async (task: QueueItem) => {
@@ -8,6 +7,6 @@ export const handleHydrate = async (task: QueueItem) => {
     logger.info({ fn: "handleHydrate", path: task.path });
     await drive.hydrateFile(task.path);
   } catch (error) {
-    logger.error(error, "handleHydrate");
+    logger.error("handleHydrate", error);
   }
 };

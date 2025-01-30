@@ -1,9 +1,7 @@
 import yargs from "yargs";
 import z from "zod";
 
-import { logger } from "@/logger";
-
-import { drive } from "./drive";
+import { drive, logger } from "./drive";
 
 const argv = yargs
   .command("file", "El path del archivo para obtener el estado", {
@@ -24,5 +22,5 @@ if (data) {
   const pendingStates = drive.getPlaceholderWithStatePending();
   logger.info({ state, pendingStates });
 } else {
-  console.error("Por favor especifica un archivo con --file <path>");
+  logger.error("Por favor especifica un archivo con --file <path>");
 }

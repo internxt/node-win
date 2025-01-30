@@ -1,6 +1,5 @@
-import { drive } from "examples/drive";
+import { drive, logger } from "examples/drive";
 
-import { logger } from "@/logger";
 import { QueueItem } from "@/queue/queueManager";
 
 export const handleChangeSize = async (task: QueueItem) => {
@@ -11,6 +10,6 @@ export const handleChangeSize = async (task: QueueItem) => {
     drive.updateFileIdentity(task.path, result, false);
     drive.updateSyncStatus(task.path, task.isFolder, true);
   } catch (error) {
-    logger.error(error, "handleChangeSize");
+    logger.error("handleChangeSize", error);
   }
 };

@@ -10,26 +10,26 @@ export class OnRawService {
   async execute({ self, event, path, details }: TProps) {
     if (event === "change" && details.prev && details.curr) {
       if (extname(path) === "") {
-        self.writeLog({ event: "onRaw", path, details: "No extension" });
+        self.logger.info({ event: "onRaw", path, details: "No extension" });
         return;
       }
 
       const item = await stat(path);
       if (item.isDirectory()) {
-        self.writeLog({ event: "onRaw", path, details: "Is directory" });
+        self.logger.info({ event: "onRaw", path, details: "Is directory" });
         return;
       }
 
       // // Ignorar archivos vacíos
       // if (item.size === 0) {
-      //   self.writeLog("Archivo vacío ignorado", path);
+      //   self.logger.info("Archivo vacío ignorado", path);
       //   return;
       // }
 
       const action = await this.detectContextMenuAction.execute({ self, details, path, isFolder: false });
 
       if (action) {
-        self.writeLog({ event: "onRaw", path, action });
+        self.logger.info({ event: "onRaw", path, action });
       }
     }
   }

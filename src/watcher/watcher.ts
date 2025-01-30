@@ -1,8 +1,10 @@
 import * as chokidar from "chokidar";
-import fs, { Stats } from "fs";
-import { inspect } from "util";
+import { Stats } from "fs";
+import { Logger } from "winston";
 
-import { IQueueManager } from "../queue/queueManager";
+import { QueueManager } from "@/queue/queue-manager";
+import { IQueueManager } from "@/queue/queueManager";
+
 import { OnAddDirService } from "./events/on-add-dir.service";
 import { OnAddService } from "./events/on-add.service";
 import { OnAllService } from "./events/on-all.service";
@@ -18,7 +20,7 @@ export class Watcher {
   options!: Watcher.TOptions;
   virtualDriveFn!: IVirtualDriveFunctions;
   queueManager!: IQueueManager;
-  logPath!: string;
+  logger!: Logger;
   fileInDevice = new Set<string>();
 
   constructor(
@@ -29,41 +31,29 @@ export class Watcher {
   ) {}
 
   init(
-    queueManager: IQueueManager,
+    queueManager: QueueManager,
     syncRootPath: string,
     options: chokidar.WatchOptions,
-    logPath: string,
+    logger: Logger,
     virtualDriveFn: IVirtualDriveFunctions,
   ) {
     this.queueManager = queueManager;
     this.syncRootPath = syncRootPath;
     this.options = options;
-    this.logPath = logPath;
+    this.logger = logger;
     this.virtualDriveFn = virtualDriveFn;
   }
 
-  public writeLog = (...messages: unknown[]) => {
-    const date = new Date().toISOString();
-    const parsedMessages = inspect(messages, { depth: Infinity });
-    const logMessage = `${date} - ${parsedMessages}`;
-
-    fs.appendFile(this.logPath, logMessage, (err) => {
-      if (err) {
-        console.error("Error writing to log file", err);
-      }
-    });
-  };
-
   private onChange = (path: string, stats?: Stats) => {
-    this.writeLog("onChange", path, stats);
+    this.logger.info({ fn: "onChange", path });
   };
 
   private onError = (error: Error) => {
-    this.writeLog("onError", error);
+    this.logger.error("onError", error);
   };
 
   private onReady = () => {
-    this.writeLog("onReady");
+    this.logger.info({ fn: "onReady" });
   };
 
   public watchAndWait() {
@@ -79,8 +69,7 @@ export class Watcher {
         .on("raw", (event, path, details) => this.onRaw.execute({ self: this, event, path, details }))
         .on("ready", this.onReady);
     } catch (error) {
-      this.writeLog("Error en watchAndWait");
-      console.error(error);
+      this.logger.error("watchAndWait", error);
     }
   }
 }

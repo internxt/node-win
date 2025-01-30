@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-import { logger } from "@/logger";
 import { PinState, SyncState } from "@/types/placeholder.type";
 
 export const addonZod = {
@@ -20,11 +19,4 @@ export const addonZod = {
   registerSyncRoot: z.literal(0),
   updateSyncStatus: z.boolean(),
   unregisterSyncRoot: z.number(),
-};
-
-export const parseAddonZod = <T>(fn: keyof typeof addonZod, data: T) => {
-  const schema = addonZod[fn];
-  const result = schema.safeParse(data);
-  if (result.error) logger.error(result.error, fn);
-  return data;
 };

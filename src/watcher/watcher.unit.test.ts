@@ -3,12 +3,13 @@ import { existsSync } from "fs";
 import { mkdir, writeFile } from "fs/promises";
 import { join } from "path";
 import { TEST_FILES } from "test/utils/setup.helper.test";
-import { sleep } from "test/utils/sleep.helper.test";
 import { v4 } from "uuid";
 import { beforeEach } from "vitest";
 import { mockDeep } from "vitest-mock-extended";
+import { Logger } from "winston";
 
 import { QueueManager } from "@/queue/queue-manager";
+import { sleep } from "@/utils";
 
 import { OnAddDirService } from "./events/on-add-dir.service";
 import { OnAddService } from "./events/on-add.service";
@@ -20,7 +21,7 @@ import { IVirtualDriveFunctions } from "./watcher.interface";
 describe("Watcher", () => {
   const virtualDriveFn = mockDeep<IVirtualDriveFunctions>();
   const queueManager = mockDeep<QueueManager>();
-  const logPath = join(TEST_FILES, `${v4()}.log`);
+  const logger = mockDeep<Logger>();
   const options = {};
 
   const onAll = mockDeep<OnAllService>();
@@ -34,7 +35,7 @@ describe("Watcher", () => {
     }
 
     const watcher = new Watcher(onAll, onAdd, onAddDir, onRaw);
-    watcher.init(queueManager, syncRootPath, options, logPath, virtualDriveFn);
+    watcher.init(queueManager, syncRootPath, options, logger, virtualDriveFn);
     watcher.watchAndWait();
   };
 
