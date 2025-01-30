@@ -25,6 +25,6 @@ export const addonZod = {
 export const parseAddonZod = <T>(fn: keyof typeof addonZod, data: T) => {
   const schema = addonZod[fn];
   const result = schema.safeParse(data);
-  if (result.error) logger.error(result.error, fn);
+  if (result.error) logger.error(fn, result.error);
   return data;
 };

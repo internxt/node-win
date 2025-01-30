@@ -8,6 +8,6 @@ export const handleDehydrate = async (task: QueueItem) => {
     logger.info({ fn: "handleDehydrate", path: task.path });
     drive.dehydrateFile(task.path);
   } catch (error) {
-    logger.error(error, "handleDehydrate");
+    logger.error("handleDehydrate", error);
   }
 };

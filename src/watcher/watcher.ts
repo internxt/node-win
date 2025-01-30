@@ -2,6 +2,8 @@ import * as chokidar from "chokidar";
 import fs, { Stats } from "fs";
 import { inspect } from "util";
 
+import { logger } from "@/logger";
+
 import { IQueueManager } from "../queue/queueManager";
 import { OnAddDirService } from "./events/on-add-dir.service";
 import { OnAddService } from "./events/on-add.service";
@@ -43,13 +45,15 @@ export class Watcher {
   }
 
   public writeLog = (...messages: unknown[]) => {
+    logger.info(messages);
+
     const date = new Date().toISOString();
     const parsedMessages = inspect(messages, { depth: Infinity });
     const logMessage = `${date} - ${parsedMessages}`;
 
     fs.appendFile(this.logPath, logMessage, (err) => {
       if (err) {
-        console.error("Error writing to log file", err);
+        logger.error("Error writing to log file", err);
       }
     });
   };
@@ -63,7 +67,7 @@ export class Watcher {
   };
 
   private onReady = () => {
-    this.writeLog("onReady");
+    this.writeLog("Watcher ready");
   };
 
   public watchAndWait() {
@@ -80,7 +84,7 @@ export class Watcher {
         .on("ready", this.onReady);
     } catch (error) {
       this.writeLog("Error en watchAndWait");
-      console.error(error);
+      logger.error(error);
     }
   }
 }

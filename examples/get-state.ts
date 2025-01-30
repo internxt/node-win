@@ -24,5 +24,5 @@ if (data) {
   const pendingStates = drive.getPlaceholderWithStatePending();
   logger.info({ state, pendingStates });
 } else {
-  console.error("Por favor especifica un archivo con --file <path>");
+  logger.error("Por favor especifica un archivo con --file <path>");
 }

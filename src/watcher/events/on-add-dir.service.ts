@@ -4,6 +4,7 @@ import { typeQueue } from "@/queue/queueManager";
 import { PinState, SyncState } from "@/types/placeholder.type";
 
 import { Watcher } from "../watcher";
+import { logger } from "@/logger";
 
 export class OnAddDirService {
   execute({ self, path, stats }: TProps) {
@@ -20,7 +21,7 @@ export class OnAddDirService {
       self.queueManager.enqueue({ path, type: typeQueue.add, isFolder: true });
     } catch (error) {
       self.writeLog("Error en onAddDir");
-      console.error(error);
+      logger.error("onAddDir",error);
     }
   }
 }

@@ -59,9 +59,12 @@ export class DetectContextMenuActionService {
       status.pinState == PinState.OnlineOnly &&
       status.syncState == SyncState.InSync
     ) {
-      if (curr.blocks === 0) {
-        return "Liberando espacio";
-      }
+      // TODO: we need to disable this for now even if dehydate it's called two times
+      // because files that are a .zip have blocks === 0, so they never dehydrate
+      // because it's seems that it's already been dehydrated
+      // if (curr.blocks === 0) {
+      //   return "Liberando espacio";
+      // }
 
       self.fileInDevice.delete(path);
       self.queueManager.enqueue({ path, type: typeQueue.dehydrate, isFolder, fileId: itemId });

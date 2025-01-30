@@ -4,18 +4,16 @@ import { typeQueue } from "@/queue/queueManager";
 import { PinState, SyncState } from "@/types/placeholder.type";
 
 import { Watcher } from "../watcher";
+import { logger } from "@/logger";
 
 export class OnAddService {
   execute({ self, path, stats }: TProps) {
     try {
-      self.writeLog("onAdd", path, stats);
       const ext = path.split(".").pop();
-
       const { size, birthtime, mtime } = stats;
-
       const fileIntenty = self.virtualDriveFn.CfGetPlaceHolderIdentity(path);
 
-      self.writeLog("fileIntenty in add", fileIntenty);
+      self.writeLog({ event: "onAdd", path, ext, size, birthtime, mtime, fileIntenty });
 
       if (!ext || size === 0 || size > 20 * 1024 * 1024 * 1024) return;
 
@@ -51,8 +49,7 @@ export class OnAddService {
         // Procesar archivo movido según sea necesario
       }
     } catch (error) {
-      console.log("Error en onAdd");
-      console.error(error);
+      logger.error("onAddService", error);
     }
   }
 }

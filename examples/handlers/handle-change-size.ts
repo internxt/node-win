@@ -11,6 +11,6 @@ export const handleChangeSize = async (task: QueueItem) => {
     drive.updateFileIdentity(task.path, result, false);
     drive.updateSyncStatus(task.path, task.isFolder, true);
   } catch (error) {
-    logger.error(error, "handleChangeSize");
+    logger.error("handleChangeSize", error);
   }
 };
