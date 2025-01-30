@@ -10,15 +10,13 @@ export class DetectContextMenuActionService {
     const { prev, curr } = details;
 
     const status = self.virtualDriveFn.CfGetPlaceHolderState(path);
-    const attribute = self.virtualDriveFn.CfGetPlaceHolderAttributes(path);
     const itemId = self.virtualDriveFn.CfGetPlaceHolderIdentity(path);
-    const isInDevice = self.fileInDevice.has(path);
+    const isInDevice = self.fileInDevice.has(itemId);
 
     self.logger.info({
       event: "onRaw",
       path,
       status,
-      attribute,
       itemId,
       isInDevice,
       prev: {
@@ -30,49 +28,32 @@ export class DetectContextMenuActionService {
         size: curr.size,
         ctimeMs: curr.ctimeMs,
         mtimeMs: curr.mtimeMs,
-        blocks: curr.blocks,
       },
     });
 
+    // TODO: check same size but different content
+    if (prev.size !== curr.size) {
+      self.queueManager.enqueue({ path, type: typeQueue.changeSize, isFolder, fileId: itemId });
+      self.fileInDevice.add(itemId);
+      return "Cambio de tamaño";
+    }
+
     if (
-      prev.size === curr.size &&
       prev.ctimeMs !== curr.ctimeMs &&
       prev.mtimeMs === curr.mtimeMs &&
       status.pinState === PinState.AlwaysLocal &&
       status.syncState === SyncState.InSync &&
       !isInDevice
     ) {
-      self.fileInDevice.add(path);
-
-      if (curr.blocks !== 0) {
-        // This event is triggered from the addon
-        return "Doble click en el archivo";
-      }
-
+      self.fileInDevice.add(itemId);
       self.queueManager.enqueue({ path, type: typeQueue.hydrate, isFolder, fileId: itemId });
       return "Mantener siempre en el dispositivo";
     }
 
-    if (
-      prev.size === curr.size &&
-      prev.ctimeMs !== curr.ctimeMs &&
-      status.pinState == PinState.OnlineOnly &&
-      status.syncState == SyncState.InSync
-    ) {
-      // Dehydrate it's always called two times
-      if (!isInDevice) {
-        return "Liberando espacio";
-      }
-
-      self.fileInDevice.delete(path);
+    if (prev.ctimeMs !== curr.ctimeMs && status.pinState == PinState.OnlineOnly && status.syncState == SyncState.InSync) {
+      self.fileInDevice.delete(itemId);
       self.queueManager.enqueue({ path, type: typeQueue.dehydrate, isFolder, fileId: itemId });
       return "Liberar espacio";
-    }
-
-    if (prev.size !== curr.size) {
-      self.queueManager.enqueue({ path, type: typeQueue.changeSize, isFolder, fileId: itemId });
-      self.fileInDevice.add(path);
-      return "Cambio de tamaño";
     }
   }
 }

@@ -1,7 +1,7 @@
 export type NapiCallbackFunction = (...args: any[]) => any;
 
 export type InputSyncCallbacks = {
-  fetchDataCallback?: NapiCallbackFunction;
+  fetchDataCallback: NapiCallbackFunction;
   validateDataCallback?: NapiCallbackFunction;
   cancelFetchDataCallback?: NapiCallbackFunction;
   fetchPlaceholdersCallback?: NapiCallbackFunction;

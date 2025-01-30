@@ -19,7 +19,7 @@ const PLACEHOLDER_ATTRIBUTES = {
 class VirtualDrive {
   syncRootPath: string;
   logger: Logger;
-  callbacks: Callbacks = {};
+  callbacks!: Callbacks;
 
   private watcher = new Watcher();
 
@@ -62,7 +62,7 @@ class VirtualDrive {
     const result = schema.safeParse(data);
     if (result.error) this.logger.error(fn, result.error);
     return data;
-  };
+  }
 
   addLoggerPath(loggerPath: string) {
     const result = addon.addLoggerPath(loggerPath);
@@ -89,7 +89,14 @@ class VirtualDrive {
   }
 
   connectSyncRoot() {
-    const result = addon.connectSyncRoot(this.syncRootPath, this.callbacks);
+    const result = addon.connectSyncRoot(this.syncRootPath, {
+      ...this.callbacks,
+      fetchDataCallback: (...props) => {
+        const id = props[0];
+        this.watcher.fileInDevice.add(id);
+        this.callbacks.fetchDataCallback(...props);
+      }
+    });
     return this.parseAddonZod("connectSyncRoot", result);
   }
 
