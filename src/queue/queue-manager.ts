@@ -3,8 +3,6 @@ import lodashChunk from "lodash.chunk";
 
 import { logger } from "@/logger";
 
-// import { logger } from "@/logger";
-
 import { HandleAction, HandleActions, IQueueManager, QueueItem, typeQueue } from "./queueManager";
 
 export type QueueHandler = {
