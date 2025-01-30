@@ -1,22 +1,26 @@
 import { resolve } from "path";
 import { inspect } from "util";
-import { createLogger, format, transports } from "winston";
+import winston from "winston";
 
-export const logger = createLogger({
-  format: format.errors({ stack: true }),
-  transports: [
-    new transports.File({
-      filename: resolve("node-win.log"),
-      format: format.combine(format.timestamp(), format.json()),
-    }),
-    new transports.Console({
-      format: format.combine(
-        format.printf(({ level, message, stack }) => {
-          const object: any = { level, message };
-          if (stack) object.stack = stack;
-          return inspect(object, { colors: true, depth: Infinity, breakLength: Infinity });
-        }),
-      ),
-    }),
-  ],
-});
+const { format, transports } = winston;
+
+export const createLogger = (path: string) => {
+  return winston.createLogger({
+    format: format.errors({ stack: true }),
+    transports: [
+      new transports.File({
+        filename: resolve(path),
+        format: format.combine(format.timestamp(), format.json()),
+      }),
+      new transports.Console({
+        format: format.combine(
+          format.printf(({ level, message, stack }) => {
+            const object: any = { level, message };
+            if (stack) object.stack = stack;
+            return inspect(object, { colors: true, depth: Infinity, breakLength: Infinity });
+          }),
+        ),
+      }),
+    ],
+  });
+};

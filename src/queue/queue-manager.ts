@@ -1,9 +1,8 @@
 import fs from "fs";
 import lodashChunk from "lodash.chunk";
+import { Logger } from "winston";
 
-import { logger } from "@/logger";
-
-import { HandleAction, HandleActions, IQueueManager, QueueItem, typeQueue } from "./queueManager";
+import { HandleAction, HandleActions, QueueItem, typeQueue } from "./queueManager";
 
 export type QueueHandler = {
   handleAdd: HandleAction;
@@ -18,7 +17,7 @@ export type QueueManagerCallback = {
   onTaskProcessing: () => Promise<void>;
 };
 
-export class QueueManager implements IQueueManager {
+export class QueueManager {
   private queues: { [key: string]: QueueItem[] } = {
     add: [],
     hydrate: [],
@@ -41,6 +40,7 @@ export class QueueManager implements IQueueManager {
   private readonly notify: QueueManagerCallback;
   private readonly persistPath: string;
 
+  logger?: Logger;
   actions: HandleActions;
 
   constructor(handlers: QueueHandler, notify: QueueManagerCallback, persistPath: string) {
@@ -79,7 +79,7 @@ export class QueueManager implements IQueueManager {
   }
 
   private loadQueueStateFromFile(): void {
-    logger.debug("Loading queue state from file:" + this.persistPath);
+    this.logger?.debug("Loading queue state from file:" + this.persistPath);
     if (this.persistPath) {
       if (!fs.existsSync(this.persistPath)) {
         this.saveQueueStateToFile();
@@ -105,11 +105,11 @@ export class QueueManager implements IQueueManager {
   }
 
   public enqueue(task: QueueItem): void {
-    logger.debug({ fn: "enqueue", task });
+    this.logger?.debug({ fn: "enqueue", task });
     const existingTask = this.queues[task.type].find((item) => item.path === task.path && item.type === task.type);
 
     if (existingTask) {
-      logger.info("Task already exists in queue. Skipping.");
+      this.logger?.info("Task already exists in queue. Skipping.");
       return;
     }
 
@@ -181,17 +181,17 @@ export class QueueManager implements IQueueManager {
   }
 
   private async processTask(type: typeQueue, task: QueueItem) {
-    logger.debug({ fn: "processTask", task });
+    this.logger?.debug({ fn: "processTask", task });
 
     try {
       await this.actions[task.type](task);
     } catch (error) {
-      logger.error(`Failed to process ${type} task`, error);
+      this.logger?.error(`Failed to process ${type} task`, error);
     }
   }
 
   public async processAll(): Promise<void> {
-    logger.debug({ fn: "processAll" });
+    this.logger?.debug({ fn: "processAll" });
     const taskTypes = Object.keys(this.queues) as typeQueue[];
     await this.notify.onTaskProcessing();
     await Promise.all(taskTypes.map((type: typeQueue) => this.processQueue(type)));

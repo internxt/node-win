@@ -1,9 +1,8 @@
-import { drive } from "examples/drive";
+import { drive, logger } from "examples/drive";
 import { addInfoItem } from "examples/info-items-manager";
-
-import { logger } from "@/logger";
-import { QueueItem } from "@/queue/queueManager";
 import { v4 } from "uuid";
+
+import { QueueItem } from "@/queue/queueManager";
 
 export const handleAdd = async (task: QueueItem) => {
   try {

@@ -1,9 +1,7 @@
 import yargs from "yargs";
 import z from "zod";
 
-import { logger } from "@/logger";
-
-import { drive } from "./drive";
+import { drive, logger } from "./drive";
 
 const argv = yargs
   .command("file", "El path del archivo para obtener el estado", {

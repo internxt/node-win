@@ -1,4 +1,3 @@
-import { logger } from "@/logger";
 import { QueueManager } from "@/queue/queue-manager";
 import VirtualDrive from "@/virtual-drive";
 
@@ -7,7 +6,7 @@ import { notifyDeleteCallback } from "./callbacks/notify-delete.callback";
 import { fetchDataCallback } from "./callbacks/notify-fetch-data.callback";
 import { notifyMessageCallback } from "./callbacks/notify-message.callback";
 import { notifyRenameCallback } from "./callbacks/notify-rename.callback";
-import { drive } from "./drive";
+import { drive, logger } from "./drive";
 import { handleAdd } from "./handlers/handle-add";
 import { handleChangeSize } from "./handlers/handle-change-size";
 import { handleDehydrate } from "./handlers/handle-dehydrate";

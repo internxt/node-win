@@ -4,7 +4,6 @@ import { typeQueue } from "@/queue/queueManager";
 import { PinState, SyncState } from "@/types/placeholder.type";
 
 import { Watcher } from "../watcher";
-import { logger } from "@/logger";
 
 export class OnAddService {
   execute({ self, path, stats }: TProps) {
@@ -13,12 +12,12 @@ export class OnAddService {
       const { size, birthtime, mtime } = stats;
       const fileIntenty = self.virtualDriveFn.CfGetPlaceHolderIdentity(path);
 
-      self.writeLog({ event: "onAdd", path, ext, size, birthtime, mtime, fileIntenty });
+      self.logger.info({ fn: "onAdd", path, ext, size, birthtime, mtime, fileIntenty });
 
       if (!ext || size === 0 || size > 20 * 1024 * 1024 * 1024) return;
 
       const status = self.virtualDriveFn.CfGetPlaceHolderState(path);
-      self.writeLog("status", status);
+      self.logger.info({ fn: "onAdd", path, status });
 
       // Verificar tiempos de creación y modificación
       const creationTime = new Date(birthtime).getTime();
@@ -45,11 +44,11 @@ export class OnAddService {
         self.fileInDevice.add(path);
         self.queueManager.enqueue({ path, type: typeQueue.add, isFolder: false });
       } else if (isMovedFile) {
-        self.writeLog("File moved:", path);
+        self.logger.info({ fn: "onAdd", msg: "File moved", path });
         // Procesar archivo movido según sea necesario
       }
     } catch (error) {
-      logger.error("onAddService", error);
+      self.logger.error("onAddService", error);
     }
   }
 }

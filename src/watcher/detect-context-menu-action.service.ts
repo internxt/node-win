@@ -14,7 +14,7 @@ export class DetectContextMenuActionService {
     const itemId = self.virtualDriveFn.CfGetPlaceHolderIdentity(path);
     const isInDevice = self.fileInDevice.has(path);
 
-    self.writeLog({
+    self.logger.info({
       event: "onRaw",
       path,
       status,

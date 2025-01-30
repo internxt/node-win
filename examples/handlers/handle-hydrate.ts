@@ -1,6 +1,5 @@
-import { drive } from "examples/drive";
+import { drive, logger } from "examples/drive";
 
-import { logger } from "@/logger";
 import { QueueItem } from "@/queue/queueManager";
 
 export const handleHydrate = async (task: QueueItem) => {
