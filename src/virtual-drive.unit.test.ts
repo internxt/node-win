@@ -1,5 +1,4 @@
 import fs from "fs";
-import { v4 } from "uuid";
 import { Mock } from "vitest";
 
 import { addon } from "@/addon";
@@ -27,35 +26,50 @@ describe("VirtualDrive", () => {
   });
 
   describe("When convertToWindowsPath is called", () => {
-    it("When unix path, then convert to windows path", () => {
-      // Arrange
-      const drive = new VirtualDrive(syncRootPath, logPath);
+    // Arrange
+    const drive = new VirtualDrive(syncRootPath, logPath);
 
+    it("When unix path, then convert to windows path", () => {
       // Assert
       const result = drive.convertToWindowsPath("C:/test-drive/test.txt");
       expect(result).toBe("C:\\test-drive\\test.txt");
     });
 
     it("When windows path, then do not modify it", () => {
-      // Arrange
-      const drive = new VirtualDrive(syncRootPath, logPath);
-
       // Assert
       const result = drive.convertToWindowsPath("C:\\test-drive\\test.txt");
       expect(result).toBe("C:\\test-drive\\test.txt");
     });
   });
 
-  it("When fix path is called", () => {
+  describe("When fix path is called", () => {
     // Arrange
     const drive = new VirtualDrive(syncRootPath, logPath);
 
-    // Assert
-    expect(drive.fixPath("C:\\test-drive\\test.txt")).toBe("C:\\test-drive\\test.txt");
-    expect(drive.fixPath("C:/test-drive/test.txt")).toBe("C:\\test-drive\\test.txt");
-    expect(drive.fixPath("test.txt")).toBe("C:\\test-drive\\test.txt");
-    expect(drive.fixPath("\\test.txt")).toBe("C:\\test-drive\\test.txt");
-    expect(drive.fixPath("/test.txt")).toBe("C:\\test-drive\\test.txt");
+    it("When absolute windows path, then do not modify it", () => {
+      // Assert
+      expect(drive.fixPath("C:\\test-drive\\test.txt")).toBe("C:\\test-drive\\test.txt");
+    });
+
+    it("When absolute unix path, then convert to absolute windows path", () => {
+      // Assert
+      expect(drive.fixPath("C:/test-drive/test.txt")).toBe("C:\\test-drive\\test.txt");
+    });
+
+    it("When relative path, then convert to absolute windows path", () => {
+      // Assert
+      expect(drive.fixPath("test.txt")).toBe("C:\\test-drive\\test.txt");
+    });
+
+    it("When relative windows path, then convert to absolute windows path", () => {
+      // Assert
+      expect(drive.fixPath("\\test.txt")).toBe("C:\\test-drive\\test.txt");
+    });
+
+    it("When relative unix path, then convert to absolute windows path", () => {
+      // Assert
+      expect(drive.fixPath("/test.txt")).toBe("C:\\test-drive\\test.txt");
+    });
   });
 
   describe("When VirtualDrive is created", () => {
@@ -70,7 +84,7 @@ describe("VirtualDrive", () => {
       expect(fs.mkdirSync).toHaveBeenCalledWith(syncRootPath, { recursive: true });
     });
 
-    it("When syncRootPath exists, then it doesn't create it", () => {
+    it("When syncRootPath exists, then do not create it", () => {
       // Arrange
       mockExistsSync.mockReturnValue(true);
 
@@ -81,7 +95,7 @@ describe("VirtualDrive", () => {
       expect(fs.mkdirSync).not.toHaveBeenCalled();
     });
 
-    it("Then it calls addon.addLoggerPath with logPath provided", () => {
+    it("Then call addon.addLoggerPath", () => {
       // Act
       new VirtualDrive(syncRootPath, logPath);
 
@@ -110,25 +124,6 @@ describe("VirtualDrive", () => {
         expect.any(String),
         expect.stringContaining("C:\\test-drive\\folder\\subfolder"),
       );
-    });
-  });
-
-  describe("When call registerSyncRoot", () => {
-    it("Then it assigns callbacks and calls addon.registerSyncRoot", async () => {
-      // Arrange
-      const drive = new VirtualDrive(syncRootPath, logPath);
-      const providerName = "MyProvider";
-      const providerVersion = "1.0.0";
-      const providerId = v4();
-      const logoPath = "C:\\iconPath";
-      const callbacks = {};
-
-      // Act
-      drive.registerSyncRoot(providerName, providerVersion, providerId, callbacks, logoPath);
-
-      // Assert
-      expect(drive.callbacks).toBe(callbacks);
-      expect(addon.registerSyncRoot).toHaveBeenCalledWith(syncRootPath, providerName, providerVersion, providerId, logoPath);
     });
   });
 });

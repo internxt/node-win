@@ -237,4 +237,76 @@ describe("Watcher", () => {
       expect(getEvents()).toEqual(["addDir", "addDir", "unlinkDir"]);
     });
   });
+
+  describe("When pin items", () => {
+    it("When pin a file, then emit one change event", async () => {
+      // Arrange
+      const syncRootPath = join(TEST_FILES, v4());
+      const file = join(syncRootPath, `${v4()}.txt`);
+      await setupWatcher(syncRootPath);
+      await writeFile(file, Buffer.alloc(1000));
+
+      // Act
+      await sleep(50);
+      execSync(`attrib +P ${file}`);
+      await sleep(50);
+
+      // Assert
+      expect(getEvents()).toEqual(["addDir", "add", "change"]);
+    });
+
+    it("When pin a folder, then do not emit any event", async () => {
+      // Arrange
+      const syncRootPath = join(TEST_FILES, v4());
+      const folder = join(syncRootPath, v4());
+      await setupWatcher(syncRootPath);
+      await mkdir(folder);
+
+      // Act
+      await sleep(50);
+      execSync(`attrib +P ${folder}`);
+      await sleep(50);
+
+      // Assert
+      expect(getEvents()).toEqual(["addDir", "addDir"]);
+    });
+  });
+
+  describe("When unpin items", () => {
+    it("When unpin a file, then emit one change event", async () => {
+      // Arrange
+      const syncRootPath = join(TEST_FILES, v4());
+      const file = join(syncRootPath, `${v4()}.txt`);
+      await setupWatcher(syncRootPath);
+      await writeFile(file, Buffer.alloc(1000));
+
+      // Act
+      await sleep(50);
+      execSync(`attrib +P ${file}`);
+      await sleep(50);
+      execSync(`attrib -P ${file}`);
+      await sleep(50);
+
+      // Assert
+      expect(getEvents()).toEqual(["addDir", "add", "change", "change"]);
+    });
+
+    it("When unpin a folder, then do not emit any event", async () => {
+      // Arrange
+      const syncRootPath = join(TEST_FILES, v4());
+      const folder = join(syncRootPath, v4());
+      await setupWatcher(syncRootPath);
+      await mkdir(folder);
+
+      // Act
+      await sleep(50);
+      execSync(`attrib +P ${folder}`);
+      await sleep(50);
+      execSync(`attrib -P ${folder}`);
+      await sleep(50);
+
+      // Assert
+      expect(getEvents()).toEqual(["addDir", "addDir"]);
+    });
+  });
 });

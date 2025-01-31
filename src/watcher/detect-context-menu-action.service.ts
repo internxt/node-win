@@ -11,10 +11,11 @@ export class DetectContextMenuActionService {
 
     const status = self.virtualDriveFn.CfGetPlaceHolderState(path);
     const itemId = self.virtualDriveFn.CfGetPlaceHolderIdentity(path);
-    const isInDevice = self.fileInDevice.has(itemId);
+    const isInDevice = self.fileInDevice.has(itemId) || self.fileInDevice.has(path);
+    console.log("🚀 ~ DetectContextMenuActionService ~ execute ~ fileInDevice:", self.fileInDevice);
 
     self.logger.info({
-      event: "onRaw",
+      event: "change",
       path,
       status,
       itemId,
@@ -38,22 +39,20 @@ export class DetectContextMenuActionService {
       return "Cambio de tamaño";
     }
 
-    if (
-      prev.ctimeMs !== curr.ctimeMs &&
-      prev.mtimeMs === curr.mtimeMs &&
-      status.pinState === PinState.AlwaysLocal &&
-      status.syncState === SyncState.InSync &&
-      !isInDevice
-    ) {
-      self.fileInDevice.add(itemId);
-      self.queueManager.enqueue({ path, type: typeQueue.hydrate, isFolder, fileId: itemId });
-      return "Mantener siempre en el dispositivo";
-    }
+    if (prev.ctimeMs !== curr.ctimeMs && status.syncState === SyncState.InSync) {
+      if (status.pinState === PinState.AlwaysLocal && !isInDevice) {
+        self.fileInDevice.add(itemId);
+        self.queueManager.enqueue({ path, type: typeQueue.hydrate, isFolder, fileId: itemId });
+        return "Mantener siempre en el dispositivo";
+      }
 
-    if (prev.ctimeMs !== curr.ctimeMs && status.pinState == PinState.OnlineOnly && status.syncState == SyncState.InSync) {
-      self.fileInDevice.delete(itemId);
-      self.queueManager.enqueue({ path, type: typeQueue.dehydrate, isFolder, fileId: itemId });
-      return "Liberar espacio";
+      if (status.pinState == PinState.OnlineOnly && isInDevice) {
+        self.fileInDevice.delete(path);
+        self.fileInDevice.delete(itemId);
+        console.log("🚀 ~ DetectContextMenuActionService ~ execute ~ self.fileInDevice:", self.fileInDevice);
+        self.queueManager.enqueue({ path, type: typeQueue.dehydrate, isFolder, fileId: itemId });
+        return "Liberar espacio";
+      }
     }
   }
 }

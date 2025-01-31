@@ -11,18 +11,18 @@ export class OnRawService {
       if (event === "change" && details.prev && details.curr) {
         const item = await stat(path);
         if (item.isDirectory()) {
-          self.logger.info({ event: "onRaw", path, details: "Is directory" });
+          self.logger.info({ event: "change", path, details: "Is directory" });
           return;
         }
 
         const action = await this.detectContextMenuAction.execute({ self, details, path, isFolder: false });
 
         if (action) {
-          self.logger.info({ event: "onRaw", path, action });
+          self.logger.info({ event: "change", path, action });
         }
       }
     } catch (error) {
-      self.logger.error("Error en onRaw", error);
+      self.logger.error("Error en change", error);
     }
   }
 }

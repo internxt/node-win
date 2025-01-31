@@ -20,14 +20,14 @@ const handlers = { handleAdd, handleHydrate, handleDehydrate, handleChangeSize }
 const notify = { onTaskSuccess: async () => undefined, onTaskProcessing: async () => undefined };
 const queueManager = new QueueManager(handlers, notify, settings.queuePersistPath);
 
-drive.registerSyncRoot(settings.driveName, settings.driveVersion, settings.providerid, callbacks, settings.iconPath);
-drive.connectSyncRoot();
-
-try {
-  initInfoItems();
-  drive.watchAndWait(settings.syncRootPath, queueManager, settings.watcherLogPath);
-} catch (error) {
-  logger.error(error);
-  drive.disconnectSyncRoot();
-  VirtualDrive.unregisterSyncRoot(settings.syncRootPath);
-}
+drive.registerSyncRoot(settings.driveName, settings.driveVersion, settings.providerid, callbacks, settings.iconPath).then(() => {
+  try {
+    initInfoItems();
+    drive.connectSyncRoot();
+    drive.watchAndWait(settings.syncRootPath, queueManager, settings.watcherLogPath);
+  } catch (error) {
+    logger.error(error);
+    drive.disconnectSyncRoot();
+    VirtualDrive.unregisterSyncRoot(settings.syncRootPath);
+  }
+});

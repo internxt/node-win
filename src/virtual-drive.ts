@@ -4,6 +4,7 @@ import { Logger } from "winston";
 
 import { addon } from "./addon";
 import { addonZod } from "./addon/addon-zod";
+import { getPlaceholderStates } from "./get-placeholder-states.service";
 import { createLogger } from "./logger";
 import { QueueManager } from "./queue/queue-manager";
 import { Callbacks } from "./types/callbacks.type";
@@ -20,8 +21,7 @@ class VirtualDrive {
   syncRootPath: string;
   logger: Logger;
   callbacks!: Callbacks;
-
-  private watcher = new Watcher();
+  watcher = new Watcher();
 
   constructor(syncRootPath: string, loggerPath: string) {
     this.syncRootPath = this.convertToWindowsPath(syncRootPath);
@@ -89,14 +89,19 @@ class VirtualDrive {
   }
 
   connectSyncRoot() {
+    if (this.callbacks === undefined) {
+      throw new Error("Callbacks are not defined");
+    }
+
     const result = addon.connectSyncRoot(this.syncRootPath, {
       ...this.callbacks,
       fetchDataCallback: (...props) => {
         const id = props[0];
         this.watcher.fileInDevice.add(id);
         this.callbacks.fetchDataCallback(...props);
-      }
+      },
     });
+
     return this.parseAddonZod("connectSyncRoot", result);
   }
 
@@ -153,8 +158,11 @@ class VirtualDrive {
     );
   }
 
-  registerSyncRoot(providerName: string, providerVersion: string, providerId: string, callbacks: Callbacks, logoPath: string) {
+  async registerSyncRoot(providerName: string, providerVersion: string, providerId: string, callbacks: Callbacks, logoPath: string) {
     this.callbacks = callbacks;
+
+    await getPlaceholderStates({ self: this, path: this.syncRootPath });
+
     const result = addon.registerSyncRoot(this.syncRootPath, providerName, providerVersion, providerId, logoPath);
     return this.parseAddonZod("registerSyncRoot", result);
   }
@@ -166,10 +174,6 @@ class VirtualDrive {
   }
 
   watchAndWait(path: string, queueManager: QueueManager, loggerPath: string) {
-    if (this.callbacks === undefined) {
-      throw new Error("Callbacks are not defined");
-    }
-
     const options = {
       ignored: /(^|[\/\\])\../,
       persistent: true,
