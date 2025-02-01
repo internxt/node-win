@@ -234,18 +234,7 @@ class VirtualDrive {
       usePolling: true,
     };
 
-    this.watcher.virtualDriveFn = {
-      CfAddItem: this.test,
-      CfDehydrate: this.test,
-      CfHydrate: this.test,
-      CfNotifyMessage: this.test,
-      CfUpdateItem: this.test,
-      CfGetPlaceHolderAttributes: this.getPlaceholderAttribute,
-      CfUpdateSyncStatus: this.updateSyncStatus,
-      CfGetPlaceHolderIdentity: this.getFileIdentity,
-      CfGetPlaceHolderState: this.getPlaceholderState,
-      CfConverToPlaceholder: this.convertToPlaceholder,
-    };
+    this.watcher.addon = addon;
 
     this.watcher.watchAndWait();
   }
@@ -403,7 +392,7 @@ class VirtualDrive {
     itemPath: string,
     isDirectory: boolean,
     sync: boolean = true
-  ): Promise<void> {
+  ) {
     return await addon.updateSyncStatus({ path: this.fixPath(itemPath), isDirectory, sync });
   }
 

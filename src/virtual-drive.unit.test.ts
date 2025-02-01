@@ -9,10 +9,10 @@ import VirtualDrive from "./virtual-drive";
 vi.mock("fs");
 vi.mock("@/addon", () => ({
   addon: {
-    addLoggerPath: vi.fn(),
+    addLoggerPath: vi.fn().mockReturnValue(true),
     connectSyncRoot: vi.fn(),
     createPlaceholderFile: vi.fn(),
-    registerSyncRoot: vi.fn(),
+    registerSyncRoot: vi.fn().mockReturnValue(0),
   },
 }));
 
@@ -84,7 +84,7 @@ describe("VirtualDrive", () => {
   });
 
   describe("When call registerSyncRoot", () => {
-    it.only("Then it assigns callbacks and calls addon.registerSyncRoot", async () => {
+    it("Then it assigns callbacks and calls addon.registerSyncRoot", async () => {
       // Arrange
       const drive = new VirtualDrive(syncRootPath, logPath);
       const providerName = "MyProvider";

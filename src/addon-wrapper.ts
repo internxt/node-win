@@ -1,5 +1,5 @@
 import { addon } from "./addon";
-import { addonZod } from "./addon-zod";
+import { addonZod } from "./addon/addon-zod";
 import { Callbacks } from "./types/callbacks.type";
 
 export class Addon {

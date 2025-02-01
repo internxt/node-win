@@ -9,9 +9,9 @@ export class DetectContextMenuActionService {
   async execute({ self, details, path, isFolder }: TProps) {
     const { prev, curr } = details;
 
-    const status = self.virtualDriveFn.CfGetPlaceHolderState(path);
-    const attribute = self.virtualDriveFn.CfGetPlaceHolderAttributes(path);
-    const itemId = self.virtualDriveFn.CfGetPlaceHolderIdentity(path);
+    const status = self.addon.getPlaceholderState({ path });
+    const attribute = self.addon.getPlaceholderAttribute({ path });
+    const itemId = self.addon.getFileIdentity({ path });
     const isInDevice = self.fileInDevice.has(path);
 
     self.logger.info({

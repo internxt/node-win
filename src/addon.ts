@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { addonZod } from "./addon-zod";
+import { addonZod } from "./addon/addon-zod";
 import { InputSyncCallbacks } from "./types/callbacks.type";
 
 export const addon: TAddon = require("../addon.node");

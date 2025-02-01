@@ -8,7 +8,7 @@ import { Watcher } from "../watcher";
 export class OnAddDirService {
   execute({ self, path }: TProps) {
     try {
-      const status = self.virtualDriveFn.CfGetPlaceHolderState(path);
+      const status = self.addon.getPlaceholderState({ path });
       self.logger.info({ fn: "onAddDir", path, status });
 
       if (status.pinState === PinState.AlwaysLocal || status.pinState === PinState.OnlineOnly || status.syncState === SyncState.InSync) {
