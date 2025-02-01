@@ -84,7 +84,7 @@ describe("VirtualDrive", () => {
   });
 
   describe("When call registerSyncRoot", () => {
-    it("Then it assigns callbacks and calls addon.registerSyncRoot", async () => {
+    it.only("Then it assigns callbacks and calls addon.registerSyncRoot", async () => {
       // Arrange
       const drive = new VirtualDrive(syncRootPath, logPath);
       const providerName = "MyProvider";

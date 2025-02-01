@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { addonZod } from "@/addon/addon-zod";
+import { addonZod } from "@/addon-zod";
 
 export interface IVirtualDriveFunctions {
   CfHydrate?: () => void;
