@@ -10,15 +10,13 @@ export class DetectContextMenuActionService {
     const { prev, curr } = details;
 
     const status = self.virtualDriveFn.CfGetPlaceHolderState(path);
-    const attribute = self.virtualDriveFn.CfGetPlaceHolderAttributes(path);
     const itemId = self.virtualDriveFn.CfGetPlaceHolderIdentity(path);
-    const isInDevice = self.fileInDevice.has(path);
+    const isInDevice = self.fileInDevice.has(itemId) || self.fileInDevice.has(path);
 
     self.logger.info({
-      event: "onRaw",
+      event: "change",
       path,
       status,
-      attribute,
       itemId,
       isInDevice,
       prev: {
@@ -30,51 +28,29 @@ export class DetectContextMenuActionService {
         size: curr.size,
         ctimeMs: curr.ctimeMs,
         mtimeMs: curr.mtimeMs,
-        blocks: curr.blocks,
       },
     });
 
-    if (
-      prev.size === curr.size &&
-      prev.ctimeMs !== curr.ctimeMs &&
-      prev.mtimeMs === curr.mtimeMs &&
-      status.pinState === PinState.AlwaysLocal &&
-      status.syncState === SyncState.InSync &&
-      !isInDevice
-    ) {
-      self.fileInDevice.add(path);
-
-      if (curr.blocks !== 0) {
-        // This event is triggered from the addon
-        return "Doble click en el archivo";
-      }
-
-      self.queueManager.enqueue({ path, type: typeQueue.hydrate, isFolder, fileId: itemId });
-      return "Mantener siempre en el dispositivo";
-    }
-
-    if (
-      prev.size === curr.size &&
-      prev.ctimeMs !== curr.ctimeMs &&
-      status.pinState == PinState.OnlineOnly &&
-      status.syncState == SyncState.InSync
-    ) {
-      // TODO: we need to disable this for now even if dehydate it's called two times
-      // because files that are a .zip have blocks === 0, so they never dehydrate
-      // because it's seems that it's already been dehydrated
-      // if (curr.blocks === 0) {
-      //   return "Liberando espacio";
-      // }
-
-      self.fileInDevice.delete(path);
-      self.queueManager.enqueue({ path, type: typeQueue.dehydrate, isFolder, fileId: itemId });
-      return "Liberar espacio";
-    }
-
+    // TODO: check same size but different content
     if (prev.size !== curr.size) {
       self.queueManager.enqueue({ path, type: typeQueue.changeSize, isFolder, fileId: itemId });
-      self.fileInDevice.add(path);
+      self.fileInDevice.add(itemId);
       return "Cambio de tamaño";
+    }
+
+    if (prev.ctimeMs !== curr.ctimeMs && status.syncState === SyncState.InSync) {
+      if (status.pinState === PinState.AlwaysLocal && !isInDevice) {
+        self.fileInDevice.add(itemId);
+        self.queueManager.enqueue({ path, type: typeQueue.hydrate, isFolder, fileId: itemId });
+        return "Mantener siempre en el dispositivo";
+      }
+
+      if (status.pinState == PinState.OnlineOnly && isInDevice) {
+        self.fileInDevice.delete(path);
+        self.fileInDevice.delete(itemId);
+        self.queueManager.enqueue({ path, type: typeQueue.dehydrate, isFolder, fileId: itemId });
+        return "Liberar espacio";
+      }
     }
   }
 }

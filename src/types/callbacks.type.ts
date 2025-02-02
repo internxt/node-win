@@ -1,6 +1,7 @@
 export type NapiCallbackFunction = (...args: any[]) => any;
 
 export type InputSyncCallbacks = {
+  // TODO: make it mandatory and add the exact type
   fetchDataCallback?: NapiCallbackFunction;
   validateDataCallback?: NapiCallbackFunction;
   cancelFetchDataCallback?: NapiCallbackFunction;

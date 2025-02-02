@@ -218,7 +218,14 @@ class VirtualDrive {
     callbacks: Callbacks,
     logoPath: string
   ): Promise<any> {
-    this.callbacks = callbacks;
+    this.callbacks = {
+      ...callbacks,
+      fetchDataCallback: (...args) => {
+        const path = args[0];
+        this.watcher.fileInDevice.add(path);
+        return callbacks.fetchDataCallback?.(...args);
+      }
+    };
     return await addon.registerSyncRoot(
       this.syncRootPath,
       providerName,
