@@ -54,6 +54,8 @@ class VirtualDrive {
       FILE_ATTRIBUTE_NORMAL: 0x1,
     };
 
+    // TODO: getPlaceholderStates in the beginning
+
     this.watcher = new Watcher();
 
     this.syncRootPath = syncRootPath;
