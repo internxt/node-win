@@ -26,6 +26,53 @@ describe("VirtualDrive", () => {
     vi.clearAllMocks();
   });
 
+  describe("When convertToWindowsPath is called", () => {
+    // Arrange
+    const drive = new VirtualDrive(syncRootPath, logPath);
+
+    it("When unix path, then convert to windows path", () => {
+      // Assert
+      const result = drive.convertToWindowsPath("C:/test-drive/test.txt");
+      expect(result).toBe("C:\\test-drive\\test.txt");
+    });
+
+    it("When windows path, then do not modify it", () => {
+      // Assert
+      const result = drive.convertToWindowsPath("C:\\test-drive\\test.txt");
+      expect(result).toBe("C:\\test-drive\\test.txt");
+    });
+  });
+
+  describe("When fixPath is called", () => {
+    // Arrange
+    const drive = new VirtualDrive(syncRootPath, logPath);
+
+    it("When absolute windows path, then do not modify it", () => {
+      // Assert
+      expect(drive.fixPath("C:\\test-drive\\test.txt")).toBe("C:\\test-drive\\test.txt");
+    });
+
+    it("When absolute unix path, then convert to absolute windows path", () => {
+      // Assert
+      expect(drive.fixPath("C:/test-drive/test.txt")).toBe("C:\\test-drive\\test.txt");
+    });
+
+    it("When relative path, then convert to absolute windows path", () => {
+      // Assert
+      expect(drive.fixPath("test.txt")).toBe("C:\\test-drive\\test.txt");
+    });
+
+    it("When relative windows path, then convert to absolute windows path", () => {
+      // Assert
+      expect(drive.fixPath("\\test.txt")).toBe("C:\\test-drive\\test.txt");
+    });
+
+    it("When relative unix path, then convert to absolute windows path", () => {
+      // Assert
+      expect(drive.fixPath("/test.txt")).toBe("C:\\test-drive\\test.txt");
+    });
+  });
+
   describe("When VirtualDrive is created", () => {
     it("When syncRootPath does not exist, then it creates it", () => {
       // Arrange
