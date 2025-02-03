@@ -1,44 +1,40 @@
 import path, { join, win32 } from "path";
 import fs from "fs";
 import { Watcher } from "./watcher/watcher";
-import { ExtraCallbacks, InputSyncCallbacks } from "./types/callbacks.type";
+import { Callbacks } from "./types/callbacks.type";
 import { Status } from "./types/placeholder.type";
 import { IQueueManager } from "./queue/queueManager";
 
 import { createLogger } from "./logger";
 import { Addon } from "./addon-wrapper";
+import { getPlaceholderStates } from "./get-placeholder-states";
+import winston from "winston";
 
 const addon = new Addon();
 
-type Callbacks = InputSyncCallbacks & ExtraCallbacks;
+const PLACEHOLDER_ATTRIBUTES = {
+  FILE_ATTRIBUTE_READONLY: 0x1,
+  FILE_ATTRIBUTE_HIDDEN: 0x2,
+  FOLDER_ATTRIBUTE_READONLY: 0x1,
+  FILE_ATTRIBUTE_NORMAL: 0x1,
+};
+
 class VirtualDrive {
-  PLACEHOLDER_ATTRIBUTES: { [key: string]: number };
   syncRootPath: string;
-  callbacks?: Callbacks;
+  callbacks!: Callbacks;
+  watcher = new Watcher();
+  logger: winston.Logger;
 
-  // private watcherBuilder: WatcherBuilder;
-  private watcher: Watcher;
-
-  constructor(syncRootPath: string, loggerPath?: string) {
-    this.PLACEHOLDER_ATTRIBUTES = {
-      FILE_ATTRIBUTE_READONLY: 0x1,
-      FILE_ATTRIBUTE_HIDDEN: 0x2,
-      FOLDER_ATTRIBUTE_READONLY: 0x1,
-      FILE_ATTRIBUTE_NORMAL: 0x1,
-    };
-
+  constructor(syncRootPath: string, loggerPath: string) {
     // TODO: getPlaceholderStates in the beginning
 
     this.watcher = new Watcher();
 
-    this.syncRootPath = syncRootPath;
+    this.syncRootPath = this.convertToWindowsPath(syncRootPath);
+    loggerPath = this.convertToWindowsPath(loggerPath);
     this.createSyncRootFolder();
-
-    let pathElements = this.syncRootPath.split("\\\\");
-    pathElements.pop();
-    let parentPath = pathElements.join("\\\\");
-
-    this.addLoggerPath(loggerPath ?? parentPath);
+    this.addLoggerPath(loggerPath);
+    this.logger = createLogger(loggerPath);
   }
 
   addLoggerPath(logPath: string) {
@@ -66,39 +62,6 @@ class VirtualDrive {
     return addon.getPlaceholderWithStatePending();
   }
 
-  getInputSyncCallbacks(): InputSyncCallbacks {
-    if (this.callbacks === undefined) {
-      throw new Error("Callbacks are not defined");
-    }
-
-    const inputSyncCallbackKeys: (keyof InputSyncCallbacks)[] = [
-      "fetchDataCallback",
-      "validateDataCallback",
-      "cancelFetchDataCallback",
-      "fetchPlaceholdersCallback",
-      "cancelFetchPlaceholdersCallback",
-      "notifyFileOpenCompletionCallback",
-      "notifyFileCloseCompletionCallback",
-      "notifyDehydrateCallback",
-      "notifyDehydrateCompletionCallback",
-      "notifyDeleteCallback",
-      "notifyDeleteCompletionCallback",
-      "notifyRenameCallback",
-      "notifyRenameCompletionCallback",
-      "noneCallback",
-    ];
-
-    const result: InputSyncCallbacks = {};
-
-    for (const key of inputSyncCallbackKeys) {
-      if (this.callbacks[key] !== undefined) {
-        result[key] = this.callbacks[key];
-      }
-    }
-
-    return result;
-  }
-
   createSyncRootFolder() {
     if (!fs.existsSync(this.syncRootPath)) {
       fs.mkdirSync(this.syncRootPath, { recursive: true });
@@ -117,8 +80,12 @@ class VirtualDrive {
     return addon.deleteFileSyncRoot({ path: this.fixPath(relativePath) });
   }
 
-  async connectSyncRoot(): Promise<any> {
-    return addon.connectSyncRoot({ callbacks: this.getInputSyncCallbacks() });
+  async connectSyncRoot() {
+    if (this.callbacks === undefined) {
+      throw new Error("Callbacks are not defined");
+    }
+
+    return addon.connectSyncRoot({ callbacks: this.callbacks });
   }
 
   createPlaceholderFile(
@@ -193,11 +160,18 @@ class VirtualDrive {
     this.callbacks = {
       ...callbacks,
       fetchDataCallback: (...args) => {
-        const path = args[0];
-        this.watcher.fileInDevice.add(path);
+        const id = args[0];
+        this.watcher.fileInDevice.add(id);
         return callbacks.fetchDataCallback?.(...args);
       }
     };
+
+    try {
+      await getPlaceholderStates({ self: this, path: this.syncRootPath});
+    } catch (exc) {
+      this.logger.error("getPlaceholderStates", exc)      
+    }
+
     return addon.registerSyncRoot({
       syncRootPath: this.syncRootPath,
       providerName,
@@ -227,7 +201,7 @@ class VirtualDrive {
 
     this.watcher.queueManager = queueManager;
 
-    this.watcher.logger = createLogger(loggerPath);
+    this.watcher.logger = this.logger;
 
     this.watcher.syncRootPath = path;
     this.watcher.options = {
@@ -271,7 +245,7 @@ class VirtualDrive {
         path.basename(fullPath),
         itemId,
         size,
-        this.PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
+        PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
         creationTime,
         lastWriteTime,
         Date.now(),
@@ -304,7 +278,7 @@ class VirtualDrive {
             itemId,
             true,
             size,
-            this.PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
+            PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
             creationTime,
             lastWriteTime,
             Date.now(),
@@ -338,7 +312,7 @@ class VirtualDrive {
               itemId,
               true,
               size,
-              this.PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
+              PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
               creationTime,
               lastWriteTime,
               Date.now(),
@@ -364,7 +338,7 @@ class VirtualDrive {
               itemId,
               true,
               0,
-              this.PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
+              PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
               Date.now(),
               Date.now(),
               Date.now(),
@@ -378,7 +352,7 @@ class VirtualDrive {
           path.basename(fullPath),
           itemId,
           size,
-          this.PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
+          PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
           creationTime,
           lastWriteTime,
           Date.now(),
