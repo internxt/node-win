@@ -13,19 +13,16 @@ export class Addon {
   }
 
   registerSyncRoot({
-    syncRootPath,
     providerName,
     providerVersion,
     providerId,
     logoPath,
   }: {
-    syncRootPath: string;
     providerName: string;
     providerVersion: string;
     providerId: string;
     logoPath: string;
   }) {
-    this.syncRootPath = syncRootPath;
     const result = addon.registerSyncRoot(this.syncRootPath, providerName, providerVersion, providerId, logoPath);
     return this.parseAddonZod("registerSyncRoot", result);
   }
@@ -41,7 +38,7 @@ export class Addon {
   }
 
   disconnectSyncRoot() {
-    addon.disconnectSyncRoot(this.syncRootPath);
+    return addon.disconnectSyncRoot(this.syncRootPath);
   }
 
   addLogger({ logPath }: { logPath: string }) {

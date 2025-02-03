@@ -29,6 +29,7 @@ class VirtualDrive {
     // TODO: getPlaceholderStates in the beginning
 
     this.watcher = new Watcher();
+    addon.syncRootPath = syncRootPath;
 
     this.syncRootPath = this.convertToWindowsPath(syncRootPath);
     loggerPath = this.convertToWindowsPath(loggerPath);
@@ -173,7 +174,6 @@ class VirtualDrive {
     }
 
     return addon.registerSyncRoot({
-      syncRootPath: this.syncRootPath,
       providerName,
       providerVersion,
       providerId,
@@ -367,7 +367,7 @@ class VirtualDrive {
     }
   }
 
-  disconnectSyncRoot(): any {
+  disconnectSyncRoot() {
     return addon.disconnectSyncRoot();
   }
 
