@@ -12,7 +12,6 @@ export class DetectContextMenuActionService {
     const status = self.virtualDriveFn.CfGetPlaceHolderState(path);
     const itemId = self.virtualDriveFn.CfGetPlaceHolderIdentity(path);
     const isInDevice = self.fileInDevice.has(itemId) || self.fileInDevice.has(path);
-    console.log("🚀 ~ DetectContextMenuActionService ~ execute ~ fileInDevice:", self.fileInDevice);
 
     self.logger.info({
       event: "change",
@@ -49,7 +48,6 @@ export class DetectContextMenuActionService {
       if (status.pinState == PinState.OnlineOnly && isInDevice) {
         self.fileInDevice.delete(path);
         self.fileInDevice.delete(itemId);
-        console.log("🚀 ~ DetectContextMenuActionService ~ execute ~ self.fileInDevice:", self.fileInDevice);
         self.queueManager.enqueue({ path, type: typeQueue.dehydrate, isFolder, fileId: itemId });
         return "Liberar espacio";
       }
