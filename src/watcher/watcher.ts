@@ -9,7 +9,7 @@ import { OnAddDirService } from "./events/on-add-dir.service";
 import { OnAddService } from "./events/on-add.service";
 import { OnAllService } from "./events/on-all.service";
 import { OnRawService } from "./events/on-raw.service";
-import { IVirtualDriveFunctions } from "./watcher.interface";
+import { Addon } from "@/addon-wrapper";
 
 export namespace Watcher {
   export type TOptions = chokidar.WatchOptions;
@@ -18,7 +18,7 @@ export namespace Watcher {
 export class Watcher {
   syncRootPath!: string;
   options!: Watcher.TOptions;
-  virtualDriveFn!: IVirtualDriveFunctions;
+  addon!: Addon;
   queueManager!: IQueueManager;
   logger!: Logger;
   fileInDevice = new Set<string>();
@@ -35,13 +35,13 @@ export class Watcher {
     syncRootPath: string,
     options: chokidar.WatchOptions,
     logger: Logger,
-    virtualDriveFn: IVirtualDriveFunctions,
+    addon: Addon,
   ) {
     this.queueManager = queueManager;
     this.syncRootPath = syncRootPath;
     this.options = options;
     this.logger = logger;
-    this.virtualDriveFn = virtualDriveFn;
+    this.addon = addon;
   }
 
   private onChange = (path: string, stats?: Stats) => {

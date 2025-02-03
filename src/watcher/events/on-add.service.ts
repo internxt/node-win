@@ -10,13 +10,13 @@ export class OnAddService {
     try {
       const ext = path.split(".").pop();
       const { size, birthtime, mtime } = stats;
-      const fileIntenty = self.virtualDriveFn.CfGetPlaceHolderIdentity(path);
+      const fileIntenty = self.addon.getFileIdentity({ path });
 
       self.logger.info({ fn: "onAdd", path, ext, size, birthtime, mtime, fileIntenty });
 
       if (!ext || size === 0 || size > 20 * 1024 * 1024 * 1024) return;
 
-      const status = self.virtualDriveFn.CfGetPlaceHolderState(path);
+      const status = self.addon.getPlaceholderState({ path });
       self.logger.info({ fn: "onAdd", path, status });
 
       // Verificar tiempos de creación y modificación

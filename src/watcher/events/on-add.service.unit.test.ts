@@ -17,8 +17,8 @@ describe("Watcher onAdd", () => {
 
   it('Should enqueue an "add" task if the file is new', () => {
     // Arrange
-    watcher.virtualDriveFn.CfGetPlaceHolderIdentity.mockReturnValue("");
-    watcher.virtualDriveFn.CfGetPlaceHolderState.mockReturnValue({
+    watcher.addon.getFileIdentity.mockReturnValue("");
+    watcher.addon.getPlaceholderState.mockReturnValue({
       pinState: PinState.Unspecified,
       syncState: SyncState.NotInSync,
     });
@@ -30,15 +30,15 @@ describe("Watcher onAdd", () => {
     onAdd.execute({ self: watcher, path, stats: stats as unknown as Stats });
 
     // Assert
-    expect(watcher.virtualDriveFn.CfGetPlaceHolderIdentity).toHaveBeenCalledWith(path);
-    expect(watcher.virtualDriveFn.CfGetPlaceHolderState).toHaveBeenCalledWith(path);
+    expect(watcher.addon.getFileIdentity).toHaveBeenCalledWith({ path });
+    expect(watcher.addon.getPlaceholderState).toHaveBeenCalledWith({ path });
     expect(watcher.queueManager.enqueue).toHaveBeenCalledWith({ path, type: typeQueue.add, isFolder: false });
   });
 
   it("Should not enqueue if the file is already in AlwaysLocal and InSync states", () => {
     // Arrange
-    watcher.virtualDriveFn.CfGetPlaceHolderIdentity.mockReturnValue("existing-file-id");
-    watcher.virtualDriveFn.CfGetPlaceHolderState.mockReturnValue({
+    watcher.addon.getFileIdentity.mockReturnValue("existing-file-id");
+    watcher.addon.getPlaceholderState.mockReturnValue({
       pinState: PinState.AlwaysLocal,
       syncState: SyncState.InSync,
     });
