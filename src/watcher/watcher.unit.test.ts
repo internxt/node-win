@@ -16,10 +16,10 @@ import { OnAddService } from "./events/on-add.service";
 import { OnAllService } from "./events/on-all.service";
 import { OnRawService } from "./events/on-raw.service";
 import { Watcher } from "./watcher";
-import { IVirtualDriveFunctions } from "./watcher.interface";
+import { Addon } from "@/addon-wrapper";
 
 describe("Watcher", () => {
-  const virtualDriveFn = mockDeep<IVirtualDriveFunctions>();
+  const addon = mockDeep<Addon>();
   const queueManager = mockDeep<QueueManager>();
   const logger = mockDeep<Logger>();
   const options = {};
@@ -35,7 +35,7 @@ describe("Watcher", () => {
     }
 
     const watcher = new Watcher(onAll, onAdd, onAddDir, onRaw);
-    watcher.init(queueManager, syncRootPath, options, logger, virtualDriveFn);
+    watcher.init(queueManager, syncRootPath, options, logger, addon);
     watcher.watchAndWait();
   };
 

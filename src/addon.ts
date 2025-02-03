@@ -11,7 +11,7 @@ export type TAddon = {
     fileName: string,
     fileId: string,
     fileSize: number,
-    combinedAttributes: number,
+    fileAttributes: number,
     creationTime: string,
     lastWriteTime: string,
     lastAccessTime: string,
@@ -25,7 +25,7 @@ export type TAddon = {
     fileAttributes: number,
     creationTime: string,
     lastWriteTime: string,
-    lastAccessTime: number,
+    lastAccessTime: string,
     path: string,
   ): any;
   hydrateFile(path: string): Promise<z.infer<typeof addonZod.hydrateFile>>;
@@ -48,9 +48,8 @@ export type TAddon = {
     callbacks: any,
     logoPath: string,
   ): z.infer<typeof addonZod.registerSyncRoot>;
-  registerSyncRootWindowsStorageProvider(path: string, providerName: string, providerVersion: string, providerId: string): any;
   unregisterSyncRoot(path: string): z.infer<typeof addonZod.unregisterSyncRoot>;
-  updateSyncStatus(path: string, sync: boolean, isDirectory: boolean): any;
+  updateSyncStatus(path: string, sync: boolean, isDirectory: boolean): z.infer<typeof addonZod.updateSyncStatus>;
   /**
    * TODO: Returns a type in c++ that is not initialized
    */

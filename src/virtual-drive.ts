@@ -1,41 +1,14 @@
-import path, { join } from "path";
+import path, { join, win32 } from "path";
 import fs from "fs";
-import { Worker } from "worker_threads";
 import { Watcher } from "./watcher/watcher";
 import { ExtraCallbacks, InputSyncCallbacks } from "./types/callbacks.type";
 import { Status } from "./types/placeholder.type";
 import { IQueueManager } from "./queue/queueManager";
 
-import { addon } from "./addon";
 import { createLogger } from "./logger";
+import { Addon } from "./addon-wrapper";
 
-interface ItemInfo {
-  path: string;
-  fileIdentity: string;
-  isPlaceholder: boolean;
-}
-interface Addon {
-  connectSyncRoot(path: string): any;
-  createPlaceholderFile(
-    fileName: string,
-    fileId: string,
-    fileSize: number,
-    combinedAttributes: number,
-    creationTime: string,
-    lastWriteTime: string,
-    lastAccessTime: string,
-    path: string
-  ): any;
-  registerSyncRootWindowsStorageProvider(
-    path: string,
-    providerName: string,
-    providerVersion: string,
-    providerId: string
-  ): any;
-  unregisterSyncRoot(path: string): any;
-  watchAndWait(path: string): any;
-  getItems(): any;
-}
+const addon = new Addon();
 
 type Callbacks = InputSyncCallbacks & ExtraCallbacks;
 class VirtualDrive {
@@ -66,12 +39,16 @@ class VirtualDrive {
     this.addLoggerPath(loggerPath ?? parentPath);
   }
 
-  addLoggerPath(loggerPath: string) {
-    console.log("loggerPath: ", loggerPath);
-    addon.addLoggerPath(loggerPath);
+  addLoggerPath(logPath: string) {
+    addon.addLogger({ logPath });
   }
 
-  private fixPath(path: string) {
+  convertToWindowsPath(path: string) {
+    return path.replaceAll("/", win32.sep);
+  }
+
+  fixPath(path: string) {
+    path = this.convertToWindowsPath(path);
     if (path.includes(this.syncRootPath)) {
       return path;
     } else {
@@ -80,11 +57,11 @@ class VirtualDrive {
   }
 
   getPlaceholderState(path: string): Status {
-    return addon.getPlaceholderState(this.fixPath(path));
+    return addon.getPlaceholderState({ path: this.fixPath(path) });
   }
 
   getPlaceholderWithStatePending(): any {
-    return addon.getPlaceholderWithStatePending(this.syncRootPath);
+    return addon.getPlaceholderWithStatePending();
   }
 
   getInputSyncCallbacks(): InputSyncCallbacks {
@@ -130,21 +107,16 @@ class VirtualDrive {
     return BigInt(jsTime) * 10000n + 116444736000000000n;
   }
 
-  async getFileIdentity(relativePath: string): Promise<string> {
-    const fullPath = path.join(this.syncRootPath, relativePath);
-    return addon.getFileIdentity(fullPath);
+  getFileIdentity(relativePath: string) {
+    return addon.getFileIdentity({ path: this.fixPath(relativePath) });
   }
 
   async deleteFileSyncRoot(relativePath: string): Promise<void> {
-    const fullPath = path.join(this.syncRootPath, relativePath);
-    return addon.deleteFileSyncRoot(fullPath);
+    return addon.deleteFileSyncRoot({ path: this.fixPath(relativePath) });
   }
 
   async connectSyncRoot(): Promise<any> {
-    return await addon.connectSyncRoot(
-      this.syncRootPath,
-      this.getInputSyncCallbacks()
-    );
+    return addon.connectSyncRoot({ callbacks: this.getInputSyncCallbacks() });
   }
 
   createPlaceholderFile(
@@ -157,23 +129,20 @@ class VirtualDrive {
     lastAccessTime: number,
     basePath: string
   ): any {
-    const combinedAttributes = fileAttributes;
     const creationTimeStr = this.convertToWindowsTime(creationTime).toString();
-    const lastWriteTimeStr =
-      this.convertToWindowsTime(lastWriteTime).toString();
-    const lastAccessTimeStr =
-      this.convertToWindowsTime(lastAccessTime).toString();
+    const lastWriteTimeStr = this.convertToWindowsTime(lastWriteTime).toString();
+    const lastAccessTimeStr = this.convertToWindowsTime(lastAccessTime).toString();
 
-    return addon.createPlaceholderFile(
+    return addon.createPlaceholderFile({
       fileName,
       fileId,
       fileSize,
-      combinedAttributes,
-      creationTimeStr,
-      lastWriteTimeStr,
-      lastAccessTimeStr,
+      fileAttributes,
+      creationTime: creationTimeStr,
+      lastWriteTime: lastWriteTimeStr,
+      lastAccessTime: lastAccessTimeStr,
       basePath
-    );
+    });
   }
 
   createPlaceholderDirectory(
@@ -188,19 +157,20 @@ class VirtualDrive {
     path: string
   ) {
     const creationTimeStr = this.convertToWindowsTime(creationTime).toString();
-    const lastWriteTimeStr =
-      this.convertToWindowsTime(lastWriteTime).toString();
-    return addon.createEntry(
+    const lastWriteTimeStr = this.convertToWindowsTime(lastWriteTime).toString();
+    const lastAccessTimeStr = this.convertToWindowsTime(lastAccessTime).toString();
+    
+    return addon.createPlaceholderDirectory({
       itemName,
       itemId,
       isDirectory,
       itemSize,
       fileAttributes,
-      creationTimeStr,
-      lastWriteTimeStr,
-      lastAccessTime,
+      creationTime: creationTimeStr,
+      lastWriteTime: lastWriteTimeStr,
+      lastAccessTime: lastAccessTimeStr,
       path
-    );
+    });
   }
 
   private isValidFolderPath(path: string) {
@@ -219,17 +189,17 @@ class VirtualDrive {
     logoPath: string
   ): Promise<any> {
     this.callbacks = callbacks;
-    return await addon.registerSyncRoot(
-      this.syncRootPath,
+    return addon.registerSyncRoot({
+      syncRootPath: this.syncRootPath,
       providerName,
       providerVersion,
       providerId,
       logoPath
-    );
+    });
   }
 
   static unregisterSyncRoot(syncRootPath: string): any {
-    const result = addon.unregisterSyncRoot(syncRootPath);
+    const result = addon.unregisterSyncRoot({ syncRootPath });
     return result;
   }
 
@@ -264,18 +234,7 @@ class VirtualDrive {
       usePolling: true,
     };
 
-    this.watcher.virtualDriveFn = {
-      CfAddItem: this.test,
-      CfDehydrate: this.test,
-      CfHydrate: this.test,
-      CfNotifyMessage: this.test,
-      CfUpdateItem: this.test,
-      CfGetPlaceHolderAttributes: addon.getPlaceholderAttribute,
-      CfUpdateSyncStatus: addon.updateSyncStatus,
-      CfGetPlaceHolderIdentity: addon.getFileIdentity,
-      CfGetPlaceHolderState: addon.getPlaceholderState,
-      CfConverToPlaceholder: addon.convertToPlaceholder,
-    };
+    this.watcher.addon = addon;
 
     this.watcher.watchAndWait();
   }
@@ -426,42 +385,34 @@ class VirtualDrive {
   }
 
   disconnectSyncRoot(): any {
-    return addon.disconnectSyncRoot(this.syncRootPath);
+    return addon.disconnectSyncRoot();
   }
 
   async updateSyncStatus(
     itemPath: string,
     isDirectory: boolean,
     sync: boolean = true
-  ): Promise<void> {
-    const isRelative = !itemPath.includes(this.syncRootPath);
-
-    if (isRelative) {
-      itemPath = path.join(this.syncRootPath, itemPath);
-    }
-    return await addon.updateSyncStatus(itemPath, sync, isDirectory);
+  ) {
+    return await addon.updateSyncStatus({ path: this.fixPath(itemPath), isDirectory, sync });
   }
 
   convertToPlaceholder(itemPath: string, id: string): boolean {
-    return addon.convertToPlaceholder(itemPath, id);
+    return addon.convertToPlaceholder({ path: this.fixPath(itemPath), id });
   }
   updateFileIdentity(itemPath: string, id: string, isDirectory: boolean): void {
-    if (!itemPath.includes(this.syncRootPath)) {
-      itemPath = path.join(this.syncRootPath, itemPath);
-    }
-    addon.updateFileIdentity(itemPath, id, isDirectory);
+    addon.updateFileIdentity({ path: this.fixPath(itemPath), id, isDirectory });
   }
 
   async dehydrateFile(itemPath: string) {
-    return addon.dehydrateFile(itemPath);
+    return addon.dehydrateFile({ path: this.fixPath(itemPath) });
   }
 
   async hydrateFile(itemPath: string): Promise<void> {
-    return await addon.hydrateFile(itemPath);
+    return addon.hydrateFile({ path: this.fixPath(itemPath) });
   }
 
-  async getPlaceholderAttribute(itemPath: string): Promise<any> {
-    return await addon.getPlaceholderAttribute(itemPath);
+  getPlaceholderAttribute(itemPath: string) {
+    return addon.getPlaceholderAttribute({ path: this.fixPath(itemPath) });
   }
 }
 
