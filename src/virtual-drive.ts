@@ -28,6 +28,7 @@ class VirtualDrive {
     };
 
     this.watcher = new Watcher();
+    addon.syncRootPath = syncRootPath;
 
     this.syncRootPath = syncRootPath;
     this.createSyncRootFolder();
@@ -190,7 +191,6 @@ class VirtualDrive {
   ): Promise<any> {
     this.callbacks = callbacks;
     return addon.registerSyncRoot({
-      syncRootPath: this.syncRootPath,
       providerName,
       providerVersion,
       providerId,
@@ -384,7 +384,7 @@ class VirtualDrive {
     }
   }
 
-  disconnectSyncRoot(): any {
+  disconnectSyncRoot() {
     return addon.disconnectSyncRoot();
   }
 
