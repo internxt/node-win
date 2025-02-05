@@ -469,6 +469,7 @@ FileState Placeholders::GetPlaceholderInfo(const std::wstring &directoryPath)
         return fileState;
     }
 
+    Logger::getInstance().log("Getting placeholder info for path: " + Logger::fromWStringToString(directoryPath), LogLevel::INFO, FOREGROUND_RED);
     HRESULT result = CfGetPlaceholderInfo(fileHandle.get(), CF_PLACEHOLDER_INFO_BASIC, info.get(), Utilities::sizeToDWORD(infoSize), nullptr);
 
     if (result != S_OK)
