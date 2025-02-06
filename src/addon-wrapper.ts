@@ -137,9 +137,4 @@ export class Addon {
     const result = await addon.hydrateFile(path);
     return this.parseAddonZod("hydrateFile", result);
   }
-
-  getPlaceholderAttribute({ path }: { path: string }) {
-    const result = addon.getPlaceholderAttribute(path);
-    return this.parseAddonZod("getPlaceholderAttribute", result);
-  }
 }
