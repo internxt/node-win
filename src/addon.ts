@@ -29,7 +29,6 @@ export type TAddon = {
     path: string,
   ): any;
   hydrateFile(path: string): Promise<z.infer<typeof addonZod.hydrateFile>>;
-  getPlaceholderAttribute(path: string): z.infer<typeof addonZod.getPlaceholderAttribute>;
   dehydrateFile(path: string): z.infer<typeof addonZod.dehydrateFile>;
   connectSyncRoot(path: string, callbacks: InputSyncCallbacks): z.infer<typeof addonZod.connectSyncRoot>;
   convertToPlaceholder(path: string, id: string): z.infer<typeof addonZod.convertToPlaceholder>;

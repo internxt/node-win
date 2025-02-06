@@ -410,10 +410,6 @@ class VirtualDrive {
   async hydrateFile(itemPath: string): Promise<void> {
     return addon.hydrateFile({ path: this.fixPath(itemPath) });
   }
-
-  getPlaceholderAttribute(itemPath: string) {
-    return addon.getPlaceholderAttribute({ path: this.fixPath(itemPath) });
-  }
 }
 
 export default VirtualDrive;

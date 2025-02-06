@@ -10,7 +10,6 @@ export class DetectContextMenuActionService {
     const { prev, curr } = details;
 
     const status = self.addon.getPlaceholderState({ path });
-    const attribute = self.addon.getPlaceholderAttribute({ path });
     const itemId = self.addon.getFileIdentity({ path });
     const isInDevice = self.fileInDevice.has(path);
 
@@ -18,7 +17,6 @@ export class DetectContextMenuActionService {
       event: "onRaw",
       path,
       status,
-      attribute,
       itemId,
       isInDevice,
       prev: {
