@@ -168,10 +168,6 @@ class VirtualDrive {
     return result;
   }
 
-  private test(): void {
-    console.log("Test");
-  }
-
   watchAndWait(
     path: string,
     queueManager: IQueueManager,

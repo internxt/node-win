@@ -10,7 +10,6 @@ import { Logger } from "winston";
 
 import { Addon } from "@/addon-wrapper";
 import { QueueManager } from "@/queue/queue-manager";
-import { PinState, SyncState } from "@/types/placeholder.type";
 import { sleep } from "@/utils";
 
 import { OnAddDirService } from "./events/on-add-dir.service";
@@ -48,7 +47,7 @@ describe("Watcher", () => {
     vi.clearAllMocks();
   });
 
-  describe("When call watchAndWait", () => {
+  describe("[Watcher] When call watchAndWait", () => {
     it("When folder is empty, then emit one addDir event", async () => {
       // Arrange
       const syncRootPath = join(TEST_FILES, v4());
@@ -81,7 +80,7 @@ describe("Watcher", () => {
     });
   });
 
-  describe("When add items", () => {
+  describe("[Watcher] When add items", () => {
     it("When add an empty folder, then emit one addDir event", async () => {
       // Arrange
       const syncRootPath = join(TEST_FILES, v4());
@@ -131,7 +130,36 @@ describe("Watcher", () => {
     });
   });
 
-  describe("When rename items", () => {
+  describe("[Watcher] When modify items", () => {
+    it("When modify a file, then emit one change event", async () => {
+      // Arrange
+      const syncRootPath = join(TEST_FILES, v4());
+      const fileName = `${v4()}.txt`;
+      const file = join(syncRootPath, fileName);
+      await setupWatcher(syncRootPath);
+      execSync(`echo "Content" > ${file}`);
+      
+      // Act
+      await sleep(50);
+      execSync(`echo "More content" >> ${file}`);
+      await sleep(50);
+
+      // Assert
+      expect(getEvents()).toEqual(["addDir", "add", "change"]);
+      expect(onRaw.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: "change",
+          path: fileName,
+          details: {
+            watchedPath: file,
+            // TODO: why does not include prev and curr stats
+          },
+        }),
+      );
+    });
+  });
+
+  describe("[Addon] When rename items", () => {
     it("When rename a file, then do not emit any event", async () => {
       // Arrange
       const syncRootPath = join(TEST_FILES, v4());
@@ -167,7 +195,7 @@ describe("Watcher", () => {
     });
   });
 
-  describe("When move items", () => {
+  describe("[Addon] When move items", () => {
     it("When move a file to a folder, then do not emit any event", async () => {
       // Arrange
       const syncRootPath = join(TEST_FILES, v4());
@@ -205,7 +233,7 @@ describe("Watcher", () => {
     });
   });
 
-  describe("When delete items", () => {
+  describe("[Addon] When delete items", () => {
     it("When delete a file, then emit one unlink event", async () => {
       // Arrange
       const syncRootPath = join(TEST_FILES, v4());
@@ -239,11 +267,12 @@ describe("Watcher", () => {
     });
   });
 
-  describe("When pin items", () => {
+  describe("[Watcher] When pin items", () => {
     it("When pin a file, then emit one change event", async () => {
       // Arrange
       const syncRootPath = join(TEST_FILES, v4());
-      const file = join(syncRootPath, `${v4()}.txt`);
+      const fileName = `${v4()}.txt`;
+      const file = join(syncRootPath, fileName);
       await setupWatcher(syncRootPath);
       await writeFile(file, Buffer.alloc(1000));
 
@@ -254,7 +283,16 @@ describe("Watcher", () => {
 
       // Assert
       expect(getEvents()).toEqual(["addDir", "add", "change"]);
-      // expect(addon.getPlaceholderState({ path: file })).toBe({ pinState: PinState.AlwaysLocal, syncState: SyncState.InSync });
+      expect(onRaw.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: "change",
+          path: fileName,
+          details: {
+            watchedPath: file,
+            // TODO: why does not include prev and curr stats
+          },
+        }),
+      );
     });
 
     it("When pin a folder, then do not emit any event", async () => {
@@ -271,15 +309,15 @@ describe("Watcher", () => {
 
       // Assert
       expect(getEvents()).toEqual(["addDir", "addDir"]);
-      // expect(addon.getPlaceholderState({ path: folder })).toBe({ pinState: PinState.AlwaysLocal, syncState: SyncState.InSync });
     });
   });
 
-  describe("When unpin items", () => {
+  describe("[Watcher] When unpin items", () => {
     it("When unpin a file, then emit one change event", async () => {
       // Arrange
       const syncRootPath = join(TEST_FILES, v4());
-      const file = join(syncRootPath, `${v4()}.txt`);
+      const fileName = `${v4()}.txt`;
+      const file = join(syncRootPath, fileName);
       await setupWatcher(syncRootPath);
       await writeFile(file, Buffer.alloc(1000));
 
@@ -292,7 +330,16 @@ describe("Watcher", () => {
 
       // Assert
       expect(getEvents()).toEqual(["addDir", "add", "change", "change"]);
-      // expect(addon.getPlaceholderState({ path: file })).toBe({ pinState: PinState.Unspecified, syncState: SyncState.InSync });
+      expect(onRaw.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: "change",
+          path: fileName,
+          details: {
+            watchedPath: file,
+            // TODO: why does not include prev and curr stats
+          },
+        }),
+      );
     });
 
     it("When unpin a folder, then do not emit any event", async () => {
@@ -311,15 +358,15 @@ describe("Watcher", () => {
 
       // Assert
       expect(getEvents()).toEqual(["addDir", "addDir"]);
-      // expect(addon.getPlaceholderState({ path: folder })).toBe({ pinState: PinState.Unspecified, syncState: SyncState.InSync });
     });
   });
 
-  describe("When set items to online only", () => {
+  describe("[Watcher] When set items to online only", () => {
     it("When set a file to online only, then emit one change event", async () => {
       // Arrange
       const syncRootPath = join(TEST_FILES, v4());
-      const file = join(syncRootPath, `${v4()}.txt`);
+      const fileName = `${v4()}.txt`;
+      const file = join(syncRootPath, fileName);
       await setupWatcher(syncRootPath);
       await writeFile(file, Buffer.alloc(1000));
 
@@ -330,7 +377,16 @@ describe("Watcher", () => {
 
       // Assert
       expect(getEvents()).toEqual(["addDir", "add", "change"]);
-      // expect(addon.getPlaceholderState({ path: file })).toBe({ pinState: PinState.Unspecified, syncState: SyncState.InSync });
+      expect(onRaw.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: "change",
+          path: fileName,
+          details: {
+            watchedPath: file,
+            // TODO: why does not include prev and curr stats
+          },
+        }),
+      );
     });
 
     it("When set a folder to online only, then do not emit any event", async () => {
@@ -347,7 +403,6 @@ describe("Watcher", () => {
 
       // Assert
       expect(getEvents()).toEqual(["addDir", "addDir"]);
-      // expect(addon.getPlaceholderState({ path: folder })).toBe({ pinState: PinState.Unspecified, syncState: SyncState.InSync });
     });
   });
 });
