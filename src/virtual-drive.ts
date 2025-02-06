@@ -8,7 +8,6 @@ import { createLogger } from "./logger";
 import { Addon } from "./addon-wrapper";
 import { getPlaceholderStates } from "./get-placeholder-states";
 import winston from "winston";
-import winston from "winston";
 
 const addon = new Addon();
 
