@@ -2,38 +2,35 @@ import path, { join, win32 } from "path";
 import fs from "fs";
 import { Watcher } from "./watcher/watcher";
 import { Callbacks } from "./types/callbacks.type";
-import { Status } from "./types/placeholder.type";
 import { IQueueManager } from "./queue/queueManager";
 
 import { createLogger } from "./logger";
 import { Addon } from "./addon-wrapper";
 import { getPlaceholderStates } from "./get-placeholder-states";
 import winston from "winston";
+import winston from "winston";
 
 const addon = new Addon();
 
-type Callbacks = InputSyncCallbacks & ExtraCallbacks;
+const PLACEHOLDER_ATTRIBUTES = {
+  FILE_ATTRIBUTE_READONLY: 0x1,
+  FILE_ATTRIBUTE_HIDDEN: 0x2,
+  FOLDER_ATTRIBUTE_READONLY: 0x1,
+  FILE_ATTRIBUTE_NORMAL: 0x1,
+};
+
 class VirtualDrive {
-  PLACEHOLDER_ATTRIBUTES: { [key: string]: number };
   syncRootPath: string;
   callbacks?: Callbacks;
+  watcher = new Watcher();
+  logger: winston.Logger;
 
-  // private watcherBuilder: WatcherBuilder;
-  private watcher: Watcher;
-
-  constructor(syncRootPath: string, loggerPath?: string) {
-    this.PLACEHOLDER_ATTRIBUTES = {
-      FILE_ATTRIBUTE_READONLY: 0x1,
-      FILE_ATTRIBUTE_HIDDEN: 0x2,
-      FOLDER_ATTRIBUTE_READONLY: 0x1,
-      FILE_ATTRIBUTE_NORMAL: 0x1,
-    };
-
-    this.watcher = new Watcher();
-    addon.syncRootPath = syncRootPath;
-
+  constructor(syncRootPath: string, loggerPath: string) {
     this.syncRootPath = this.convertToWindowsPath(syncRootPath);
     loggerPath = this.convertToWindowsPath(loggerPath);
+
+    addon.syncRootPath = this.syncRootPath;
+
     this.createSyncRootFolder();
     this.addLoggerPath(loggerPath);
     this.logger = createLogger(loggerPath);
