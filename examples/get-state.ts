@@ -19,8 +19,7 @@ const { data } = z.object({ file: z.string() }).safeParse(argv);
 if (data) {
   const path = data.file;
   const state = drive.getPlaceholderState(path);
-  const pendingStates = drive.getPlaceholderWithStatePending();
-  logger.info({ state, pendingStates });
+  logger.info({ state });
 } else {
   logger.error("Por favor especifica un archivo con --file <path>");
 }
