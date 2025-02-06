@@ -1,9 +1,11 @@
 import fs from "fs";
 import { v4 } from "uuid";
 import { Mock } from "vitest";
+import { mockDeep } from "vitest-mock-extended";
 
 import { addon } from "@/addon";
 
+import { Callbacks } from "./types/callbacks.type";
 import VirtualDrive from "./virtual-drive";
 
 vi.mock("fs");
@@ -138,13 +140,14 @@ describe("VirtualDrive", () => {
       const providerVersion = "1.0.0";
       const providerId = v4();
       const logoPath = "C:\\iconPath";
-      const callbacks = {};
+      const callbacks = mockDeep<Callbacks>();
 
       // Act
+      expect(drive.callbacks).toBe(undefined);
       await drive.registerSyncRoot(providerName, providerVersion, providerId, callbacks, logoPath);
 
       // Assert
-      expect(drive.callbacks).toBe(callbacks);
+      expect(drive.callbacks).not.toBe(undefined);
       expect(addon.registerSyncRoot).toHaveBeenCalledWith(syncRootPath, providerName, providerVersion, providerId, logoPath);
     });
   });

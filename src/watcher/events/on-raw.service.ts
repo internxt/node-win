@@ -1,11 +1,10 @@
 import { stat } from "fs/promises";
-import { extname } from "path";
 
 import { DetectContextMenuActionService } from "../detect-context-menu-action.service";
 import { Watcher } from "../watcher";
 
 export class OnRawService {
-  constructor(private readonly detectContextMenuAction: DetectContextMenuActionService = new DetectContextMenuActionService()) {}
+  constructor(private readonly detectContextMenuAction = new DetectContextMenuActionService()) {}
 
   async execute({ self, event, path, details }: TProps) {
     try {
