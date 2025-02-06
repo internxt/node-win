@@ -10,9 +10,9 @@ export class OnAddService {
     try {
       const ext = path.split(".").pop();
       const { size, birthtime, mtime } = stats;
-      const fileIntenty = self.addon.getFileIdentity({ path });
+      const itemId = self.addon.getFileIdentity({ path });
 
-      self.logger.info({ fn: "onAdd", path, ext, size, birthtime, mtime, fileIntenty });
+      self.logger.info({ fn: "onAdd", path, ext, size, birthtime, mtime, itemId });
 
       if (!ext || size === 0 || size > 20 * 1024 * 1024 * 1024) return;
 
@@ -27,7 +27,7 @@ export class OnAddService {
       let isNewFile = false;
       let isMovedFile = false;
 
-      if (!fileIntenty) {
+      if (!itemId) {
         // El archivo fue creado recientemente (dentro de los últimos 60 segundos)
         isNewFile = true;
       } else if (creationTime !== modificationTime) {

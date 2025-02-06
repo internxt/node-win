@@ -2,7 +2,6 @@ import path, { join, win32 } from "path";
 import fs from "fs";
 import { Watcher } from "./watcher/watcher";
 import { ExtraCallbacks, InputSyncCallbacks } from "./types/callbacks.type";
-import { Status } from "./types/placeholder.type";
 import { IQueueManager } from "./queue/queueManager";
 
 import { createLogger } from "./logger";
@@ -16,7 +15,6 @@ class VirtualDrive {
   syncRootPath: string;
   callbacks?: Callbacks;
 
-  // private watcherBuilder: WatcherBuilder;
   private watcher: Watcher;
 
   constructor(syncRootPath: string, loggerPath?: string) {
@@ -57,7 +55,7 @@ class VirtualDrive {
     }
   }
 
-  getPlaceholderState(path: string): Status {
+  getPlaceholderState(path: string) {
     return addon.getPlaceholderState({ path: this.fixPath(path) });
   }
 

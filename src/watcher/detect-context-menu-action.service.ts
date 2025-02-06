@@ -14,7 +14,7 @@ export class DetectContextMenuActionService {
     const isInDevice = self.fileInDevice.has(path);
 
     self.logger.info({
-      event: "onRaw",
+      event: "change",
       path,
       status,
       itemId,
