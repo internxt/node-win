@@ -28,7 +28,6 @@ export class DetectContextMenuActionService {
         size: curr.size,
         ctimeMs: curr.ctimeMs,
         mtimeMs: curr.mtimeMs,
-        blocks: curr.blocks,
       },
     });
 

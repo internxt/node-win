@@ -1,7 +1,12 @@
 export type NapiCallbackFunction = (...args: any[]) => any;
 
+export type TFetchDataCallback = (
+  id: string,
+  callback: (data: boolean, path: string, errorHandler?: () => void) => Promise<{ finished: boolean; progress: number }>,
+) => void;
+
 export type InputSyncCallbacks = {
-  fetchDataCallback?: NapiCallbackFunction;
+  fetchDataCallback: TFetchDataCallback;
   validateDataCallback?: NapiCallbackFunction;
   cancelFetchDataCallback?: NapiCallbackFunction;
   fetchPlaceholdersCallback?: NapiCallbackFunction;
