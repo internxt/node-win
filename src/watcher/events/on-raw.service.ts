@@ -22,7 +22,7 @@ export class OnRawService {
         }
       }
     } catch (error) {
-      self.logger.error("Error en change", error);
+      self.logger.error("Error on change", error);
     }
   }
 }

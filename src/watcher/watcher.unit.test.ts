@@ -8,7 +8,9 @@ import { beforeEach } from "vitest";
 import { mockDeep } from "vitest-mock-extended";
 import { Logger } from "winston";
 
+import { Addon } from "@/addon-wrapper";
 import { QueueManager } from "@/queue/queue-manager";
+import { PinState, SyncState } from "@/types/placeholder.type";
 import { sleep } from "@/utils";
 
 import { OnAddDirService } from "./events/on-add-dir.service";
@@ -16,7 +18,6 @@ import { OnAddService } from "./events/on-add.service";
 import { OnAllService } from "./events/on-all.service";
 import { OnRawService } from "./events/on-raw.service";
 import { Watcher } from "./watcher";
-import { Addon } from "@/addon-wrapper";
 
 describe("Watcher", () => {
   const addon = mockDeep<Addon>();
@@ -235,6 +236,118 @@ describe("Watcher", () => {
 
       // Assert
       expect(getEvents()).toEqual(["addDir", "addDir", "unlinkDir"]);
+    });
+  });
+
+  describe("When pin items", () => {
+    it("When pin a file, then emit one change event", async () => {
+      // Arrange
+      const syncRootPath = join(TEST_FILES, v4());
+      const file = join(syncRootPath, `${v4()}.txt`);
+      await setupWatcher(syncRootPath);
+      await writeFile(file, Buffer.alloc(1000));
+
+      // Act
+      await sleep(50);
+      execSync(`attrib +P ${file}`);
+      await sleep(50);
+
+      // Assert
+      expect(getEvents()).toEqual(["addDir", "add", "change"]);
+      // expect(addon.getPlaceholderState({ path: file })).toBe({ pinState: PinState.AlwaysLocal, syncState: SyncState.InSync });
+    });
+
+    it("When pin a folder, then do not emit any event", async () => {
+      // Arrange
+      const syncRootPath = join(TEST_FILES, v4());
+      const folder = join(syncRootPath, v4());
+      await setupWatcher(syncRootPath);
+      await mkdir(folder);
+
+      // Act
+      await sleep(50);
+      execSync(`attrib +P ${folder}`);
+      await sleep(50);
+
+      // Assert
+      expect(getEvents()).toEqual(["addDir", "addDir"]);
+      // expect(addon.getPlaceholderState({ path: folder })).toBe({ pinState: PinState.AlwaysLocal, syncState: SyncState.InSync });
+    });
+  });
+
+  describe("When unpin items", () => {
+    it("When unpin a file, then emit one change event", async () => {
+      // Arrange
+      const syncRootPath = join(TEST_FILES, v4());
+      const file = join(syncRootPath, `${v4()}.txt`);
+      await setupWatcher(syncRootPath);
+      await writeFile(file, Buffer.alloc(1000));
+
+      // Act
+      await sleep(50);
+      execSync(`attrib +P ${file}`);
+      await sleep(50);
+      execSync(`attrib -P ${file}`);
+      await sleep(50);
+
+      // Assert
+      expect(getEvents()).toEqual(["addDir", "add", "change", "change"]);
+      // expect(addon.getPlaceholderState({ path: file })).toBe({ pinState: PinState.Unspecified, syncState: SyncState.InSync });
+    });
+
+    it("When unpin a folder, then do not emit any event", async () => {
+      // Arrange
+      const syncRootPath = join(TEST_FILES, v4());
+      const folder = join(syncRootPath, v4());
+      await setupWatcher(syncRootPath);
+      await mkdir(folder);
+
+      // Act
+      await sleep(50);
+      execSync(`attrib +P ${folder}`);
+      await sleep(50);
+      execSync(`attrib -P ${folder}`);
+      await sleep(50);
+
+      // Assert
+      expect(getEvents()).toEqual(["addDir", "addDir"]);
+      // expect(addon.getPlaceholderState({ path: folder })).toBe({ pinState: PinState.Unspecified, syncState: SyncState.InSync });
+    });
+  });
+
+  describe("When set items to online only", () => {
+    it("When set a file to online only, then emit one change event", async () => {
+      // Arrange
+      const syncRootPath = join(TEST_FILES, v4());
+      const file = join(syncRootPath, `${v4()}.txt`);
+      await setupWatcher(syncRootPath);
+      await writeFile(file, Buffer.alloc(1000));
+
+      // Act
+      await sleep(50);
+      execSync(`attrib -P +U ${file}`);
+      await sleep(50);
+
+      // Assert
+      expect(getEvents()).toEqual(["addDir", "add", "change"]);
+      // expect(addon.getPlaceholderState({ path: file })).toBe({ pinState: PinState.Unspecified, syncState: SyncState.InSync });
+    });
+
+    it("When set a folder to online only, then do not emit any event", async () => {
+      // Arrange
+      const syncRootPath = join(TEST_FILES, v4());
+      const folder = join(syncRootPath, v4());
+      await setupWatcher(syncRootPath);
+      await mkdir(folder);
+
+      // Act
+      await sleep(50);
+      execSync(`attrib -P +U ${folder}`);
+      await sleep(50);
+
+      // Assert
+      expect(getEvents()).toEqual(["addDir", "addDir"]);
+      // expect(addon.getPlaceholderState({ path: folder })).toBe({ pinState: PinState.Unspecified, syncState: SyncState.InSync });
     });
   });
 });

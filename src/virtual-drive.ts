@@ -12,21 +12,22 @@ import winston from "winston";
 
 const addon = new Addon();
 
-const PLACEHOLDER_ATTRIBUTES = {
-  FILE_ATTRIBUTE_READONLY: 0x1,
-  FILE_ATTRIBUTE_HIDDEN: 0x2,
-  FOLDER_ATTRIBUTE_READONLY: 0x1,
-  FILE_ATTRIBUTE_NORMAL: 0x1,
-};
-
+type Callbacks = InputSyncCallbacks & ExtraCallbacks;
 class VirtualDrive {
+  PLACEHOLDER_ATTRIBUTES: { [key: string]: number };
   syncRootPath: string;
-  callbacks!: Callbacks;
-  watcher = new Watcher();
-  logger: winston.Logger;
+  callbacks?: Callbacks;
 
-  constructor(syncRootPath: string, loggerPath: string) {
-    // TODO: getPlaceholderStates in the beginning
+  // private watcherBuilder: WatcherBuilder;
+  private watcher: Watcher;
+
+  constructor(syncRootPath: string, loggerPath?: string) {
+    this.PLACEHOLDER_ATTRIBUTES = {
+      FILE_ATTRIBUTE_READONLY: 0x1,
+      FILE_ATTRIBUTE_HIDDEN: 0x2,
+      FOLDER_ATTRIBUTE_READONLY: 0x1,
+      FILE_ATTRIBUTE_NORMAL: 0x1,
+    };
 
     this.watcher = new Watcher();
     addon.syncRootPath = syncRootPath;
@@ -55,7 +56,7 @@ class VirtualDrive {
     }
   }
 
-  getPlaceholderState(path: string): Status {
+  getPlaceholderState(path: string) {
     return addon.getPlaceholderState({ path: this.fixPath(path) });
   }
 
@@ -392,10 +393,6 @@ class VirtualDrive {
 
   async hydrateFile(itemPath: string): Promise<void> {
     return addon.hydrateFile({ path: this.fixPath(itemPath) });
-  }
-
-  getPlaceholderAttribute(itemPath: string) {
-    return addon.getPlaceholderAttribute({ path: this.fixPath(itemPath) });
   }
 }
 
