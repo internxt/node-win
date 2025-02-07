@@ -1,6 +1,6 @@
 import { execSync } from "child_process";
 import { existsSync } from "fs";
-import { mkdir, writeFile } from "fs/promises";
+import { appendFile, mkdir, rename, rm, unlink, writeFile } from "fs/promises";
 import { join } from "path";
 import { TEST_FILES } from "test/utils/setup.helper.test";
 import { v4 } from "uuid";
@@ -88,7 +88,7 @@ describe("Watcher", () => {
       await setupWatcher(syncRootPath);
 
       // Act
-      execSync(`mkdir ${folder}`);
+      await mkdir(folder);
       await sleep(50);
 
       // Assert
@@ -103,7 +103,22 @@ describe("Watcher", () => {
       await setupWatcher(syncRootPath);
 
       // Act
-      execSync(`echo. 2>${file}`);
+      await writeFile(file, Buffer.alloc(1000));
+      await sleep(50);
+
+      // Assert
+      expect(getEvents()).toEqual(["addDir", "add"]);
+      expect(onAdd.execute).toHaveBeenCalledWith(expect.objectContaining({ path: file }));
+    });
+
+    it("When add a file of zero size, then emit one add event", async () => {
+      // Arrange
+      const syncRootPath = join(TEST_FILES, v4());
+      const file = join(syncRootPath, `${v4()}.txt`);
+      await setupWatcher(syncRootPath);
+
+      // Act
+      await writeFile(file, Buffer.alloc(0));
       await sleep(50);
 
       // Assert
@@ -119,8 +134,8 @@ describe("Watcher", () => {
       await setupWatcher(syncRootPath);
 
       // Act
-      execSync(`mkdir ${folder}`);
-      execSync(`echo. 2>${file}`);
+      await mkdir(folder);
+      await writeFile(file, Buffer.alloc(1000));
       await sleep(50);
 
       // Assert
@@ -137,11 +152,11 @@ describe("Watcher", () => {
       const fileName = `${v4()}.txt`;
       const file = join(syncRootPath, fileName);
       await setupWatcher(syncRootPath);
-      execSync(`echo "Content" > ${file}`);
+      await writeFile(file, Buffer.alloc(1000));
       
       // Act
       await sleep(50);
-      execSync(`echo "More content" >> ${file}`);
+      await appendFile(file, Buffer.alloc(1000));
       await sleep(50);
 
       // Assert
@@ -166,11 +181,12 @@ describe("Watcher", () => {
       const fileName1 = `${v4()}.txt`;
       const fileName2 = `${v4()}.txt`;
       const file1 = join(syncRootPath, fileName1);
+      const file2 = join(syncRootPath, fileName2);
       await setupWatcher(syncRootPath);
       await writeFile(file1, Buffer.alloc(1000));
 
       // Act
-      execSync(`ren ${fileName1} ${fileName2}`, { cwd: syncRootPath });
+      await rename(file1, file2);
       await sleep(50);
 
       // Assert
@@ -180,14 +196,13 @@ describe("Watcher", () => {
     it("When rename a folder, then do not emit any event", async () => {
       // Arrange
       const syncRootPath = join(TEST_FILES, v4());
-      const folderName1 = v4();
-      const folderName2 = v4();
-      const folder1 = join(syncRootPath, folderName1);
+      const folder1 = join(syncRootPath, v4());
+      const folder2 = join(syncRootPath, v4());
       await setupWatcher(syncRootPath);
       await mkdir(folder1);
 
       // Act
-      execSync(`ren ${folderName1} ${folderName2}`, { cwd: syncRootPath });
+      await rename(folder1, folder2);
       await sleep(50);
 
       // Assert
@@ -200,13 +215,14 @@ describe("Watcher", () => {
       // Arrange
       const syncRootPath = join(TEST_FILES, v4());
       const folder = join(syncRootPath, v4());
-      const file = join(syncRootPath, `${v4()}.txt`);
+      const fileName = `${v4()}.txt`;
+      const file = join(syncRootPath, fileName);
       await setupWatcher(syncRootPath);
       await mkdir(folder);
       await writeFile(file, Buffer.alloc(1000));
 
       // Act
-      execSync(`mv ${file} ${folder}`);
+      await rename(file, join(folder, fileName));
       await sleep(50);
 
       // Assert
@@ -225,7 +241,7 @@ describe("Watcher", () => {
       // Act
       await mkdir(folder);
       await mkdir(folder1);
-      execSync(`mv ${folder1} ${folder2}`);
+      await rename(folder1, folder2);
       await sleep(50);
 
       // Assert
@@ -243,7 +259,7 @@ describe("Watcher", () => {
 
       // Act
       await sleep(50);
-      execSync(`rm ${file}`);
+      await unlink(file);
       await sleep(150);
 
       // Assert
@@ -259,7 +275,7 @@ describe("Watcher", () => {
 
       // Act
       await sleep(50);
-      execSync(`rmdir ${folder}`);
+      await rm(folder, { recursive: true, force: true });
       await sleep(150);
 
       // Assert
