@@ -10,15 +10,13 @@ export class DetectContextMenuActionService {
     const { prev, curr } = details;
 
     const status = self.addon.getPlaceholderState({ path });
-    const attribute = self.addon.getPlaceholderAttribute({ path });
     const itemId = self.addon.getFileIdentity({ path });
     const isInDevice = self.fileInDevice.has(path);
 
     self.logger.info({
-      event: "onRaw",
+      event: "change",
       path,
       status,
-      attribute,
       itemId,
       isInDevice,
       prev: {
@@ -30,7 +28,6 @@ export class DetectContextMenuActionService {
         size: curr.size,
         ctimeMs: curr.ctimeMs,
         mtimeMs: curr.mtimeMs,
-        blocks: curr.blocks,
       },
     });
 

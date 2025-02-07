@@ -6,7 +6,9 @@ import { v4 } from "uuid";
 
 import settings from "./settings";
 
-const rootFile1 = join(settings.syncRootPath, v4());
+const rootFileName1 = v4();
+const rootZipFileName = `${v4()}.zip`;
+const rootFile1 = join(settings.syncRootPath, rootFileName1);
 const rootFile2ChangeSize = join(settings.syncRootPath, `change-size-${v4()}.txt`);
 const rootFile3 = join(settings.syncRootPath, `${v4()}.txt`);
 const rootFile3Moved = join(settings.syncRootPath, `moved-${v4()}.txt`);
@@ -22,6 +24,7 @@ execSync(`echo Hello, world! > ${rootFile2ChangeSize}`);
 execSync(`echo Hello, world! >> ${rootFile2ChangeSize}`); // Sync
 execSync(`echo Hello, world! > ${rootFile3}`);
 execSync(`type nul > ${rootFile4}`); // No sync (0 bytes)
+execSync(`cd ${settings.syncRootPath} && tar -cf ${rootZipFileName} ${rootFileName1}`); // Sync
 execSync(`mv ${rootFile3} ${rootFile3Moved}`); // Sync
 execSync(`mkdir ${rootFolder1}`); // Sync
 execSync(`mkdir ${rootFolder2}`); // Cloud (no files inside)
