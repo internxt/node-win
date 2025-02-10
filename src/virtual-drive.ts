@@ -34,8 +34,8 @@ class VirtualDrive {
     this.logger = createLogger(loggerPath);
   }
 
-  addLoggerPath(logPath: string) {
-    addon.addLogger({ logPath });
+  convertToWindowsTime(jsTime: number) {
+    return BigInt(jsTime) * 10000n + 116444736000000000n;
   }
 
   convertToWindowsPath(path: string) {
@@ -51,11 +51,15 @@ class VirtualDrive {
     }
   }
 
+  addLoggerPath(logPath: string) {
+    addon.addLogger({ logPath });
+  }
+
   getPlaceholderState(path: string) {
     return addon.getPlaceholderState({ path: this.fixPath(path) });
   }
 
-  getPlaceholderWithStatePending(): any {
+  getPlaceholderWithStatePending() {
     return addon.getPlaceholderWithStatePending();
   }
 
@@ -65,19 +69,15 @@ class VirtualDrive {
     }
   }
 
-  convertToWindowsTime(jsTime: number): bigint {
-    return BigInt(jsTime) * 10000n + 116444736000000000n;
-  }
-
   getFileIdentity(relativePath: string) {
     return addon.getFileIdentity({ path: this.fixPath(relativePath) });
   }
 
-  async deleteFileSyncRoot(relativePath: string): Promise<void> {
+  async deleteFileSyncRoot(relativePath: string) {
     return addon.deleteFileSyncRoot({ path: this.fixPath(relativePath) });
   }
 
-  async connectSyncRoot() {
+  connectSyncRoot() {
     if (this.callbacks === undefined) {
       throw new Error("Callbacks are not defined");
     }
@@ -139,14 +139,6 @@ class VirtualDrive {
     });
   }
 
-  private isValidFolderPath(path: string) {
-    return path.startsWith("/") && path.endsWith("/") && !path.includes(".");
-  }
-
-  private isValidFilePath(path: string) {
-    return path.includes(".");
-  }
-
   async registerSyncRoot(
     providerName: string,
     providerVersion: string,
@@ -163,9 +155,8 @@ class VirtualDrive {
     });
   }
 
-  static unregisterSyncRoot(syncRootPath: string): any {
-    const result = addon.unregisterSyncRoot({ syncRootPath });
-    return result;
+  static unregisterSyncRoot(syncRootPath: string) {
+    return addon.unregisterSyncRoot({ syncRootPath });
   }
 
   watchAndWait(
@@ -173,15 +164,10 @@ class VirtualDrive {
     queueManager: IQueueManager,
     loggerPath: string
   ): void {
-    if (this.callbacks === undefined) {
-      throw new Error("Callbacks are not defined");
-    }
-
+    this.watcher.addon = addon;
     this.watcher.queueManager = queueManager;
-
     this.watcher.logger = this.logger;
-
-    this.watcher.syncRootPath = path;
+    this.watcher.syncRootPath = this.syncRootPath;
     this.watcher.options = {
       ignored: /(^|[\/\\])\../,
       persistent: true,
@@ -195,8 +181,6 @@ class VirtualDrive {
       usePolling: true,
     };
 
-    this.watcher.addon = addon;
-
     this.watcher.watchAndWait();
   }
 
@@ -206,7 +190,7 @@ class VirtualDrive {
     size: number = 0,
     creationTime: number = Date.now(),
     lastWriteTime: number = Date.now()
-  ): void {
+  ) {
     const fullPath = path.join(this.syncRootPath, relativePath);
     const splitPath = relativePath.split("/").filter((p) => p);
     const directoryPath = path.resolve(this.syncRootPath);
@@ -241,7 +225,7 @@ class VirtualDrive {
     size: number = 0,
     creationTime: number = Date.now(),
     lastWriteTime: number = Date.now()
-  ): void {
+  ) {
     const splitPath = relativePath.split("/").filter((p) => p);
     const directoryPath = path.resolve(this.syncRootPath);
     let currentPath = directoryPath;
@@ -268,107 +252,30 @@ class VirtualDrive {
     }
   }
 
-  createItemByPath(
-    relativePath: string,
-    itemId: string,
-    size: number = 0,
-    creationTime: number = Date.now(),
-    lastWriteTime: number = Date.now()
-  ): void {
-    const fullPath = path.join(this.syncRootPath, relativePath);
-    const splitPath = relativePath.split("/").filter((p) => p);
-    const directoryPath = path.resolve(this.syncRootPath);
-    let currentPath = directoryPath;
-    if (this.isValidFolderPath(relativePath)) {
-      // Es un directorio
-
-      for (const dir of splitPath) {
-        if (fs.existsSync(currentPath)) {
-          try {
-            this.createPlaceholderDirectory(
-              dir,
-              itemId,
-              true,
-              size,
-              PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
-              creationTime,
-              lastWriteTime,
-              Date.now(),
-              currentPath
-            );
-          } catch (error) {
-            //@ts-ignore
-            console.error(`Error while creating directory: ${error.message}`);
-          }
-        }
-        currentPath = path.join(currentPath, dir);
-      }
-    } else if (this.isValidFilePath(relativePath)) {
-      // Es un archivo
-
-      try {
-        for (let i = 0; i < splitPath.length - 1; i++) {
-          // everything except last element
-          const dir = splitPath[i];
-          if (fs.existsSync(currentPath)) {
-            this.createPlaceholderDirectory(
-              dir,
-              itemId,
-              true,
-              0,
-              PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
-              Date.now(),
-              Date.now(),
-              Date.now(),
-              currentPath
-            );
-          }
-          currentPath = path.join(currentPath, dir);
-        }
-        // last element is the file
-        this.createPlaceholderFile(
-          path.basename(fullPath),
-          itemId,
-          size,
-          PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
-          creationTime,
-          lastWriteTime,
-          Date.now(),
-          currentPath
-        );
-      } catch (error) {
-        //@ts-ignore
-        console.error(`Error al crear placeholder: ${error.message}`);
-      }
-    } else {
-      console.error("Invalid path");
-    }
-  }
-
   disconnectSyncRoot() {
     return addon.disconnectSyncRoot();
   }
 
-  async updateSyncStatus(
+  updateSyncStatus(
     itemPath: string,
     isDirectory: boolean,
     sync: boolean = true
   ) {
-    return await addon.updateSyncStatus({ path: this.fixPath(itemPath), isDirectory, sync });
+    return addon.updateSyncStatus({ path: this.fixPath(itemPath), isDirectory, sync });
   }
 
-  convertToPlaceholder(itemPath: string, id: string): boolean {
+  convertToPlaceholder(itemPath: string, id: string) {
     return addon.convertToPlaceholder({ path: this.fixPath(itemPath), id });
   }
-  updateFileIdentity(itemPath: string, id: string, isDirectory: boolean): void {
-    addon.updateFileIdentity({ path: this.fixPath(itemPath), id, isDirectory });
+  updateFileIdentity(itemPath: string, id: string, isDirectory: boolean) {
+    return addon.updateFileIdentity({ path: this.fixPath(itemPath), id, isDirectory });
   }
 
-  async dehydrateFile(itemPath: string) {
+  dehydrateFile(itemPath: string) {
     return addon.dehydrateFile({ path: this.fixPath(itemPath) });
   }
 
-  async hydrateFile(itemPath: string): Promise<void> {
+  hydrateFile(itemPath: string) {
     return addon.hydrateFile({ path: this.fixPath(itemPath) });
   }
 }
