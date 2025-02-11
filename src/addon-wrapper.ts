@@ -27,7 +27,7 @@ export class Addon {
     return this.parseAddonZod("registerSyncRoot", result);
   }
 
-  connectSyncRoot({ callbacks }: { callbacks: Callbacks }) {
+  connectSyncRoot({ callbacks }: { callbacks: Callbacks; syncRootPath: string }) {
     const result = addon.connectSyncRoot(this.syncRootPath, callbacks);
     return this.parseAddonZod("connectSyncRoot", result);
   }
@@ -37,8 +37,8 @@ export class Addon {
     return this.parseAddonZod("unregisterSyncRoot", result);
   }
 
-  disconnectSyncRoot() {
-    return addon.disconnectSyncRoot(this.syncRootPath);
+  disconnectSyncRoot({ syncRootPath }: { syncRootPath: string }) {
+    return addon.disconnectSyncRoot(syncRootPath);
   }
 
   addLogger({ logPath }: { logPath: string }) {

@@ -29,5 +29,5 @@ try {
 } catch (error) {
   logger.error(error);
   drive.disconnectSyncRoot();
-  VirtualDrive.unregisterSyncRoot(settings.syncRootPath);
+  drive.unregisterSyncRoot();
 }
