@@ -32,7 +32,6 @@ std::wstring Logger::fromUtf8ToWide(const std::string& utf8Str) {
 void Logger::log(const std::string &message, LogLevel level, WORD color) {
     std::lock_guard<std::mutex> guard(log_mutex);
 
-    // Obtener la fecha y hora actual formateada
     auto now = std::chrono::system_clock::now();
     auto now_as_time_t = std::chrono::system_clock::to_time_t(now);
     auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
@@ -45,24 +44,19 @@ void Logger::log(const std::string &message, LogLevel level, WORD color) {
     std::string level_str = toString(level);
     std::transform(level_str.begin(), level_str.end(), level_str.begin(), ::tolower);
 
-    // Escribir en el archivo de log (sin colores)
     log_file << "[" << time_stream.str() << "] [" << level_str << "] " << message << std::endl;
 
-    // Preparar la salida en consola
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
     GetConsoleScreenBufferInfo(hConsole, &consoleInfo);
     WORD saved_attributes = consoleInfo.wAttributes;
 
-    // Si se ha especificado un color (distinto de 0), cambiar el atributo
     if (color != 0) {
         SetConsoleTextAttribute(hConsole, color);
     }
 
-    // Imprimir en consola
     printf("[%s] [%s] %s\n", time_stream.str().c_str(), level_str.c_str(), message.c_str());
 
-    // Restaurar el atributo original
     if (color != 0) {
         SetConsoleTextAttribute(hConsole, saved_attributes);
     }

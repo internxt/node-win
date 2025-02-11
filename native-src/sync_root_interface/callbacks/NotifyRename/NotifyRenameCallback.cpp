@@ -12,7 +12,6 @@
 napi_threadsafe_function g_notify_rename_tsfn = nullptr;
 napi_value response_callback_fn(napi_env env, napi_callback_info info)
 {
-    Logger::getInstance().log("response_callback_fn called.", LogLevel::DEBUG, FOREGROUND_BLUE);
     size_t argc = 1;
     napi_value argv[1];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
@@ -36,7 +35,6 @@ napi_value response_callback_fn(napi_env env, napi_callback_info info)
 
 void notify_rename_call(napi_env env, napi_value js_callback, void* context, void* data)
 {
-    Logger::getInstance().log("========================================================================================== open notify_rename_call called.", LogLevel::DEBUG, FOREGROUND_GREEN);
     RenameContext* renameCtx = static_cast<RenameContext*>(data);
     napi_value js_targetPathArg, js_fileIdentityArg, undefined, result;
     std::u16string u16_targetPath(renameCtx->targetPath.begin(), renameCtx->targetPath.end());
@@ -150,9 +148,6 @@ void CALLBACK notify_rename_callback_wrapper(
     if (PathFileExistsW(absolutePath.c_str()) == FALSE)
         absolutePath = driveLetter + L"\\" + targetPathArg;
     bool isDirectory = std::filesystem::is_directory(absolutePath);
-    // Placeholders::UpdateSyncStatus(absolutePath, renameCtx->callbackResult, isDirectory);
    
     RemoveRenameContext(callbackInfo->TransferKey);
-
-    Logger::getInstance().log("========================================================================================== close notify_rename_call called.", LogLevel::DEBUG, FOREGROUND_GREEN);
 }
