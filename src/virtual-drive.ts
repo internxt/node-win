@@ -17,6 +17,7 @@ const PLACEHOLDER_ATTRIBUTES = {
 
 class VirtualDrive {
   syncRootPath: string;
+  providerId: string;
   callbacks?: Callbacks;
   watcher = new Watcher();
   logger: winston.Logger;
@@ -24,10 +25,11 @@ class VirtualDrive {
 
   addon: Addon;
 
-  constructor(syncRootPath: string, loggerPath: string) {
+  constructor(syncRootPath: string, providerId: string, loggerPath: string) {
     this.addon = new Addon();
     this.syncRootPath = this.convertToWindowsPath(syncRootPath);
     loggerPath = this.convertToWindowsPath(loggerPath);
+    this.providerId = providerId;
 
     this.addon.syncRootPath = this.syncRootPath;
 
@@ -175,7 +177,7 @@ class VirtualDrive {
   }
 
   unregisterSyncRoot() {
-    return this.addon.unregisterSyncRoot({ syncRootPath: this.syncRootPath });
+    return this.addon.unregisterSyncRoot({ providerId: this.providerId });
   }
 
   watchAndWait(path: string, queueManager: IQueueManager, loggerPath: string): void {

@@ -32,8 +32,8 @@ export class Addon {
     return this.parseAddonZod("connectSyncRoot", result);
   }
 
-  unregisterSyncRoot({ syncRootPath }: { syncRootPath: string }) {
-    const result = addon.unregisterSyncRoot(syncRootPath);
+  unregisterSyncRoot({ providerId }: { providerId: string }) {
+    const result = addon.unregisterSyncRoot(providerId);
     return this.parseAddonZod("unregisterSyncRoot", result);
   }
 

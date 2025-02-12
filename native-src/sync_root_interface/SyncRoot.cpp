@@ -170,12 +170,16 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
     }
 }
 
-HRESULT SyncRoot::UnregisterSyncRoot()
+HRESULT SyncRoot::UnregisterSyncRoot(const GUID &providerId)
 {
     try
     {
+        // Convert GUID to string for syncRootID
+        wchar_t syncRootID[39];
+        StringFromGUID2(providerId, syncRootID, 39);
+
         Logger::getInstance().log("Unregistering sync root.", LogLevel::INFO);
-        winrt::StorageProviderSyncRootManager::Unregister(L"syncRootID");
+        winrt::StorageProviderSyncRootManager::Unregister(syncRootID);
         return S_OK;
     }
     catch (...)
