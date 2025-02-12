@@ -20,7 +20,7 @@ const handlers = { handleAdd, handleHydrate, handleDehydrate, handleChangeSize }
 const notify = { onTaskSuccess: async () => undefined, onTaskProcessing: async () => undefined };
 const queueManager = new QueueManager(handlers, notify, settings.queuePersistPath);
 
-drive.registerSyncRoot(settings.driveName, settings.driveVersion, settings.providerid, callbacks, settings.iconPath);
+drive.registerSyncRoot(settings.driveName, settings.driveVersion, callbacks, settings.iconPath);
 drive.connectSyncRoot();
 
 try {
