@@ -21,7 +21,6 @@ class VirtualDrive {
   callbacks?: Callbacks;
   watcher = new Watcher();
   logger: winston.Logger;
-  connections: Map<string, any> = new Map();
 
   addon: Addon;
 
@@ -91,18 +90,11 @@ class VirtualDrive {
     const connectionKey = this.addon.connectSyncRoot({ syncRootPath: this.syncRootPath, callbacks: this.callbacks });
 
     console.log("Connection key: ", connectionKey);
-    this.connections.set(this.syncRootPath, connectionKey);
     return connectionKey;
   }
 
   disconnectSyncRoot() {
-    const connectionKey = this.connections.get(this.syncRootPath);
-    if (connectionKey) {
-      this.addon.disconnectSyncRoot({ syncRootPath: this.syncRootPath });
-      this.connections.delete(this.syncRootPath);
-    } else {
-      throw new Error(`No connection found for syncRootPath: ${this.syncRootPath}`);
-    }
+    this.addon.disconnectSyncRoot({ syncRootPath: this.syncRootPath });
   }
 
   createPlaceholderFile(
