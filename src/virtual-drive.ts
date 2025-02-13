@@ -4,9 +4,9 @@ import winston from "winston";
 
 import { Addon } from "./addon-wrapper";
 import { createLogger } from "./logger";
-import { IQueueManager } from "./queue/queueManager";
 import { Callbacks } from "./types/callbacks.type";
 import { Watcher } from "./watcher/watcher";
+import { QueueManager } from "./queue/queue-manager";
 
 const PLACEHOLDER_ATTRIBUTES = {
   FILE_ATTRIBUTE_READONLY: 0x1,
@@ -164,7 +164,7 @@ class VirtualDrive {
     return this.addon.unregisterSyncRoot({ providerId: this.providerId });
   }
 
-  watchAndWait(path: string, queueManager: IQueueManager, loggerPath: string): void {
+  watchAndWait(path: string, queueManager: QueueManager, loggerPath: string): void {
     this.watcher.addon = this.addon;
     this.watcher.queueManager = queueManager;
     this.watcher.logger = this.logger;
