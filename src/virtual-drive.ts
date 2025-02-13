@@ -87,7 +87,7 @@ class VirtualDrive {
 
     console.log("Connecting to sync root: ", this.syncRootPath);
 
-    const connectionKey = this.addon.connectSyncRoot({ syncRootPath: this.syncRootPath, callbacks: this.callbacks });
+    const connectionKey = this.addon.connectSyncRoot({ callbacks: this.callbacks });
 
     console.log("Connection key: ", connectionKey);
     return connectionKey;
