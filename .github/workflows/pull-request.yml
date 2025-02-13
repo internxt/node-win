@@ -25,5 +25,5 @@ jobs:
       - name: Run Prettier
         run: yarn prettier . --check
 
-      # - name: Run tests
-      #   run: yarn test:once
+      - name: Run tests
+        run: yarn test:once
