@@ -1,4 +1,3 @@
-import { logger } from "examples/drive";
 import fs from "fs";
 import path, { join, win32 } from "path";
 import winston from "winston";
