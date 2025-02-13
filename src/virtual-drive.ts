@@ -4,9 +4,9 @@ import winston from "winston";
 
 import { Addon } from "./addon-wrapper";
 import { createLogger } from "./logger";
+import { QueueManager } from "./queue/queue-manager";
 import { Callbacks } from "./types/callbacks.type";
 import { Watcher } from "./watcher/watcher";
-import { QueueManager } from "./queue/queue-manager";
 
 const PLACEHOLDER_ATTRIBUTES = {
   FILE_ATTRIBUTE_READONLY: 0x1,
