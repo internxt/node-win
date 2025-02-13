@@ -32,13 +32,13 @@ export class Addon {
     return this.parseAddonZod("connectSyncRoot", result);
   }
 
-  unregisterSyncRoot({ syncRootPath }: { syncRootPath: string }) {
-    const result = addon.unregisterSyncRoot(syncRootPath);
+  unregisterSyncRoot({ providerId }: { providerId: string }) {
+    const result = addon.unregisterSyncRoot(providerId);
     return this.parseAddonZod("unregisterSyncRoot", result);
   }
 
-  disconnectSyncRoot() {
-    return addon.disconnectSyncRoot(this.syncRootPath);
+  disconnectSyncRoot({ syncRootPath }: { syncRootPath: string }) {
+    return addon.disconnectSyncRoot(syncRootPath);
   }
 
   addLogger({ logPath }: { logPath: string }) {
