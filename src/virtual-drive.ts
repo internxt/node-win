@@ -1,3 +1,4 @@
+import { logger } from "examples/drive";
 import fs from "fs";
 import path, { join, win32 } from "path";
 import winston from "winston";
@@ -85,11 +86,9 @@ class VirtualDrive {
       throw new Error("Callbacks are not defined");
     }
 
-    console.log("Connecting to sync root: ", this.syncRootPath);
-
     const connectionKey = this.addon.connectSyncRoot({ callbacks: this.callbacks });
 
-    console.log("Connection key: ", connectionKey);
+    this.logger.debug({ fn: "connectSyncRoot", connectionKey });
     return connectionKey;
   }
 

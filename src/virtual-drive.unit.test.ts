@@ -125,7 +125,7 @@ describe("VirtualDrive", () => {
       mockExistsSync.mockReturnValue(true);
       const providerId = v4();
 
-      const drive = new VirtualDrive(syncRootPath, logPath, providerId);
+      const drive = new VirtualDrive(syncRootPath, providerId, logPath);
 
       // Act
       drive.createFileByPath("folder/subfolder/file.txt", "file-id", 1234, 1660000000000, 1660000001000);
