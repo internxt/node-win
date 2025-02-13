@@ -265,6 +265,8 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
             // Liberar el buffer de mensaje de error
             LocalFree(errorMsg);
 
+            CloseHandle(fileHandle);
+
             return false;
         }
 
