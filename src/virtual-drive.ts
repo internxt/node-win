@@ -6,6 +6,7 @@ import { IQueueManager } from "./queue/queueManager";
 
 import { createLogger } from "./logger";
 import { Addon } from "./addon-wrapper";
+import { getPlaceholderStates } from "./get-placeholder-states";
 import winston from "winston";
 
 const addon = new Addon();
@@ -146,7 +147,21 @@ class VirtualDrive {
     callbacks: Callbacks,
     logoPath: string
   ): Promise<any> {
-    this.callbacks = callbacks;
+    this.callbacks = {
+      ...callbacks,
+      fetchDataCallback: (...args) => {
+        const id = args[0];
+        this.watcher.fileInDevice.add(id);
+        return callbacks.fetchDataCallback?.(...args);
+      }
+    };
+
+    try {
+      await getPlaceholderStates({ self: this, path: this.syncRootPath});
+    } catch (exc) {
+      this.logger.error("getPlaceholderStates", exc)      
+    }
+
     return addon.registerSyncRoot({
       providerName,
       providerVersion,
