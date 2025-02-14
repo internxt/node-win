@@ -597,7 +597,6 @@ bool Placeholders::IsFileValidForSync(const std::wstring &filePath)
 
 void Placeholders::ForceShellRefresh(const std::wstring &path)
 {
-    Logger::getInstance().log("Forcing shell refresh for path: " + Logger::fromWStringToString(path), LogLevel::INFO);
     SHChangeNotify(SHCNE_UPDATEDIR, SHCNF_PATH, path.c_str(), nullptr);
     SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATH, path.c_str(), nullptr);
 }
