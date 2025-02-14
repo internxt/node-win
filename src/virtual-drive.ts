@@ -1,11 +1,10 @@
-import { logger } from "examples/drive";
 import fs from "fs";
 import path, { join, win32 } from "path";
 import winston from "winston";
 
 import { Addon } from "./addon-wrapper";
 import { createLogger } from "./logger";
-import { IQueueManager } from "./queue/queueManager";
+import { QueueManager } from "./queue/queue-manager";
 import { Callbacks } from "./types/callbacks.type";
 import { Watcher } from "./watcher/watcher";
 
@@ -165,7 +164,7 @@ class VirtualDrive {
     return this.addon.unregisterSyncRoot({ providerId: this.providerId });
   }
 
-  watchAndWait(path: string, queueManager: IQueueManager, loggerPath: string): void {
+  watchAndWait(path: string, queueManager: QueueManager, loggerPath: string): void {
     this.watcher.addon = this.addon;
     this.watcher.queueManager = queueManager;
     this.watcher.logger = this.logger;
