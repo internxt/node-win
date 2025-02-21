@@ -45,9 +45,6 @@ void Placeholders::CreateOne(
 
         wstring fullPath = std::wstring(destPath) + L'\\' + fileName;
 
-        wprintf(L"[CreatePlaceholder] Full path: %s", fullPath.c_str());
-        wprintf(L"\n");
-
         if (std::filesystem::exists(fullPath))
         {
             Placeholders::ConvertToPlaceholder(fullPath, fileIdentity);
@@ -85,7 +82,6 @@ void Placeholders::CreateOne(
         prop.Value(L"Value1");
         prop.IconResource(L"shell32.dll,-44");
 
-        wprintf(L"[CreatePlaceholder] Successfully created placeholder file\n");
         // UpdateSyncStatus(fullDestPath, true, false);
     }
     catch (...)
@@ -112,7 +108,6 @@ void Placeholders::MaintainIdentity(std::wstring &fullPath, PCWSTR itemIdentity,
     std::string identity = Placeholders::GetFileIdentity(fullPath);
     if (!identity.empty())
     {
-        wprintf(L"[MaintainIdentity] Identity is not empty\n");
         int len = WideCharToMultiByte(CP_UTF8, 0, itemIdentity, -1, NULL, 0, NULL, NULL);
         if (len > 0)
         {
@@ -120,13 +115,7 @@ void Placeholders::MaintainIdentity(std::wstring &fullPath, PCWSTR itemIdentity,
             WideCharToMultiByte(CP_UTF8, 0, itemIdentity, -1, &itemIdentityStr[0], len, NULL, NULL);
             std::string cleanIdentity = cleanString(identity);
             std::string cleanItemIdentity = cleanString(itemIdentityStr);
-            printf("[MaintainIdentity] cleanCurrentIdentity: %s\n", cleanIdentity.c_str());
-            printf("[MaintainIdentity] cleanItemIdentity: %s\n", cleanItemIdentity.c_str());
-            if (cleanIdentity == cleanItemIdentity)
-            {
-                wprintf(L"[MaintainIdentity] Identity is corret not need to update\n");
-            }
-            else
+            if (cleanIdentity != cleanItemIdentity)
             {
                 wprintf(L"[MaintainIdentity] Identity is incorrect, updating...\n");
                 std::wstring itemIdentityStrW(itemIdentity);
@@ -138,7 +127,6 @@ void Placeholders::MaintainIdentity(std::wstring &fullPath, PCWSTR itemIdentity,
             // Handle error as needed
         }
     }
-    printf("[MaintainIdentity] End Maintain Identity\n");
 }
 
 void Placeholders::CreateEntry(
@@ -185,17 +173,11 @@ void Placeholders::CreateEntry(
                 wprintf(L"[CreatePlaceholder] Failed to create placeholder directory with HRESULT 0x%08x\n", hr);
                 throw winrt::hresult_error(hr);
             }
-            else
-            {
-                wprintf(L"[CreatePlaceholder] Successfully created placeholder directory\n");
-            }
 
             std::wstring finalPath = std::wstring(destPath) + L"\\" + std::wstring(itemName);
             Placeholders::UpdatePinState(finalPath, PinState::OnlineOnly);
             UpdateSyncStatus(finalPath, true, true);
         }
-
-        wprintf(L"[CreatePlaceholder] Successfully created %s at %s\n", isDirectory ? L"directory" : L"file", fullDestPath.c_str());
     }
     catch (const winrt::hresult_error &error)
     {
@@ -230,7 +212,6 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
         if (fileHandle == INVALID_HANDLE_VALUE)
         {
             // Manejar el error al abrir el archivo
-            wprintf(L"[ConvertToPlaceholder] Error opening file: %d\n", GetLastError());
             return false;
         }
 
@@ -259,8 +240,6 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
                 (LPWSTR)&errorMsg,
                 0,
                 NULL);
-
-            wprintf(L"[ConvertToPlaceholder] Error details: %s\n", errorMsg);
 
             // Liberar el buffer de mensaje de error
             LocalFree(errorMsg);
@@ -328,7 +307,6 @@ void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSync
 
 void Placeholders::UpdateFileIdentity(const std::wstring &filePath, const std::wstring &fileIdentity, bool isDirectory)
 {
-    wprintf(L"[UpdateFileIdentity] Path: %ls\n", filePath.c_str());
     HANDLE fileHandle = CreateFileW(
         filePath.c_str(),
         FILE_WRITE_ATTRIBUTES, // permisson needed to change the state
@@ -452,7 +430,6 @@ CF_PLACEHOLDER_STATE GetPlaceholderStateMock(const std::wstring &filePath)
     }
 }
 
-
 FileState Placeholders::GetPlaceholderInfo(const std::wstring &directoryPath)
 {
 
@@ -488,24 +465,12 @@ FileState Placeholders::GetPlaceholderInfo(const std::wstring &directoryPath)
     {
 
         SyncState syncState = syncStateOpt.value();
-
-        printf("placeholderInfo.SyncState: %s\n", syncStateToString(syncState).c_str());
-    }
-    else
-    {
-        printf("placeholderInfo.SyncState: No value\n");
     }
 
     if (pinStateOpt.has_value())
     {
 
         PinState pinState = pinStateOpt.value();
-
-        printf("placeholderInfo.PinState: %s\n", pinStateToString(pinState).c_str());
-    }
-    else
-    {
-        printf("placeholderInfo.PinState: No value\n");
     }
 
     fileState.pinstate = pinStateOpt.value_or(PinState::Unspecified);
@@ -607,7 +572,7 @@ HRESULT Placeholders::UpdatePinState(const std::wstring &path, const PinState st
 
     const auto cfState = pinStateToCfPinState(state);
     HRESULT result = CfSetPinState(handleForPath(path).get(), cfState, CF_SET_PIN_FLAG_NONE, nullptr);
-    
+
     // ForceShellRefresh(path);
 
     if (result != S_OK)
