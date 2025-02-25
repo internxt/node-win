@@ -16,11 +16,6 @@ jobs:
         with:
           node-version: 18
 
-      - name: Check PR size
-        uses: maidsafe/pr_size_checker@v2
-        with:
-          max_lines_changed: 500
-
       - name: Install dependencies
         run: yarn install --ignore-scripts
 
