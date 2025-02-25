@@ -1,10 +1,10 @@
-name: Some pull request checks
+name: Pull request checks
 
 on:
   pull_request:
 
 jobs:
-  type-check:
+  checks:
     runs-on: windows-latest
 
     steps:
@@ -15,6 +15,11 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18
+
+      - name: Check PR size
+      - uses: maidsafe/pr_size_checker@v2
+        with:
+          max_lines_changed: 500
 
       - name: Install dependencies
         run: yarn install --ignore-scripts
