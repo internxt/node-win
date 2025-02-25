@@ -22,19 +22,20 @@ jobs:
           echo "Base SHA: $BASE_SHA"
           echo "Head SHA: $HEAD_SHA"
 
-          # Compute the merge base between the two branches.
+          # Compute the merge base between the two branches
           MERGE_BASE=$(git merge-base "$HEAD_SHA" "$BASE_SHA")
           echo "Merge Base: $MERGE_BASE"
 
-          # Calculate added and deleted lines between the merge base and the head commit.
+          # Calculate added and deleted lines between the merge base and the head commit
           TOTAL_CHANGED=$(git diff --numstat "$MERGE_BASE" "$HEAD_SHA" \
+            | grep -v "yarn.lock" \
             | awk '{ added += $1; deleted += $2 } END { print added + deleted }')
 
-          # Default to 0 if nothing is output.
+          # Default to 0 if nothing is output
           TOTAL_CHANGED=${TOTAL_CHANGED:-0}
           echo "Total changed lines: $TOTAL_CHANGED"
 
-          # Make the total available for later steps.
+          # Make the total available for later steps
           echo "total=$TOTAL_CHANGED" >> "$GITHUB_OUTPUT"
 
       - name: Fail if too many changes
@@ -43,4 +44,3 @@ jobs:
           echo "PR has ${{ steps.diff_check.outputs.total }} changed lines, which exceeds the 500-line limit."
           echo "Please reduce the size of this PR."
           exit 1
-
