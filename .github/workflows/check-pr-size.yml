@@ -4,12 +4,14 @@ on:
   pull_request:
 
 jobs:
-  checks:
+  check_pr_size:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       - name: Check PR size
         uses: maidsafe/pr_size_checker@v2
