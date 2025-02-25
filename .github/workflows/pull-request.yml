@@ -1,10 +1,10 @@
-name: Some pull request checks
+name: Pull request checks
 
 on:
   pull_request:
 
 jobs:
-  type-check:
+  checks:
     runs-on: windows-latest
 
     steps:
