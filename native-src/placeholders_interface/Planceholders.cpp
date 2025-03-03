@@ -209,27 +209,28 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
     {
         if (!std::filesystem::exists(fullPath))
         {
-            // El archivo no existe
             wprintf(L"[ConvertToPlaceholder] File does not exist\n");
             return false;
         }
 
-        // Obtener un handle al archivo
         bool isDirectory = fs::is_directory(fullPath);
 
-        // Obtener un handle al archivo o carpeta
+        if (!isDirectory) {
+            wprintf(L"[ConvertToPlaceholder] File is not a directory\n");
+            return false;
+        }
+
         HANDLE fileHandle = CreateFileW(
             fullPath.c_str(),
             FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES,
             FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
             nullptr,
             OPEN_EXISTING,
-            isDirectory ? FILE_FLAG_BACKUP_SEMANTICS : 0, // Agregar FILE_FLAG_BACKUP_SEMANTICS si es una carpeta
+            isDirectory ? FILE_FLAG_BACKUP_SEMANTICS : 0,
             nullptr);
 
         if (fileHandle == INVALID_HANDLE_VALUE)
         {
-            // Manejar el error al abrir el archivo
             wprintf(L"[ConvertToPlaceholder] Error opening file: %d\n", GetLastError());
             return false;
         }
@@ -238,7 +239,6 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
         USN convertUsn;
         OVERLAPPED overlapped = {};
 
-        // Convierte la cadena de la identidad del servidor a LPCVOID
         LPCVOID idStrLPCVOID = static_cast<LPCVOID>(serverIdentity.c_str());
         DWORD idStrByteLength = static_cast<DWORD>(serverIdentity.size() * sizeof(wchar_t));
 
@@ -246,33 +246,22 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
 
         if (FAILED(hr))
         {
-            // Manejar el error al convertir a marcador de posición
-            wprintf(L"[ConvertToPlaceholder] Error converting to placeholder, ConvertToPlaceholder failed with HRESULT 0x%X\n", hr);
-
-            // Puedes obtener información detallada sobre el error usando FormatMessage
-            LPVOID errorMsg;
-            FormatMessageW(
-                FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-                NULL,
-                hr,
-                0, // Default language
-                (LPWSTR)&errorMsg,
-                0,
-                NULL);
-
-            wprintf(L"[ConvertToPlaceholder] Error details: %s\n", errorMsg);
-
-            // Liberar el buffer de mensaje de error
-            LocalFree(errorMsg);
-
+            std::wstring errorMessage = Utilities::GetErrorMessageCloudFiles(hr);
+            wprintf(L"[ConvertToPlaceholder] Error converting to placeholder, HRESULT: 0x%X\nDetails: %s\n", hr, errorMessage.c_str());
             CloseHandle(fileHandle);
-
             return false;
         }
 
         if (!isDirectory)
         {
-            CfSetPinState(fileHandle, CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
+            HRESULT hrPinState = CfSetPinState(fileHandle, CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
+            if (FAILED(hrPinState))
+            {
+                std::wstring errorMessage = Utilities::GetErrorMessageCloudFiles(hrPinState);
+                wprintf(L"[ConvertToPlaceholder] Error setting pin state, HRESULT: 0x%X\nDetails: %s\n", hrPinState, errorMessage.c_str());
+                CloseHandle(fileHandle);
+                return false;
+            }
         }
 
         CloseHandle(fileHandle);
@@ -372,20 +361,11 @@ void Placeholders::UpdateFileIdentity(const std::wstring &filePath, const std::w
 
     if (FAILED(hr))
     {
-        wprintf(L"[UpdateFileIdentity] Error updating fileIdentity: 0x%08X\n", hr);
-        LPWSTR errorMessage = nullptr;
-        FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                       nullptr,
-                       HRESULT_CODE(hr),
-                       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                       reinterpret_cast<LPWSTR>(&errorMessage),
-                       0,
-                       nullptr);
-        if (errorMessage)
-        {
-            wprintf(L"[UpdateFileIdentity] Error: %ls\n", errorMessage);
-            LocalFree(errorMessage);
-        }
+        std::wstring errorMessage = Utilities::GetErrorMessageCloudFiles(hr);
+        wprintf(L"[UpdateFileIdentity] Error updating fileIdentity: %ls\n", errorMessage.c_str());
+        CloseHandle(fileHandle);
+        return;
+
     }
 
     CloseHandle(fileHandle);
