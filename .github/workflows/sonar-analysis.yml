@@ -27,6 +27,8 @@ jobs:
       - name: Install Build Wrapper
         uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v5
 
+      - run: ls .
+
       - name: Run Build Wrapper
         run: build-wrapper-win-x86-64.exe --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} node-gyp configure
 
