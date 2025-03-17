@@ -1,6 +1,7 @@
 /.env
 /.vscode
 /addon.node
+/bin
 /build
 /dist
 /examples/tmp
