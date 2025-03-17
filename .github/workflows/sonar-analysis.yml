@@ -28,7 +28,7 @@ jobs:
         uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v5
 
       - name: Run Build Wrapper
-        run: build-wrapper-win-x86-64.exe --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} python gyp.config.py && node-gyp clean && node-gyp configure build
+        run: build-wrapper-win-x86-64.exe --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmd /C "python gyp.config.py && node-gyp clean && node-gyp configure build -- -p:nodeReuse=False"
 
       - run: ls ${{ env.BUILD_WRAPPER_OUT_DIR }}
       - run: cat ${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json
