@@ -28,7 +28,7 @@ jobs:
         uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v5
 
       - name: Run Build Wrapper
-        run: build-wrapper-win-x86-64.exe --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} python gyp.config.py && node-gyp clean && node-gyp configure build
+        run: build-wrapper-win-x86-64.exe --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} npm run build:addon
 
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v5
