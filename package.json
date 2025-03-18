@@ -1,6 +1,6 @@
 {
   "name": "virtual-drive",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "description": "",
   "main": "dist/index.ts",
   "types": "dist/index.d.ts",
