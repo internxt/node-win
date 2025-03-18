@@ -1,6 +1,6 @@
-#include "stdafx.h"
-#include "SyncRoot.h"
 #include "Callbacks.h"
+#include "SyncRoot.h"
+#include "stdafx.h"
 #include <iostream>
 #include <iostream>
 #include <filesystem>
@@ -9,6 +9,7 @@
 namespace fs = std::filesystem;
 // variable to disconect
 CF_CONNECTION_KEY gloablConnectionKey;
+std::map<std::wstring, CF_CONNECTION_KEY> connectionMap;
 
 void TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCallbacks input)
 {
@@ -115,16 +116,17 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
 {
     try
     {
-        auto syncRootID = providerId;
+        // Convert GUID to string for syncRootID
+        wchar_t syncRootID[39];
+        StringFromGUID2(providerId, syncRootID, 39);
 
         winrt::StorageProviderSyncRootInfo info;
-        info.Id(L"syncRootID");
+        info.Id(syncRootID);
 
         auto folder = winrt::StorageFolder::GetFolderFromPathAsync(syncRootPath).get();
         info.Path(folder);
 
         // The string can be in any form acceptable to SHLoadIndirectString.
-
         info.DisplayNameResource(providerName);
 
         std::wstring completeIconResource = std::wstring(logoPath) + L",0";
@@ -135,7 +137,7 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
         info.HydrationPolicyModifier(winrt::StorageProviderHydrationPolicyModifier::None);
         info.PopulationPolicy(winrt::StorageProviderPopulationPolicy::AlwaysFull);
         info.InSyncPolicy(winrt::StorageProviderInSyncPolicy::FileCreationTime | winrt::StorageProviderInSyncPolicy::DirectoryCreationTime);
-        info.Version(L"1.0.0");
+        info.Version(providerVersion);
         info.ShowSiblingsAsGroup(false);
         info.HardlinkPolicy(winrt::StorageProviderHardlinkPolicy::None);
 
@@ -145,9 +147,8 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
         // Context
         std::wstring syncRootIdentity(syncRootPath);
         syncRootIdentity.append(L"->");
-        syncRootIdentity.append(L"TestProvider");
+        syncRootIdentity.append(providerName);
 
-        wchar_t const contextString[] = L"TestProviderContextString";
         winrt::IBuffer contextBuffer = winrt::CryptographicBuffer::ConvertStringToBinary(syncRootIdentity.data(), winrt::BinaryStringEncoding::Utf8);
         info.Context(contextBuffer);
 
@@ -165,20 +166,26 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
     catch (...)
     {
         wprintf(L"Could not register the sync root, hr %08x\n", static_cast<HRESULT>(winrt::to_hresult()));
+        return E_FAIL;
     }
 }
 
-HRESULT SyncRoot::UnregisterSyncRoot()
+HRESULT SyncRoot::UnregisterSyncRoot(const GUID &providerId)
 {
     try
     {
+        // Convert GUID to string for syncRootID
+        wchar_t syncRootID[39];
+        StringFromGUID2(providerId, syncRootID, 39);
+
         Logger::getInstance().log("Unregistering sync root.", LogLevel::INFO);
-        winrt::StorageProviderSyncRootManager::Unregister(L"syncRootID");
+        winrt::StorageProviderSyncRootManager::Unregister(syncRootID);
         return S_OK;
     }
     catch (...)
     {
         wprintf(L"Could not unregister the sync root, hr %08x\n", static_cast<HRESULT>(winrt::to_hresult()));
+        return E_FAIL;
     }
 }
 
@@ -205,38 +212,38 @@ HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallback
             CF_CONNECT_FLAG_REQUIRE_PROCESS_INFO | CF_CONNECT_FLAG_REQUIRE_FULL_FILE_PATH,
             connectionKey);
         wprintf(L"Connection key: %llu\n", *connectionKey);
-        gloablConnectionKey = *connectionKey;
+        if (SUCCEEDED(hr))
+        {
+            connectionMap[syncRootPath] = *connectionKey;
+        }
         return hr;
     }
     catch (const std::exception &e)
     {
         wprintf(L"Excepción capturada: %hs\n", e.what());
-        // Aquí puedes decidir si retornar un código de error específico o mantener el E_FAIL.
+        return E_FAIL;
     }
     catch (...)
     {
         wprintf(L"Excepción desconocida capturada\n");
-        // Igualmente, puedes decidir el código de error a retornar.
+        return E_FAIL;
     }
 }
 
 // disconection sync root
-HRESULT SyncRoot::DisconnectSyncRoot()
+HRESULT SyncRoot::DisconnectSyncRoot(const wchar_t *syncRootPath)
 {
-    Logger::getInstance().log("Disconnecting sync root.", LogLevel::INFO);
-    try
+    auto it = connectionMap.find(syncRootPath);
+    if (it != connectionMap.end())
     {
-        HRESULT hr = CfDisconnectSyncRoot(gloablConnectionKey);
+        HRESULT hr = CfDisconnectSyncRoot(it->second);
+        if (SUCCEEDED(hr))
+        {
+            connectionMap.erase(it);
+        }
         return hr;
     }
-    catch (const std::exception &e)
-    {
-        Logger::getInstance().log("Exception caught: " + std::string(e.what()), LogLevel::ERROR);
-    }
-    catch (...)
-    {
-        Logger::getInstance().log("Unknown exception caught.", LogLevel::ERROR);
-    }
+    return E_FAIL;
 }
 
 // struct

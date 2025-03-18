@@ -1,8 +1,9 @@
-import VirtualDrive from '@/virtual-drive';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
+
+import VirtualDrive from "@/virtual-drive";
 
 interface GenerateOptions {
-  rootPath: string
+  rootPath: string;
   depth: number;
   filesPerFolder: number;
   foldersPerLevel: number;
@@ -26,18 +27,7 @@ function randomNormal(mean: number, stdDev: number): number {
 }
 
 function getRandomExtension(): string {
-  const extensions = [
-    ".txt",
-    ".pdf",
-    ".rar",
-    ".jpg",
-    ".docx",
-    ".xlsx",
-    ".mp4",
-    ".mkv",
-    ".json",
-    ""
-  ];
+  const extensions = [".txt", ".pdf", ".rar", ".jpg", ".docx", ".xlsx", ".mp4", ".mkv", ".json", ""];
   const index = Math.floor(Math.random() * extensions.length);
   return extensions[index];
 }
@@ -47,17 +37,11 @@ async function createStructureRecursively(
   currentPath: string,
   level: number,
   options: GenerateOptions,
-  result: Record<string, string>
+  result: Record<string, string>,
 ): Promise<void> {
   if (level < 0) return;
 
-  const {
-    filesPerFolder,
-    foldersPerLevel,
-    meanSize,
-    stdDev,
-    timeOffset
-  } = options;
+  const { filesPerFolder, foldersPerLevel, meanSize, stdDev, timeOffset } = options;
 
   for (let i = 0; i < filesPerFolder; i++) {
     const fileName = `file_${generateRandomId()}${getRandomExtension()}`;
@@ -69,13 +53,7 @@ async function createStructureRecursively(
     const createdAt = Date.now() - (timeOffset || 0);
     const updatedAt = Date.now() - (timeOffset || 0) + 2000;
 
-    drive.createFileByPath(
-      fullPath,
-      fileId,
-      fileSize,
-      createdAt,
-      updatedAt
-    );
+    drive.createFileByPath(fullPath, fileId, fileSize, createdAt, updatedAt);
 
     result[fileId] = fullPath;
   }
@@ -88,22 +66,13 @@ async function createStructureRecursively(
     const createdAt = Date.now() - (timeOffset || 0) - 10000; // Ejemplo
     const updatedAt = Date.now() - (timeOffset || 0);
 
-    drive.createFolderByPath(
-      newFolderPath,
-      folderId,
-      1000,
-      createdAt,
-      updatedAt
-    );
+    drive.createFolderByPath(newFolderPath, folderId, 1000, createdAt, updatedAt);
 
     await createStructureRecursively(drive, newFolderPath, level - 1, options, result);
   }
 }
 
-async function generateRandomFilesAndFolders(
-  drive: VirtualDrive,
-  options: GenerateOptions
-): Promise<Record<string, string>> {
+async function generateRandomFilesAndFolders(drive: VirtualDrive, options: GenerateOptions): Promise<Record<string, string>> {
   const { rootPath } = options;
 
   const result: Record<string, string> = {};
@@ -114,4 +83,4 @@ async function generateRandomFilesAndFolders(
 }
 
 export { generateRandomFilesAndFolders };
-export type { GenerateOptions }
+export type { GenerateOptions };

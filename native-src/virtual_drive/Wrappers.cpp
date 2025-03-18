@@ -112,19 +112,27 @@ napi_value UnregisterSyncRootWrapper(napi_env env, napi_callback_info args)
 
     if (argc < 1)
     {
-        napi_throw_error(env, nullptr, "The sync root path is required for UnregisterSyncRoot");
+        napi_throw_error(env, nullptr, "The provider ID is required for UnregisterSyncRoot");
         return nullptr;
     }
 
-    LPCWSTR syncRootPath;
-    size_t pathLength;
-    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
-    syncRootPath = new WCHAR[pathLength + 1];
-    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(syncRootPath)), pathLength + 1, nullptr);
+    GUID providerId;
+    LPCWSTR providerIdStr;
+    size_t providerIdStrLength;
+    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &providerIdStrLength);
+    providerIdStr = new WCHAR[providerIdStrLength + 1];
+    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(providerIdStr)), providerIdStrLength + 1, nullptr);
 
-    HRESULT result = SyncRoot::UnregisterSyncRoot();
+    if (FAILED(CLSIDFromString(providerIdStr, &providerId)))
+    {
+        napi_throw_error(env, nullptr, "Invalid GUID format");
+        delete[] providerIdStr;
+        return nullptr;
+    }
 
-    delete[] syncRootPath;
+    HRESULT result = SyncRoot::UnregisterSyncRoot(providerId);
+
+    delete[] providerIdStr;
 
     napi_value napiResult;
     napi_create_int32(env, static_cast<int32_t>(result), &napiResult);
@@ -429,8 +437,8 @@ napi_value DisconnectSyncRootWrapper(napi_env env, napi_callback_info args)
     syncRootPath = new WCHAR[pathLength + 1];
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(syncRootPath)), pathLength + 1, nullptr);
 
-    HRESULT result = SyncRoot::DisconnectSyncRoot();
-    // wprintf(L"DisconnectSyncRootWrapper: %08x\n", static_cast<HRESULT>(result));
+    HRESULT result = SyncRoot::DisconnectSyncRoot(syncRootPath);
+
     delete[] syncRootPath;
 
     napi_value napiResult;
@@ -440,7 +448,6 @@ napi_value DisconnectSyncRootWrapper(napi_env env, napi_callback_info args)
 
 napi_value GetFileIdentityWrapper(napi_env env, napi_callback_info args)
 {
-    printf("GetFileIdentityWrapper\n");
     size_t argc = 1;
     napi_value argv[1];
     napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
@@ -458,7 +465,6 @@ napi_value GetFileIdentityWrapper(napi_env env, napi_callback_info args)
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(fullPath)), pathLength + 1, nullptr);
 
     std::string fileIdentity = Placeholders::GetFileIdentity(fullPath);
-    printf("fileIdentity got\n");
     fileIdentity.erase(std::remove(fileIdentity.begin(), fileIdentity.end(), '\0'), fileIdentity.end());
     fileIdentity.erase(std::remove(fileIdentity.begin(), fileIdentity.end(), ' '), fileIdentity.end());
 
@@ -489,7 +495,6 @@ napi_value DeleteFileSyncRootWrapper(napi_env env, napi_callback_info args)
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(fullPath)), pathLength + 1, nullptr);
 
     SyncRoot::DeleteFileSyncRoot(fullPath);
-    printf("fileIdentity got\n");
 
     delete[] fullPath;
     return nullptr;

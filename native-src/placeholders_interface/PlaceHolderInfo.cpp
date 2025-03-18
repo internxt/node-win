@@ -167,7 +167,6 @@ FileHandle handleForPath(const std::wstring &wPath)
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
     std::string path = converter.to_bytes(wPath);
 
-    printf("path IN HANDLERCREATOR: %s\n", path.c_str());
     LPCSTR pPath = path.c_str();
 
     std::filesystem::path pathFs(path);

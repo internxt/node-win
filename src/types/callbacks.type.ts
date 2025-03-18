@@ -1,7 +1,11 @@
 export type NapiCallbackFunction = (...args: any[]) => any;
 
+export type FilePlaceholderIdPrefixType = "FILE:";
+
+export type FilePlaceholderId = `${FilePlaceholderIdPrefixType}${string}`;
+
 export type TFetchDataCallback = (
-  id: string,
+  id: FilePlaceholderId,
   callback: (data: boolean, path: string, errorHandler?: () => void) => Promise<{ finished: boolean; progress: number }>,
 ) => void;
 
