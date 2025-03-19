@@ -4,21 +4,16 @@ import { Logger } from "winston";
 
 import { Addon } from "@/addon-wrapper";
 import { QueueManager } from "@/queue/queue-manager";
-import { IQueueManager } from "@/queue/queueManager";
 
 import { OnAddDirService } from "./events/on-add-dir.service";
 import { OnAddService } from "./events/on-add.service";
 import { OnRawService } from "./events/on-raw.service";
 
-export namespace Watcher {
-  export type TOptions = WatchOptions;
-}
-
 export class Watcher {
   syncRootPath!: string;
-  options!: Watcher.TOptions;
+  options!: WatchOptions;
   addon!: Addon;
-  queueManager!: IQueueManager;
+  queueManager!: QueueManager;
   logger!: Logger;
   fileInDevice = new Set<string>();
   chokidar?: FSWatcher;

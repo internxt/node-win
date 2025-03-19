@@ -1,11 +1,11 @@
-name: Some pull request checks
+name: Pull request checks
 
 on:
   pull_request:
 
 jobs:
-  type-check:
-    runs-on: ubuntu-latest
+  checks:
+    runs-on: windows-latest
 
     steps:
       - name: Checkout code
@@ -22,5 +22,8 @@ jobs:
       - name: Run TypeScript compiler
         run: yarn tsc
 
-      # - name: Run Vitest
-      #   run: yarn vitest:once
+      - name: Run Prettier
+        run: yarn prettier . --check
+
+      - name: Run tests
+        run: yarn test:once
