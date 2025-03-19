@@ -1,5 +1,5 @@
 {
-  "name": "virtual-drive",
+  "name": "node-win",
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.ts",
