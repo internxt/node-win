@@ -29,7 +29,7 @@ std::wstring Logger::fromUtf8ToWide(const std::string& utf8Str) {
     return std::wstring(wideStr.get());
 }
 
-void Logger::log(const std::string &message, LogLevel level) {
+void Logger::log(const std::string &message, LogLevel level, WORD color) {
     std::lock_guard<std::mutex> guard(log_mutex);
 
     auto now = std::chrono::system_clock::now();
@@ -45,7 +45,21 @@ void Logger::log(const std::string &message, LogLevel level) {
     std::transform(level_str.begin(), level_str.end(), level_str.begin(), ::tolower);
 
     log_file << "[" << time_stream.str() << "] [" << level_str << "] " << message << std::endl;
+
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
+    GetConsoleScreenBufferInfo(hConsole, &consoleInfo);
+    WORD saved_attributes = consoleInfo.wAttributes;
+
+    if (color != 0) {
+        SetConsoleTextAttribute(hConsole, color);
+    }
+
     printf("[%s] [%s] %s\n", time_stream.str().c_str(), level_str.c_str(), message.c_str());
+
+    if (color != 0) {
+        SetConsoleTextAttribute(hConsole, saved_attributes);
+    }
 }
 
 std::string Logger::toString(LogLevel level) {
