@@ -1,4 +1,3 @@
-import { logger } from "examples/drive";
 import fs from "fs";
 import path, { join, win32 } from "path";
 import winston from "winston";
@@ -165,7 +164,7 @@ class VirtualDrive {
     return this.addon.unregisterSyncRoot({ providerId: this.providerId });
   }
 
-  unRegisterSyncRootByProviderId(providerId: string) {
+  unRegisterSyncRootByProviderId({ providerId }: { providerId: string }) {
     return this.addon.unregisterSyncRoot({ providerId });
   }
 
