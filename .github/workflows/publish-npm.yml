@@ -1,12 +1,13 @@
 name: Publish package to npmjs
 
 on:
-  release:
-    types: [published]
+  # release:
+  #   types: [published]
+  pull_request:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     permissions:
       contents: read
@@ -23,6 +24,9 @@ jobs:
 
       - name: Install dependencies
         run: yarn install --ignore-scripts
+
+      - name: Build package
+        run: yarn build
 
       - name: Create .npmrc file
         run: |
