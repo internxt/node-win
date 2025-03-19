@@ -165,6 +165,10 @@ class VirtualDrive {
     return this.addon.unregisterSyncRoot({ providerId: this.providerId });
   }
 
+  unRegisterSyncRootByProviderId(providerId: string) {
+    return this.addon.unregisterSyncRoot({ providerId });
+  }
+
   watchAndWait(path: string, queueManager: IQueueManager, loggerPath: string): void {
     this.watcher.addon = this.addon;
     this.watcher.queueManager = queueManager;
