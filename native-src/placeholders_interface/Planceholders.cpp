@@ -48,7 +48,6 @@ void Placeholders::CreateOne(
         if (std::filesystem::exists(fullPath))
         {
             Placeholders::ConvertToPlaceholder(fullPath, fileIdentity);
-            wprintf(L"[CreatePlaceholder] File already exists. Skipping creation. Initializing identity maintenance...\n");
             Placeholders::MaintainIdentity(fullPath, fileIdentity, false);
             return; // No hacer nada si ya existe
         }
@@ -158,7 +157,6 @@ void Placeholders::CreateEntry(
         if (DirectoryExists(fullDestPath.c_str()))
         {
             Placeholders::ConvertToPlaceholder(fullDestPath, itemIdentity);
-            wprintf(L"[CreatePlaceholder] Directory already exists. Skipping creation. Initializing identity maintenance...\n");
             Placeholders::MaintainIdentity(fullDestPath, itemIdentity, true);
             return; // No hacer nada si ya existe
         }
@@ -296,7 +294,6 @@ void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSync
     // wprintf(L"Marking item as %s: %ls\n", inputSyncState ? L"IN_SYNC" : L"NOT_IN_SYNC", filePath.c_str());
     HRESULT hr = CfSetInSyncState(fileHandle, syncState, CF_SET_IN_SYNC_FLAG_NONE, nullptr);
     // imprimir hresult
-    wprintf(L"hr: %ld\n", hr);
     if (FAILED(hr))
     {
         wprintf(L"[UpdateSyncStatus] Error al establecer el estado de sincronización: %ld\n", hr);
