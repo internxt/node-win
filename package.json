@@ -1,9 +1,16 @@
 {
-  "name": "node-win",
-  "version": "1.0.0",
-  "description": "",
+  "name": "@internxt/node-win",
+  "version": "1.0.1",
+  "description": "Drive desktop node addon",
   "main": "dist/index.ts",
   "types": "dist/index.d.ts",
+  "author": "Internxt <hello@internxt.com>",
+  "license": "MIT",
+  "gypfile": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/internxt/node-win.git"
+  },
   "scripts": {
     "========== Testing ==========": "",
     "test": "vitest",
@@ -16,7 +23,9 @@
     "config:gyp": "python gyp.config.py",
     "build": "python gyp.config.py && node-gyp clean && node-gyp configure build && yarn build:ts",
     "========== Linter ==========": "",
-    "format": "prettier . --write",
+    "format": "prettier . --check",
+    "format:fix": "prettier . --write",
+    "type-check": "tsc",
     "========== Examples ==========": "",
     "prod:register": "node ./dist/examples/register.js",
     "register": "nodemon",
@@ -25,9 +34,6 @@
     "unregister": "ts-node -r tsconfig-paths/register ./examples/unregister.ts",
     "disconnect": "ts-node -r tsconfig-paths/register ./examples/disconnect.ts"
   },
-  "author": "",
-  "license": "ISC",
-  "gypfile": true,
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^5.2.1",
     "@types/lodash.chunk": "^4.2.9",
