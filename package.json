@@ -1,5 +1,5 @@
 {
-  "name": "node-win",
+  "name": "@internxt/node-win",
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.ts",
