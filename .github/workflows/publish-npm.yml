@@ -1,8 +1,9 @@
 name: Publish package to npmjs
 
 on:
-  release:
-    types: [published]
+  # release:
+  #   types: [published]
+  pull_request:
 
 jobs:
   package:
