@@ -1,9 +1,8 @@
 name: Publish package to npmjs
 
 on:
-  # release:
-  #   types: [published]
-  pull_request:
+  release:
+    types: [published]
 
 jobs:
   package:
@@ -42,13 +41,13 @@ jobs:
           echo "@internxt:registry=https://npm.pkg.github.com/" > .npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
 
-      - name: Publish package
+      - name: Publish package to github
         run: npm publish --scope=@internxt --access public
 
-      # - name: Create .npmrc file
-      #   run: |
-      #     echo "registry=https://registry.npmjs.org/" > .npmrc
-      #     echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> .npmrc
+      - name: Create .npmrc file
+        run: |
+          echo "registry=https://registry.npmjs.org/" > .npmrc
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> .npmrc
 
-      # - name: Publish package
-      #   run: npm publish --scope=@internxt --access public
+      - name: Publish package to npm
+        run: npm publish --scope=@internxt --access public
