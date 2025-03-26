@@ -14,8 +14,8 @@
   "scripts": {
     "========== Testing ==========": "",
     "test": "vitest",
-    "test:once": "npm run vitest -- --run",
-    "test:one": "npm run vitest -- related x",
+    "test:once": "npm run test -- --run",
+    "test:one": "npm run test -- related x",
     "========== Build ==========": "",
     "clean": "node-gyp clean",
     "build:gyp": "node-gyp configure build",
