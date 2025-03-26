@@ -763,62 +763,7 @@ napi_value HydrateFileWrapper(napi_env env, napi_callback_info args)
 
     return promise;
 }
-// napi_value HydrateFileWrapper(napi_env env, napi_callback_info args) {
-//     size_t argc = 1;
-//     napi_value argv[1];
-//     napi_value thisArg;
-//     napi_get_cb_info(env, args, &argc, argv, &thisArg, nullptr);
 
-//     if (argc < 1) {
-//         napi_throw_type_error(env, nullptr, "The file path is required for HydrateFile");
-//         return nullptr;
-//     }
-
-//     // Obtener el argumento de JavaScript y convertirlo a una cadena de C++
-//     size_t pathLength;
-//     napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
-//     std::wstring fullPath(pathLength, L'\0');
-//     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(&fullPath[0]), pathLength + 1, nullptr);
-
-//     // Crear una promesa
-//     napi_deferred deferred;
-//     napi_value promise;
-//     napi_create_promise(env, &deferred, &promise);
-
-//     // Crear un handle scope para manejar la creación de objetos V8
-//     napi_handle_scope handleScope;
-//     napi_open_handle_scope(env, &handleScope);
-
-//     // Usar un bloque de manejo de V8
-//     {
-//         v8::Isolate* isolate = v8::Isolate::GetCurrent();
-//         v8::HandleScope scope(isolate);
-
-//         try {
-//             Logger::getInstance().log("init... " + Logger::fromWStringToString(fullPath.c_str()), LogLevel::INFO);
-//             SyncRoot::HydrateFile(fullPath.c_str());
-
-//             napi_value result;
-//             napi_get_undefined(env, &result);
-//             napi_resolve_deferred(env, deferred, result);
-//         } catch (const std::exception& e) {
-//             napi_value error;
-//             napi_create_string_utf8(env, e.what(), NAPI_AUTO_LENGTH, &error);
-//             napi_reject_deferred(env, deferred, error);
-//         } catch (...) {
-//             napi_value error;
-//             napi_create_string_utf8(env, "Unknown error", NAPI_AUTO_LENGTH, &error);
-//             napi_reject_deferred(env, deferred, error);
-//         }
-//     }
-
-//     // Cerrar el handle scope
-//     napi_close_handle_scope(env, handleScope);
-
-//     return promise;
-// }
-
-// Wrapper for DehydrateFile
 napi_value DehydrateFileWrapper(napi_env env, napi_callback_info args)
 {
     size_t argc = 1;
