@@ -54,6 +54,39 @@ void Utilities::ApplyCustomOverwriteStateToPlaceholderFile(LPCWSTR path, LPCWSTR
     }
 }
 
+void Utilities::AddFolderToSearchIndexer(_In_ PCWSTR folder)
+{
+    HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    if (FAILED(hr))
+    {
+        wprintf(L"Failed to initialize COM library. Error code = %08x\n", hr);
+        return;
+    }
+
+    std::wstring url(L"file:///");
+    url.append(folder);
+
+    try
+    {
+        winrt::com_ptr<ISearchManager> searchManager;
+        winrt::check_hresult(CoCreateInstance(__uuidof(CSearchManager), NULL, CLSCTX_SERVER, __uuidof(&searchManager), searchManager.put_void()));
+
+        winrt::com_ptr<ISearchCatalogManager> searchCatalogManager;
+        winrt::check_hresult(searchManager->GetCatalog(MSSEARCH_INDEX, searchCatalogManager.put()));
+
+        winrt::com_ptr<ISearchCrawlScopeManager> searchCrawlScopeManager;
+        winrt::check_hresult(searchCatalogManager->GetCrawlScopeManager(searchCrawlScopeManager.put()));
+
+        winrt::check_hresult(searchCrawlScopeManager->AddDefaultScopeRule(url.data(), TRUE, FOLLOW_FLAGS::FF_INDEXCOMPLEXURLS));
+        winrt::check_hresult(searchCrawlScopeManager->SaveAll());
+
+    }
+    catch (...)
+    {
+        wprintf(L"Failed on call to AddFolderToSearchIndexer for \"%s\" with %08x\n", url.data(), static_cast<HRESULT>(winrt::to_hresult()));
+    }
+}
+
 void Utilities::ApplyTransferStateToFile(_In_ PCWSTR fullPath, _In_ CF_CALLBACK_INFO &callbackInfo, UINT64 total, UINT64 completed)
 {
     Logger::getInstance().log("ApplyTransferStateToFile", LogLevel::INFO);

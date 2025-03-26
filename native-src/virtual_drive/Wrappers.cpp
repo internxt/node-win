@@ -417,7 +417,6 @@ napi_value CreateEntryWrapper(napi_env env, napi_callback_info args)
     return result;
 }
 
-// disconection wrapper
 napi_value DisconnectSyncRootWrapper(napi_env env, napi_callback_info args)
 {
     size_t argc = 1;
@@ -500,7 +499,7 @@ napi_value DeleteFileSyncRootWrapper(napi_env env, napi_callback_info args)
     return nullptr;
 }
 
-napi_value addLoggerPathWrapper(napi_env env, napi_callback_info args)
+napi_value AddLoggerPathWrapper(napi_env env, napi_callback_info args)
 {
     size_t argc = 1;
     napi_value argv[1];
