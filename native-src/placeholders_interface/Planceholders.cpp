@@ -226,7 +226,9 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
         if (FAILED(hr))
         {
             // Manejar el error al convertir a marcador de posición
-            wprintf(L"[ConvertToPlaceholder] Error converting to placeholder, ConvertToPlaceholder failed with HRESULT 0x%X\n", hr);
+            if (hr != 0x8007017C) {
+                wprintf(L"[ConvertToPlaceholder] Error converting to placeholder, ConvertToPlaceholder failed with HRESULT 0x%X\n", hr);
+            }
 
             // Puedes obtener información detallada sobre el error usando FormatMessage
             LPVOID errorMsg;
