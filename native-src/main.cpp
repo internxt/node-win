@@ -147,7 +147,7 @@ napi_value init(napi_env env, napi_value exports)
   napi_property_descriptor addLoggerPathDesc = {
       "addLoggerPath",
       nullptr,
-      addLoggerPathWrapper,
+      AddLoggerPathWrapper,
       nullptr,
       nullptr,
       nullptr,
