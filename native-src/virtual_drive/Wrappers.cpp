@@ -220,50 +220,46 @@ napi_value GetRegisteredSyncRootsWrapper(napi_env env, napi_callback_info args)
         napi_value jsArray;
         napi_status status = napi_create_array_with_length(env, roots.size(), &jsArray);
         if (status != napi_ok)
-            throw std::runtime_error("Error creando el array");
+            throw std::runtime_error("Error creating the array");
 
         for (size_t i = 0; i < roots.size(); i++)
         {
             napi_value jsObj;
             status = napi_create_object(env, &jsObj);
             if (status != napi_ok)
-                throw std::runtime_error("Error creando el objeto");
+                throw std::runtime_error("Error creating the object");
 
             std::string id = WStringToUTF8(roots[i].id);
             napi_value napiId;
             status = napi_create_string_utf8(env, id.c_str(), id.size(), &napiId);
             if (status != napi_ok)
-                throw std::runtime_error("Error creando la cadena id");
+                throw std::runtime_error("Error creating the string id");
             napi_set_named_property(env, jsObj, "id", napiId);
 
-            // Propiedad "path"
             std::string path = WStringToUTF8(roots[i].path);
             napi_value napiPath;
             status = napi_create_string_utf8(env, path.c_str(), path.size(), &napiPath);
             if (status != napi_ok)
-                throw std::runtime_error("Error creando la cadena path");
+                throw std::runtime_error("Error creating the string path");
             napi_set_named_property(env, jsObj, "path", napiPath);
 
-            // Propiedad "displayName"
             std::string displayName = WStringToUTF8(roots[i].displayName);
             napi_value napiDisplayName;
             status = napi_create_string_utf8(env, displayName.c_str(), displayName.size(), &napiDisplayName);
             if (status != napi_ok)
-                throw std::runtime_error("Error creando la cadena displayName");
+                throw std::runtime_error("Error creating the string displayName");
             napi_set_named_property(env, jsObj, "displayName", napiDisplayName);
 
-            // Propiedad "version"
             std::string version = WStringToUTF8(roots[i].version);
             napi_value napiVersion;
             status = napi_create_string_utf8(env, version.c_str(), version.size(), &napiVersion);
             if (status != napi_ok)
-                throw std::runtime_error("Error creando la cadena version");
+                throw std::runtime_error("Error creating the string version");
             napi_set_named_property(env, jsObj, "version", napiVersion);
 
-            // Insertamos el objeto en el array
             status = napi_set_element(env, jsArray, i, jsObj);
             if (status != napi_ok)
-                throw std::runtime_error("Error insertando el elemento en el array");
+                throw std::runtime_error("Error setting the element in the array");
         }
 
         return jsArray;
