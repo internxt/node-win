@@ -27,6 +27,11 @@ export class Addon {
     return this.parseAddonZod("registerSyncRoot", result);
   }
 
+  getRegisteredSyncRoots() {
+    const result = addon.getRegisteredSyncRoots();
+    return this.parseAddonZod("getRegisteredSyncRoots", result);
+  }
+
   connectSyncRoot({ callbacks }: { callbacks: Callbacks }) {
     const result = addon.connectSyncRoot(this.syncRootPath, callbacks);
     return this.parseAddonZod("connectSyncRoot", result);

@@ -1,10 +1,10 @@
 #include "Callbacks.h"
 #include "SyncRoot.h"
 #include "stdafx.h"
-#include <iostream>
-#include <iostream>
 #include <filesystem>
 #include "Logger.h"
+#include <iostream>
+#include <vector>
 
 namespace fs = std::filesystem;
 // variable to disconect
@@ -168,6 +168,45 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
         wprintf(L"Could not register the sync root, hr %08x\n", static_cast<HRESULT>(winrt::to_hresult()));
         return E_FAIL;
     }
+}
+
+std::vector<SyncRoots> SyncRoot::GetRegisteredSyncRoots()
+{
+    std::vector<SyncRoots> syncRootList;
+    try
+    {
+        auto syncRoots = winrt::StorageProviderSyncRootManager::GetCurrentSyncRoots();
+
+        printf("Sync roots count: %d\n", syncRoots.Size());
+
+        for (auto const &info : syncRoots)
+        {
+            auto contextBuffer = info.Context();
+            std::wstring contextString;
+            if (contextBuffer)
+            {
+                contextString = winrt::CryptographicBuffer::ConvertBinaryToString(
+                                    winrt::BinaryStringEncoding::Utf8,
+                                    contextBuffer)
+                                    .c_str();
+            }
+
+            if (contextString.find(L"->") != std::wstring::npos)
+            {
+                SyncRoots sr;
+                sr.id = info.Id();
+                sr.path = info.Path().Path();
+                sr.displayName = info.DisplayNameResource();
+                sr.version = info.Version();
+                syncRootList.push_back(sr);
+            }
+        }
+    }
+    catch (...)
+    {
+        Logger::getInstance().log("ERROR: getting sync root", LogLevel::INFO);
+    }
+    return syncRootList;
 }
 
 HRESULT SyncRoot::UnregisterSyncRoot(const GUID &providerId)

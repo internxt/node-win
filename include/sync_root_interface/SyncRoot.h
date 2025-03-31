@@ -3,6 +3,16 @@
 #include <cfapi.h>
 #include <Callbacks.h>
 #include "stdafx.h"
+#include <iostream>
+#include <vector>
+
+struct SyncRoots
+{
+    std::wstring id;
+    std::wstring path;
+    std::wstring displayName;
+    std::wstring version;
+};
 
 struct ItemInfo
 {
@@ -15,6 +25,7 @@ class SyncRoot
 {
 public:
     static HRESULT RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *providerName, const wchar_t *providerVersion, const GUID &providerId, const wchar_t *logoPath);
+    static std::vector<SyncRoots> GetRegisteredSyncRoots();
     static HRESULT ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallbacks syncCallbacks, napi_env env, CF_CONNECTION_KEY *connectionKey);
     static HRESULT DisconnectSyncRoot(const wchar_t *syncRootPath);
     static HRESULT UnregisterSyncRoot(const GUID &providerId);
