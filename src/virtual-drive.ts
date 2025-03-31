@@ -2,7 +2,7 @@ import fs from "fs";
 import path, { join, win32 } from "path";
 import winston from "winston";
 
-import { Addon } from "./addon-wrapper";
+import { Addon, DependencyInjectionAddonProvider } from "./addon-wrapper";
 import { createLogger } from "./logger";
 import { QueueManager } from "./queue/queue-manager";
 import { Callbacks } from "./types/callbacks.type";
@@ -25,7 +25,7 @@ class VirtualDrive {
   addon: Addon;
 
   constructor(syncRootPath: string, providerId: string, loggerPath: string) {
-    this.addon = new Addon();
+    this.addon = DependencyInjectionAddonProvider.get();
     this.syncRootPath = this.convertToWindowsPath(syncRootPath);
     loggerPath = this.convertToWindowsPath(loggerPath);
     this.providerId = providerId;
@@ -164,8 +164,8 @@ class VirtualDrive {
     return this.addon.unregisterSyncRoot({ providerId: this.providerId });
   }
 
-  unRegisterSyncRootByProviderId({ providerId }: { providerId: string }) {
-    return this.addon.unregisterSyncRoot({ providerId });
+  static unRegisterSyncRootByProviderId({ providerId }: { providerId: string }) {
+    return DependencyInjectionAddonProvider.get().unregisterSyncRoot({ providerId });
   }
 
   watchAndWait(path: string, queueManager: QueueManager, loggerPath: string): void {

@@ -138,3 +138,15 @@ export class Addon {
     return this.parseAddonZod("hydrateFile", result);
   }
 }
+
+export class DependencyInjectionAddonProvider {
+  private static _addon: Addon;
+
+  static get() {
+    if (DependencyInjectionAddonProvider._addon) return DependencyInjectionAddonProvider._addon;
+
+    DependencyInjectionAddonProvider._addon = new Addon();
+
+    return DependencyInjectionAddonProvider._addon;
+  }
+}
