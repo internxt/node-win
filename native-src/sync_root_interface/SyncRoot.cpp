@@ -193,8 +193,8 @@ std::vector<SyncRoots> SyncRoot::GetRegisteredSyncRoots()
 
             /**
              * v2.5.1 Jonathan Arce
-             * Sync root records are now filtered using the characters '->' and '#inxt#' to identify our records.
-             * Currently, we only use '#inxt#' in the records, but to support previous versions, we are still
+             * Sync root register are now filtered using the characters '->' and '#inxt#' to identify our register.
+             * Currently, we only use '#inxt#' in the register, but to support previous versions, we are still
              * including '->' in the filter. In future versions, the filtering by '->' should be removed.
              */
             if (contextString.find(L"#inxt#") != std::wstring::npos || contextString.find(L"->") != std::wstring::npos)
