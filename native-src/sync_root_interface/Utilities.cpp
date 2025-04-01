@@ -80,7 +80,6 @@ void Utilities::AddFolderToSearchIndexer(_In_ PCWSTR folder)
         winrt::check_hresult(searchCrawlScopeManager->AddDefaultScopeRule(url.data(), TRUE, FOLLOW_FLAGS::FF_INDEXCOMPLEXURLS));
         winrt::check_hresult(searchCrawlScopeManager->SaveAll());
 
-        // wprintf(L"Succesfully called AddFolderToSearchIndexer on \"%s\"\n", url.data());
     }
     catch (...)
     {
