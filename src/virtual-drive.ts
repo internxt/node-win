@@ -160,6 +160,10 @@ class VirtualDrive {
     });
   }
 
+  static getRegisteredSyncRoots() {
+    return DependencyInjectionAddonProvider.get().getRegisteredSyncRoots();
+  }
+
   unregisterSyncRoot() {
     return this.addon.unregisterSyncRoot({ providerId: this.providerId });
   }

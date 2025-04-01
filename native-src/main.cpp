@@ -57,6 +57,24 @@ napi_value init(napi_env env, napi_value exports)
     return nullptr;
   }
 
+  // GetRegisteredSyncRootsWrapper
+  napi_property_descriptor getRegisteredSyncRootsRootDesc = {
+      "getRegisteredSyncRoots",
+      nullptr,
+      GetRegisteredSyncRootsWrapper,
+      nullptr,
+      nullptr,
+      nullptr,
+      napi_default,
+      nullptr};
+
+  napi_status defineGetRegisteredSyncRootsRootDescStatus = napi_define_properties(env, exports, 1, &getRegisteredSyncRootsRootDesc);
+  if (defineGetRegisteredSyncRootsRootDescStatus != napi_ok)
+  {
+    napi_throw_error(env, nullptr, "Failed to define getRegisteredSyncRoots function");
+    return nullptr;
+  }
+
   // ConnectSyncRootWrapper
   napi_property_descriptor connectSyncRootDesc = {
       "connectSyncRoot",

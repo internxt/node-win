@@ -14,4 +14,12 @@ export const addonZod = {
   registerSyncRoot: z.literal(0),
   updateSyncStatus: z.boolean(),
   unregisterSyncRoot: z.number(),
+  getRegisteredSyncRoots: z.array(
+    z.object({
+      id: z.string(),
+      path: z.string(),
+      displayName: z.string(),
+      version: z.string(),
+    }),
+  ),
 };

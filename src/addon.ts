@@ -53,4 +53,5 @@ export type TAddon = {
    * TODO: Returns a type in c++ that is not initialized
    */
   updateFileIdentity(itemPath: string, id: string, isDirectory: boolean): any;
+  getRegisteredSyncRoots(): z.infer<typeof addonZod.getRegisteredSyncRoots>;
 };
