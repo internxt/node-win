@@ -146,7 +146,7 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
 
         // Context
         std::wstring syncRootIdentity(syncRootPath);
-        syncRootIdentity.append(L"->");
+        syncRootIdentity.append(L"#intx#");
         syncRootIdentity.append(providerName);
 
         winrt::IBuffer contextBuffer = winrt::CryptographicBuffer::ConvertStringToBinary(syncRootIdentity.data(), winrt::BinaryStringEncoding::Utf8);
@@ -191,7 +191,13 @@ std::vector<SyncRoots> SyncRoot::GetRegisteredSyncRoots()
                                     .c_str();
             }
 
-            if (contextString.find(L"->") != std::wstring::npos)
+            /**
+             * v2.5.1 Jonathan Arce
+             * Sync root records are now filtered using the characters '->' and '#inxt#' to identify our records.
+             * Currently, we only use '#inxt#' in the records, but to support previous versions, we are still
+             * including '->' in the filter. In future versions, the filtering by '->' should be removed.
+             */
+            if (contextString.find(L"#inxt#") != std::wstring::npos || contextString.find(L"->") != std::wstring::npos)
             {
                 SyncRoots sr;
                 sr.id = info.Id();
