@@ -145,7 +145,6 @@ export class QueueManager {
 
       return a.path.localeCompare(b.path);
     });
-    console.log("Sorted queue:", this.queues[type]);
   }
 
   private async processQueue(type: typeQueue): Promise<void> {
