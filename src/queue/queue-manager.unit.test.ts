@@ -35,7 +35,7 @@ describe("QueueManager", () => {
 
     tasks.forEach((task) => queueManager.enqueue(task));
 
-    expect(queueManager["queues"][typeQueue.add]).toEqual([
+    expect(queueManager["queues"][typeQueue.add]).toStrictEqual([
       { path: "\\test", isFolder: true, type: typeQueue.add },
       { path: "\\test\\test.txt", isFolder: false, type: typeQueue.add },
       { path: "\\test\\test2.txt", isFolder: false, type: typeQueue.add },
