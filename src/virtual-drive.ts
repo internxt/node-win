@@ -151,7 +151,7 @@ class VirtualDrive {
 
   async registerSyncRoot(providerName: string, providerVersion: string, callbacks: Callbacks, logoPath: string): Promise<any> {
     this.callbacks = callbacks;
-    console.log("Registering sync root: ", this.syncRootPath);
+    this.logger.debug({ msg: "Registering sync root", syncRootPath: this.syncRootPath });
     return this.addon.registerSyncRoot({
       providerName,
       providerVersion,

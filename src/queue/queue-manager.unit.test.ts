@@ -1,33 +1,22 @@
+import { join } from "path";
+import { TEST_FILES } from "test/utils/setup.helper.test";
+import { v4 } from "uuid";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-
-import { sleep } from "@/utils";
+import { mockDeep } from "vitest-mock-extended";
 
 import { QueueHandler, QueueManager, QueueManagerCallback } from "./queue-manager";
 import { QueueItem, typeQueue } from "./queueManager";
 
 describe("QueueManager", () => {
+  const mockHandlers = mockDeep<QueueHandler>();
+  const mockCallbacks = mockDeep<QueueManagerCallback>();
   let queueManager: QueueManager;
-  let mockHandlers: QueueHandler;
-  let mockCallbacks: QueueManagerCallback;
+
+  const persistPath = join(TEST_FILES, v4());
 
   beforeEach(() => {
-    mockHandlers = {
-      handleAdd: vi.fn().mockResolvedValue(undefined),
-      handleHydrate: vi.fn().mockResolvedValue(undefined),
-      handleDehydrate: vi.fn().mockResolvedValue(undefined),
-      handleChangeSize: vi.fn().mockResolvedValue(undefined),
-    };
-
-    mockCallbacks = {
-      onTaskSuccess: vi.fn().mockResolvedValue(undefined),
-      onTaskProcessing: vi.fn().mockResolvedValue(undefined),
-    };
-
-    queueManager = new QueueManager(mockHandlers, mockCallbacks, "mockPath.json");
-  });
-
-  it("should initialize the queue correctly", () => {
-    expect(queueManager).toBeDefined();
+    vi.clearAllMocks();
+    queueManager = new QueueManager(mockHandlers, mockCallbacks, persistPath);
   });
 
   it("should add a task to the queue and sort it correctly", async () => {
@@ -45,9 +34,6 @@ describe("QueueManager", () => {
     ];
 
     tasks.forEach((task) => queueManager.enqueue(task));
-    await sleep(1000);
-
-    console.log("queue", queueManager["queues"][typeQueue.add]);
 
     expect(queueManager["queues"][typeQueue.add]).toEqual([
       { path: "\\test", isFolder: true, type: typeQueue.add },
@@ -74,6 +60,7 @@ describe("QueueManager", () => {
   it("should clear the queue", () => {
     queueManager.enqueue({ path: "\\test", isFolder: true, type: typeQueue.add });
     queueManager.clearQueue();
+
     expect(queueManager["queues"][typeQueue.add].length).toBe(0);
   });
 
@@ -89,7 +76,7 @@ describe("QueueManager", () => {
 
     tasks.forEach((task) => queueManager.enqueue(task));
 
-    expect(queueManager["queues"][typeQueue.add]).toEqual([
+    expect(queueManager["queues"][typeQueue.add]).toStrictEqual([
       { path: "\\folder", isFolder: true, type: typeQueue.add },
       { path: "\\folder\\file.txt", isFolder: false, type: typeQueue.add },
       { path: "\\folder\\subfolder", isFolder: true, type: typeQueue.add },
@@ -112,7 +99,7 @@ describe("QueueManager", () => {
 
     tasks.forEach((task) => queueManager.enqueue(task));
 
-    expect(queueManager["queues"][typeQueue.add]).toEqual([
+    expect(queueManager["queues"][typeQueue.add]).toStrictEqual([
       { path: "\\alpha", isFolder: true, type: typeQueue.add },
       { path: "\\beta", isFolder: true, type: typeQueue.add },
       { path: "\\gamma", isFolder: true, type: typeQueue.add },
