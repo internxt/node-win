@@ -132,16 +132,18 @@ export class QueueManager {
 
   private sortQueue(type: typeQueue): void {
     this.queues[type].sort((a, b) => {
-      if (a.isFolder && b.isFolder) {
-        return 0;
+      const depthA = a.path.split("\\").length;
+      const depthB = b.path.split("\\").length;
+
+      if (depthA !== depthB) {
+        return depthA - depthB;
       }
-      if (a.isFolder) {
-        return -1;
+
+      if (a.isFolder !== b.isFolder) {
+        return a.isFolder ? 1 : -1;
       }
-      if (b.isFolder) {
-        return 1;
-      }
-      return 0;
+
+      return a.path.localeCompare(b.path);
     });
   }
 
