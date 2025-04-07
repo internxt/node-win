@@ -146,7 +146,7 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
 
         // Context
         std::wstring syncRootIdentity(syncRootPath);
-        syncRootIdentity.append(L"#intx#");
+        syncRootIdentity.append(L"#inxt#");
         syncRootIdentity.append(providerName);
 
         winrt::IBuffer contextBuffer = winrt::CryptographicBuffer::ConvertStringToBinary(syncRootIdentity.data(), winrt::BinaryStringEncoding::Utf8);
