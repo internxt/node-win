@@ -274,34 +274,78 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
  */
 void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSyncState, bool isDirectory = false)
 {
-    wprintf(L"[UpdateSyncStatus] Path: %ls\n", filePath.c_str());
-    HANDLE fileHandle = CreateFileW(
-        filePath.c_str(),
-        FILE_WRITE_ATTRIBUTES, // permisson needed to change the state
-        FILE_SHARE_READ | FILE_SHARE_WRITE,
-        nullptr,
-        OPEN_EXISTING,
-        isDirectory ? FILE_FLAG_BACKUP_SEMANTICS : FILE_ATTRIBUTE_NORMAL,
-        nullptr);
-
-    if (fileHandle == INVALID_HANDLE_VALUE)
+    try
     {
-        wprintf(L"[UpdateSyncStatus] Error al abrir el archivo: %d\n", GetLastError());
-        return;
-    }
+        // Get a handle to the file
+        HANDLE hFile = CreateFileW(
+            filePath.c_str(),
+            GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+            nullptr,
+            OPEN_EXISTING,
+            isDirectory ? FILE_FLAG_BACKUP_SEMANTICS : 0,
+            nullptr);
 
-    // https://learn.microsoft.com/en-us/windows/win32/api/cfapi/nf-cfapi-cfsetinsyncstate
-    // https://learn.microsoft.com/en-us/windows/win32/api/cfapi/ne-cfapi-cf_in_sync_state
-    CF_IN_SYNC_STATE syncState = inputSyncState ? CF_IN_SYNC_STATE_IN_SYNC : CF_IN_SYNC_STATE_NOT_IN_SYNC;
-    // wprintf(L"Marking item as %s: %ls\n", inputSyncState ? L"IN_SYNC" : L"NOT_IN_SYNC", filePath.c_str());
-    HRESULT hr = CfSetInSyncState(fileHandle, syncState, CF_SET_IN_SYNC_FLAG_NONE, nullptr);
-    // imprimir hresult
-    if (FAILED(hr))
+        if (hFile == INVALID_HANDLE_VALUE)
+        {
+            wprintf(L"[UpdateSyncStatus] Failed to open file %s with error %d\n", filePath.c_str(), GetLastError());
+            return;
+        }
+
+        // Set the sync state using Cloud Files API
+        HRESULT hr = CfSetInSyncState(
+            hFile,
+            inputSyncState ? CF_IN_SYNC_STATE_IN_SYNC : CF_IN_SYNC_STATE_NOT_IN_SYNC,
+            CF_SET_IN_SYNC_FLAG_NONE,
+            nullptr);
+
+        if (FAILED(hr))
+        {
+            wprintf(L"[UpdateSyncStatus] Failed to set sync state for %s with HRESULT 0x%08x\n", filePath.c_str(), hr);
+            CloseHandle(hFile);
+            return;
+        }
+
+        // Update property store to reflect sync state
+        winrt::com_ptr<IShellItem2> shellItem;
+        hr = SHCreateItemFromParsingName(filePath.c_str(), nullptr, __uuidof(shellItem), shellItem.put_void());
+        
+        if (SUCCEEDED(hr))
+        {
+            winrt::com_ptr<IPropertyStore> propStore;
+            hr = shellItem->GetPropertyStore(GETPROPERTYSTOREFLAGS::GPS_READWRITE, __uuidof(propStore), propStore.put_void());
+            
+            if (SUCCEEDED(hr))
+            {
+                PROPVARIANT syncState;
+                InitPropVariantFromBoolean(inputSyncState, &syncState);
+                propStore->SetValue(PKEY_StorageProviderState, syncState);
+                propStore->Commit();
+            }
+        }
+
+        // Notify shell of changes
+        SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATH, filePath.c_str(), nullptr);
+        
+        // Also notify parent directory
+        std::wstring parentPath = filePath;
+        size_t lastSlash = parentPath.find_last_of(L'\\');
+        if (lastSlash != std::wstring::npos) {
+            parentPath = parentPath.substr(0, lastSlash);
+            SHChangeNotify(SHCNE_UPDATEDIR, SHCNF_PATH, parentPath.c_str(), nullptr);
+        }
+
+        CloseHandle(hFile);
+        wprintf(L"[UpdateSyncStatus] Successfully updated sync state for %s to %s\n", 
+                filePath.c_str(), 
+                inputSyncState ? L"IN_SYNC" : L"NOT_IN_SYNC");
+    }
+    catch (...)
     {
-        wprintf(L"[UpdateSyncStatus] Error al establecer el estado de sincronización: %ld\n", hr);
+        wprintf(L"[UpdateSyncStatus] Failed to update sync state for %s with error %08x\n", 
+                filePath.c_str(), 
+                static_cast<HRESULT>(winrt::to_hresult()));
     }
-
-    CloseHandle(fileHandle);
 }
 
 void Placeholders::UpdateFileIdentity(const std::wstring &filePath, const std::wstring &fileIdentity, bool isDirectory)
