@@ -26,8 +26,8 @@ class VirtualDrive {
 
   constructor(syncRootPath: string, providerId: string, loggerPath: string) {
     this.addon = DependencyInjectionAddonProvider.get();
-    this.syncRootPath = this.convertToWindowsPath(syncRootPath);
-    loggerPath = this.convertToWindowsPath(loggerPath);
+    this.syncRootPath = this.convertToWindowsPath({ path: syncRootPath });
+    loggerPath = this.convertToWindowsPath({ path: loggerPath });
     this.providerId = providerId;
 
     this.addon.syncRootPath = this.syncRootPath;
@@ -41,12 +41,12 @@ class VirtualDrive {
     return BigInt(jsTime) * 10000n + 116444736000000000n;
   }
 
-  private convertToWindowsPath(path: string) {
+  convertToWindowsPath({ path }: { path: string }) {
     return path.replaceAll("/", win32.sep);
   }
 
   fixPath(path: string) {
-    path = this.convertToWindowsPath(path);
+    path = this.convertToWindowsPath({ path });
     if (path.includes(this.syncRootPath)) {
       return path;
     } else {

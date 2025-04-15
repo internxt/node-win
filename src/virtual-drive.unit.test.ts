@@ -36,13 +36,13 @@ describe("VirtualDrive", () => {
 
     it("When unix path, then convert to windows path", () => {
       // Assert
-      const result = drive.convertToWindowsPath("C:/test-drive/test.txt");
+      const result = drive.convertToWindowsPath({ path: "C:/test-drive/test.txt" });
       expect(result).toBe("C:\\test-drive\\test.txt");
     });
 
     it("When windows path, then do not modify it", () => {
       // Assert
-      const result = drive.convertToWindowsPath("C:\\test-drive\\test.txt");
+      const result = drive.convertToWindowsPath({ path: "C:\\test-drive\\test.txt" });
       expect(result).toBe("C:\\test-drive\\test.txt");
     });
   });
