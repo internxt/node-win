@@ -1,5 +1,4 @@
 import { QueueManager } from "@/queue/queue-manager";
-import VirtualDrive from "@/virtual-drive";
 
 import { cancelFetchDataCallback } from "./callbacks/cancel-fetch-data.callback";
 import { notifyDeleteCallback } from "./callbacks/notify-delete.callback";
@@ -17,15 +16,19 @@ import settings from "./settings";
 const callbacks = { notifyDeleteCallback, notifyRenameCallback, fetchDataCallback, cancelFetchDataCallback, notifyMessageCallback };
 const handlers = { handleAdd, handleHydrate, handleDehydrate, handleChangeSize };
 
-const notify = { onTaskSuccess: async () => undefined, onTaskProcessing: async () => undefined };
-const queueManager = new QueueManager(handlers, notify, settings.queuePersistPath);
+const queueManager = new QueueManager({ handlers, persistPath: settings.queuePersistPath });
 
-drive.registerSyncRoot(settings.driveName, settings.driveVersion, callbacks, settings.iconPath);
+drive.registerSyncRoot({
+  providerName: settings.driveName,
+  providerVersion: settings.driveVersion,
+  callbacks,
+  logoPath: settings.iconPath,
+});
 drive.connectSyncRoot();
 
 try {
   initInfoItems();
-  drive.watchAndWait(settings.syncRootPath, queueManager, settings.watcherLogPath);
+  drive.watchAndWait({ queueManager });
 } catch (error) {
   logger.error(error);
   drive.disconnectSyncRoot();

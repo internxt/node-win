@@ -16,7 +16,7 @@ describe("QueueManager", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    queueManager = new QueueManager(mockHandlers, mockCallbacks, persistPath);
+    queueManager = new QueueManager({ handlers: mockHandlers, persistPath });
   });
 
   it("should add a task to the queue and sort it correctly", async () => {

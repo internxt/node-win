@@ -226,7 +226,8 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
         if (FAILED(hr))
         {
             // Manejar el error al convertir a marcador de posición
-            if (hr != 0x8007017C) {
+            if (hr != 0x8007017C)
+            {
                 wprintf(L"[ConvertToPlaceholder] Error converting to placeholder, ConvertToPlaceholder failed with HRESULT 0x%X\n", hr);
             }
 
@@ -287,6 +288,7 @@ void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSync
     if (fileHandle == INVALID_HANDLE_VALUE)
     {
         wprintf(L"[UpdateSyncStatus] Error al abrir el archivo: %d\n", GetLastError());
+        CloseHandle(fileHandle);
         return;
     }
 

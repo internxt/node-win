@@ -128,7 +128,13 @@ describe("VirtualDrive", () => {
       const drive = new VirtualDrive(syncRootPath, providerId, logPath);
 
       // Act
-      drive.createFileByPath("folder/subfolder/file.txt", "file-id", 1234, 1660000000000, 1660000001000);
+      drive.createFileByPath({
+        relativePath: "folder/subfolder/file.txt",
+        itemId: "file-id",
+        size: 1234,
+        creationTime: 1660000000000,
+        lastWriteTime: 1660000001000,
+      });
 
       // Assert
       expect(addon.createPlaceholderFile).toHaveBeenCalledWith(
@@ -156,7 +162,7 @@ describe("VirtualDrive", () => {
 
       // Act
       expect(drive.callbacks).toBe(undefined);
-      await drive.registerSyncRoot(providerName, providerVersion, callbacks, logoPath);
+      await drive.registerSyncRoot({ providerName, providerVersion, callbacks, logoPath });
 
       // Assert
       expect(drive.callbacks).not.toBe(undefined);
