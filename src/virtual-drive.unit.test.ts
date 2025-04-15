@@ -166,7 +166,13 @@ describe("VirtualDrive", () => {
 
       // Assert
       expect(drive.callbacks).not.toBe(undefined);
-      expect(addon.registerSyncRoot).toHaveBeenCalledWith(syncRootPath, providerName, providerVersion, providerId, logoPath);
+      expect(addon.registerSyncRoot).toHaveBeenCalledWith(
+        syncRootPath,
+        providerName,
+        providerVersion,
+        providerId,
+        logoPath,
+      );
     });
   });
 });

@@ -13,7 +13,13 @@ import { handleHydrate } from "./handlers/handle-hydrate";
 import { initInfoItems } from "./info-items-manager";
 import settings from "./settings";
 
-const callbacks = { notifyDeleteCallback, notifyRenameCallback, fetchDataCallback, cancelFetchDataCallback, notifyMessageCallback };
+const callbacks = {
+  notifyDeleteCallback,
+  notifyRenameCallback,
+  fetchDataCallback,
+  cancelFetchDataCallback,
+  notifyMessageCallback,
+};
 const handlers = { handleAdd, handleHydrate, handleDehydrate, handleChangeSize };
 
 const queueManager = new QueueManager({ handlers, persistPath: settings.queuePersistPath });

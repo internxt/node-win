@@ -53,7 +53,13 @@ async function createStructureRecursively(
     const createdAt = Date.now() - (timeOffset || 0);
     const updatedAt = Date.now() - (timeOffset || 0) + 2000;
 
-    drive.createFileByPath({ relativePath: fullPath, itemId: fileId, size: fileSize, creationTime: createdAt, lastWriteTime: updatedAt });
+    drive.createFileByPath({
+      relativePath: fullPath,
+      itemId: fileId,
+      size: fileSize,
+      creationTime: createdAt,
+      lastWriteTime: updatedAt,
+    });
 
     result[fileId] = fullPath;
   }
@@ -77,7 +83,10 @@ async function createStructureRecursively(
   }
 }
 
-async function generateRandomFilesAndFolders(drive: VirtualDrive, options: GenerateOptions): Promise<Record<string, string>> {
+async function generateRandomFilesAndFolders(
+  drive: VirtualDrive,
+  options: GenerateOptions,
+): Promise<Record<string, string>> {
   const { rootPath } = options;
 
   const result: Record<string, string> = {};

@@ -11,7 +11,11 @@ export class OnAddDirService {
       const status = self.addon.getPlaceholderState({ path });
       self.logger.info({ fn: "onAddDir", path, status });
 
-      if (status.pinState === PinState.AlwaysLocal || status.pinState === PinState.OnlineOnly || status.syncState === SyncState.InSync) {
+      if (
+        status.pinState === PinState.AlwaysLocal ||
+        status.pinState === PinState.OnlineOnly ||
+        status.syncState === SyncState.InSync
+      ) {
         return;
       }
 
