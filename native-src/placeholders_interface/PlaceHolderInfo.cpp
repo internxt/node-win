@@ -163,7 +163,20 @@ FileHandle handleForPath(const std::wstring &wPath)
         return {};
     }
 
-    std::filesystem::path pathFs(wPath); // Use wPath directly to create path
+    /**
+     *  v1.0.9 Jonathan Arce
+     *
+     * We directly use the wPath parameter in handleForPath for several important reasons:
+     *
+     * 1. Performance optimization: Using wPath directly avoids unnecessary string conversions
+     *    between wide strings and UTF-8/ANSI, which would be costly for file operations.
+     *
+     * 2. Unicode support: Windows APIs like CfOpenFileWithOplock and CreateFileW require wide
+     *    character strings (wchar_t) to properly handle Unicode paths with international
+     *    characters, spaces, and special symbols.
+     */
+
+    std::filesystem::path pathFs(wPath);
     if (!std::filesystem::exists(pathFs))
     {
         return {};
