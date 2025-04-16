@@ -15,8 +15,6 @@ export class OnAddService {
       const itemId = self.addon.getFileIdentity({ path });
       const status = self.addon.getPlaceholderState({ path });
 
-      self.logger.debug({ msg: "onAdd", path, size, birthtime, mtime, itemId, status });
-
       const creationTime = new Date(birthtime).getTime();
       const modificationTime = new Date(mtime).getTime();
 
