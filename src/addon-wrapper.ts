@@ -106,7 +106,7 @@ export class Addon {
     itemId,
     isDirectory,
     itemSize,
-    fileAttributes,
+    folderAttributes,
     creationTime,
     lastWriteTime,
     lastAccessTime,
@@ -116,7 +116,7 @@ export class Addon {
     itemId: string;
     isDirectory: boolean;
     itemSize: number;
-    fileAttributes: number;
+    folderAttributes: number;
     creationTime: string;
     lastWriteTime: string;
     lastAccessTime: string;
@@ -127,7 +127,7 @@ export class Addon {
       itemId,
       isDirectory,
       itemSize,
-      fileAttributes,
+      folderAttributes,
       creationTime,
       lastWriteTime,
       lastAccessTime,

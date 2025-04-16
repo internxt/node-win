@@ -2,11 +2,17 @@ import fs from "fs";
 import path, { join, win32 } from "path";
 import winston from "winston";
 
+
+
 import { Addon, DependencyInjectionAddonProvider } from "./addon-wrapper";
 import { createLogger } from "./logger";
 import { QueueManager } from "./queue/queue-manager";
 import { Callbacks } from "./types/callbacks.type";
 import { Watcher } from "./watcher/watcher";
+
+
+
+
 
 const PLACEHOLDER_ATTRIBUTES = {
   FILE_ATTRIBUTE_READONLY: 0x1,
@@ -135,7 +141,7 @@ class VirtualDrive {
     itemId,
     isDirectory,
     itemSize,
-    fileAttributes,
+    folderAttributes,
     creationTime,
     lastWriteTime,
     lastAccessTime,
@@ -145,7 +151,7 @@ class VirtualDrive {
     itemId: string;
     isDirectory: boolean;
     itemSize: number;
-    fileAttributes: number;
+    folderAttributes: number;
     creationTime: number;
     lastWriteTime: number;
     lastAccessTime: number;
@@ -160,7 +166,7 @@ class VirtualDrive {
       itemId,
       isDirectory,
       itemSize,
-      fileAttributes,
+      folderAttributes,
       creationTime: creationTimeStr,
       lastWriteTime: lastWriteTimeStr,
       lastAccessTime: lastAccessTimeStr,
@@ -290,8 +296,8 @@ class VirtualDrive {
             itemId,
             isDirectory: true,
             itemSize: size,
-            fileAttributes: PLACEHOLDER_ATTRIBUTES.FOLDER_ATTRIBUTE_READONLY,
-            creationTime: creationTime,
+            folderAttributes: PLACEHOLDER_ATTRIBUTES.FOLDER_ATTRIBUTE_READONLY,
+            creationTime,
             lastWriteTime: lastWriteTime,
             lastAccessTime: Date.now(),
             path: currentPath,
