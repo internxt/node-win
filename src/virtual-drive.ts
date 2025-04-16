@@ -2,17 +2,11 @@ import fs from "fs";
 import path, { join, win32 } from "path";
 import winston from "winston";
 
-
-
 import { Addon, DependencyInjectionAddonProvider } from "./addon-wrapper";
 import { createLogger } from "./logger";
 import { QueueManager } from "./queue/queue-manager";
 import { Callbacks } from "./types/callbacks.type";
 import { Watcher } from "./watcher/watcher";
-
-
-
-
 
 const PLACEHOLDER_ATTRIBUTES = {
   FILE_ATTRIBUTE_READONLY: 0x1,
