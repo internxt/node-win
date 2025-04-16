@@ -15,8 +15,6 @@ export class OnAddService {
       const itemId = self.addon.getFileIdentity({ path });
       const status = self.addon.getPlaceholderState({ path });
 
-      self.logger.info({ fn: "onAdd", path, size, birthtime, mtime, itemId, status });
-
       const creationTime = new Date(birthtime).getTime();
       const modificationTime = new Date(mtime).getTime();
 
@@ -41,10 +39,10 @@ export class OnAddService {
         self.fileInDevice.add(path);
         self.queueManager.enqueue({ path, type: typeQueue.add, isFolder: false });
       } else if (isMovedFile) {
-        self.logger.info({ fn: "onAdd", msg: "File moved", path });
+        self.logger.debug({ msg: "File moved", path });
       }
     } catch (error) {
-      self.logger.error("onAddService", error);
+      self.logger.error({ msg: "onAddService", error });
     }
   }
 }

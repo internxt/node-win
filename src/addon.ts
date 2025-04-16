@@ -3,6 +3,7 @@ import { z } from "zod";
 import { addonZod } from "./addon/addon-zod";
 import { InputSyncCallbacks } from "./types/callbacks.type";
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 export const addon: TAddon = require("../addon.node");
 
 export type TAddon = {

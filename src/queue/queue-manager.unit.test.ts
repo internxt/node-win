@@ -4,12 +4,11 @@ import { v4 } from "uuid";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mockDeep } from "vitest-mock-extended";
 
-import { QueueHandler, QueueManager, QueueManagerCallback } from "./queue-manager";
+import { QueueHandler, QueueManager } from "./queue-manager";
 import { QueueItem, typeQueue } from "./queueManager";
 
 describe("QueueManager", () => {
   const mockHandlers = mockDeep<QueueHandler>();
-  const mockCallbacks = mockDeep<QueueManagerCallback>();
   let queueManager: QueueManager;
 
   const persistPath = join(TEST_FILES, v4());

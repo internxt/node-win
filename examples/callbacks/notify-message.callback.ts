@@ -6,6 +6,6 @@ export const notifyMessageCallback = (
   errorName: string,
   callback: (response: boolean) => void,
 ) => {
-  logger.info({ event: "notifyMessageCallback", message, action, errorName });
+  logger.debug({ msg: "notifyMessageCallback", message, action, errorName });
   callback(true);
 };
