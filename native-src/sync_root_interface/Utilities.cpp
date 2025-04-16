@@ -160,6 +160,26 @@ void Utilities::ApplyTransferStateToFile(_In_ PCWSTR fullPath, _In_ CF_CALLBACK_
     }
 }
 
+std::wstring Utilities::GetErrorMessageCloudFiles(HRESULT hr) {
+    LPWSTR errorMsg = nullptr;
+    DWORD size = FormatMessageW(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        nullptr,
+        hr,
+        0,
+        (LPWSTR)&errorMsg,
+        0,
+        nullptr
+    );
+
+    std::wstring message;
+    if (size > 0 && errorMsg != nullptr) {
+        message.assign(errorMsg, size);
+    }
+    LocalFree(errorMsg);
+    return message;
+}
+
 
 bool Utilities::IsTemporaryFile(const std::wstring &fullPath)
 {

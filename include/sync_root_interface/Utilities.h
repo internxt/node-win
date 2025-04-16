@@ -11,6 +11,7 @@ public:
     static std::wstring ProcessErrorNameToWString(_In_ ProcessErrorName error);
     static std::wstring FileOperationErrorToWString(_In_ FileOperationError error);
     static bool IsTemporaryFile(const std::wstring &fullPath);
+    static std::wstring GetErrorMessageCloudFiles(HRESULT hr);
 
     static winrt::com_array<wchar_t>
     ConvertSidToStringSid(_In_ PSID sid)
