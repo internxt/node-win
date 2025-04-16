@@ -193,12 +193,9 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
             return false;
         }
 
+        // print fullPath
+        wprintf(L"[ConvertToPlaceholder] Full path: %ls\n", fullPath.c_str());
         bool isDirectory = fs::is_directory(fullPath);
-
-        if (!isDirectory) {
-            wprintf(L"[ConvertToPlaceholder] File is not a directory\n");
-            return false;
-        }
 
         HANDLE fileHandle = CreateFileW(
             fullPath.c_str(),
@@ -273,42 +270,112 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
     }
 }
 
+// Función para obtener el mensaje de error de HRESULT
+std::wstring GetErrorMessageFromHRESULT(HRESULT hr)
+{
+    LPWSTR errorMessage = nullptr;
+    DWORD result = FormatMessageW(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        nullptr,
+        hr,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        reinterpret_cast<LPWSTR>(&errorMessage),
+        0,
+        nullptr);
+
+    std::wstring message;
+    if (result > 0 && errorMessage)
+    {
+        message = errorMessage;
+        LocalFree(errorMessage);
+    }
+    else
+    {
+        message = L"Error desconocido";
+    }
+
+    return message;
+}
+
 /**
  * @brief Mark a file or directory as synchronized
  * @param filePath path to the file or directory
  * @param isDirectory true if the path is a directory, false if it is a file
  * @return void
  */
-void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSyncState, bool isDirectory = false)
+void Placeholders::UpdateSyncStatus(const std::wstring &filePath,
+                                    bool                inputSyncState,
+                                    bool                isDirectory /* = false */)
 {
     wprintf(L"[UpdateSyncStatus] Path: %ls\n", filePath.c_str());
-    HANDLE fileHandle = CreateFileW(
-        filePath.c_str(),
-        FILE_WRITE_ATTRIBUTES, // permisson needed to change the state
-        FILE_SHARE_READ | FILE_SHARE_WRITE,
-        nullptr,
-        OPEN_EXISTING,
-        isDirectory ? FILE_FLAG_BACKUP_SEMANTICS : FILE_ATTRIBUTE_NORMAL,
-        nullptr);
 
-    if (fileHandle == INVALID_HANDLE_VALUE)
+    CF_PLACEHOLDER_STATE state = GetPlaceholderState(filePath);
+    if (state == CF_PLACEHOLDER_STATE_INVALID)
     {
-        wprintf(L"[UpdateSyncStatus] Error al abrir el archivo: %d\n", GetLastError());
+        if (!ConvertToPlaceholder(filePath, L"temp_identity"))
+        {
+            wprintf(L"[UpdateSyncStatus] ‑ no se pudo convertir a placeholder\n");
+            return;
+        }
+    }
+
+
+    DWORD flags = FILE_FLAG_OPEN_REPARSE_POINT; 
+    if (isDirectory) flags |= FILE_FLAG_BACKUP_SEMANTICS;
+
+    HANDLE h = CreateFileW(filePath.c_str(),
+                           FILE_WRITE_ATTRIBUTES,
+                           FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                           nullptr,
+                           OPEN_EXISTING,
+                           flags,
+                           nullptr);
+
+    if (h == INVALID_HANDLE_VALUE)
+    {
+        wprintf(L"[UpdateSyncStatus] CreateFileW falló: %lu\n", GetLastError());
         return;
     }
 
-    // https://learn.microsoft.com/en-us/windows/win32/api/cfapi/nf-cfapi-cfsetinsyncstate
-    // https://learn.microsoft.com/en-us/windows/win32/api/cfapi/ne-cfapi-cf_in_sync_state
-    CF_IN_SYNC_STATE syncState = inputSyncState ? CF_IN_SYNC_STATE_IN_SYNC : CF_IN_SYNC_STATE_NOT_IN_SYNC;
-    // wprintf(L"Marking item as %s: %ls\n", inputSyncState ? L"IN_SYNC" : L"NOT_IN_SYNC", filePath.c_str());
-    HRESULT hr = CfSetInSyncState(fileHandle, syncState, CF_SET_IN_SYNC_FLAG_NONE, nullptr);
-    // imprimir hresult
+    CF_IN_SYNC_STATE sync = inputSyncState ? CF_IN_SYNC_STATE_IN_SYNC
+                                           : CF_IN_SYNC_STATE_NOT_IN_SYNC;
+
+    HRESULT hr = CfSetInSyncState(h, sync, CF_SET_IN_SYNC_FLAG_NONE, nullptr);
+
     if (FAILED(hr))
     {
-        wprintf(L"[UpdateSyncStatus] Error al establecer el estado de sincronización: %ld\n", hr);
+        switch (HRESULT_CODE(hr))
+        {
+        case ERROR_RETRY:                  
+            Sleep(50);
+            hr = CfSetInSyncState(h, sync, CF_SET_IN_SYNC_FLAG_NONE, nullptr);
+            wprintf(L"[UpdateSyncStatus] Retry CfSetInSyncState\n");
+            break;
+
+        case ERROR_CLOUD_FILE_PROVIDER_NOT_RUNNING:   // 0x1A94
+            SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATH, filePath.c_str(), nullptr);
+            wprintf(L"[UpdateSyncStatus] Retry CfSetInSyncState\n");
+            break;
+
+        case ERROR_CLOUD_FILE_NOT_IN_SYNC:         
+            ConvertToPlaceholder(filePath, L"temp_identity");
+            hr = CfSetInSyncState(h, sync, CF_SET_IN_SYNC_FLAG_NONE, nullptr);
+            wprintf(L"[UpdateSyncStatus] Retry CfSetInSyncState\n");
+            break;
+
+        default:
+            wprintf(L"[UpdateSyncStatus] CfSetInSyncState 0x%08X\n", hr);
+            break;
+        }
+    }
+    else
+    {
+        wprintf(L"[UpdateSyncStatus] Estado actualizado\n");
     }
 
-    CloseHandle(fileHandle);
+    CloseHandle(h);
+
+    SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATH, filePath.c_str(), nullptr);
 }
 
 void Placeholders::UpdateFileIdentity(const std::wstring &filePath, const std::wstring &fileIdentity, bool isDirectory)
