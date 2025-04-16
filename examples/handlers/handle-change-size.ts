@@ -7,8 +7,15 @@ export const handleChangeSize = async (task: QueueItem) => {
   try {
     logger.info({ fn: "handleChangeSize", path: task.path });
     const id = v4();
-    drive.convertToPlaceholder(task.path, id);
-    drive.updateFileIdentity(task.path, id, false);
+    drive.convertToPlaceholder({
+      itemPath: task.path,
+      id,
+    });
+    drive.updateFileIdentity({
+      itemPath: task.path,
+      id,
+      isDirectory: task.isFolder,
+    });
   } catch (error) {
     logger.error("handleChangeSize", error);
   }

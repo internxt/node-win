@@ -8,7 +8,10 @@ export const handleAdd = async (task: QueueItem) => {
   try {
     logger.info({ fn: "handleAdd", task });
     const id = task.isFolder ? v4() : addInfoItem(task.path);
-    drive.convertToPlaceholder(task.path, id);
+    drive.convertToPlaceholder({
+      itemPath: task.path,
+      id,
+    });
   } catch (error) {
     logger.error("handleAdd", error);
   }

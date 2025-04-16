@@ -7,7 +7,7 @@ module.exports = {
   importOrderParserPlugins: ["typescript", "decorators-legacy"],
   importOrderSeparation: true,
   plugins: [require.resolve("@trivago/prettier-plugin-sort-imports")],
-  printWidth: 140,
+  printWidth: 120,
   proseWrap: "never",
   semi: true,
   singleQuote: false,

@@ -26,8 +26,8 @@ class VirtualDrive {
 
   constructor(syncRootPath: string, providerId: string, loggerPath: string) {
     this.addon = DependencyInjectionAddonProvider.get();
-    this.syncRootPath = this.convertToWindowsPath(syncRootPath);
-    loggerPath = this.convertToWindowsPath(loggerPath);
+    this.syncRootPath = this.convertToWindowsPath({ path: syncRootPath });
+    loggerPath = this.convertToWindowsPath({ path: loggerPath });
     this.providerId = providerId;
 
     this.addon.syncRootPath = this.syncRootPath;
@@ -37,16 +37,16 @@ class VirtualDrive {
     this.logger = createLogger(loggerPath);
   }
 
-  convertToWindowsTime(jsTime: number) {
+  private convertToWindowsTime(jsTime: number) {
     return BigInt(jsTime) * 10000n + 116444736000000000n;
   }
 
-  convertToWindowsPath(path: string) {
+  convertToWindowsPath({ path }: { path: string }) {
     return path.replaceAll("/", win32.sep);
   }
 
   fixPath(path: string) {
-    path = this.convertToWindowsPath(path);
+    path = this.convertToWindowsPath({ path });
     if (path.includes(this.syncRootPath)) {
       return path;
     } else {
@@ -58,7 +58,7 @@ class VirtualDrive {
     this.addon.addLogger({ logPath });
   }
 
-  getPlaceholderState(path: string) {
+  getPlaceholderState({ path }: { path: string }) {
     return this.addon.getPlaceholderState({ path: this.fixPath(path) });
   }
 
@@ -72,12 +72,12 @@ class VirtualDrive {
     }
   }
 
-  getFileIdentity(relativePath: string) {
-    return this.addon.getFileIdentity({ path: this.fixPath(relativePath) });
+  getFileIdentity({ path }: { path: string }) {
+    return this.addon.getFileIdentity({ path: this.fixPath(path) });
   }
 
-  async deleteFileSyncRoot(relativePath: string) {
-    return this.addon.deleteFileSyncRoot({ path: this.fixPath(relativePath) });
+  async deleteFileSyncRoot({ path }: { path: string }) {
+    return this.addon.deleteFileSyncRoot({ path: this.fixPath(path) });
   }
 
   connectSyncRoot() {
@@ -95,16 +95,25 @@ class VirtualDrive {
     this.addon.disconnectSyncRoot({ syncRootPath: this.syncRootPath });
   }
 
-  createPlaceholderFile(
-    fileName: string,
-    fileId: string,
-    fileSize: number,
-    fileAttributes: number,
-    creationTime: number,
-    lastWriteTime: number,
-    lastAccessTime: number,
-    basePath: string,
-  ): any {
+  private createPlaceholderFile({
+    fileName,
+    fileId,
+    fileSize,
+    fileAttributes,
+    creationTime,
+    lastWriteTime,
+    lastAccessTime,
+    basePath = this.syncRootPath,
+  }: {
+    fileName: string;
+    fileId: string;
+    fileSize: number;
+    fileAttributes: number;
+    creationTime: number;
+    lastWriteTime: number;
+    lastAccessTime: number;
+    basePath?: string;
+  }): any {
     const creationTimeStr = this.convertToWindowsTime(creationTime).toString();
     const lastWriteTimeStr = this.convertToWindowsTime(lastWriteTime).toString();
     const lastAccessTimeStr = this.convertToWindowsTime(lastAccessTime).toString();
@@ -121,17 +130,27 @@ class VirtualDrive {
     });
   }
 
-  createPlaceholderDirectory(
-    itemName: string,
-    itemId: string,
-    isDirectory: boolean,
-    itemSize: number,
-    fileAttributes: number,
-    creationTime: number,
-    lastWriteTime: number,
-    lastAccessTime: number,
-    path: string,
-  ) {
+  private createPlaceholderDirectory({
+    itemName,
+    itemId,
+    isDirectory,
+    itemSize,
+    folderAttributes,
+    creationTime,
+    lastWriteTime,
+    lastAccessTime,
+    path = this.syncRootPath,
+  }: {
+    itemName: string;
+    itemId: string;
+    isDirectory: boolean;
+    itemSize: number;
+    folderAttributes: number;
+    creationTime: number;
+    lastWriteTime: number;
+    lastAccessTime: number;
+    path?: string;
+  }) {
     const creationTimeStr = this.convertToWindowsTime(creationTime).toString();
     const lastWriteTimeStr = this.convertToWindowsTime(lastWriteTime).toString();
     const lastAccessTimeStr = this.convertToWindowsTime(lastAccessTime).toString();
@@ -141,7 +160,7 @@ class VirtualDrive {
       itemId,
       isDirectory,
       itemSize,
-      fileAttributes,
+      folderAttributes,
       creationTime: creationTimeStr,
       lastWriteTime: lastWriteTimeStr,
       lastAccessTime: lastAccessTimeStr,
@@ -149,7 +168,17 @@ class VirtualDrive {
     });
   }
 
-  async registerSyncRoot(providerName: string, providerVersion: string, callbacks: Callbacks, logoPath: string): Promise<any> {
+  async registerSyncRoot({
+    providerName,
+    providerVersion,
+    callbacks,
+    logoPath,
+  }: {
+    providerName: string;
+    providerVersion: string;
+    callbacks: Callbacks;
+    logoPath: string;
+  }): Promise<any> {
     this.callbacks = callbacks;
     this.logger.debug({ msg: "Registering sync root", syncRootPath: this.syncRootPath });
     return this.addon.registerSyncRoot({
@@ -172,7 +201,7 @@ class VirtualDrive {
     return DependencyInjectionAddonProvider.get().unregisterSyncRoot({ providerId });
   }
 
-  watchAndWait(path: string, queueManager: QueueManager, loggerPath: string): void {
+  watchAndWait({ queueManager }: { queueManager: QueueManager }): void {
     this.watcher.addon = this.addon;
     this.watcher.queueManager = queueManager;
     this.watcher.logger = this.logger;
@@ -193,13 +222,19 @@ class VirtualDrive {
     this.watcher.watchAndWait();
   }
 
-  createFileByPath(
-    relativePath: string,
-    itemId: string,
-    size: number = 0,
-    creationTime: number = Date.now(),
-    lastWriteTime: number = Date.now(),
-  ) {
+  createFileByPath({
+    relativePath,
+    itemId,
+    size = 0,
+    creationTime = Date.now(),
+    lastWriteTime = Date.now(),
+  }: {
+    relativePath: string;
+    itemId: string;
+    size?: number;
+    creationTime?: number;
+    lastWriteTime?: number;
+  }) {
     const fullPath = path.join(this.syncRootPath, relativePath);
     const splitPath = relativePath.split("/").filter((p) => p);
     const directoryPath = path.resolve(this.syncRootPath);
@@ -212,29 +247,35 @@ class VirtualDrive {
         currentPath = path.join(currentPath, dir);
       }
       // last element is the file
-      this.createPlaceholderFile(
-        path.basename(fullPath),
-        itemId,
-        size,
-        PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
+      this.createPlaceholderFile({
+        fileName: path.basename(fullPath),
+        fileId: itemId,
+        fileSize: size,
+        fileAttributes: PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
         creationTime,
         lastWriteTime,
-        Date.now(),
-        currentPath,
-      );
+        lastAccessTime: Date.now(),
+        basePath: currentPath,
+      });
     } catch (error) {
       //@ts-ignore
       console.error(`Error al crear placeholder: ${error.message}`);
     }
   }
 
-  createFolderByPath(
-    relativePath: string,
-    itemId: string,
-    size: number = 0,
-    creationTime: number = Date.now(),
-    lastWriteTime: number = Date.now(),
-  ) {
+  createFolderByPath({
+    relativePath,
+    itemId,
+    size = 0,
+    creationTime = Date.now(),
+    lastWriteTime = Date.now(),
+  }: {
+    relativePath: string;
+    itemId: string;
+    size?: number;
+    creationTime?: number;
+    lastWriteTime?: number;
+  }) {
     const splitPath = relativePath.split("/").filter((p) => p);
     const directoryPath = path.resolve(this.syncRootPath);
     let currentPath = directoryPath;
@@ -244,39 +285,40 @@ class VirtualDrive {
       const last = i === splitPath.length - 1;
       if (last) {
         if (fs.existsSync(currentPath)) {
-          this.createPlaceholderDirectory(
-            dir,
+          this.createPlaceholderDirectory({
+            itemName: dir,
             itemId,
-            true,
-            size,
-            PLACEHOLDER_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
+            isDirectory: true,
+            itemSize: size,
+            folderAttributes: PLACEHOLDER_ATTRIBUTES.FOLDER_ATTRIBUTE_READONLY,
             creationTime,
-            lastWriteTime,
-            Date.now(),
-            currentPath,
-          );
+            lastWriteTime: lastWriteTime,
+            lastAccessTime: Date.now(),
+            path: currentPath,
+          });
         }
       }
       currentPath = path.join(currentPath, dir);
     }
   }
 
-  updateSyncStatus(itemPath: string, isDirectory: boolean, sync: boolean = true) {
+  updateSyncStatus({ itemPath, isDirectory, sync = true }: { itemPath: string; isDirectory: boolean; sync?: boolean }) {
     return this.addon.updateSyncStatus({ path: this.fixPath(itemPath), isDirectory, sync });
   }
 
-  convertToPlaceholder(itemPath: string, id: string) {
+  convertToPlaceholder({ itemPath, id }: { itemPath: string; id: string }) {
     return this.addon.convertToPlaceholder({ path: this.fixPath(itemPath), id });
   }
-  updateFileIdentity(itemPath: string, id: string, isDirectory: boolean) {
+
+  updateFileIdentity({ itemPath, id, isDirectory }: { itemPath: string; id: string; isDirectory: boolean }) {
     return this.addon.updateFileIdentity({ path: this.fixPath(itemPath), id, isDirectory });
   }
 
-  dehydrateFile(itemPath: string) {
+  dehydrateFile({ itemPath }: { itemPath: string }) {
     return this.addon.dehydrateFile({ path: this.fixPath(itemPath) });
   }
 
-  hydrateFile(itemPath: string) {
+  hydrateFile({ itemPath }: { itemPath: string }) {
     return this.addon.hydrateFile({ path: this.fixPath(itemPath) });
   }
 }

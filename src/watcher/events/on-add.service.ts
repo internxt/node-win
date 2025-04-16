@@ -29,7 +29,11 @@ export class OnAddService {
         isMovedFile = true;
       }
 
-      if (status.pinState === PinState.AlwaysLocal || status.pinState === PinState.OnlineOnly || status.syncState === SyncState.InSync) {
+      if (
+        status.pinState === PinState.AlwaysLocal ||
+        status.pinState === PinState.OnlineOnly ||
+        status.syncState === SyncState.InSync
+      ) {
         return;
       }
 

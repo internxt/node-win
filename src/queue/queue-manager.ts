@@ -12,6 +12,9 @@ export type QueueHandler = {
   handleChangeSize: HandleAction;
 };
 
+/**
+ * * @deprecated
+ */
 export type QueueManagerCallback = {
   onTaskSuccess: () => Promise<void>;
   onTaskProcessing: () => Promise<void>;
@@ -37,13 +40,13 @@ export class QueueManager {
   private enqueueTimeout: NodeJS.Timeout | null = null;
   private enqueueDelay = 2000;
 
-  private readonly notify: QueueManagerCallback;
+  // private readonly notify: QueueManagerCallback;
   private readonly persistPath: string;
 
   logger?: Logger;
   actions: HandleActions;
 
-  constructor(handlers: QueueHandler, notify: QueueManagerCallback, persistPath: string) {
+  constructor({ handlers, persistPath }: { handlers: QueueHandler; persistPath: string }) {
     this.actions = {
       add: handlers.handleAdd,
       hydrate: handlers.handleHydrate,
@@ -51,7 +54,7 @@ export class QueueManager {
       changeSize: handlers.handleChangeSize,
       change: handlers.handleChange || (() => Promise.resolve()),
     };
-    this.notify = notify;
+    // this.notify = notify;
     this.persistPath = persistPath;
     if (!fs.existsSync(this.persistPath)) {
       fs.writeFileSync(this.persistPath, JSON.stringify(this.queues));
@@ -165,7 +168,7 @@ export class QueueManager {
     const chunks = lodashChunk(this.queues[type], chunkSize);
 
     for (const chunk of chunks) {
-      await this.notify.onTaskProcessing();
+      // await this.notify.onTaskProcessing();
       await Promise.all(chunk.map((task) => this.processTask(type, task)));
       this.queues[type] = this.queues[type].slice(chunk.length);
     }
@@ -173,7 +176,7 @@ export class QueueManager {
 
   private async processSequentially(type: typeQueue): Promise<void> {
     while (this.queues[type].length > 0) {
-      await this.notify.onTaskProcessing();
+      // await this.notify.onTaskProcessing();
 
       const task = this.queues[type].shift();
       this.saveQueueStateToFile();
@@ -195,8 +198,8 @@ export class QueueManager {
   public async processAll(): Promise<void> {
     this.logger?.debug({ fn: "processAll" });
     const taskTypes = Object.keys(this.queues) as typeQueue[];
-    await this.notify.onTaskProcessing();
+    // await this.notify.onTaskProcessing();
     await Promise.all(taskTypes.map((type: typeQueue) => this.processQueue(type)));
-    await this.notify.onTaskSuccess();
+    // await this.notify.onTaskSuccess();
   }
 }
