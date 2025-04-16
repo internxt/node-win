@@ -21,7 +21,7 @@ if (data) {
   const state = drive.getPlaceholderState({
     path,
   });
-  logger.info({ state });
+  logger.debug({ msg: "state", state });
 } else {
-  logger.error("Por favor especifica un archivo con --file <path>");
+  logger.error({ msg: "Please specify a file with --file <path>" });
 }

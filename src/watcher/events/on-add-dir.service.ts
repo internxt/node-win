@@ -9,7 +9,7 @@ export class OnAddDirService {
   execute({ self, path }: TProps) {
     try {
       const status = self.addon.getPlaceholderState({ path });
-      self.logger.info({ fn: "onAddDir", path, status });
+      self.logger.debug({ msg: "onAddDir", path, status });
 
       if (
         status.pinState === PinState.AlwaysLocal ||
@@ -21,7 +21,7 @@ export class OnAddDirService {
 
       self.queueManager.enqueue({ path, type: typeQueue.add, isFolder: true });
     } catch (error) {
-      self.logger.error("Error en onAddDir", error);
+      self.logger.error({ msg: "Error en onAddDir", error });
     }
   }
 }

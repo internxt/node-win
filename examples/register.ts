@@ -36,7 +36,7 @@ try {
   initInfoItems();
   drive.watchAndWait({ queueManager });
 } catch (error) {
-  logger.error(error);
+  logger.error({ msg: "Error when register", error });
   drive.disconnectSyncRoot();
   drive.unregisterSyncRoot();
 }

@@ -1,9 +1,8 @@
 import fs from "fs";
 import path, { join, win32 } from "path";
-import winston from "winston";
 
 import { Addon, DependencyInjectionAddonProvider } from "./addon-wrapper";
-import { createLogger } from "./logger";
+import { TLogger } from "./logger";
 import { QueueManager } from "./queue/queue-manager";
 import { Callbacks } from "./types/callbacks.type";
 import { Watcher } from "./watcher/watcher";
@@ -20,11 +19,21 @@ class VirtualDrive {
   providerId: string;
   callbacks?: Callbacks;
   watcher = new Watcher();
-  logger: winston.Logger;
+  logger: TLogger;
 
   addon: Addon;
 
-  constructor(syncRootPath: string, providerId: string, loggerPath: string) {
+  constructor({
+    syncRootPath,
+    providerId,
+    loggerPath,
+    logger,
+  }: {
+    syncRootPath: string;
+    providerId: string;
+    loggerPath: string;
+    logger: TLogger;
+  }) {
     this.addon = DependencyInjectionAddonProvider.get();
     this.syncRootPath = this.convertToWindowsPath({ path: syncRootPath });
     loggerPath = this.convertToWindowsPath({ path: loggerPath });
@@ -34,7 +43,7 @@ class VirtualDrive {
 
     this.createSyncRootFolder();
     this.addLoggerPath(loggerPath);
-    this.logger = createLogger(loggerPath);
+    this.logger = logger;
   }
 
   private convertToWindowsTime(jsTime: number) {
@@ -87,7 +96,7 @@ class VirtualDrive {
 
     const connectionKey = this.addon.connectSyncRoot({ callbacks: this.callbacks });
 
-    this.logger.debug({ fn: "connectSyncRoot", connectionKey });
+    this.logger.debug({ msg: "connectSyncRoot", connectionKey });
     return connectionKey;
   }
 
@@ -207,7 +216,7 @@ class VirtualDrive {
     this.watcher.logger = this.logger;
     this.watcher.syncRootPath = this.syncRootPath;
     this.watcher.options = {
-      ignored: /(^|[\/\\])\../,
+      ignored: /(^|[/\\])\../,
       persistent: true,
       ignoreInitial: true,
       followSymlinks: true,
@@ -258,8 +267,7 @@ class VirtualDrive {
         basePath: currentPath,
       });
     } catch (error) {
-      //@ts-ignore
-      console.error(`Error al crear placeholder: ${error.message}`);
+      this.logger.error({ msg: "Error creating placeholder", error });
     }
   }
 
@@ -292,7 +300,7 @@ class VirtualDrive {
             itemSize: size,
             folderAttributes: PLACEHOLDER_ATTRIBUTES.FOLDER_ATTRIBUTE_READONLY,
             creationTime,
-            lastWriteTime: lastWriteTime,
+            lastWriteTime,
             lastAccessTime: Date.now(),
             path: currentPath,
           });

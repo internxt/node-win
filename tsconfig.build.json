@@ -7,5 +7,5 @@
   },
   "exclude": ["**/*.test.ts"],
   "extends": "./tsconfig.json",
-  "include": ["index.ts", "src", "examples"]
+  "include": ["index.ts", "src"]
 }

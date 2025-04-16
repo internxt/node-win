@@ -5,7 +5,7 @@ import { QueueItem } from "@/queue/queueManager";
 
 export const handleChangeSize = async (task: QueueItem) => {
   try {
-    logger.info({ fn: "handleChangeSize", path: task.path });
+    logger.debug({ msg: "handleChangeSize", path: task.path });
     const id = v4();
     drive.convertToPlaceholder({
       itemPath: task.path,
@@ -17,6 +17,6 @@ export const handleChangeSize = async (task: QueueItem) => {
       isDirectory: task.isFolder,
     });
   } catch (error) {
-    logger.error("handleChangeSize", error);
+    logger.error({ msg: "handleChangeSize", error });
   }
 };
