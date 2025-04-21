@@ -2,6 +2,7 @@ name: Pull request checks
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened]
 
 jobs:
   checks:
@@ -24,6 +25,9 @@ jobs:
 
       - name: Run Prettier
         run: npm run format
+
+      - name: Run Eslint
+        run: npm run lint
 
       - name: Run tests
         run: npm run test:once

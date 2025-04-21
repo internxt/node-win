@@ -6,9 +6,9 @@ import { TEST_FILES } from "test/utils/setup.helper.test";
 import { v4 } from "uuid";
 import { beforeEach } from "vitest";
 import { mockDeep } from "vitest-mock-extended";
-import { Logger } from "winston";
 
 import { Addon } from "@/addon-wrapper";
+import { TLogger } from "@/logger";
 import { QueueManager } from "@/queue/queue-manager";
 import { sleep } from "@/utils";
 
@@ -22,7 +22,7 @@ describe("Watcher", () => {
 
   const addon = mockDeep<Addon>();
   const queueManager = mockDeep<QueueManager>();
-  const logger = mockDeep<Logger>();
+  const logger = mockDeep<TLogger>();
   const options = {};
 
   const onAll = vi.fn();

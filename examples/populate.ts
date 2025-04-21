@@ -2,7 +2,7 @@ import { execSync } from "child_process";
 import { join } from "path";
 import { v4 } from "uuid";
 
-import VirtualDrive from "@/virtual-drive";
+import "@/virtual-drive";
 
 import settings from "./settings";
 

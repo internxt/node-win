@@ -5,10 +5,11 @@ import { mockDeep } from "vitest-mock-extended";
 
 import { addon } from "@/addon";
 
+import { TLogger } from "./logger";
 import { Callbacks } from "./types/callbacks.type";
 import VirtualDrive from "./virtual-drive";
 
-vi.mock("fs");
+vi.mock(import("fs"));
 vi.mock("@/addon", () => ({
   addon: {
     addLoggerPath: vi.fn().mockReturnValue(true),
@@ -20,9 +21,10 @@ vi.mock("@/addon", () => ({
 
 describe("VirtualDrive", () => {
   const mockExistsSync = fs.existsSync as Mock;
+  const loggerMock = mockDeep<TLogger>();
 
   const syncRootPath = "C:\\test-drive";
-  const logPath = "C:\\test-logs";
+  const loggerPath = "C:\\test-logs";
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -32,17 +34,17 @@ describe("VirtualDrive", () => {
     const providerId = v4();
 
     // Arrange
-    const drive = new VirtualDrive(syncRootPath, providerId, logPath);
+    const drive = new VirtualDrive({ syncRootPath, providerId, loggerPath, logger: loggerMock });
 
     it("When unix path, then convert to windows path", () => {
       // Assert
-      const result = drive.convertToWindowsPath("C:/test-drive/test.txt");
+      const result = drive.convertToWindowsPath({ path: "C:/test-drive/test.txt" });
       expect(result).toBe("C:\\test-drive\\test.txt");
     });
 
     it("When windows path, then do not modify it", () => {
       // Assert
-      const result = drive.convertToWindowsPath("C:\\test-drive\\test.txt");
+      const result = drive.convertToWindowsPath({ path: "C:\\test-drive\\test.txt" });
       expect(result).toBe("C:\\test-drive\\test.txt");
     });
   });
@@ -51,7 +53,7 @@ describe("VirtualDrive", () => {
     const providerId = v4();
 
     // Arrange
-    const drive = new VirtualDrive(syncRootPath, providerId, logPath);
+    const drive = new VirtualDrive({ syncRootPath, providerId, loggerPath, logger: loggerMock });
 
     it("When absolute windows path, then do not modify it", () => {
       // Assert
@@ -87,7 +89,7 @@ describe("VirtualDrive", () => {
       const providerId = v4();
 
       // Act
-      new VirtualDrive(syncRootPath, providerId, logPath);
+      new VirtualDrive({ syncRootPath, providerId, loggerPath, logger: loggerMock });
 
       // Assert
       expect(fs.mkdirSync).toHaveBeenCalledWith(syncRootPath, {
@@ -102,7 +104,7 @@ describe("VirtualDrive", () => {
       const providerId = v4();
 
       // Act
-      new VirtualDrive(syncRootPath, providerId, logPath);
+      new VirtualDrive({ syncRootPath, providerId, loggerPath, logger: loggerMock });
 
       // Assert
       expect(fs.mkdirSync).not.toHaveBeenCalled();
@@ -112,10 +114,10 @@ describe("VirtualDrive", () => {
       // Act
       const providerId = v4();
 
-      new VirtualDrive(syncRootPath, providerId, logPath);
+      new VirtualDrive({ syncRootPath, providerId, loggerPath, logger: loggerMock });
 
       // Assert
-      expect(addon.addLoggerPath).toHaveBeenCalledWith(logPath);
+      expect(addon.addLoggerPath).toHaveBeenCalledWith(loggerPath);
     });
   });
 
@@ -125,10 +127,16 @@ describe("VirtualDrive", () => {
       mockExistsSync.mockReturnValue(true);
       const providerId = v4();
 
-      const drive = new VirtualDrive(syncRootPath, providerId, logPath);
+      const drive = new VirtualDrive({ syncRootPath, providerId, loggerPath, logger: loggerMock });
 
       // Act
-      drive.createFileByPath("folder/subfolder/file.txt", "file-id", 1234, 1660000000000, 1660000001000);
+      drive.createFileByPath({
+        relativePath: "folder/subfolder/file.txt",
+        itemId: "file-id",
+        size: 1234,
+        creationTime: 1660000000000,
+        lastWriteTime: 1660000001000,
+      });
 
       // Assert
       expect(addon.createPlaceholderFile).toHaveBeenCalledWith(
@@ -148,7 +156,7 @@ describe("VirtualDrive", () => {
     it("Then it assigns callbacks and calls addon.registerSyncRoot", async () => {
       // Arrange
       const providerId = v4();
-      const drive = new VirtualDrive(syncRootPath, providerId, logPath);
+      const drive = new VirtualDrive({ syncRootPath, providerId, loggerPath, logger: loggerMock });
       const providerName = "MyProvider";
       const providerVersion = "1.0.0";
       const logoPath = "C:\\iconPath";
@@ -156,11 +164,17 @@ describe("VirtualDrive", () => {
 
       // Act
       expect(drive.callbacks).toBe(undefined);
-      await drive.registerSyncRoot(providerName, providerVersion, callbacks, logoPath);
+      await drive.registerSyncRoot({ providerName, providerVersion, callbacks, logoPath });
 
       // Assert
       expect(drive.callbacks).not.toBe(undefined);
-      expect(addon.registerSyncRoot).toHaveBeenCalledWith(syncRootPath, providerName, providerVersion, providerId, logoPath);
+      expect(addon.registerSyncRoot).toHaveBeenCalledWith(
+        syncRootPath,
+        providerName,
+        providerVersion,
+        providerId,
+        logoPath,
+      );
     });
   });
 });

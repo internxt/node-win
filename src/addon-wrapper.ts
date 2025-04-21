@@ -89,7 +89,16 @@ export class Addon {
     lastAccessTime: string;
     basePath: string;
   }) {
-    return addon.createPlaceholderFile(fileName, fileId, fileSize, fileAttributes, creationTime, lastWriteTime, lastAccessTime, basePath);
+    return addon.createPlaceholderFile(
+      fileName,
+      fileId,
+      fileSize,
+      fileAttributes,
+      creationTime,
+      lastWriteTime,
+      lastAccessTime,
+      basePath,
+    );
   }
 
   createPlaceholderDirectory({
@@ -97,7 +106,7 @@ export class Addon {
     itemId,
     isDirectory,
     itemSize,
-    fileAttributes,
+    folderAttributes,
     creationTime,
     lastWriteTime,
     lastAccessTime,
@@ -107,13 +116,23 @@ export class Addon {
     itemId: string;
     isDirectory: boolean;
     itemSize: number;
-    fileAttributes: number;
+    folderAttributes: number;
     creationTime: string;
     lastWriteTime: string;
     lastAccessTime: string;
     path: string;
   }) {
-    return addon.createEntry(itemName, itemId, isDirectory, itemSize, fileAttributes, creationTime, lastWriteTime, lastAccessTime, path);
+    return addon.createEntry(
+      itemName,
+      itemId,
+      isDirectory,
+      itemSize,
+      folderAttributes,
+      creationTime,
+      lastWriteTime,
+      lastAccessTime,
+      path,
+    );
   }
 
   /**

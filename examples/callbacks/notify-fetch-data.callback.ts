@@ -5,7 +5,7 @@ import { TFetchDataCallback } from "@/types/callbacks.type";
 import { sleep } from "@/utils";
 
 export const fetchDataCallback = async (id: string, callback: Parameters<TFetchDataCallback>[1]) => {
-  logger.info({ fn: "fetchDataCallback", id });
+  logger.debug({ msg: "fetchDataCallback", id });
   const path = await getInfoItem(id);
 
   let finish = false;

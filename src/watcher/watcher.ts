@@ -1,8 +1,7 @@
 import { watch, WatchOptions, FSWatcher } from "chokidar";
-import { Stats } from "fs";
-import { Logger } from "winston";
 
 import { Addon } from "@/addon-wrapper";
+import { TLogger } from "@/logger";
 import { QueueManager } from "@/queue/queue-manager";
 
 import { OnAddDirService } from "./events/on-add-dir.service";
@@ -14,7 +13,7 @@ export class Watcher {
   options!: WatchOptions;
   addon!: Addon;
   queueManager!: QueueManager;
-  logger!: Logger;
+  logger!: TLogger;
   fileInDevice = new Set<string>();
   chokidar?: FSWatcher;
 
@@ -24,7 +23,7 @@ export class Watcher {
     private readonly onRaw: OnRawService = new OnRawService(),
   ) {}
 
-  init(queueManager: QueueManager, syncRootPath: string, options: WatchOptions, logger: Logger, addon: Addon) {
+  init(queueManager: QueueManager, syncRootPath: string, options: WatchOptions, logger: TLogger, addon: Addon) {
     this.queueManager = queueManager;
     this.syncRootPath = syncRootPath;
     this.options = options;
@@ -32,16 +31,16 @@ export class Watcher {
     this.addon = addon;
   }
 
-  private onChange = (path: string, stats?: Stats) => {
-    this.logger.info({ fn: "onChange", path });
+  private onChange = (path: string) => {
+    this.logger.debug({ msg: "onChange", path });
   };
 
   private onError = (error: Error) => {
-    this.logger.error("onError", error);
+    this.logger.error({ msg: "onError", error });
   };
 
   private onReady = () => {
-    this.logger.info({ fn: "onReady" });
+    this.logger.debug({ msg: "onReady" });
   };
 
   public watchAndWait() {
@@ -54,8 +53,8 @@ export class Watcher {
         .on("error", this.onError)
         .on("raw", (event, path, details) => this.onRaw.execute({ self: this, event, path, details }))
         .on("ready", this.onReady);
-    } catch (error) {
-      this.logger.error("watchAndWait", error);
+    } catch (exc) {
+      this.logger.error({ msg: "watchAndWait", exc });
     }
   }
 }
