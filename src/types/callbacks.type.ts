@@ -6,7 +6,11 @@ export type FilePlaceholderId = `${FilePlaceholderIdPrefixType}${string}`;
 
 export type TFetchDataCallback = (
   id: FilePlaceholderId,
-  callback: (data: boolean, path: string, errorHandler?: () => void) => Promise<{ finished: boolean; progress: number }>,
+  callback: (
+    data: boolean,
+    path: string,
+    errorHandler?: () => void,
+  ) => Promise<{ finished: boolean; progress: number }>,
 ) => void;
 
 export type InputSyncCallbacks = {

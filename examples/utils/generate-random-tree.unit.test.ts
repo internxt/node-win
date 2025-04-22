@@ -6,12 +6,36 @@ class MockVirtualDrive implements Partial<VirtualDrive> {
   private files: Record<string, any> = {};
   private folders: Record<string, any> = {};
 
-  createFileByPath(path: string, id: string, size: number, createdAt: number, updatedAt: number): void {
-    this.files[path] = { id, size, createdAt, updatedAt };
+  createFileByPath({
+    relativePath,
+    itemId,
+    size = 0,
+    creationTime = Date.now(),
+    lastWriteTime = Date.now(),
+  }: {
+    relativePath: string;
+    itemId: string;
+    size?: number;
+    creationTime?: number;
+    lastWriteTime?: number;
+  }): void {
+    this.files[relativePath] = { itemId, size, creationTime, lastWriteTime };
   }
 
-  createFolderByPath(path: string, id: string, size: number, createdAt: number, updatedAt: number): void {
-    this.folders[path] = { id, size, createdAt, updatedAt };
+  createFolderByPath({
+    relativePath,
+    itemId,
+    size = 0,
+    creationTime = Date.now(),
+    lastWriteTime = Date.now(),
+  }: {
+    relativePath: string;
+    itemId: string;
+    size?: number;
+    creationTime?: number;
+    lastWriteTime?: number;
+  }): void {
+    this.folders[relativePath] = { itemId, size, creationTime, lastWriteTime };
   }
 
   getFiles(): Record<string, any> {

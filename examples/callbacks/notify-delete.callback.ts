@@ -1,6 +1,6 @@
 import { logger } from "examples/drive";
 
 export const notifyDeleteCallback = (fileId: string, callback: (response: boolean) => void) => {
-  logger.info({ event: "notifyDeleteCallback", fileId });
+  logger.debug({ msg: "notifyDeleteCallback", fileId });
   callback(true);
 };

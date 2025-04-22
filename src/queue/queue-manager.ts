@@ -1,6 +1,7 @@
 import fs from "fs";
 import lodashChunk from "lodash.chunk";
-import { Logger } from "winston";
+
+import { TLogger } from "@/logger";
 
 import { HandleAction, HandleActions, QueueItem, typeQueue } from "./queueManager";
 
@@ -12,6 +13,9 @@ export type QueueHandler = {
   handleChangeSize: HandleAction;
 };
 
+/**
+ * * @deprecated
+ */
 export type QueueManagerCallback = {
   onTaskSuccess: () => Promise<void>;
   onTaskProcessing: () => Promise<void>;
@@ -37,13 +41,13 @@ export class QueueManager {
   private enqueueTimeout: NodeJS.Timeout | null = null;
   private enqueueDelay = 2000;
 
-  private readonly notify: QueueManagerCallback;
+  // private readonly notify: QueueManagerCallback;
   private readonly persistPath: string;
 
-  logger?: Logger;
+  logger?: TLogger;
   actions: HandleActions;
 
-  constructor(handlers: QueueHandler, notify: QueueManagerCallback, persistPath: string) {
+  constructor({ handlers, persistPath }: { handlers: QueueHandler; persistPath: string }) {
     this.actions = {
       add: handlers.handleAdd,
       hydrate: handlers.handleHydrate,
@@ -51,7 +55,7 @@ export class QueueManager {
       changeSize: handlers.handleChangeSize,
       change: handlers.handleChange || (() => Promise.resolve()),
     };
-    this.notify = notify;
+    // this.notify = notify;
     this.persistPath = persistPath;
     if (!fs.existsSync(this.persistPath)) {
       fs.writeFileSync(this.persistPath, JSON.stringify(this.queues));
@@ -79,7 +83,7 @@ export class QueueManager {
   }
 
   private loadQueueStateFromFile(): void {
-    this.logger?.debug("Loading queue state from file:" + this.persistPath);
+    this.logger?.debug({ msg: "Loading queue state from file:" + this.persistPath });
     if (this.persistPath) {
       if (!fs.existsSync(this.persistPath)) {
         this.saveQueueStateToFile();
@@ -105,11 +109,11 @@ export class QueueManager {
   }
 
   public enqueue(task: QueueItem): void {
-    this.logger?.debug({ fn: "enqueue", task });
+    this.logger?.debug({ msg: "enqueue", task });
     const existingTask = this.queues[task.type].find((item) => item.path === task.path && item.type === task.type);
 
     if (existingTask) {
-      this.logger?.info("Task already exists in queue. Skipping.");
+      this.logger?.info({ msg: "Task already exists in queue. Skipping." });
       return;
     }
 
@@ -165,7 +169,7 @@ export class QueueManager {
     const chunks = lodashChunk(this.queues[type], chunkSize);
 
     for (const chunk of chunks) {
-      await this.notify.onTaskProcessing();
+      // await this.notify.onTaskProcessing();
       await Promise.all(chunk.map((task) => this.processTask(type, task)));
       this.queues[type] = this.queues[type].slice(chunk.length);
     }
@@ -173,7 +177,7 @@ export class QueueManager {
 
   private async processSequentially(type: typeQueue): Promise<void> {
     while (this.queues[type].length > 0) {
-      await this.notify.onTaskProcessing();
+      // await this.notify.onTaskProcessing();
 
       const task = this.queues[type].shift();
       this.saveQueueStateToFile();
@@ -183,20 +187,20 @@ export class QueueManager {
   }
 
   private async processTask(type: typeQueue, task: QueueItem) {
-    this.logger?.debug({ fn: "processTask", task });
+    this.logger?.debug({ msg: "processTask", task });
 
     try {
       await this.actions[task.type](task);
     } catch (error) {
-      this.logger?.error(`Failed to process ${type} task`, error);
+      this.logger?.error({ msg: `Failed to process ${type} task`, error });
     }
   }
 
   public async processAll(): Promise<void> {
-    this.logger?.debug({ fn: "processAll" });
+    this.logger?.debug({ msg: "processAll" });
     const taskTypes = Object.keys(this.queues) as typeQueue[];
-    await this.notify.onTaskProcessing();
+    // await this.notify.onTaskProcessing();
     await Promise.all(taskTypes.map((type: typeQueue) => this.processQueue(type)));
-    await this.notify.onTaskSuccess();
+    // await this.notify.onTaskSuccess();
   }
 }
