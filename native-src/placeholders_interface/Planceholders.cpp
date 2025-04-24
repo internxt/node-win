@@ -49,7 +49,7 @@ void Placeholders::CreateOne(
         {
             Placeholders::ConvertToPlaceholder(fullPath, fileIdentity);
             Placeholders::MaintainIdentity(fullPath, fileIdentity, false);
-            return; // No hacer nada si ya existe
+            return;
         }
 
         std::wstring relativeName(fileIdentity);
@@ -193,7 +193,6 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
             return false;
         }
 
-        // print fullPath
         wprintf(L"[ConvertToPlaceholder] Full path: %ls\n", fullPath.c_str());
         bool isDirectory = fs::is_directory(fullPath);
 
@@ -271,7 +270,6 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
     }
 }
 
-// Función para obtener el mensaje de error de HRESULT
 std::wstring GetErrorMessageFromHRESULT(HRESULT hr)
 {
     LPWSTR errorMessage = nullptr;
@@ -305,24 +303,14 @@ std::wstring GetErrorMessageFromHRESULT(HRESULT hr)
  * @return void
  */
 void Placeholders::UpdateSyncStatus(const std::wstring &filePath,
-                                    bool                inputSyncState,
-                                    bool                isDirectory /* = false */)
+                                    bool inputSyncState,
+                                    bool isDirectory /* = false */)
 {
     wprintf(L"[UpdateSyncStatus] Path: %ls\n", filePath.c_str());
 
-    CF_PLACEHOLDER_STATE state = GetPlaceholderState(filePath);
-    if (state == CF_PLACEHOLDER_STATE_INVALID)
-    {
-        if (!ConvertToPlaceholder(filePath, L"temp_identity"))
-        {
-            wprintf(L"[UpdateSyncStatus] ‑ no se pudo convertir a placeholder\n");
-            return;
-        }
-    }
-
-
-    DWORD flags = FILE_FLAG_OPEN_REPARSE_POINT; 
-    if (isDirectory) flags |= FILE_FLAG_BACKUP_SEMANTICS;
+    DWORD flags = FILE_FLAG_OPEN_REPARSE_POINT;
+    if (isDirectory)
+        flags |= FILE_FLAG_BACKUP_SEMANTICS;
 
     HANDLE h = CreateFileW(filePath.c_str(),
                            FILE_WRITE_ATTRIBUTES,
@@ -347,18 +335,18 @@ void Placeholders::UpdateSyncStatus(const std::wstring &filePath,
     {
         switch (HRESULT_CODE(hr))
         {
-        case ERROR_RETRY:                  
+        case ERROR_RETRY:
             Sleep(50);
             hr = CfSetInSyncState(h, sync, CF_SET_IN_SYNC_FLAG_NONE, nullptr);
             wprintf(L"[UpdateSyncStatus] Retry CfSetInSyncState\n");
             break;
 
-        case ERROR_CLOUD_FILE_PROVIDER_NOT_RUNNING:   // 0x1A94
+        case ERROR_CLOUD_FILE_PROVIDER_NOT_RUNNING: // 0x1A94
             SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATH, filePath.c_str(), nullptr);
             wprintf(L"[UpdateSyncStatus] Retry CfSetInSyncState\n");
             break;
 
-        case ERROR_CLOUD_FILE_NOT_IN_SYNC:         
+        case ERROR_CLOUD_FILE_NOT_IN_SYNC:
             ConvertToPlaceholder(filePath, L"temp_identity");
             hr = CfSetInSyncState(h, sync, CF_SET_IN_SYNC_FLAG_NONE, nullptr);
             wprintf(L"[UpdateSyncStatus] Retry CfSetInSyncState\n");
@@ -428,33 +416,9 @@ void Placeholders::UpdateFileIdentity(const std::wstring &filePath, const std::w
         wprintf(L"[UpdateFileIdentity] Error updating fileIdentity: %ls\n", errorMessage.c_str());
         CloseHandle(fileHandle);
         return;
-
     }
 
     CloseHandle(fileHandle);
-}
-
-CF_PLACEHOLDER_STATE Placeholders::GetPlaceholderState(const std::wstring &filePath)
-{
-    HANDLE fileHandle = CreateFileW(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
-    if (fileHandle == INVALID_HANDLE_VALUE)
-    {
-        // Error al abrir el archivo
-        return CF_PLACEHOLDER_STATE_INVALID;
-    }
-
-    FILE_BASIC_INFO fileBasicInfo;
-    if (!GetFileInformationByHandleEx(fileHandle, FileBasicInfo, &fileBasicInfo, sizeof(fileBasicInfo)))
-    {
-        // Error al obtener la información básica del archivo
-        CloseHandle(fileHandle);
-        return CF_PLACEHOLDER_STATE_INVALID;
-    }
-
-    CF_PLACEHOLDER_STATE placeholderState = CfGetPlaceholderStateFromFileInfo(&fileBasicInfo, FileBasicInfo);
-    CloseHandle(fileHandle);
-
-    return placeholderState;
 }
 
 std::string Placeholders::GetFileIdentity(const std::wstring &filePath)
@@ -476,22 +440,6 @@ std::string Placeholders::GetFileIdentity(const std::wstring &filePath)
     else
     {
         return "";
-    }
-}
-
-CF_PLACEHOLDER_STATE GetPlaceholderStateMock(const std::wstring &filePath)
-{
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    static std::uniform_int_distribution<int> dis(0, 1);
-
-    if (dis(gen) == 0)
-    {
-        return CF_PLACEHOLDER_STATE_IN_SYNC;
-    }
-    else
-    {
-        return CF_PLACEHOLDER_STATE_SYNC_ROOT;
     }
 }
 
