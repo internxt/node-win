@@ -323,7 +323,7 @@ void Placeholders::UpdateSyncStatus(const std::wstring &filePath,
     if (h == INVALID_HANDLE_VALUE)
     {
         wprintf(L"[UpdateSyncStatus] CreateFileW falló: %lu\n", GetLastError());
-        CloseHandle(fileHandle);
+        CloseHandle(h);
         return;
     }
 
