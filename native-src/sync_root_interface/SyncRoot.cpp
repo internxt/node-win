@@ -78,39 +78,65 @@ void SyncRoot::HydrateFile(const wchar_t *filePath)
     }
 }
 
-void SyncRoot::DehydrateFile(const wchar_t *filePath)
+void SyncRoot::DehydrateFile(const wchar_t* filePath)
 {
-    // Logger::getInstance().log("Dehydration file init", LogLevel::INFO);
-    wprintf(L"Dehydration file init %ls\n", filePath);
-    DWORD attrib = GetFileAttributesW(filePath);
-    if (!(attrib & FILE_ATTRIBUTE_DIRECTORY))
+    wprintf(L"[DehydrateFile] init %ls\n", filePath);
+
+    DWORD attr = GetFileAttributesW(filePath);
+    if (attr == INVALID_FILE_ATTRIBUTES || (attr & FILE_ATTRIBUTE_DIRECTORY))
+        return;                                     
+
+    DWORD flags = FILE_FLAG_OPEN_REPARSE_POINT;
+    winrt::handle h(CreateFileW(filePath,
+                                FILE_WRITE_ATTRIBUTES,
+                                FILE_SHARE_READ | FILE_SHARE_WRITE |
+                                FILE_SHARE_DELETE,
+                                nullptr,
+                                OPEN_EXISTING,
+                                flags,
+                                nullptr));
+    if (!h)
     {
-        winrt::handle placeholder(CreateFileW(filePath, 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
-
-        LARGE_INTEGER offset;
-        offset.QuadPart = 0;
-        LARGE_INTEGER length;
-        GetFileSizeEx(placeholder.get(), &length);
-
-        if (attrib & FILE_ATTRIBUTE_UNPINNED)
-        {
-            // Logger::getInstance().log("Dehydrating file " + Logger::fromWStringToString(filePath), LogLevel::INFO);
-            wprintf(L"Dehydrating file starteeed %ls\n", filePath);
-            HRESULT hr = CfDehydratePlaceholder(placeholder.get(), offset, length, CF_DEHYDRATE_FLAG_NONE, NULL);
-
-            if (FAILED(hr))
-            {
-                wprintf(L"Error dehydrating file %ls\n", filePath);
-                // Logger::getInstance().log("Error dehydrating file " + Logger::fromWStringToString(filePath), LogLevel::ERROR);
-            }
-            else
-            {
-                wprintf(L"Dehydration finished %ls\n", filePath);
-                // Logger::getInstance().log("Dehydration finished " + Logger::fromWStringToString(filePath), LogLevel::INFO);
-            }
-        }
+        wprintf(L"[DehydrateFile] CreateFileW falló: %lu\n", GetLastError());
+        return;
     }
+
+    if (!(attr & FILE_ATTRIBUTE_UNPINNED))         
+    {
+        CfSetPinState(h.get(), CF_PIN_STATE_UNPINNED,
+                      CF_SET_PIN_FLAG_NONE, nullptr);
+    }
+
+    LARGE_INTEGER len; GetFileSizeEx(h.get(), &len);
+
+    HRESULT hr = CfDehydratePlaceholder(h.get(),
+                                        /*offset*/{}, len,
+                                        CF_DEHYDRATE_FLAG_NONE, nullptr);
+
+    if (hr == HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION)) 
+    {
+        wprintf(L"[DehydrateFile] sharing-violation; reintentaré luego\n");
+        return;                  
+    }
+
+    if (FAILED(hr))
+    {
+        wprintf(L"[DehydrateFile] CfDehydratePlaceholder 0x%08X\n", hr);
+        return;
+    }
+
+    CfSetInSyncState(h.get(), CF_IN_SYNC_STATE_NOT_IN_SYNC,
+                     CF_SET_IN_SYNC_FLAG_NONE, nullptr);
+
+
+    Utilities::ClearTransferProperties(filePath);
+
+
+    SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATH, filePath, nullptr);
+
+    wprintf(L"[DehydrateFile] OK %ls\n", filePath);
 }
+
 
 HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *providerName, const wchar_t *providerVersion, const GUID &providerId, const wchar_t *logoPath)
 {
