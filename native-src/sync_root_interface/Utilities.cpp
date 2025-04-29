@@ -88,6 +88,26 @@ void Utilities::AddFolderToSearchIndexer(_In_ PCWSTR folder)
     }
 }
 
+void Utilities::ClearTransferProperties(PCWSTR fullPath) 
+{
+    winrt::com_ptr<IShellItem2>   item;
+    winrt::com_ptr<IPropertyStore>store;
+
+    if (FAILED(SHCreateItemFromParsingName(fullPath, nullptr,
+                                           __uuidof(item), item.put_void())))
+        return;
+
+    if (FAILED(item->GetPropertyStore(GPS_READWRITE | GPS_VOLATILEPROPERTIESONLY,
+                                      __uuidof(store), store.put_void())))
+        return;
+
+    PROPVARIANT empty; PropVariantInit(&empty);
+    store->SetValue(PKEY_StorageProviderTransferProgress, empty);
+    store->SetValue(PKEY_SyncTransferStatus,             empty);
+    store->Commit();
+}
+
+
 void Utilities::ApplyTransferStateToFile(_In_ PCWSTR fullPath, _In_ CF_CALLBACK_INFO &callbackInfo, UINT64 total, UINT64 completed)
 {
     Logger::getInstance().log("ApplyTransferStateToFile", LogLevel::INFO);
@@ -116,10 +136,10 @@ void Utilities::ApplyTransferStateToFile(_In_ PCWSTR fullPath, _In_ CF_CALLBACK_
     {
         // First, get the Volatile property store for the file. That's where the properties are maintained.
         winrt::com_ptr<IShellItem2> shellItem;
+        winrt::com_ptr<IPropertyStore>propStoreVolatile;
+
         winrt::check_hresult(SHCreateItemFromParsingName(fullPath, nullptr, __uuidof(shellItem), shellItem.put_void()));
-        // wprintf(L"transfer-> fullPath \"%s\"\n", fullPath);
-        // wprintf(L"transfer-> shellItem \"%s\"\n", shellItem);
-        winrt::com_ptr<IPropertyStore> propStoreVolatile;
+
         // wprintf(L"transfer-> propStoreVolatile \"%s\"\n", propStoreVolatile);
         winrt::check_hresult(
             shellItem->GetPropertyStore(
@@ -130,27 +150,39 @@ void Utilities::ApplyTransferStateToFile(_In_ PCWSTR fullPath, _In_ CF_CALLBACK_
         // The PKEY_StorageProviderTransferProgress property works with a UINT64 array that is two elements, with
         // element 0 being the amount of data transferred, and element 1 being the total amount
         // that will be transferred.
-        PROPVARIANT transferProgress;
-        UINT64 values[]{completed, total};
-        winrt::check_hresult(InitPropVariantFromUInt64Vector(values, ARRAYSIZE(values), &transferProgress)); // TODO: should work, but doesn't the library doesn't have this function implemented
-        winrt::check_hresult(propStoreVolatile->SetValue(PKEY_StorageProviderTransferProgress, transferProgress));
-        // wprintf(L"transfer-> transferProgress \"%s\"\n", transferProgress);
-        // Set the sync transfer status accordingly
+        if (completed < total)
+        {
+            PROPVARIANT pvProgress, pvStatus;
+            UINT64 values[] { completed, total };
+            InitPropVariantFromUInt64Vector(values, ARRAYSIZE(values), &pvProgress);
+            InitPropVariantFromUInt32(SYNC_TRANSFER_STATUS::STS_TRANSFERRING, &pvStatus);
 
-        PROPVARIANT transferStatus;
-        winrt::check_hresult(
-            InitPropVariantFromUInt32(
-                (completed < total) ? SYNC_TRANSFER_STATUS::STS_TRANSFERRING : SYNC_TRANSFER_STATUS::STS_NONE,
-                &transferStatus));
-        winrt::check_hresult(propStoreVolatile->SetValue(PKEY_SyncTransferStatus, transferStatus));
-        // wprintf(L"transfer-> transferStatus \"%s\"\n", transferStatus);
-        // Without this, all your hard work is wasted.
-        winrt::check_hresult(propStoreVolatile->Commit());
-        // wprintf(L"transfer-> propStoreVolatile \"%s\"\n", propStoreVolatile);
-        // Broadcast a notification that something about the file has changed, so that apps
-        // who subscribe (such as File Explorer) can update their UI to reflect the new progress
-        SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATH, static_cast<LPCVOID>(fullPath), nullptr);
-        wprintf(L"Succesfully Set Transfer Progress on \"%s\" to %llu/%llu\n", fullPath, completed, total);
+            propStoreVolatile->SetValue(PKEY_StorageProviderTransferProgress, pvProgress);
+            propStoreVolatile->SetValue(PKEY_SyncTransferStatus, pvStatus);
+            propStoreVolatile->Commit();
+
+            PropVariantClear(&pvProgress);
+        }
+        else
+        {
+            PROPVARIANT empty; PropVariantInit(&empty);
+            propStoreVolatile->SetValue(PKEY_StorageProviderTransferProgress, empty);
+            propStoreVolatile->SetValue(PKEY_SyncTransferStatus, empty);
+            propStoreVolatile->Commit();
+
+            HANDLE h = CreateFileW(fullPath,
+                                FILE_WRITE_ATTRIBUTES,
+                                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                nullptr,
+                                OPEN_EXISTING,
+                                FILE_FLAG_OPEN_REPARSE_POINT,
+                                nullptr);
+            if (h != INVALID_HANDLE_VALUE) {
+                CfSetInSyncState(h, CF_IN_SYNC_STATE_IN_SYNC,
+                                CF_SET_IN_SYNC_FLAG_NONE, nullptr);
+                CloseHandle(h);
+            }
+        }
     }
     catch (...)
     {
