@@ -99,9 +99,7 @@ void SyncRoot::DehydrateFile(const wchar_t* filePath)
 
     LARGE_INTEGER len; GetFileSizeEx(h.get(), &len);
 
-    HRESULT hr = CfDehydratePlaceholder(h.get(),
-                                        /*offset*/{}, len,
-                                        CF_DEHYDRATE_FLAG_NONE, nullptr);
+    HRESULT hr = CfDehydratePlaceholder(h.get(), {}, len, CF_DEHYDRATE_FLAG_NONE, nullptr);
 
     if (hr == HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION)) 
     {
