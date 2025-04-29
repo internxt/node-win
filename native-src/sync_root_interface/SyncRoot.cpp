@@ -42,8 +42,6 @@ void SyncRoot::HydrateFile(const wchar_t *filePath)
 
         if (attrib & FILE_ATTRIBUTE_PINNED)
         {
-            // if (!(attrib & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS))
-            // {
             Logger::getInstance().log("Hydration file init", LogLevel::INFO);
 
             auto start = std::chrono::steady_clock::now();
@@ -68,20 +66,12 @@ void SyncRoot::HydrateFile(const wchar_t *filePath)
                     wprintf(L"Hydration finished %ls\n", filePath);
                 }
             }
-            // }
-            // else
-            // {
-            //     wprintf(L"File is already hydrated: %ls\n", filePath);
-            //     Logger::getInstance().log("File is already hydrated " + Logger::fromWStringToString(filePath), LogLevel::INFO);
-            // }
         }
     }
 }
 
 void SyncRoot::DehydrateFile(const wchar_t* filePath)
 {
-    wprintf(L"[DehydrateFile] init %ls\n", filePath);
-
     DWORD attr = GetFileAttributesW(filePath);
     if (attr == INVALID_FILE_ATTRIBUTES || (attr & FILE_ATTRIBUTE_DIRECTORY))
         return;                                     

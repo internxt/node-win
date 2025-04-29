@@ -150,7 +150,7 @@ void Utilities::ApplyTransferStateToFile(_In_ PCWSTR fullPath, _In_ CF_CALLBACK_
         // The PKEY_StorageProviderTransferProgress property works with a UINT64 array that is two elements, with
         // element 0 being the amount of data transferred, and element 1 being the total amount
         // that will be transferred.
-        if (completed < total)               // ===== PROGRESO ACTIVO =====
+        if (completed < total)
         {
             PROPVARIANT pvProgress, pvStatus;
             UINT64 values[] { completed, total };
@@ -158,19 +158,18 @@ void Utilities::ApplyTransferStateToFile(_In_ PCWSTR fullPath, _In_ CF_CALLBACK_
             InitPropVariantFromUInt32(SYNC_TRANSFER_STATUS::STS_TRANSFERRING, &pvStatus);
 
             propStoreVolatile->SetValue(PKEY_StorageProviderTransferProgress, pvProgress);
-            propStoreVolatile->SetValue(PKEY_SyncTransferStatus,             pvStatus);
+            propStoreVolatile->SetValue(PKEY_SyncTransferStatus, pvStatus);
             propStoreVolatile->Commit();
 
-            PropVariantClear(&pvProgress);   // buena higiene
+            PropVariantClear(&pvProgress);
         }
-        else                                 // ===== TRANSFERENCIA FINALIZADA =====
+        else
         {
-            PROPVARIANT empty; PropVariantInit(&empty);            // --- NUEVO
-            propStoreVolatile->SetValue(PKEY_StorageProviderTransferProgress, empty); // --- NUEVO
-            propStoreVolatile->SetValue(PKEY_SyncTransferStatus,             empty); // --- NUEVO
-            propStoreVolatile->Commit();                                       // --- NUEVO
+            PROPVARIANT empty; PropVariantInit(&empty);
+            propStoreVolatile->SetValue(PKEY_StorageProviderTransferProgress, empty);
+            propStoreVolatile->SetValue(PKEY_SyncTransferStatus, empty);
+            propStoreVolatile->Commit();
 
-            // (opcional pero recomendable) marcar el archivo como IN_SYNC    // --- NUEVO
             HANDLE h = CreateFileW(fullPath,
                                 FILE_WRITE_ATTRIBUTES,
                                 FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
