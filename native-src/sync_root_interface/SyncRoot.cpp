@@ -100,7 +100,21 @@ void SyncRoot::DehydrateFile(const wchar_t *filePath)
 
             if (FAILED(hr))
             {
-                wprintf(L"Error dehydrating file %ls\n", filePath);
+                DWORD err = HRESULT_CODE(hr);
+                if (err == ERROR_SHARING_VIOLATION || err == ERROR_CLOUD_FILE_IN_USE)
+                {
+                    wprintf(L"Cannot dehydrate because the file is currently in use: %ls\n", filePath);
+
+                    MessageBoxW(
+                        nullptr,
+                        L"Unable to free up space because the file is currently in use.\nPlease close the file and try again.",
+                        L"File in use",
+                        MB_OK | MB_ICONWARNING | MB_SYSTEMMODAL);
+                }
+                else
+                {
+                    wprintf(L"Error dehydrating file %ls\n", filePath);
+                }
                 // Logger::getInstance().log("Error dehydrating file " + Logger::fromWStringToString(filePath), LogLevel::ERROR);
             }
             else
