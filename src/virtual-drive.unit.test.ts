@@ -6,7 +6,6 @@ import { mockDeep } from "vitest-mock-extended";
 import { addon } from "@/addon";
 
 import { TLogger } from "./logger";
-import { Callbacks } from "./types/callbacks.type";
 import VirtualDrive from "./virtual-drive";
 
 vi.mock(import("fs"));
@@ -160,14 +159,11 @@ describe("VirtualDrive", () => {
       const providerName = "MyProvider";
       const providerVersion = "1.0.0";
       const logoPath = "C:\\iconPath";
-      const callbacks = mockDeep<Callbacks>();
 
       // Act
-      expect(drive.callbacks).toBe(undefined);
-      await drive.registerSyncRoot({ providerName, providerVersion, callbacks, logoPath });
+      await drive.registerSyncRoot({ providerName, providerVersion, logoPath });
 
       // Assert
-      expect(drive.callbacks).not.toBe(undefined);
       expect(addon.registerSyncRoot).toHaveBeenCalledWith(
         syncRootPath,
         providerName,
