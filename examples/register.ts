@@ -27,10 +27,10 @@ const queueManager = new QueueManager({ handlers, persistPath: settings.queuePer
 drive.registerSyncRoot({
   providerName: settings.driveName,
   providerVersion: settings.driveVersion,
-  callbacks,
   logoPath: settings.iconPath,
 });
-drive.connectSyncRoot();
+
+drive.connectSyncRoot({ callbacks });
 
 try {
   initInfoItems();
