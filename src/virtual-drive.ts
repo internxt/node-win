@@ -1,5 +1,5 @@
 import fs from "fs";
-import path, { join, win32 } from "path";
+import path, { join, posix, win32 } from "path";
 
 import { Addon, DependencyInjectionAddonProvider } from "./addon-wrapper";
 import { TLogger } from "./logger";
@@ -51,7 +51,7 @@ class VirtualDrive {
   }
 
   convertToWindowsPath({ path }: { path: string }) {
-    return path.replaceAll("/", win32.sep);
+    return path.replaceAll(posix.sep, win32.sep);
   }
 
   fixPath(path: string) {
@@ -89,12 +89,8 @@ class VirtualDrive {
     return this.addon.deleteFileSyncRoot({ path: this.fixPath(path) });
   }
 
-  connectSyncRoot() {
-    if (this.callbacks === undefined) {
-      throw new Error("Callbacks are not defined");
-    }
-
-    const connectionKey = this.addon.connectSyncRoot({ callbacks: this.callbacks });
+  connectSyncRoot({ callbacks }: { callbacks: Callbacks }) {
+    const connectionKey = this.addon.connectSyncRoot({ callbacks });
 
     this.logger.debug({ msg: "connectSyncRoot", connectionKey });
     return connectionKey;
@@ -180,15 +176,12 @@ class VirtualDrive {
   async registerSyncRoot({
     providerName,
     providerVersion,
-    callbacks,
     logoPath,
   }: {
     providerName: string;
     providerVersion: string;
-    callbacks: Callbacks;
     logoPath: string;
   }): Promise<any> {
-    this.callbacks = callbacks;
     this.logger.debug({ msg: "Registering sync root", syncRootPath: this.syncRootPath });
     return this.addon.registerSyncRoot({
       providerName,
