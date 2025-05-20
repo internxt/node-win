@@ -13,12 +13,6 @@ Before proceeding, ensure you have the following tools installed:
 nvm install 18
 ```
 
-- **yarn**
-
-```bash
-npm install -g yarn
-```
-
 - **node-gyp**
 
 ```bash

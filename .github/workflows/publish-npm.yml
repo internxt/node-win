@@ -5,7 +5,7 @@ on:
     types: [published]
 
 jobs:
-  package:
+  publish_npm:
     runs-on: windows-latest
 
     permissions:
@@ -29,9 +29,6 @@ jobs:
 
       - name: Install node-gyp
         run: npm install -g node-gyp
-
-      - name: Install dependencies
-        run: yarn install --ignore-scripts
 
       - name: Build package
         run: npm run build
