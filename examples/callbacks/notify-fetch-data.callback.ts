@@ -4,9 +4,9 @@ import { getInfoItem } from "examples/info-items-manager";
 import { TFetchDataCallback } from "@/types/callbacks.type";
 import { sleep } from "@/utils";
 
-export const fetchDataCallback = async (id: string, callback: Parameters<TFetchDataCallback>[1]) => {
+export const fetchDataCallback: TFetchDataCallback = async (id, callback) => {
   logger.debug({ msg: "fetchDataCallback", id });
-  const path = await getInfoItem(id);
+  const path = await getInfoItem({ id });
 
   let finish = false;
   while (!finish) {

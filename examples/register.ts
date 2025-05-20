@@ -24,19 +24,25 @@ const handlers = { handleAdd, handleHydrate, handleDehydrate, handleChangeSize }
 
 const queueManager = new QueueManager({ handlers, persistPath: settings.queuePersistPath });
 
-drive.registerSyncRoot({
-  providerName: settings.driveName,
-  providerVersion: settings.driveVersion,
-  logoPath: settings.iconPath,
-});
+async function init() {
+  await drive
+    .registerSyncRoot({
+      providerName: settings.driveName,
+      providerVersion: settings.driveVersion,
+      logoPath: settings.iconPath,
+    })
+    .then(() => {});
 
-drive.connectSyncRoot({ callbacks });
+  drive.connectSyncRoot({ callbacks });
 
-try {
-  initInfoItems();
-  drive.watchAndWait({ queueManager });
-} catch (error) {
-  logger.error({ msg: "Error when register", error });
-  drive.disconnectSyncRoot();
-  drive.unregisterSyncRoot();
+  try {
+    initInfoItems();
+    drive.watchAndWait({ callbacks, queueManager });
+  } catch (error) {
+    logger.error({ msg: "Error when register", error });
+    drive.disconnectSyncRoot();
+    drive.unregisterSyncRoot();
+  }
 }
+
+void init();

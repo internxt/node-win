@@ -1,6 +1,18 @@
 import { logger } from "examples/drive";
+import { getInfoItem } from "examples/info-items-manager";
+import { rm } from "fs/promises";
 
-export const notifyDeleteCallback = (fileId: string, callback: (response: boolean) => void) => {
-  logger.debug({ msg: "notifyDeleteCallback", fileId });
+import { TNotifyDeleteCallback } from "@/types/callbacks.type";
+
+export const notifyDeleteCallback: TNotifyDeleteCallback = async (id, callback) => {
+  const path = await getInfoItem({ id });
+  await rm(path);
+
+  logger.debug({
+    msg: "notifyDeleteCallback",
+    path,
+    id,
+  });
+
   callback(true);
 };

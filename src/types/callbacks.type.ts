@@ -1,8 +1,8 @@
-export type NapiCallbackFunction = (...args: any[]) => any;
+type NapiCallbackFunction = (...args: unknown[]) => unknown;
 
-export type FilePlaceholderIdPrefixType = "FILE:";
-
-export type FilePlaceholderId = `${FilePlaceholderIdPrefixType}${string}`;
+type FilePlaceholderId = `FILE:${string}`;
+type FolderPlaceholderId = `FOLDER:${string}`;
+export type PlaceholderId = FilePlaceholderId | FolderPlaceholderId;
 
 export type TFetchDataCallback = (
   id: FilePlaceholderId,
@@ -12,8 +12,9 @@ export type TFetchDataCallback = (
     errorHandler?: () => void,
   ) => Promise<{ finished: boolean; progress: number }>,
 ) => void;
+export type TNotifyDeleteCallback = (id: PlaceholderId, callback: (response: boolean) => void) => void;
 
-export type InputSyncCallbacks = {
+export type AddonCallbacks = {
   fetchDataCallback: TFetchDataCallback;
   validateDataCallback?: NapiCallbackFunction;
   cancelFetchDataCallback?: NapiCallbackFunction;
@@ -23,11 +24,14 @@ export type InputSyncCallbacks = {
   notifyFileCloseCompletionCallback?: NapiCallbackFunction;
   notifyDehydrateCallback?: NapiCallbackFunction;
   notifyDehydrateCompletionCallback?: NapiCallbackFunction;
-  notifyDeleteCallback?: NapiCallbackFunction;
+  notifyDeleteCallback?: TNotifyDeleteCallback;
   notifyDeleteCompletionCallback?: NapiCallbackFunction;
   notifyRenameCallback?: NapiCallbackFunction;
   notifyRenameCompletionCallback?: NapiCallbackFunction;
   noneCallback?: NapiCallbackFunction;
 };
 
-export type Callbacks = InputSyncCallbacks;
+export type VirtualDriveCallbacks = AddonCallbacks & {
+  handleDeleteFile: ({ uuid }: { uuid: string }) => Promise<void>;
+  handleDeleteFolder: ({ uuid }: { uuid: string }) => Promise<void>;
+};

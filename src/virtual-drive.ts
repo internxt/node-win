@@ -5,7 +5,7 @@ import { Addon, DependencyInjectionAddonProvider } from "./addon-wrapper";
 import { TLogger } from "./logger";
 import { QueueManager } from "./queue/queue-manager";
 import { Callbacks } from "./types/callbacks.type";
-import { Watcher } from "./watcher/watcher";
+import { TWatcherCallbacks, Watcher } from "./watcher/watcher";
 
 const PLACEHOLDER_ATTRIBUTES = {
   FILE_ATTRIBUTE_READONLY: 0x1,
@@ -17,11 +17,9 @@ const PLACEHOLDER_ATTRIBUTES = {
 class VirtualDrive {
   syncRootPath: string;
   providerId: string;
-  callbacks?: Callbacks;
-  watcher = new Watcher();
   logger: TLogger;
-
   addon: Addon;
+  deletedDirs = new Set<string>();
 
   constructor({
     syncRootPath,
@@ -118,7 +116,7 @@ class VirtualDrive {
     lastWriteTime: number;
     lastAccessTime: number;
     basePath?: string;
-  }): any {
+  }) {
     const creationTimeStr = this.convertToWindowsTime(creationTime).toString();
     const lastWriteTimeStr = this.convertToWindowsTime(lastWriteTime).toString();
     const lastAccessTimeStr = this.convertToWindowsTime(lastAccessTime).toString();
@@ -181,7 +179,7 @@ class VirtualDrive {
     providerName: string;
     providerVersion: string;
     logoPath: string;
-  }): Promise<any> {
+  }) {
     this.logger.debug({ msg: "Registering sync root", syncRootPath: this.syncRootPath });
     return this.addon.registerSyncRoot({
       providerName,
@@ -204,24 +202,14 @@ class VirtualDrive {
   }
 
   watchAndWait({ queueManager }: { queueManager: QueueManager }): void {
-    this.watcher.addon = this.addon;
-    this.watcher.queueManager = queueManager;
-    this.watcher.logger = this.logger;
-    this.watcher.syncRootPath = this.syncRootPath;
-    this.watcher.options = {
-      ignored: /(^|[/\\])\../,
-      persistent: true,
-      ignoreInitial: true,
-      followSymlinks: true,
-      depth: undefined,
-      awaitWriteFinish: {
-        stabilityThreshold: 2000,
-        pollInterval: 100,
-      },
-      usePolling: true,
-    };
+    const watcher = new Watcher({
+      queueManager,
+      syncRootPath: this.syncRootPath,
+      logger: this.logger,
+      addon: this.addon,
+    });
 
-    this.watcher.watchAndWait();
+    watcher.watchAndWait();
   }
 
   createFileByPath({

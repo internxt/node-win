@@ -130,7 +130,7 @@ export class QueueManager {
 
     // Inicia el temporizador de espera
     this.enqueueTimeout = setTimeout(() => {
-      this.processAll();
+      void this.processAll();
     }, this.enqueueDelay);
   }
 

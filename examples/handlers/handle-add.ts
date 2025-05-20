@@ -1,13 +1,17 @@
 import { drive, logger } from "examples/drive";
 import { addInfoItem } from "examples/info-items-manager";
-import { v4 } from "uuid";
 
 import { QueueItem } from "@/queue/queueManager";
 
 export const handleAdd = async (task: QueueItem) => {
   try {
     logger.debug({ msg: "handleAdd", task });
-    const id = task.isFolder ? v4() : addInfoItem(task.path);
+
+    const id = addInfoItem({
+      itemPath: task.path,
+      isFile: !task.isFolder,
+    });
+
     drive.convertToPlaceholder({
       itemPath: task.path,
       id,

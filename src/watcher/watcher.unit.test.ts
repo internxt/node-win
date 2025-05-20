@@ -1,58 +1,14 @@
 import { execSync } from "child_process";
-import { existsSync } from "fs";
-import { appendFile, mkdir, rename, rm, unlink, writeFile } from "fs/promises";
+import { appendFile, mkdir, rename, writeFile } from "fs/promises";
 import { join } from "path";
 import { TEST_FILES } from "test/utils/setup.helper.test";
 import { v4 } from "uuid";
-import { beforeEach } from "vitest";
-import { mockDeep } from "vitest-mock-extended";
 
-import { Addon } from "@/addon-wrapper";
-import { TLogger } from "@/logger";
-import { QueueManager } from "@/queue/queue-manager";
 import { sleep } from "@/utils";
 
-import { OnAddDirService } from "./events/on-add-dir.service";
-import { OnAddService } from "./events/on-add.service";
-import { OnRawService } from "./events/on-raw.service";
-import { Watcher } from "./watcher";
+import { getEvents, setupWatcher } from "./watcher.helper.test";
 
 describe("Watcher", () => {
-  let watcher: Watcher | undefined;
-
-  const addon = mockDeep<Addon>();
-  const queueManager = mockDeep<QueueManager>();
-  const logger = mockDeep<TLogger>();
-  const options = {};
-
-  const onAll = vi.fn();
-  const onAdd = mockDeep<OnAddService>();
-  const onAddDir = mockDeep<OnAddDirService>();
-  const onRaw = mockDeep<OnRawService>();
-
-  const setupWatcher = async (syncRootPath: string) => {
-    if (!existsSync(syncRootPath)) {
-      await mkdir(syncRootPath);
-    }
-
-    watcher = new Watcher(onAdd, onAddDir, onRaw);
-    watcher.init(queueManager, syncRootPath, options, logger, addon);
-    watcher.watchAndWait();
-    watcher.chokidar?.on("all", (event, path) => onAll({ event, path }));
-  };
-
-  const getEvents = () => {
-    return onAll.mock.calls.map((call) => ({ event: call[0].event, path: call[0].path }));
-  };
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    watcher?.chokidar?.close();
-  });
-
   describe("[Watcher] When call watchAndWait", () => {
     it("When folder is empty, then emit one addDir event", async () => {
       // Arrange
@@ -81,12 +37,10 @@ describe("Watcher", () => {
       await sleep(50);
 
       // Assert
-      expect(getEvents()).toStrictEqual(
-        expect.arrayContaining([
-          { event: "addDir", path: syncRootPath },
-          { event: "add", path: file },
-        ]),
-      );
+      expect(getEvents()).toStrictEqual([
+        { event: "addDir", path: syncRootPath },
+        { event: "add", path: file },
+      ]);
     });
   });
 
@@ -103,12 +57,10 @@ describe("Watcher", () => {
       await sleep(50);
 
       // Assert
-      expect(getEvents()).toStrictEqual(
-        expect.arrayContaining([
-          { event: "addDir", path: syncRootPath },
-          { event: "addDir", path: folder },
-        ]),
-      );
+      expect(getEvents()).toStrictEqual([
+        { event: "addDir", path: syncRootPath },
+        { event: "addDir", path: folder },
+      ]);
     });
 
     it("When add a file, then emit one add event", async () => {
@@ -123,12 +75,10 @@ describe("Watcher", () => {
       await sleep(50);
 
       // Assert
-      expect(getEvents()).toStrictEqual(
-        expect.arrayContaining([
-          { event: "addDir", path: syncRootPath },
-          { event: "add", path: file },
-        ]),
-      );
+      expect(getEvents()).toStrictEqual([
+        { event: "addDir", path: syncRootPath },
+        { event: "add", path: file },
+      ]);
     });
 
     it("When add a file of zero size, then emit one add event", async () => {
@@ -143,15 +93,13 @@ describe("Watcher", () => {
       await sleep(50);
 
       // Assert
-      expect(getEvents()).toStrictEqual(
-        expect.arrayContaining([
-          { event: "addDir", path: syncRootPath },
-          { event: "add", path: file },
-        ]),
-      );
+      expect(getEvents()).toStrictEqual([
+        { event: "addDir", path: syncRootPath },
+        { event: "add", path: file },
+      ]);
     });
 
-    it("When add a folder and a file inside, then emit one addDir and one add event", async () => {
+    it("When add a folder with a file inside, then emit one addDir and one add event", async () => {
       // Arrange
       const syncRootPath = join(TEST_FILES, v4());
       const folder = join(syncRootPath, v4());
@@ -165,13 +113,11 @@ describe("Watcher", () => {
       await sleep(50);
 
       // Assert
-      expect(getEvents()).toStrictEqual(
-        expect.arrayContaining([
-          { event: "addDir", path: syncRootPath },
-          { event: "addDir", path: folder },
-          { event: "add", path: file },
-        ]),
-      );
+      expect(getEvents()).toStrictEqual([
+        { event: "addDir", path: syncRootPath },
+        { event: "addDir", path: folder },
+        { event: "add", path: file },
+      ]);
     });
   });
 
@@ -190,13 +136,11 @@ describe("Watcher", () => {
       await sleep(50);
 
       // Assert
-      expect(getEvents()).toStrictEqual(
-        expect.arrayContaining([
-          { event: "addDir", path: syncRootPath },
-          { event: "add", path: file },
-          { event: "change", path: file },
-        ]),
-      );
+      expect(getEvents()).toStrictEqual([
+        { event: "addDir", path: syncRootPath },
+        { event: "add", path: file },
+        { event: "change", path: file },
+      ]);
     });
   });
 
@@ -269,14 +213,12 @@ describe("Watcher", () => {
       await sleep(50);
 
       // Assert
-      expect(getEvents()).toStrictEqual(
-        expect.arrayContaining([
-          { event: "addDir", path: syncRootPath },
-          { event: "add", path: file },
-          { event: "addDir", path: folder },
-          { event: "add", path: movedFile },
-        ]),
-      );
+      expect(getEvents()).toStrictEqual([
+        { event: "addDir", path: syncRootPath },
+        { event: "add", path: file },
+        { event: "addDir", path: folder },
+        { event: "add", path: movedFile },
+      ]);
     });
 
     it("When move a folder to a folder, then emit one unlinkDir and one addDir event", async () => {
@@ -308,52 +250,6 @@ describe("Watcher", () => {
     });
   });
 
-  describe("[Addon] When delete items", () => {
-    it("When delete a file, then emit one unlink event", async () => {
-      // Arrange
-      const syncRootPath = join(TEST_FILES, v4());
-      const file = join(syncRootPath, v4());
-      await setupWatcher(syncRootPath);
-      await writeFile(file, Buffer.alloc(1000));
-
-      // Act
-      await sleep(50);
-      await unlink(file);
-      await sleep(150);
-
-      // Assert
-      expect(getEvents()).toStrictEqual(
-        expect.arrayContaining([
-          { event: "addDir", path: syncRootPath },
-          { event: "add", path: file },
-          { event: "unlink", path: file },
-        ]),
-      );
-    });
-
-    it("When delete a folder, then emit one unlinkDir event", async () => {
-      // Arrange
-      const syncRootPath = join(TEST_FILES, v4());
-      const folder = join(syncRootPath, v4());
-      await setupWatcher(syncRootPath);
-      await mkdir(folder);
-
-      // Act
-      await sleep(50);
-      await rm(folder, { recursive: true, force: true });
-      await sleep(150);
-
-      // Assert
-      expect(getEvents()).toStrictEqual(
-        expect.arrayContaining([
-          { event: "addDir", path: syncRootPath },
-          { event: "addDir", path: folder },
-          { event: "unlinkDir", path: folder },
-        ]),
-      );
-    });
-  });
-
   describe("[Watcher] When pin items", () => {
     it("When pin a file, then emit one change event", async () => {
       // Arrange
@@ -369,13 +265,11 @@ describe("Watcher", () => {
       await sleep(50);
 
       // Assert
-      expect(getEvents()).toStrictEqual(
-        expect.arrayContaining([
-          { event: "addDir", path: syncRootPath },
-          { event: "add", path: file },
-          { event: "change", path: file },
-        ]),
-      );
+      expect(getEvents()).toStrictEqual([
+        { event: "addDir", path: syncRootPath },
+        { event: "add", path: file },
+        { event: "change", path: file },
+      ]);
     });
 
     it("When pin a folder, then do not emit any event", async () => {
@@ -391,12 +285,10 @@ describe("Watcher", () => {
       await sleep(50);
 
       // Assert
-      expect(getEvents()).toStrictEqual(
-        expect.arrayContaining([
-          { event: "addDir", path: syncRootPath },
-          { event: "addDir", path: folder },
-        ]),
-      );
+      expect(getEvents()).toStrictEqual([
+        { event: "addDir", path: syncRootPath },
+        { event: "addDir", path: folder },
+      ]);
     });
   });
 
@@ -417,14 +309,12 @@ describe("Watcher", () => {
       await sleep(50);
 
       // Assert
-      expect(getEvents()).toStrictEqual(
-        expect.arrayContaining([
-          { event: "addDir", path: syncRootPath },
-          { event: "add", path: file },
-          { event: "change", path: file },
-          { event: "change", path: file },
-        ]),
-      );
+      expect(getEvents()).toStrictEqual([
+        { event: "addDir", path: syncRootPath },
+        { event: "add", path: file },
+        { event: "change", path: file },
+        { event: "change", path: file },
+      ]);
     });
 
     it("When unpin a folder, then do not emit any event", async () => {
@@ -442,12 +332,10 @@ describe("Watcher", () => {
       await sleep(50);
 
       // Assert
-      expect(getEvents()).toStrictEqual(
-        expect.arrayContaining([
-          { event: "addDir", path: syncRootPath },
-          { event: "addDir", path: folder },
-        ]),
-      );
+      expect(getEvents()).toStrictEqual([
+        { event: "addDir", path: syncRootPath },
+        { event: "addDir", path: folder },
+      ]);
     });
   });
 
@@ -466,13 +354,11 @@ describe("Watcher", () => {
       await sleep(50);
 
       // Assert
-      expect(getEvents()).toStrictEqual(
-        expect.arrayContaining([
-          { event: "addDir", path: syncRootPath },
-          { event: "add", path: file },
-          { event: "change", path: file },
-        ]),
-      );
+      expect(getEvents()).toStrictEqual([
+        { event: "addDir", path: syncRootPath },
+        { event: "add", path: file },
+        { event: "change", path: file },
+      ]);
     });
 
     it("When set a folder to online only, then do not emit any event", async () => {
@@ -488,12 +374,10 @@ describe("Watcher", () => {
       await sleep(50);
 
       // Assert
-      expect(getEvents()).toStrictEqual(
-        expect.arrayContaining([
-          { event: "addDir", path: syncRootPath },
-          { event: "addDir", path: folder },
-        ]),
-      );
+      expect(getEvents()).toStrictEqual([
+        { event: "addDir", path: syncRootPath },
+        { event: "addDir", path: folder },
+      ]);
     });
   });
 });

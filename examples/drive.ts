@@ -1,20 +1,26 @@
+import { inspect } from "util";
+
 import { TBody } from "@/logger";
 import VirtualDrive from "@/virtual-drive";
 
 import settings from "./settings";
 
+const customInspect = (body: TBody) => {
+  return inspect(body, { depth: Infinity, colors: true, breakLength: Infinity });
+};
+
 export const logger = {
   debug(body: TBody) {
-    console.debug(body);
+    console.debug(customInspect(body));
   },
   info(body: TBody) {
-    console.info(body);
+    console.info(customInspect(body));
   },
   warn(body: TBody) {
-    console.warn(body);
+    console.warn(customInspect(body));
   },
   error(body: TBody) {
-    console.error(body);
+    console.error(customInspect(body));
   },
 };
 

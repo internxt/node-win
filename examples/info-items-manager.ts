@@ -25,10 +25,13 @@ export const deleteInfoItems = () => {
   writeFileSync(infoItemsPath, JSON.stringify({}));
 };
 
-export const addInfoItem = (itemPath: string) => {
+export const addInfoItem = ({ itemPath, isFile }: { itemPath: string; isFile: boolean }) => {
   const fileName = basename(itemPath);
   const serverItemPath = join(serverPath, fileName);
-  copyFileSync(itemPath, serverItemPath);
+
+  if (isFile) {
+    copyFileSync(itemPath, serverItemPath);
+  }
 
   const id = v4();
   const infoItems = getInfoItems();
@@ -38,7 +41,7 @@ export const addInfoItem = (itemPath: string) => {
   return id;
 };
 
-export const getInfoItem = (id: string) => {
+export const getInfoItem = ({ id }: { id: string }) => {
   const infoItems = getInfoItems();
   return infoItems[id];
 };
