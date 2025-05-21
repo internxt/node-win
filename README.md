@@ -1,3 +1,5 @@
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/internxt/node-win)
+
 # Setup
 
 This guide explains how to set up and build the `node-win` project.
