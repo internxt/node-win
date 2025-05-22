@@ -8,7 +8,8 @@
   "license": "MIT",
   "gypfile": true,
   "repository": {
-    "url": "https://github.com/internxt/node-win"
+    "type": "git",
+    "url": "git+https://github.com/internxt/node-win.git"
   },
   "scripts": {
     "clean": "node-gyp clean",
