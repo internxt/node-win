@@ -80,8 +80,6 @@ void Placeholders::CreateOne(
         prop.Id(1);
         prop.Value(L"Value1");
         prop.IconResource(L"shell32.dll,-44");
-
-        // UpdateSyncStatus(fullDestPath, true, false);
     }
     catch (...)
     {
@@ -121,10 +119,6 @@ void Placeholders::MaintainIdentity(std::wstring &fullPath, PCWSTR itemIdentity,
                 Placeholders::UpdateFileIdentity(fullPath, itemIdentityStrW, isDirectory);
             }
         }
-        else
-        {
-            // Handle error as needed
-        }
     }
 }
 
@@ -140,30 +134,27 @@ void Placeholders::CreateEntry(
     FILETIME lastAccessTime,
     _In_ PCWSTR destPath)
 {
-
     std::wstring fullDestPath = std::wstring(destPath) + L"\\" + std::wstring(itemName);
     CF_PLACEHOLDER_CREATE_INFO cloudEntry = {};
     std::wstring relativeName(itemIdentity);
     cloudEntry.FileIdentity = relativeName.c_str();
     cloudEntry.FileIdentityLength = static_cast<DWORD>((relativeName.size() + 1) * sizeof(WCHAR));
     cloudEntry.RelativeFileName = itemName;
-    cloudEntry.Flags = CF_PLACEHOLDER_CREATE_FLAG_DISABLE_ON_DEMAND_POPULATION; // -> desactive download on demand
+    cloudEntry.Flags = CF_PLACEHOLDER_CREATE_FLAG_DISABLE_ON_DEMAND_POPULATION;
     cloudEntry.FsMetadata.BasicInfo.FileAttributes = FILE_ATTRIBUTE_DIRECTORY;
     cloudEntry.FsMetadata.BasicInfo.CreationTime = Utilities::FileTimeToLargeInteger(creationTime);
     cloudEntry.FsMetadata.BasicInfo.LastWriteTime = Utilities::FileTimeToLargeInteger(lastWriteTime);
     try
     {
-        // TODO: si existe o es placeholder return
         if (DirectoryExists(fullDestPath.c_str()))
         {
             Placeholders::ConvertToPlaceholder(fullDestPath, itemIdentity);
             Placeholders::MaintainIdentity(fullDestPath, itemIdentity, true);
-            return; // No hacer nada si ya existe
+            return;
         }
 
-        if (isDirectory) // TODO: the function createEntry is used to create only folders (directories), so this if is always true
+        if (isDirectory)
         {
-            // wprintf(L"Create directory, full destination path: %ls, fullDestPath.c_str()");
             PathRemoveFileSpecW(&fullDestPath[0]);
             HRESULT hr = CfCreatePlaceholders(fullDestPath.c_str(), &cloudEntry, 1, CF_CREATE_FLAG_NONE, NULL);
             if (FAILED(hr))
@@ -207,7 +198,6 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
 
         if (fileHandle == INVALID_HANDLE_VALUE)
         {
-            // Manejar el error al abrir el archivo
             return false;
         }
 
@@ -222,24 +212,21 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
 
         if (FAILED(hr))
         {
-            // Manejar el error al convertir a marcador de posición
             if (hr != 0x8007017C)
             {
                 wprintf(L"[ConvertToPlaceholder] Error converting to placeholder, ConvertToPlaceholder failed with HRESULT 0x%X\n", hr);
             }
 
-            // Puedes obtener información detallada sobre el error usando FormatMessage
             LPVOID errorMsg;
             FormatMessageW(
                 FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
                 NULL,
                 hr,
-                0, // Default language
+                0,
                 (LPWSTR)&errorMsg,
                 0,
                 NULL);
 
-            // Liberar el buffer de mensaje de error
             LocalFree(errorMsg);
 
             CloseHandle(fileHandle);
@@ -248,24 +235,16 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
 
         if (!isDirectory)
         {
-            HRESULT hrPinState = CfSetPinState(fileHandle, CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
-            if (FAILED(hrPinState))
-            {
-                std::wstring errorMessage = Utilities::GetErrorMessageCloudFiles(hrPinState);
-                wprintf(L"[ConvertToPlaceholder] Error setting pin state, HRESULT: 0x%X\nDetails: %s\n", hrPinState, errorMessage.c_str());
-                CloseHandle(fileHandle);
-                return false;
-            }
+            Placeholders::UpdatePinState(fullPath, PinState::AlwaysLocal);
         }
 
         CloseHandle(fileHandle);
         wprintf(L"[ConvertToPlaceholder] Successfully converted to placeholder: %ls\n", fullPath.c_str());
         return true;
     }
-    catch (const winrt::hresult_error &error)
+    catch (...)
     {
-        // Manejar excepciones desconocidas
-        wprintf(L"[ConvertToPlaceholder] Unknown exception occurred\n");
+        wprintf(L"[ConvertToPlaceholder] Failed to convert to placeholder with %08x\n", static_cast<HRESULT>(winrt::to_hresult()));
         return false;
     }
 }
