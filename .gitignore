@@ -1,5 +1,5 @@
 /.vscode
 /bin
 /build
-/dist
+/dist/addon.node
 /venv
