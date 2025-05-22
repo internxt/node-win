@@ -9,10 +9,10 @@ This guide explains how to set up and build the `node-win` project.
 Before proceeding, ensure you have the following tools installed:
 
 - **Python 3.10**
-- **Node 18**
+- **Node 20**
 
 ```bash
-nvm install 18
+nvm install 20
 ```
 
 - **node-gyp**

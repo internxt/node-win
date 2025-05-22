@@ -1,6 +1,6 @@
 {
   "name": "@internxt/node-win",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "description": "Drive desktop node addon",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,5 +16,8 @@
     "build:gyp": "node-gyp configure build",
     "config:gyp": "python gyp.config.py",
     "build": "python gyp.config.py && node-gyp clean && node-gyp configure build"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }

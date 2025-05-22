@@ -1,4 +1,4 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.addon = void 0;
-exports.addon = require("./dist/addon.node");
+exports.addon = require("./addon.node");
