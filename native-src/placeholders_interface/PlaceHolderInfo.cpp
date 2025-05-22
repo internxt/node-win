@@ -136,7 +136,7 @@ std::optional<BYTE> PlaceHolderInfo::FileIdentity() const
     }
 
     printf("FILE OPTIONAL: %d\n", _data->FileIdentity[0]);
-    return _data->FileIdentity[0]; // Devuelve el primer byte del array
+    return _data->FileIdentity[0];
 }
 
 void FileHandle::deletePlaceholderInfo(CF_PLACEHOLDER_BASIC_INFO *info)
@@ -193,7 +193,6 @@ FileHandle handleForPath(const std::wstring &wPath)
         }
         else
         {
-            // Convert only for logging purposes
             std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
             std::string path = converter.to_bytes(wPath);
             printf("Could not CfOpenFileWithOplock for path: %s with error: %ld\n", path.c_str(), openResult);
@@ -202,7 +201,7 @@ FileHandle handleForPath(const std::wstring &wPath)
     else if (std::filesystem::is_regular_file(pathFs))
     {
         HANDLE handle = CreateFileW(
-            wPath.c_str(), // Use wide string path directly
+            wPath.c_str(),
             FILE_READ_ATTRIBUTES,
             FILE_SHARE_READ | FILE_SHARE_WRITE,
             nullptr,
