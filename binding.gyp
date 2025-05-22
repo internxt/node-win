@@ -54,7 +54,7 @@
       ],
       "copies": [
         {
-          "destination": ".",
+          "destination": "dist",
           "files": [
             "<(PRODUCT_DIR)/addon.node"
           ]
