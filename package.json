@@ -2,63 +2,18 @@
   "name": "@internxt/node-win",
   "version": "1.0.12",
   "description": "Drive desktop node addon",
-  "main": "dist/index.ts",
+  "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "author": "Internxt <hello@internxt.com>",
   "license": "MIT",
   "gypfile": true,
   "repository": {
-    "type": "git",
-    "url": "git+https://github.com/internxt/node-win.git"
+    "url": "https://github.com/internxt/node-win"
   },
   "scripts": {
-    "========== Testing ==========": "",
-    "test": "vitest",
-    "test:once": "npm run test -- --run",
-    "test:one": "npm run test -- related x",
-    "========== Build ==========": "",
     "clean": "node-gyp clean",
     "build:gyp": "node-gyp configure build",
-    "build:ts": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "config:gyp": "python gyp.config.py",
-    "build": "python gyp.config.py && node-gyp clean && node-gyp configure build && npm run build:ts",
-    "========== Linter ==========": "",
-    "lint": "eslint . --ext .ts,.tsx --max-warnings 13",
-    "lint:fix": "npm run run lint --fix",
-    "format": "prettier . --check",
-    "format:fix": "prettier . --write",
-    "type-check": "tsc",
-    "========== Examples ==========": "",
-    "register": "nodemon",
-    "populate": "ts-node -r tsconfig-paths/register ./examples/populate.ts",
-    "get-state": "ts-node -r tsconfig-paths/register ./examples/get-state.ts",
-    "unregister": "ts-node -r tsconfig-paths/register ./examples/unregister.ts",
-    "disconnect": "ts-node -r tsconfig-paths/register ./examples/disconnect.ts"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.24.0",
-    "@trivago/prettier-plugin-sort-imports": "^5.2.1",
-    "@types/lodash.chunk": "^4.2.9",
-    "@types/node": "^20.5.0",
-    "@types/yargs": "^17.0.32",
-    "eslint": "^9.24.0",
-    "globals": "^16.0.0",
-    "nodemon": "^3.1.9",
-    "prettier": "^3.4.2",
-    "ts-node": "^10.9.2",
-    "tsc-alias": "^1.8.10",
-    "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.1.6",
-    "typescript-eslint": "^8.30.1",
-    "uuid": "^11.1.0",
-    "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.0.5",
-    "vitest-mock-extended": "^2.0.2",
-    "yargs": "^17.7.2"
-  },
-  "dependencies": {
-    "chokidar": "^3.6.0",
-    "lodash.chunk": "^4.2.0",
-    "zod": "^3.24.1"
+    "build": "python gyp.config.py && node-gyp clean && node-gyp configure build"
   }
 }

@@ -1,3 +1,5 @@
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/internxt/node-win)
+
 # Setup
 
 This guide explains how to set up and build the `node-win` project.
@@ -11,12 +13,6 @@ Before proceeding, ensure you have the following tools installed:
 
 ```bash
 nvm install 18
-```
-
-- **yarn**
-
-```bash
-npm install -g yarn
 ```
 
 - **node-gyp**

@@ -54,12 +54,6 @@
       ],
       "copies": [
         {
-          "destination": ".",
-          "files": [
-            "<(PRODUCT_DIR)/addon.node"
-          ]
-        },
-        {
           "destination": "dist",
           "files": [
             "<(PRODUCT_DIR)/addon.node"
