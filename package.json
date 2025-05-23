@@ -16,5 +16,8 @@
     "build:gyp": "node-gyp configure build",
     "config:gyp": "python gyp.config.py",
     "build": "python gyp.config.py && node-gyp clean && node-gyp configure build"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }
