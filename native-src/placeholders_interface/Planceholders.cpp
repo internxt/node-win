@@ -497,29 +497,41 @@ std::vector<std::wstring> Placeholders::GetPlaceholderWithStatePending(const std
 {
     std::vector<std::wstring> resultPaths;
 
-    for (const auto &entry : std::filesystem::directory_iterator(directoryPath))
+    try
     {
-        const auto &path = entry.path().wstring();
+        for (const auto &entry : std::filesystem::directory_iterator(directoryPath, std::filesystem::directory_options::skip_permission_denied))
+        {
+            const auto &path = entry.path().wstring();
 
-        if (entry.is_directory())
-        {
-            std::vector<std::wstring> subfolderPaths = GetPlaceholderWithStatePending(path);
-            resultPaths.insert(resultPaths.end(), subfolderPaths.begin(), subfolderPaths.end());
-        }
-        else if (entry.is_regular_file())
-        {
-            FileState placeholderState = Placeholders::GetPlaceholderInfo(path);
-            bool isFileValidForSync = (placeholderState.syncstate == SyncState::Undefined || placeholderState.syncstate == SyncState::NotInSync);
-            if (isFileValidForSync && IsFileValidForSync(path))
+            if (entry.is_directory())
             {
-                resultPaths.push_back(path);
+                FileState folderState = Placeholders::GetPlaceholderInfo(path);
+
+                if (folderState.syncstate == SyncState::Undefined || folderState.syncstate == SyncState::NotInSync)
+                {
+                    std::vector<std::wstring> subfolderPaths = GetPlaceholderWithStatePending(path);
+                    resultPaths.insert(resultPaths.end(), subfolderPaths.begin(), subfolderPaths.end());
+                }
+            }
+            else if (entry.is_regular_file())
+            {
+                FileState placeholderState = Placeholders::GetPlaceholderInfo(path);
+
+                bool isFileValidForSync = (placeholderState.syncstate == SyncState::Undefined || placeholderState.syncstate == SyncState::NotInSync);
+                if (isFileValidForSync && IsFileValidForSync(path))
+                {
+                    resultPaths.push_back(path);
+                }
             }
         }
+    }
+    catch (const std::exception &e)
+    {
+        wprintf(L"[GetPlaceholderWithStatePending] Error: %s\n", e.what());
     }
 
     return resultPaths;
 }
-
 bool Placeholders::IsFileValidForSync(const std::wstring &filePath)
 {
     // Obtener un handle al archivo
@@ -553,7 +565,7 @@ bool Placeholders::IsFileValidForSync(const std::wstring &filePath)
     }
 
     LARGE_INTEGER maxFileSize;
-    maxFileSize.QuadPart = 20LL * 1024 * 1024 * 1024; // 20GB
+    maxFileSize.QuadPart = 40LL * 1024 * 1024 * 1024; // 20GB
 
     if (fileSize.QuadPart > maxFileSize.QuadPart)
     {
