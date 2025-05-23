@@ -45,15 +45,11 @@ void Placeholders::CreateOne(
 
         wstring fullPath = std::wstring(destPath) + L'\\' + fileName;
 
-        wprintf(L"[CreatePlaceholder] Full path: %s", fullPath.c_str());
-        wprintf(L"\n");
-
         if (std::filesystem::exists(fullPath))
         {
             Placeholders::ConvertToPlaceholder(fullPath, fileIdentity);
-            wprintf(L"[CreatePlaceholder] File already exists. Skipping creation. Initializing identity maintenance...\n");
             Placeholders::MaintainIdentity(fullPath, fileIdentity, false);
-            return; // No hacer nada si ya existe
+            return;
         }
 
         std::wstring relativeName(fileIdentity);
@@ -85,7 +81,6 @@ void Placeholders::CreateOne(
         prop.Value(L"Value1");
         prop.IconResource(L"shell32.dll,-44");
 
-        wprintf(L"[CreatePlaceholder] Successfully created placeholder file\n");
         // UpdateSyncStatus(fullDestPath, true, false);
     }
     catch (...)
@@ -112,7 +107,6 @@ void Placeholders::MaintainIdentity(std::wstring &fullPath, PCWSTR itemIdentity,
     std::string identity = Placeholders::GetFileIdentity(fullPath);
     if (!identity.empty())
     {
-        wprintf(L"[MaintainIdentity] Identity is not empty\n");
         int len = WideCharToMultiByte(CP_UTF8, 0, itemIdentity, -1, NULL, 0, NULL, NULL);
         if (len > 0)
         {
@@ -120,13 +114,7 @@ void Placeholders::MaintainIdentity(std::wstring &fullPath, PCWSTR itemIdentity,
             WideCharToMultiByte(CP_UTF8, 0, itemIdentity, -1, &itemIdentityStr[0], len, NULL, NULL);
             std::string cleanIdentity = cleanString(identity);
             std::string cleanItemIdentity = cleanString(itemIdentityStr);
-            printf("[MaintainIdentity] cleanCurrentIdentity: %s\n", cleanIdentity.c_str());
-            printf("[MaintainIdentity] cleanItemIdentity: %s\n", cleanItemIdentity.c_str());
-            if (cleanIdentity == cleanItemIdentity)
-            {
-                wprintf(L"[MaintainIdentity] Identity is corret not need to update\n");
-            }
-            else
+            if (cleanIdentity != cleanItemIdentity)
             {
                 wprintf(L"[MaintainIdentity] Identity is incorrect, updating...\n");
                 std::wstring itemIdentityStrW(itemIdentity);
@@ -138,7 +126,6 @@ void Placeholders::MaintainIdentity(std::wstring &fullPath, PCWSTR itemIdentity,
             // Handle error as needed
         }
     }
-    printf("[MaintainIdentity] End Maintain Identity\n");
 }
 
 void Placeholders::CreateEntry(
@@ -170,7 +157,6 @@ void Placeholders::CreateEntry(
         if (DirectoryExists(fullDestPath.c_str()))
         {
             Placeholders::ConvertToPlaceholder(fullDestPath, itemIdentity);
-            wprintf(L"[CreatePlaceholder] Directory already exists. Skipping creation. Initializing identity maintenance...\n");
             Placeholders::MaintainIdentity(fullDestPath, itemIdentity, true);
             return; // No hacer nada si ya existe
         }
@@ -185,17 +171,11 @@ void Placeholders::CreateEntry(
                 wprintf(L"[CreatePlaceholder] Failed to create placeholder directory with HRESULT 0x%08x\n", hr);
                 throw winrt::hresult_error(hr);
             }
-            else
-            {
-                wprintf(L"[CreatePlaceholder] Successfully created placeholder directory\n");
-            }
 
             std::wstring finalPath = std::wstring(destPath) + L"\\" + std::wstring(itemName);
             Placeholders::UpdatePinState(finalPath, PinState::OnlineOnly);
             UpdateSyncStatus(finalPath, true, true);
         }
-
-        wprintf(L"[CreatePlaceholder] Successfully created %s at %s\n", isDirectory ? L"directory" : L"file", fullDestPath.c_str());
     }
     catch (const winrt::hresult_error &error)
     {
@@ -209,28 +189,25 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
     {
         if (!std::filesystem::exists(fullPath))
         {
-            // El archivo no existe
             wprintf(L"[ConvertToPlaceholder] File does not exist\n");
             return false;
         }
 
-        // Obtener un handle al archivo
+        wprintf(L"[ConvertToPlaceholder] Full path: %ls\n", fullPath.c_str());
         bool isDirectory = fs::is_directory(fullPath);
 
-        // Obtener un handle al archivo o carpeta
         HANDLE fileHandle = CreateFileW(
             fullPath.c_str(),
             FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES,
             FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
             nullptr,
             OPEN_EXISTING,
-            isDirectory ? FILE_FLAG_BACKUP_SEMANTICS : 0, // Agregar FILE_FLAG_BACKUP_SEMANTICS si es una carpeta
+            isDirectory ? FILE_FLAG_BACKUP_SEMANTICS : 0,
             nullptr);
 
         if (fileHandle == INVALID_HANDLE_VALUE)
         {
             // Manejar el error al abrir el archivo
-            wprintf(L"[ConvertToPlaceholder] Error opening file: %d\n", GetLastError());
             return false;
         }
 
@@ -238,7 +215,6 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
         USN convertUsn;
         OVERLAPPED overlapped = {};
 
-        // Convierte la cadena de la identidad del servidor a LPCVOID
         LPCVOID idStrLPCVOID = static_cast<LPCVOID>(serverIdentity.c_str());
         DWORD idStrByteLength = static_cast<DWORD>(serverIdentity.size() * sizeof(wchar_t));
 
@@ -247,7 +223,10 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
         if (FAILED(hr))
         {
             // Manejar el error al convertir a marcador de posición
-            wprintf(L"[ConvertToPlaceholder] Error converting to placeholder, ConvertToPlaceholder failed with HRESULT 0x%X\n", hr);
+            if (hr != 0x8007017C)
+            {
+                wprintf(L"[ConvertToPlaceholder] Error converting to placeholder, ConvertToPlaceholder failed with HRESULT 0x%X\n", hr);
+            }
 
             // Puedes obtener información detallada sobre el error usando FormatMessage
             LPVOID errorMsg;
@@ -260,19 +239,23 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
                 0,
                 NULL);
 
-            wprintf(L"[ConvertToPlaceholder] Error details: %s\n", errorMsg);
-
             // Liberar el buffer de mensaje de error
             LocalFree(errorMsg);
 
             CloseHandle(fileHandle);
-
             return false;
         }
 
         if (!isDirectory)
         {
-            CfSetPinState(fileHandle, CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
+            HRESULT hrPinState = CfSetPinState(fileHandle, CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
+            if (FAILED(hrPinState))
+            {
+                std::wstring errorMessage = Utilities::GetErrorMessageCloudFiles(hrPinState);
+                wprintf(L"[ConvertToPlaceholder] Error setting pin state, HRESULT: 0x%X\nDetails: %s\n", hrPinState, errorMessage.c_str());
+                CloseHandle(fileHandle);
+                return false;
+            }
         }
 
         CloseHandle(fileHandle);
@@ -287,48 +270,106 @@ bool Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std:
     }
 }
 
+std::wstring GetErrorMessageFromHRESULT(HRESULT hr)
+{
+    LPWSTR errorMessage = nullptr;
+    DWORD result = FormatMessageW(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        nullptr,
+        hr,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        reinterpret_cast<LPWSTR>(&errorMessage),
+        0,
+        nullptr);
+
+    std::wstring message;
+    if (result > 0 && errorMessage)
+    {
+        message = errorMessage;
+        LocalFree(errorMessage);
+    }
+    else
+    {
+        message = L"Error desconocido";
+    }
+
+    return message;
+}
+
 /**
  * @brief Mark a file or directory as synchronized
  * @param filePath path to the file or directory
  * @param isDirectory true if the path is a directory, false if it is a file
  * @return void
  */
-void Placeholders::UpdateSyncStatus(const std::wstring &filePath, bool inputSyncState, bool isDirectory = false)
+void Placeholders::UpdateSyncStatus(const std::wstring &filePath,
+                                    bool inputSyncState,
+                                    bool isDirectory /* = false */)
 {
     wprintf(L"[UpdateSyncStatus] Path: %ls\n", filePath.c_str());
-    HANDLE fileHandle = CreateFileW(
-        filePath.c_str(),
-        FILE_WRITE_ATTRIBUTES, // permisson needed to change the state
-        FILE_SHARE_READ | FILE_SHARE_WRITE,
-        nullptr,
-        OPEN_EXISTING,
-        isDirectory ? FILE_FLAG_BACKUP_SEMANTICS : FILE_ATTRIBUTE_NORMAL,
-        nullptr);
 
-    if (fileHandle == INVALID_HANDLE_VALUE)
+    DWORD flags = FILE_FLAG_OPEN_REPARSE_POINT;
+    if (isDirectory)
+        flags |= FILE_FLAG_BACKUP_SEMANTICS;
+
+    HANDLE h = CreateFileW(filePath.c_str(),
+                           FILE_WRITE_ATTRIBUTES,
+                           FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                           nullptr,
+                           OPEN_EXISTING,
+                           flags,
+                           nullptr);
+
+    if (h == INVALID_HANDLE_VALUE)
     {
-        wprintf(L"[UpdateSyncStatus] Error al abrir el archivo: %d\n", GetLastError());
+        wprintf(L"[UpdateSyncStatus] CreateFileW falló: %lu\n", GetLastError());
+        CloseHandle(h);
         return;
     }
 
-    // https://learn.microsoft.com/en-us/windows/win32/api/cfapi/nf-cfapi-cfsetinsyncstate
-    // https://learn.microsoft.com/en-us/windows/win32/api/cfapi/ne-cfapi-cf_in_sync_state
-    CF_IN_SYNC_STATE syncState = inputSyncState ? CF_IN_SYNC_STATE_IN_SYNC : CF_IN_SYNC_STATE_NOT_IN_SYNC;
-    // wprintf(L"Marking item as %s: %ls\n", inputSyncState ? L"IN_SYNC" : L"NOT_IN_SYNC", filePath.c_str());
-    HRESULT hr = CfSetInSyncState(fileHandle, syncState, CF_SET_IN_SYNC_FLAG_NONE, nullptr);
-    // imprimir hresult
-    wprintf(L"hr: %ld\n", hr);
+    CF_IN_SYNC_STATE sync = inputSyncState ? CF_IN_SYNC_STATE_IN_SYNC
+                                           : CF_IN_SYNC_STATE_NOT_IN_SYNC;
+
+    HRESULT hr = CfSetInSyncState(h, sync, CF_SET_IN_SYNC_FLAG_NONE, nullptr);
+
     if (FAILED(hr))
     {
-        wprintf(L"[UpdateSyncStatus] Error al establecer el estado de sincronización: %ld\n", hr);
+        switch (HRESULT_CODE(hr))
+        {
+        case ERROR_RETRY:
+            Sleep(50);
+            hr = CfSetInSyncState(h, sync, CF_SET_IN_SYNC_FLAG_NONE, nullptr);
+            wprintf(L"[UpdateSyncStatus] Retry CfSetInSyncState\n");
+            break;
+
+        case ERROR_CLOUD_FILE_PROVIDER_NOT_RUNNING: // 0x1A94
+            SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATH, filePath.c_str(), nullptr);
+            wprintf(L"[UpdateSyncStatus] Retry CfSetInSyncState\n");
+            break;
+
+        case ERROR_CLOUD_FILE_NOT_IN_SYNC:
+            ConvertToPlaceholder(filePath, L"temp_identity");
+            hr = CfSetInSyncState(h, sync, CF_SET_IN_SYNC_FLAG_NONE, nullptr);
+            wprintf(L"[UpdateSyncStatus] Retry CfSetInSyncState\n");
+            break;
+
+        default:
+            wprintf(L"[UpdateSyncStatus] CfSetInSyncState 0x%08X\n", hr);
+            break;
+        }
+    }
+    else
+    {
+        wprintf(L"[UpdateSyncStatus] Estado actualizado\n");
     }
 
-    CloseHandle(fileHandle);
+    CloseHandle(h);
+
+    SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATH, filePath.c_str(), nullptr);
 }
 
 void Placeholders::UpdateFileIdentity(const std::wstring &filePath, const std::wstring &fileIdentity, bool isDirectory)
 {
-    wprintf(L"[UpdateFileIdentity] Path: %ls\n", filePath.c_str());
     HANDLE fileHandle = CreateFileW(
         filePath.c_str(),
         FILE_WRITE_ATTRIBUTES, // permisson needed to change the state
@@ -372,46 +413,13 @@ void Placeholders::UpdateFileIdentity(const std::wstring &filePath, const std::w
 
     if (FAILED(hr))
     {
-        wprintf(L"[UpdateFileIdentity] Error updating fileIdentity: 0x%08X\n", hr);
-        LPWSTR errorMessage = nullptr;
-        FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                       nullptr,
-                       HRESULT_CODE(hr),
-                       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                       reinterpret_cast<LPWSTR>(&errorMessage),
-                       0,
-                       nullptr);
-        if (errorMessage)
-        {
-            wprintf(L"[UpdateFileIdentity] Error: %ls\n", errorMessage);
-            LocalFree(errorMessage);
-        }
-    }
-
-    CloseHandle(fileHandle);
-}
-
-CF_PLACEHOLDER_STATE Placeholders::GetPlaceholderState(const std::wstring &filePath)
-{
-    HANDLE fileHandle = CreateFileW(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
-    if (fileHandle == INVALID_HANDLE_VALUE)
-    {
-        // Error al abrir el archivo
-        return CF_PLACEHOLDER_STATE_INVALID;
-    }
-
-    FILE_BASIC_INFO fileBasicInfo;
-    if (!GetFileInformationByHandleEx(fileHandle, FileBasicInfo, &fileBasicInfo, sizeof(fileBasicInfo)))
-    {
-        // Error al obtener la información básica del archivo
+        std::wstring errorMessage = Utilities::GetErrorMessageCloudFiles(hr);
+        wprintf(L"[UpdateFileIdentity] Error updating fileIdentity: %ls\n", errorMessage.c_str());
         CloseHandle(fileHandle);
-        return CF_PLACEHOLDER_STATE_INVALID;
+        return;
     }
 
-    CF_PLACEHOLDER_STATE placeholderState = CfGetPlaceholderStateFromFileInfo(&fileBasicInfo, FileBasicInfo);
     CloseHandle(fileHandle);
-
-    return placeholderState;
 }
 
 std::string Placeholders::GetFileIdentity(const std::wstring &filePath)
@@ -435,23 +443,6 @@ std::string Placeholders::GetFileIdentity(const std::wstring &filePath)
         return "";
     }
 }
-
-CF_PLACEHOLDER_STATE GetPlaceholderStateMock(const std::wstring &filePath)
-{
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    static std::uniform_int_distribution<int> dis(0, 1);
-
-    if (dis(gen) == 0)
-    {
-        return CF_PLACEHOLDER_STATE_IN_SYNC;
-    }
-    else
-    {
-        return CF_PLACEHOLDER_STATE_SYNC_ROOT;
-    }
-}
-
 
 FileState Placeholders::GetPlaceholderInfo(const std::wstring &directoryPath)
 {
@@ -488,24 +479,12 @@ FileState Placeholders::GetPlaceholderInfo(const std::wstring &directoryPath)
     {
 
         SyncState syncState = syncStateOpt.value();
-
-        printf("placeholderInfo.SyncState: %s\n", syncStateToString(syncState).c_str());
-    }
-    else
-    {
-        printf("placeholderInfo.SyncState: No value\n");
     }
 
     if (pinStateOpt.has_value())
     {
 
         PinState pinState = pinStateOpt.value();
-
-        printf("placeholderInfo.PinState: %s\n", pinStateToString(pinState).c_str());
-    }
-    else
-    {
-        printf("placeholderInfo.PinState: No value\n");
     }
 
     fileState.pinstate = pinStateOpt.value_or(PinState::Unspecified);
@@ -518,29 +497,41 @@ std::vector<std::wstring> Placeholders::GetPlaceholderWithStatePending(const std
 {
     std::vector<std::wstring> resultPaths;
 
-    for (const auto &entry : std::filesystem::directory_iterator(directoryPath))
+    try
     {
-        const auto &path = entry.path().wstring();
+        for (const auto &entry : std::filesystem::directory_iterator(directoryPath, std::filesystem::directory_options::skip_permission_denied))
+        {
+            const auto &path = entry.path().wstring();
 
-        if (entry.is_directory())
-        {
-            std::vector<std::wstring> subfolderPaths = GetPlaceholderWithStatePending(path);
-            resultPaths.insert(resultPaths.end(), subfolderPaths.begin(), subfolderPaths.end());
-        }
-        else if (entry.is_regular_file())
-        {
-            FileState placeholderState = Placeholders::GetPlaceholderInfo(path);
-            bool isFileValidForSync = (placeholderState.syncstate == SyncState::Undefined || placeholderState.syncstate == SyncState::NotInSync);
-            if (isFileValidForSync && IsFileValidForSync(path))
+            if (entry.is_directory())
             {
-                resultPaths.push_back(path);
+                FileState folderState = Placeholders::GetPlaceholderInfo(path);
+
+                if (folderState.syncstate == SyncState::Undefined || folderState.syncstate == SyncState::NotInSync)
+                {
+                    std::vector<std::wstring> subfolderPaths = GetPlaceholderWithStatePending(path);
+                    resultPaths.insert(resultPaths.end(), subfolderPaths.begin(), subfolderPaths.end());
+                }
+            }
+            else if (entry.is_regular_file())
+            {
+                FileState placeholderState = Placeholders::GetPlaceholderInfo(path);
+
+                bool isFileValidForSync = (placeholderState.syncstate == SyncState::Undefined || placeholderState.syncstate == SyncState::NotInSync);
+                if (isFileValidForSync && IsFileValidForSync(path))
+                {
+                    resultPaths.push_back(path);
+                }
             }
         }
+    }
+    catch (const std::exception &e)
+    {
+        wprintf(L"[GetPlaceholderWithStatePending] Error: %s\n", e.what());
     }
 
     return resultPaths;
 }
-
 bool Placeholders::IsFileValidForSync(const std::wstring &filePath)
 {
     // Obtener un handle al archivo
@@ -574,7 +565,7 @@ bool Placeholders::IsFileValidForSync(const std::wstring &filePath)
     }
 
     LARGE_INTEGER maxFileSize;
-    maxFileSize.QuadPart = 20LL * 1024 * 1024 * 1024; // 20GB
+    maxFileSize.QuadPart = 40LL * 1024 * 1024 * 1024; // 20GB
 
     if (fileSize.QuadPart > maxFileSize.QuadPart)
     {
@@ -597,7 +588,6 @@ bool Placeholders::IsFileValidForSync(const std::wstring &filePath)
 
 void Placeholders::ForceShellRefresh(const std::wstring &path)
 {
-    Logger::getInstance().log("Forcing shell refresh for path: " + Logger::fromWStringToString(path), LogLevel::INFO);
     SHChangeNotify(SHCNE_UPDATEDIR, SHCNF_PATH, path.c_str(), nullptr);
     SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATH, path.c_str(), nullptr);
 }
@@ -607,7 +597,7 @@ HRESULT Placeholders::UpdatePinState(const std::wstring &path, const PinState st
 
     const auto cfState = pinStateToCfPinState(state);
     HRESULT result = CfSetPinState(handleForPath(path).get(), cfState, CF_SET_PIN_FLAG_NONE, nullptr);
-    
+
     // ForceShellRefresh(path);
 
     if (result != S_OK)

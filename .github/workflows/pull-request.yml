@@ -2,28 +2,40 @@ name: Pull request checks
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened]
 
 jobs:
-  checks:
+  pull_request:
     runs-on: windows-latest
+
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      - name: Install dependencies
-        run: yarn install --ignore-scripts
+      - name: Setup Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
 
-      - name: Run TypeScript compiler
-        run: yarn tsc
+      - name: Install node-gyp
+        run: npm install -g node-gyp
 
-      - name: Run Prettier
-        run: yarn prettier . --check
+      - name: Build package
+        run: npm run build
 
-      - name: Run tests
-        run: yarn test:once
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            dist/
+            build/

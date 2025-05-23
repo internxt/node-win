@@ -5,6 +5,15 @@
 #include "LoggerPath.h"
 #include <Logger.h>
 #include <SyncRoot.h>
+#include <codecvt>
+#include <locale>
+#include <vector>
+
+std::string WStringToUTF8(const std::wstring &wstr)
+{
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
+    return conv.to_bytes(wstr);
+}
 
 napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
 {
@@ -200,6 +209,71 @@ napi_value RegisterSyncRootWrapper(napi_env env, napi_callback_info args)
     napi_value napiResult;
     napi_create_int32(env, static_cast<int32_t>(result), &napiResult);
     return napiResult;
+}
+
+napi_value GetRegisteredSyncRootsWrapper(napi_env env, napi_callback_info args)
+{
+    try
+    {
+        std::vector<SyncRoots> roots = SyncRoot::GetRegisteredSyncRoots();
+
+        napi_value jsArray;
+        napi_status status = napi_create_array_with_length(env, roots.size(), &jsArray);
+        if (status != napi_ok)
+            throw std::runtime_error("Error creating the array");
+
+        for (size_t i = 0; i < roots.size(); i++)
+        {
+            napi_value jsObj;
+            status = napi_create_object(env, &jsObj);
+            if (status != napi_ok)
+                throw std::runtime_error("Error creating the object");
+
+            std::string id = WStringToUTF8(roots[i].id);
+            napi_value napiId;
+            status = napi_create_string_utf8(env, id.c_str(), id.size(), &napiId);
+            if (status != napi_ok)
+                throw std::runtime_error("Error creating the string id");
+            napi_set_named_property(env, jsObj, "id", napiId);
+
+            std::string path = WStringToUTF8(roots[i].path);
+            napi_value napiPath;
+            status = napi_create_string_utf8(env, path.c_str(), path.size(), &napiPath);
+            if (status != napi_ok)
+                throw std::runtime_error("Error creating the string path");
+            napi_set_named_property(env, jsObj, "path", napiPath);
+
+            std::string displayName = WStringToUTF8(roots[i].displayName);
+            napi_value napiDisplayName;
+            status = napi_create_string_utf8(env, displayName.c_str(), displayName.size(), &napiDisplayName);
+            if (status != napi_ok)
+                throw std::runtime_error("Error creating the string displayName");
+            napi_set_named_property(env, jsObj, "displayName", napiDisplayName);
+
+            std::string version = WStringToUTF8(roots[i].version);
+            napi_value napiVersion;
+            status = napi_create_string_utf8(env, version.c_str(), version.size(), &napiVersion);
+            if (status != napi_ok)
+                throw std::runtime_error("Error creating the string version");
+            napi_set_named_property(env, jsObj, "version", napiVersion);
+
+            status = napi_set_element(env, jsArray, i, jsObj);
+            if (status != napi_ok)
+                throw std::runtime_error("Error setting the element in the array");
+        }
+
+        return jsArray;
+    }
+    catch (const std::exception &ex)
+    {
+        napi_throw_error(env, nullptr, ex.what());
+        return nullptr;
+    }
+    catch (...)
+    {
+        napi_throw_error(env, nullptr, "An unknown error occurred in GetRegisteredSyncRootsWrapper");
+        return nullptr;
+    }
 }
 
 napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args)
@@ -448,7 +522,6 @@ napi_value DisconnectSyncRootWrapper(napi_env env, napi_callback_info args)
 
 napi_value GetFileIdentityWrapper(napi_env env, napi_callback_info args)
 {
-    printf("GetFileIdentityWrapper\n");
     size_t argc = 1;
     napi_value argv[1];
     napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
@@ -466,7 +539,6 @@ napi_value GetFileIdentityWrapper(napi_env env, napi_callback_info args)
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(fullPath)), pathLength + 1, nullptr);
 
     std::string fileIdentity = Placeholders::GetFileIdentity(fullPath);
-    printf("fileIdentity got\n");
     fileIdentity.erase(std::remove(fileIdentity.begin(), fileIdentity.end(), '\0'), fileIdentity.end());
     fileIdentity.erase(std::remove(fileIdentity.begin(), fileIdentity.end(), ' '), fileIdentity.end());
 
@@ -497,7 +569,6 @@ napi_value DeleteFileSyncRootWrapper(napi_env env, napi_callback_info args)
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(fullPath)), pathLength + 1, nullptr);
 
     SyncRoot::DeleteFileSyncRoot(fullPath);
-    printf("fileIdentity got\n");
 
     delete[] fullPath;
     return nullptr;

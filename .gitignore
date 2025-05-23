@@ -1,11 +1,6 @@
-/.env
 /.vscode
 /addon.node
 /bin
 /build
 /dist
-/examples/tmp
-/node_modules
-/package-lock.json
-/test-files
 /venv

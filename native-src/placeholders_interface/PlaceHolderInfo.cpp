@@ -163,14 +163,20 @@ FileHandle handleForPath(const std::wstring &wPath)
         return {};
     }
 
-    // Convertir std::wstring a std::string
-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-    std::string path = converter.to_bytes(wPath);
+    /**
+     *  v1.0.9 Jonathan Arce
+     *
+     * We directly use the wPath parameter in handleForPath for several important reasons:
+     *
+     * 1. Performance optimization: Using wPath directly avoids unnecessary string conversions
+     *    between wide strings and UTF-8/ANSI, which would be costly for file operations.
+     *
+     * 2. Unicode support: Windows APIs like CfOpenFileWithOplock and CreateFileW require wide
+     *    character strings (wchar_t) to properly handle Unicode paths with international
+     *    characters, spaces, and special symbols.
+     */
 
-    printf("path IN HANDLERCREATOR: %s\n", path.c_str());
-    LPCSTR pPath = path.c_str();
-
-    std::filesystem::path pathFs(path);
+    std::filesystem::path pathFs(wPath);
     if (!std::filesystem::exists(pathFs))
     {
         return {};
@@ -187,13 +193,16 @@ FileHandle handleForPath(const std::wstring &wPath)
         }
         else
         {
+            // Convert only for logging purposes
+            std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+            std::string path = converter.to_bytes(wPath);
             printf("Could not CfOpenFileWithOplock for path: %s with error: %ld\n", path.c_str(), openResult);
         }
     }
     else if (std::filesystem::is_regular_file(pathFs))
     {
-        HANDLE handle = CreateFile(
-            pPath,
+        HANDLE handle = CreateFileW(
+            wPath.c_str(), // Use wide string path directly
             FILE_READ_ATTRIBUTES,
             FILE_SHARE_READ | FILE_SHARE_WRITE,
             nullptr,
@@ -207,6 +216,9 @@ FileHandle handleForPath(const std::wstring &wPath)
         }
         else
         {
+            // Convert only for logging purposes
+            std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+            std::string path = converter.to_bytes(wPath);
             printf("Could not CreateFile for path: %s with error: %ld\n", path.c_str(), GetLastError());
         }
     }

@@ -31,7 +31,7 @@ public:
         return instance;
     }
 
-    void log(const std::string &message, LogLevel level);
+    void log(const std::string &message, LogLevel level, WORD color = 0);
 
     Logger(const Logger&) = delete;
     Logger& operator=(const Logger&) = delete;
