@@ -42,8 +42,6 @@ void SyncRoot::HydrateFile(const wchar_t *filePath)
 
         if (attrib & FILE_ATTRIBUTE_PINNED)
         {
-            // if (!(attrib & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS))
-            // {
             Logger::getInstance().log("Hydration file init", LogLevel::INFO);
 
             auto start = std::chrono::steady_clock::now();
@@ -68,19 +66,12 @@ void SyncRoot::HydrateFile(const wchar_t *filePath)
                     wprintf(L"Hydration finished %ls\n", filePath);
                 }
             }
-            // }
-            // else
-            // {
-            //     wprintf(L"File is already hydrated: %ls\n", filePath);
-            //     Logger::getInstance().log("File is already hydrated " + Logger::fromWStringToString(filePath), LogLevel::INFO);
-            // }
         }
     }
 }
 
 void SyncRoot::DehydrateFile(const wchar_t *filePath)
 {
-    // Logger::getInstance().log("Dehydration file init", LogLevel::INFO);
     wprintf(L"Dehydration file init %ls\n", filePath);
     DWORD attrib = GetFileAttributesW(filePath);
     if (!(attrib & FILE_ATTRIBUTE_DIRECTORY))
@@ -94,7 +85,6 @@ void SyncRoot::DehydrateFile(const wchar_t *filePath)
 
         if (attrib & FILE_ATTRIBUTE_UNPINNED)
         {
-            // Logger::getInstance().log("Dehydrating file " + Logger::fromWStringToString(filePath), LogLevel::INFO);
             wprintf(L"Dehydrating file starteeed %ls\n", filePath);
             HRESULT hr = CfDehydratePlaceholder(placeholder.get(), offset, length, CF_DEHYDRATE_FLAG_NONE, NULL);
 
@@ -115,12 +105,10 @@ void SyncRoot::DehydrateFile(const wchar_t *filePath)
                 {
                     wprintf(L"Error dehydrating file %ls\n", filePath);
                 }
-                // Logger::getInstance().log("Error dehydrating file " + Logger::fromWStringToString(filePath), LogLevel::ERROR);
             }
             else
             {
                 wprintf(L"Dehydration finished %ls\n", filePath);
-                // Logger::getInstance().log("Dehydration finished " + Logger::fromWStringToString(filePath), LogLevel::INFO);
             }
         }
     }
