@@ -92,7 +92,7 @@ napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
     destPath = new WCHAR[destPathLength + 1];
     napi_get_value_string_utf16(env, argv[7], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(destPath)), destPathLength + 1, nullptr);
 
-    Placeholders::CreateOne(
+    PlaceholderResult result = Placeholders::CreateOne(
         fileName,
         fileIdentity,
         fileSize,
@@ -103,13 +103,28 @@ napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
         lastAccessTime,
         destPath);
 
+    // Create result object
+    napi_value resultObj;
+    napi_create_object(env, &resultObj);
+
+    // Add success property
+    napi_value successValue;
+    napi_get_boolean(env, result.success, &successValue);
+    napi_set_named_property(env, resultObj, "success", successValue);
+
+    // Add errorMessage property if there is an error
+    if (!result.success && !result.errorMessage.empty())
+    {
+        napi_value errorMessageValue;
+        napi_create_string_utf16(env, reinterpret_cast<const char16_t*>(result.errorMessage.c_str()), result.errorMessage.length(), &errorMessageValue);
+        napi_set_named_property(env, resultObj, "errorMessage", errorMessageValue);
+    }
+
     delete[] fileName;
     delete[] fileIdentity;
     delete[] destPath;
 
-    napi_value result;
-    napi_get_boolean(env, true, &result);
-    return result;
+    return resultObj;
 }
 
 napi_value UnregisterSyncRootWrapper(napi_env env, napi_callback_info args)
@@ -470,7 +485,7 @@ napi_value CreateEntryWrapper(napi_env env, napi_callback_info args)
     destPath = new WCHAR[destPathLength + 1];
     napi_get_value_string_utf16(env, argv[8], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(destPath)), destPathLength + 1, nullptr);
 
-    Placeholders::CreateEntry(
+    PlaceholderResult result = Placeholders::CreateEntry(
         itemName,
         itemIdentity,
         isDirectory,
@@ -482,13 +497,28 @@ napi_value CreateEntryWrapper(napi_env env, napi_callback_info args)
         lastAccessTime,
         destPath);
 
+    // Create result object
+    napi_value resultObj;
+    napi_create_object(env, &resultObj);
+
+    // Add success property
+    napi_value successValue;
+    napi_get_boolean(env, result.success, &successValue);
+    napi_set_named_property(env, resultObj, "success", successValue);
+
+    // Add errorMessage property if there is an error
+    if (!result.success && !result.errorMessage.empty())
+    {
+        napi_value errorMessageValue;
+        napi_create_string_utf16(env, reinterpret_cast<const char16_t*>(result.errorMessage.c_str()), result.errorMessage.length(), &errorMessageValue);
+        napi_set_named_property(env, resultObj, "errorMessage", errorMessageValue);
+    }
+
     delete[] itemName;
     delete[] itemIdentity;
     delete[] destPath;
 
-    napi_value result;
-    napi_get_boolean(env, true, &result);
-    return result;
+    return resultObj;
 }
 
 // disconection wrapper
@@ -718,36 +748,42 @@ napi_value ConvertToPlaceholderWrapper(napi_env env, napi_callback_info args)
 {
     size_t argc = 2;
     napi_value argv[2];
-
     napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
 
     if (argc < 2)
     {
-        napi_throw_error(env, nullptr, "Both full path and placeholder ID are required for ConvertToPlaceholder");
+        napi_throw_type_error(env, nullptr, "Wrong number of arguments");
         return nullptr;
     }
 
-    size_t pathLength;
-    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
+    char path[1024];
+    char serverIdentity[1024];
+    size_t pathLen, serverIdentityLen;
 
-    std::unique_ptr<char16_t[]> widePath(new char16_t[pathLength + 1]);
+    napi_get_value_string_utf8(env, argv[0], path, sizeof(path), &pathLen);
+    napi_get_value_string_utf8(env, argv[1], serverIdentity, sizeof(serverIdentity), &serverIdentityLen);
 
-    napi_get_value_string_utf16(env, argv[0], widePath.get(), pathLength + 1, nullptr);
+    std::wstring wPath(path, path + pathLen);
+    std::wstring wServerIdentity(serverIdentity, serverIdentity + serverIdentityLen);
 
-    size_t placeholderIdLength;
-    napi_get_value_string_utf16(env, argv[1], nullptr, 0, &placeholderIdLength);
+    PlaceholderResult result = Placeholders::ConvertToPlaceholder(wPath, wServerIdentity);
 
-    std::unique_ptr<char16_t[]> widePlaceholderId(new char16_t[placeholderIdLength + 1]);
+    napi_value resultObj;
+    napi_create_object(env, &resultObj);
 
-    napi_get_value_string_utf16(env, argv[1], widePlaceholderId.get(), placeholderIdLength + 1, nullptr);
+    napi_value successValue;
+    napi_get_boolean(env, result.success, &successValue);
+    napi_set_named_property(env, resultObj, "success", successValue);
 
-    bool success = Placeholders::ConvertToPlaceholder(
-        reinterpret_cast<wchar_t *>(widePath.get()),
-        reinterpret_cast<wchar_t *>(widePlaceholderId.get()));
+    if (!result.success)
+    {
+        std::string errorMessage(result.errorMessage.begin(), result.errorMessage.end());
+        napi_value errorValue;
+        napi_create_string_utf8(env, errorMessage.c_str(), errorMessage.length(), &errorValue);
+        napi_set_named_property(env, resultObj, "errorMessage", errorValue);
+    }
 
-    napi_value result;
-    napi_get_boolean(env, success, &result);
-    return result;
+    return resultObj;
 }
 
 napi_value UpdateFileIdentityWrapper(napi_env env, napi_callback_info args)
