@@ -28,7 +28,7 @@ bool DirectoryExists(const wchar_t *path)
     return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY);
 }
 
-CreateOneResult Placeholders::CreateOne(
+PlaceholderResult Placeholders::CreateOne(
     _In_ PCWSTR fileName,
     _In_ PCWSTR fileIdentity,
     int64_t fileSize,
@@ -39,7 +39,7 @@ CreateOneResult Placeholders::CreateOne(
     FILETIME lastAccessTime,
     _In_ PCWSTR destPath)
 {
-    CreateOneResult result = {false, L""};
+    PlaceholderResult result = {false, L""};
 
     try
     {
@@ -138,7 +138,7 @@ void Placeholders::MaintainIdentity(std::wstring &fullPath, PCWSTR itemIdentity,
     }
 }
 
-CreateEntryResult Placeholders::CreateEntry(
+PlaceholderResult Placeholders::CreateEntry(
     _In_ PCWSTR itemName,
     _In_ PCWSTR itemIdentity,
     bool isDirectory,
@@ -150,7 +150,7 @@ CreateEntryResult Placeholders::CreateEntry(
     FILETIME lastAccessTime,
     _In_ PCWSTR destPath)
 {
-    CreateEntryResult result = {false, L""};
+    PlaceholderResult result = {false, L""};
 
     std::wstring fullDestPath = std::wstring(destPath) + L"\\" + std::wstring(itemName);
     CF_PLACEHOLDER_CREATE_INFO cloudEntry = {};
@@ -205,9 +205,9 @@ CreateEntryResult Placeholders::CreateEntry(
     return result;
 }
 
-ConvertToPlaceholderResult Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std::wstring &serverIdentity)
+PlaceholderResult Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std::wstring &serverIdentity)
 {
-    ConvertToPlaceholderResult result = {false, L""};
+    PlaceholderResult result = {false, L""};
 
     if (!std::filesystem::exists(fullPath))
     {

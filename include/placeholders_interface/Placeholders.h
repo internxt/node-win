@@ -10,19 +10,7 @@ enum class PlaceholderAttribute
     PINNED = 2,
 };
 
-struct ConvertToPlaceholderResult {
-    bool success;
-    std::wstring errorMessage;
-};
-
-struct CreateOneResult
-{
-    bool success;
-    std::wstring errorMessage;
-};
-
-struct CreateEntryResult
-{
+struct PlaceholderResult {
     bool success;
     std::wstring errorMessage;
 };
@@ -30,7 +18,7 @@ struct CreateEntryResult
 class Placeholders
 {
 public:
-    static CreateOneResult CreateOne(
+    static PlaceholderResult CreateOne(
         _In_ PCWSTR fileName,
         _In_ PCWSTR fileIdentity,
         int64_t fileSize,
@@ -43,7 +31,7 @@ public:
 
     static void MaintainIdentity(std::wstring &fullPath, PCWSTR fileIdentity, bool isDirectory);
 
-    static CreateEntryResult CreateEntry(
+    static PlaceholderResult CreateEntry(
         _In_ PCWSTR itemName,
         _In_ PCWSTR itemIdentity,
         bool isDirectory,
@@ -61,7 +49,7 @@ public:
     static CF_PLACEHOLDER_STATE GetPlaceholderState(const std::wstring &filePath);
     static std::vector<std::wstring> GetPlaceholderWithStatePending(const std::wstring &filePath);
     static bool IsFileValidForSync(const std::wstring &filePath);
-    static ConvertToPlaceholderResult ConvertToPlaceholder(const std::wstring &fullPath, const std::wstring &serverIdentity);
+    static PlaceholderResult ConvertToPlaceholder(const std::wstring &fullPath, const std::wstring &serverIdentity);
     static std::string GetFileIdentity(const std::wstring &filePath);
     static void UpdateFileIdentity(const std::wstring &filePath, const std::wstring &fileIdentity, bool isDirectory);
     static PlaceholderAttribute GetAttribute(const std::wstring &filePath);

@@ -92,7 +92,7 @@ napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
     destPath = new WCHAR[destPathLength + 1];
     napi_get_value_string_utf16(env, argv[7], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(destPath)), destPathLength + 1, nullptr);
 
-    CreateOneResult result = Placeholders::CreateOne(
+    PlaceholderResult result = Placeholders::CreateOne(
         fileName,
         fileIdentity,
         fileSize,
@@ -116,7 +116,7 @@ napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
     if (!result.success && !result.errorMessage.empty())
     {
         napi_value errorMessageValue;
-        napi_create_string_utf16(env, result.errorMessage.c_str(), result.errorMessage.length(), &errorMessageValue);
+        napi_create_string_utf16(env, reinterpret_cast<const char16_t*>(result.errorMessage.c_str()), result.errorMessage.length(), &errorMessageValue);
         napi_set_named_property(env, resultObj, "errorMessage", errorMessageValue);
     }
 
@@ -485,7 +485,7 @@ napi_value CreateEntryWrapper(napi_env env, napi_callback_info args)
     destPath = new WCHAR[destPathLength + 1];
     napi_get_value_string_utf16(env, argv[8], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(destPath)), destPathLength + 1, nullptr);
 
-    CreateEntryResult result = Placeholders::CreateEntry(
+    PlaceholderResult result = Placeholders::CreateEntry(
         itemName,
         itemIdentity,
         isDirectory,
@@ -510,7 +510,7 @@ napi_value CreateEntryWrapper(napi_env env, napi_callback_info args)
     if (!result.success && !result.errorMessage.empty())
     {
         napi_value errorMessageValue;
-        napi_create_string_utf16(env, result.errorMessage.c_str(), result.errorMessage.length(), &errorMessageValue);
+        napi_create_string_utf16(env, reinterpret_cast<const char16_t*>(result.errorMessage.c_str()), result.errorMessage.length(), &errorMessageValue);
         napi_set_named_property(env, resultObj, "errorMessage", errorMessageValue);
     }
 
@@ -766,7 +766,7 @@ napi_value ConvertToPlaceholderWrapper(napi_env env, napi_callback_info args)
     std::wstring wPath(path, path + pathLen);
     std::wstring wServerIdentity(serverIdentity, serverIdentity + serverIdentityLen);
 
-    ConvertToPlaceholderResult result = Placeholders::ConvertToPlaceholder(wPath, wServerIdentity);
+    PlaceholderResult result = Placeholders::ConvertToPlaceholder(wPath, wServerIdentity);
 
     napi_value resultObj;
     napi_create_object(env, &resultObj);
