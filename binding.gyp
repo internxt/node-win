@@ -28,8 +28,6 @@
         "native-src/sync_root_interface/callbacks/FetchData/TransferContext.cpp",
         "native-src/sync_root_interface/callbacks/FetchPlaceholder/FetchPlaceholder.cpp",
         "native-src/sync_root_interface/callbacks/NotifyDelete/NotifyDeleteCallback.cpp",
-        "native-src/sync_root_interface/callbacks/NotifyRename/NotifyRenameCallback.cpp",
-        "native-src/sync_root_interface/callbacks/NotifyRename/RenameTransferContext.cpp",
         "native-src/virtual_drive/Wrappers.cpp"
       ],
       "include_dirs": [

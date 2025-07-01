@@ -21,7 +21,5 @@ struct InputSyncCallbacks {
     napi_ref notify_dehydrate_completion_callback_ref;
     napi_ref notify_delete_callback_ref;
     napi_ref notify_delete_completion_callback_ref;
-    napi_ref notify_rename_callback_ref;
-    napi_ref notify_rename_completion_callback_ref;
     napi_ref none_callback_ref;
 };

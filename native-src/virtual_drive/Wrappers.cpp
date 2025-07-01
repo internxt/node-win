@@ -317,7 +317,6 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args)
         InputSyncCallbacks callbacks = {};
 
         napi_value notifyDeleteCompletionCallback;
-        napi_value notifyRenameCallback;
         napi_value fetchDataCallback;
         napi_value cancelFetchDataCallback;
 
@@ -331,19 +330,6 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args)
         if (type_status != napi_ok || valuetype != napi_function)
         {
             napi_throw_error(env, nullptr, "notifyDeleteCallback should be a function.");
-            return nullptr;
-        }
-
-        if (napi_get_named_property(env, argv[1], "notifyRenameCallback", &notifyRenameCallback) == napi_ok)
-        {
-            napi_create_reference(env, notifyRenameCallback, 1, &callbacks.notify_rename_callback_ref);
-        }
-
-        napi_valuetype valuetype_rename;
-        napi_status type_status_rename = napi_typeof(env, notifyRenameCallback, &valuetype_rename);
-        if (type_status_rename != napi_ok || valuetype_rename != napi_function)
-        {
-            napi_throw_error(env, nullptr, "notifyRenameCallback should be a function.");
             return nullptr;
         }
 
