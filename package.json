@@ -1,6 +1,6 @@
 {
   "name": "@internxt/node-win",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "description": "Drive desktop node addon",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
