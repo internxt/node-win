@@ -278,8 +278,6 @@ std::wstring Utilities::FileOperationErrorToWString(FileOperationError error)
         return L"UPLOAD_ERROR";
     case FileOperationError::DOWNLOAD_ERROR:
         return L"DOWNLOAD_ERROR";
-    case FileOperationError::RENAME_ERROR:
-        return L"RENAME_ERROR";
     case FileOperationError::DELETE_ERROR:
         return L"DELETE_ERROR";
     case FileOperationError::METADATA_READ_ERROR:

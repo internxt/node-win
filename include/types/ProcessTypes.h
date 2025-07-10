@@ -17,7 +17,6 @@ enum class FileOperationError
 {
     UPLOAD_ERROR,
     DOWNLOAD_ERROR,
-    RENAME_ERROR,
     DELETE_ERROR,
     METADATA_READ_ERROR
 };
