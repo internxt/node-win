@@ -316,22 +316,8 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args)
         // CALLBACKS
         InputSyncCallbacks callbacks = {};
 
-        napi_value notifyDeleteCompletionCallback;
         napi_value fetchDataCallback;
         napi_value cancelFetchDataCallback;
-
-        if (napi_get_named_property(env, argv[1], "notifyDeleteCallback", &notifyDeleteCompletionCallback) == napi_ok)
-        {
-            napi_create_reference(env, notifyDeleteCompletionCallback, 1, &callbacks.notify_delete_callback_ref);
-        }
-
-        napi_valuetype valuetype;
-        napi_status type_status = napi_typeof(env, notifyDeleteCompletionCallback, &valuetype);
-        if (type_status != napi_ok || valuetype != napi_function)
-        {
-            napi_throw_error(env, nullptr, "notifyDeleteCallback should be a function.");
-            return nullptr;
-        }
 
         if (napi_get_named_property(env, argv[1], "fetchDataCallback", &fetchDataCallback) == napi_ok)
         {
@@ -693,39 +679,6 @@ napi_value GetPlaceholderStateWrapper(napi_env env, napi_callback_info args)
     napi_value jsSyncState;
     napi_create_int32(env, static_cast<int32_t>(state.syncstate), &jsSyncState);
     napi_set_named_property(env, result, "syncState", jsSyncState);
-
-    return result;
-}
-
-napi_value GetPlaceholderWithStatePendingWrapper(napi_env env, napi_callback_info args)
-{
-    size_t argc = 1;
-    napi_value argv[1];
-
-    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
-    if (argc < 1)
-    {
-        napi_throw_error(env, nullptr, "The path is required for GetPlaceholderWithStatePending");
-        return nullptr;
-    }
-
-    size_t pathLength;
-    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
-
-    std::unique_ptr<char16_t[]> widePath(new char16_t[pathLength + 1]);
-
-    napi_get_value_string_utf16(env, argv[0], widePath.get(), pathLength + 1, nullptr);
-
-    std::vector<std::wstring> state = Placeholders::GetPlaceholderWithStatePending(reinterpret_cast<wchar_t *>(widePath.get()));
-
-    napi_value result;
-    napi_create_array_with_length(env, state.size(), &result);
-    for (size_t i = 0; i < state.size(); ++i)
-    {
-        napi_value jsString;
-        napi_create_string_utf16(env, reinterpret_cast<const char16_t *>(state[i].c_str()), state[i].length(), &jsString);
-        napi_set_element(env, result, i, jsString);
-    }
 
     return result;
 }
