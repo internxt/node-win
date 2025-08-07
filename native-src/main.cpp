@@ -3,7 +3,6 @@
 
 napi_value init(napi_env env, napi_value exports)
 {
-  // CreatePlaceholderFileWrapper
   napi_property_descriptor desc = {
       "createPlaceholderFile",
       nullptr,
@@ -21,7 +20,6 @@ napi_value init(napi_env env, napi_value exports)
     return nullptr;
   }
 
-  // UnregisterSyncRootWrapper
   napi_property_descriptor unregisterDesc = {
       "unregisterSyncRoot",
       nullptr,
@@ -39,7 +37,6 @@ napi_value init(napi_env env, napi_value exports)
     return nullptr;
   }
 
-  // RegisterSyncRootWrapper
   napi_property_descriptor registerSyncRootDesc = {
       "registerSyncRoot",
       nullptr,
@@ -57,7 +54,6 @@ napi_value init(napi_env env, napi_value exports)
     return nullptr;
   }
 
-  // GetRegisteredSyncRootsWrapper
   napi_property_descriptor getRegisteredSyncRootsRootDesc = {
       "getRegisteredSyncRoots",
       nullptr,
@@ -75,7 +71,6 @@ napi_value init(napi_env env, napi_value exports)
     return nullptr;
   }
 
-  // ConnectSyncRootWrapper
   napi_property_descriptor connectSyncRootDesc = {
       "connectSyncRoot",
       nullptr,
@@ -110,7 +105,6 @@ napi_value init(napi_env env, napi_value exports)
     return nullptr;
   }
 
-  // disconection
   napi_property_descriptor disconnectDesc = {
       "disconnectSyncRoot",
       nullptr,
@@ -247,7 +241,6 @@ napi_value init(napi_env env, napi_value exports)
     return nullptr;
   }
 
-  // Define HydrateFile wrapper
   napi_property_descriptor hydrateFileDesc = {
       "hydrateFile",
       nullptr,
@@ -265,7 +258,6 @@ napi_value init(napi_env env, napi_value exports)
     return nullptr;
   }
 
-  // Define DehydrateFile wrapper
   napi_property_descriptor dehydrateFileDesc = {
       "dehydrateFile",
       nullptr,
