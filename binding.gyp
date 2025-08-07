@@ -34,7 +34,6 @@
         "include/placeholders_interface",
         "include/sync_root_interface",
         "include/sync_root_interface/callbacks",
-        "include/types",
         "include/virtual_drive"
       ],
       "libraries": [

@@ -1,23 +1,16 @@
 {
   "name": "@internxt/node-win",
   "version": "1.0.20",
+  "author": "Internxt <hello@internxt.com>",
   "description": "Drive desktop node addon",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "author": "Internxt <hello@internxt.com>",
   "license": "MIT",
   "gypfile": true,
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/internxt/node-win.git"
-  },
   "scripts": {
     "clean": "node-gyp clean",
     "build:gyp": "node-gyp configure build",
     "config:gyp": "python gyp.config.py",
     "build": "python gyp.config.py && node-gyp clean && node-gyp configure build"
-  },
-  "engines": {
-    "node": ">=20.0.0"
   }
 }
