@@ -248,6 +248,21 @@ HRESULT SyncRoot::UnregisterSyncRoot(const GUID &providerId)
     }
 }
 
+HRESULT SyncRoot::UnregisterSyncRoot(const wchar_t *providerIdStr)
+{
+    try
+    {
+        Logger::getInstance().log("Unregistering sync root (string).", LogLevel::INFO);
+        winrt::StorageProviderSyncRootManager::Unregister(providerIdStr);
+        return S_OK;
+    }
+    catch (...)
+    {
+        wprintf(L"Could not unregister the sync root (string), hr %08x\n", static_cast<HRESULT>(winrt::to_hresult()));
+        return E_FAIL;
+    }
+}
+
 HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallbacks syncCallbacks, napi_env env, CF_CONNECTION_KEY *connectionKey)
 {
     try

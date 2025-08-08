@@ -127,6 +127,13 @@ napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
     return resultObj;
 }
 
+/**
+ * v2.5.7 Carlos Gonzalez
+ * Added backward compatibility for the default virtual drive identifier "syncRootID".
+ * If the provided ID is "syncRootID", it will be unregistered without throwing an error,
+ * maintaining support for previous versions that used it instead of a GUID.
+ */
+
 napi_value UnregisterSyncRootWrapper(napi_env env, napi_callback_info args)
 {
     size_t argc = 1;
@@ -147,14 +154,24 @@ napi_value UnregisterSyncRootWrapper(napi_env env, napi_callback_info args)
     providerIdStr = new WCHAR[providerIdStrLength + 1];
     napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(providerIdStr)), providerIdStrLength + 1, nullptr);
 
-    if (FAILED(CLSIDFromString(providerIdStr, &providerId)))
+
+    HRESULT result;
+    HRESULT guidResult = CLSIDFromString(providerIdStr, &providerId);
+
+    if (SUCCEEDED(guidResult))
     {
-        napi_throw_error(env, nullptr, "Invalid GUID format");
+        result = SyncRoot::UnregisterSyncRoot(providerId);
+    }
+    else if (wcscmp(providerIdStr, L"syncRootID") == 0)
+    {
+        result = SyncRoot::UnregisterSyncRoot(providerIdStr);
+    }
+    else
+    {
+        napi_throw_error(env, nullptr, "Invalid provider ID: must be a GUID or 'syncRootID'");
         delete[] providerIdStr;
         return nullptr;
     }
-
-    HRESULT result = SyncRoot::UnregisterSyncRoot(providerId);
 
     delete[] providerIdStr;
 
