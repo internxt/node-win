@@ -173,8 +173,6 @@ HRESULT SyncRoot::RegisterSyncRoot(const wchar_t *syncRootPath, const wchar_t *p
 
         winrt::StorageProviderSyncRootManager::Register(info);
 
-        Sleep(1000);
-
         return S_OK;
     }
     catch (...)
