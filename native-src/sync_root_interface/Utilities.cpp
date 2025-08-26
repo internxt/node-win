@@ -45,7 +45,6 @@ void Utilities::AddFolderToSearchIndexer(_In_ PCWSTR folder)
 void Utilities::ApplyTransferStateToFile(_In_ PCWSTR fullPath, _In_ CF_CALLBACK_INFO &callbackInfo, UINT64 total, UINT64 completed)
 {
     Logger::getInstance().log("ApplyTransferStateToFile", LogLevel::INFO);
-    printf("ApplyTransferStateToFile\n");
     // Tell the Cloud File API about progress so that toasts can be displayed
 
     HRESULT hr1 = CfReportProviderProgress(
