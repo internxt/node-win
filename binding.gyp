@@ -27,6 +27,7 @@
         "native-src/sync_root_interface/callbacks/FetchData/FileCopierWithProgress.cpp",
         "native-src/sync_root_interface/callbacks/FetchData/TransferContext.cpp",
         "native-src/virtual_drive/Wrappers.cpp",
+        "native-src/virtual_drive/connect_sync_root.cpp",
         "native-src/virtual_drive/create_file_placeholder.cpp",
         "native-src/virtual_drive/create_folder_placeholder.cpp",
         "native-src/virtual_drive/get_file_identity.cpp",
