@@ -33,7 +33,6 @@ public:
     static std::string GetFileIdentity(const wchar_t *path);
     static void HydrateFile(const wchar_t *filePath);
     static void DehydrateFile(const wchar_t *filePath);
-    static void DeleteFileSyncRoot(const wchar_t *path);
 
 private:
     CF_CONNECTION_KEY connectionKey;
