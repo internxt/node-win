@@ -11,11 +11,6 @@ namespace fs = std::filesystem;
 CF_CONNECTION_KEY gloablConnectionKey;
 std::map<std::wstring, CF_CONNECTION_KEY> connectionMap;
 
-void TransformInputCallbacksToSyncCallbacks(napi_env env, InputSyncCallbacks input)
-{
-    register_threadsafe_callbacks(env, input);
-}
-
 void AddCustomState(
     _In_ winrt::IVector<winrt::StorageProviderItemPropertyDefinition> &customStates,
     _In_ LPCWSTR displayNameResource,
@@ -257,40 +252,30 @@ HRESULT SyncRoot::UnregisterSyncRoot(const wchar_t *providerIdStr)
 
 HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallbacks syncCallbacks, napi_env env, CF_CONNECTION_KEY *connectionKey)
 {
-    try
-    {
-        Utilities::AddFolderToSearchIndexer(syncRootPath);
+    Utilities::AddFolderToSearchIndexer(syncRootPath);
+    register_threadsafe_callbacks(env, syncCallbacks);
 
-        TransformInputCallbacksToSyncCallbacks(env, syncCallbacks);
+    CF_CALLBACK_REGISTRATION callbackTable[] = {
+        {CF_CALLBACK_TYPE_FETCH_DATA, fetch_data_callback_wrapper},
+        {CF_CALLBACK_TYPE_CANCEL_FETCH_DATA, cancel_fetch_data_callback_wrapper},
+        CF_CALLBACK_REGISTRATION_END
+    };
 
-        CF_CALLBACK_REGISTRATION callbackTable[] = {
-            {CF_CALLBACK_TYPE_FETCH_DATA, fetch_data_callback_wrapper},
-            {CF_CALLBACK_TYPE_CANCEL_FETCH_DATA, cancel_fetch_data_callback_wrapper},
-            CF_CALLBACK_REGISTRATION_END};
+    HRESULT hr = CfConnectSyncRoot(
+        syncRootPath,
+        callbackTable,
+        nullptr,
+        CF_CONNECT_FLAG_REQUIRE_PROCESS_INFO | CF_CONNECT_FLAG_REQUIRE_FULL_FILE_PATH,
+        connectionKey
+    );
 
-        HRESULT hr = CfConnectSyncRoot(
-            syncRootPath,
-            callbackTable,
-            nullptr, // Contexto (opcional)
-            CF_CONNECT_FLAG_REQUIRE_PROCESS_INFO | CF_CONNECT_FLAG_REQUIRE_FULL_FILE_PATH,
-            connectionKey);
-        wprintf(L"Connection key: %llu\n", *connectionKey);
-        if (SUCCEEDED(hr))
-        {
-            connectionMap[syncRootPath] = *connectionKey;
-        }
-        return hr;
+    wprintf(L"Connection key: %llu\n", connectionKey->Internal);
+    
+    if (SUCCEEDED(hr)) {
+        connectionMap[syncRootPath] = *connectionKey;
     }
-    catch (const std::exception &e)
-    {
-        wprintf(L"Excepción capturada: %hs\n", e.what());
-        return E_FAIL;
-    }
-    catch (...)
-    {
-        wprintf(L"Excepción desconocida capturada\n");
-        return E_FAIL;
-    }
+    
+    return hr;
 }
 
 // disconection sync root
@@ -307,51 +292,4 @@ HRESULT SyncRoot::DisconnectSyncRoot(const wchar_t *syncRootPath)
         return hr;
     }
     return E_FAIL;
-}
-
-// struct
-struct FileIdentityInfo
-{
-    BYTE *FileIdentity;
-    size_t FileIdentityLength;
-};
-
-void SyncRoot::DeleteFileSyncRoot(const wchar_t *path)
-{
-    try
-    {
-        // Mostrar el archivo a eliminar
-        wprintf(L"Intentando eliminar: %ls\n", path);
-
-        // Verificar si el archivo es un directorio o un archivo regular
-        bool isDirectory = fs::is_directory(path);
-        wprintf(L"Es directorio: %d\n", isDirectory);
-
-        // Si es un directorio, eliminar recursivamente
-        if (isDirectory)
-        {
-            fs::remove_all(path); // Esta línea reemplaza la función personalizada DeleteFileOrDirectory
-            wprintf(L"Directorio eliminado con éxito: %ls\n", path);
-        }
-        else
-        {
-            // Si es un archivo, simplemente eliminar
-            if (!DeleteFileW(path))
-            {
-                wprintf(L"No se pudo eliminar el archivo: %ls\n", path);
-            }
-            else
-            {
-                wprintf(L"Archivo eliminado con éxito: %ls\n", path);
-            }
-        }
-    }
-    catch (const std::exception &e)
-    {
-        wprintf(L"Excepción capturada: %hs\n", e.what());
-    }
-    catch (...)
-    {
-        wprintf(L"Excepción desconocida capturada\n");
-    }
 }
