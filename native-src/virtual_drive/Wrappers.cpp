@@ -14,7 +14,7 @@
 #include "get_file_identity.h"
 #include "connect_sync_root.h"
 #include "hydrate_file.h"
-#include "napi_safe_wrap.h"
+#include "NAPI_SAFE_WRAP.h"
 
 std::string WStringToUTF8(const std::wstring &wstr)
 {
@@ -24,7 +24,7 @@ std::string WStringToUTF8(const std::wstring &wstr)
 
 napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args)
 {
-    return napi_safe_wrap(env, args, create_file_placeholder_impl);
+    return NAPI_SAFE_WRAP(env, args, create_file_placeholder_impl);
 }
 
 /**
@@ -81,7 +81,7 @@ napi_value UnregisterSyncRootWrapper(napi_env env, napi_callback_info args)
 }
 
 napi_value RegisterSyncRootWrapper(napi_env env, napi_callback_info info) {
-    return napi_safe_wrap(env, info, register_sync_root_impl);
+    return NAPI_SAFE_WRAP(env, info, register_sync_root_impl);
 }
 
 napi_value GetRegisteredSyncRootsWrapper(napi_env env, napi_callback_info args)
@@ -151,12 +151,12 @@ napi_value GetRegisteredSyncRootsWrapper(napi_env env, napi_callback_info args)
 
 napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args)
 {
-    return napi_safe_wrap(env, args, connect_sync_root_impl);
+    return NAPI_SAFE_WRAP(env, args, connect_sync_root_impl);
 }
 
 napi_value CreateEntryWrapper(napi_env env, napi_callback_info args)
 {
-    return napi_safe_wrap(env, args, create_folder_placeholder_impl);
+    return NAPI_SAFE_WRAP(env, args, create_folder_placeholder_impl);
 }
 
 // disconection wrapper
@@ -190,7 +190,7 @@ napi_value DisconnectSyncRootWrapper(napi_env env, napi_callback_info args)
 
 napi_value GetFileIdentityWrapper(napi_env env, napi_callback_info args)
 {
-    return napi_safe_wrap(env, args, get_file_identity_impl);
+    return NAPI_SAFE_WRAP(env, args, get_file_identity_impl);
 }
 
 napi_value DeleteFileSyncRootWrapper(napi_env env, napi_callback_info args)
@@ -409,7 +409,7 @@ napi_value UpdateFileIdentityWrapper(napi_env env, napi_callback_info args)
 
 napi_value HydrateFileWrapper(napi_env env, napi_callback_info args)
 {
-    return napi_safe_wrap(env, args, hydrate_file_impl);
+    return NAPI_SAFE_WRAP(env, args, hydrate_file_impl);
 }
 
 napi_value DehydrateFileWrapper(napi_env env, napi_callback_info args)
