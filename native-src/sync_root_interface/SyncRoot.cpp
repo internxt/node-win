@@ -68,12 +68,6 @@ void SyncRoot::HydrateFile(const wchar_t *filePath)
                     wprintf(L"Hydration finished %ls\n", filePath);
                 }
             }
-            // }
-            // else
-            // {
-            //     wprintf(L"File is already hydrated: %ls\n", filePath);
-            //     Logger::getInstance().log("File is already hydrated " + Logger::fromWStringToString(filePath), LogLevel::INFO);
-            // }
         }
     }
 }
