@@ -9,51 +9,30 @@ std::string WStringToUTF8(const std::wstring &wstr) {
     return conv.to_bytes(wstr);
 }
 
+void add_string_property(napi_env env, napi_value obj, const char* key, const std::wstring& value) {
+    std::string utf8Value = WStringToUTF8(value);
+    napi_value napiValue;
+    napi_create_string_utf8(env, utf8Value.c_str(), utf8Value.size(), &napiValue);
+    napi_set_named_property(env, obj, key, napiValue);
+}
+
 napi_value get_registered_sync_roots_wrapper(napi_env env, napi_callback_info args) {
     std::vector<SyncRoots> roots = get_registered_sync_roots();
 
     napi_value jsArray;
-    napi_status status = napi_create_array_with_length(env, roots.size(), &jsArray);
-    if (status != napi_ok)
-        throw std::runtime_error("Error creating the array");
+    napi_create_array_with_length(env, roots.size(), &jsArray);
 
     for (size_t i = 0; i < roots.size(); i++) {
         napi_value jsObj;
-        status = napi_create_object(env, &jsObj);
-        if (status != napi_ok)
-            throw std::runtime_error("Error creating the object");
+        napi_create_object(env, &jsObj);
 
-        std::string id = WStringToUTF8(roots[i].id);
-        napi_value napiId;
-        status = napi_create_string_utf8(env, id.c_str(), id.size(), &napiId);
-        if (status != napi_ok)
-            throw std::runtime_error("Error creating the string id");
-        napi_set_named_property(env, jsObj, "id", napiId);
+        add_string_property(env, jsObj, "id", roots[i].id);
+        add_string_property(env, jsObj, "path", roots[i].path);
+        add_string_property(env, jsObj, "displayName", roots[i].displayName);
+        add_string_property(env, jsObj, "version", roots[i].version);
+        add_string_property(env, jsObj, "context", roots[i].context);
 
-        std::string path = WStringToUTF8(roots[i].path);
-        napi_value napiPath;
-        status = napi_create_string_utf8(env, path.c_str(), path.size(), &napiPath);
-        if (status != napi_ok)
-            throw std::runtime_error("Error creating the string path");
-        napi_set_named_property(env, jsObj, "path", napiPath);
-
-        std::string displayName = WStringToUTF8(roots[i].displayName);
-        napi_value napiDisplayName;
-        status = napi_create_string_utf8(env, displayName.c_str(), displayName.size(), &napiDisplayName);
-        if (status != napi_ok)
-            throw std::runtime_error("Error creating the string displayName");
-        napi_set_named_property(env, jsObj, "displayName", napiDisplayName);
-
-        std::string version = WStringToUTF8(roots[i].version);
-        napi_value napiVersion;
-        status = napi_create_string_utf8(env, version.c_str(), version.size(), &napiVersion);
-        if (status != napi_ok)
-            throw std::runtime_error("Error creating the string version");
-        napi_set_named_property(env, jsObj, "version", napiVersion);
-
-        status = napi_set_element(env, jsArray, i, jsObj);
-        if (status != napi_ok)
-            throw std::runtime_error("Error setting the element in the array");
+        napi_set_element(env, jsArray, i, jsObj);
     }
 
     return jsArray;
