@@ -30,7 +30,6 @@ void register_sync_root(const wchar_t *syncRootPath, const wchar_t *providerName
     winrt::Uri uri(L"https://drive.internxt.com/app/trash");
     info.RecycleBinUri(uri);
 
-    // Context
     std::wstring syncRootIdentity(syncRootPath);
     syncRootIdentity.append(L"#inxt#");
     syncRootIdentity.append(providerName);
