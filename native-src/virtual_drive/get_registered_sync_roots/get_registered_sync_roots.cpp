@@ -15,13 +15,7 @@ std::vector<SyncRoots> get_registered_sync_roots() {
         sr.path = info.Path().Path();
         sr.displayName = info.DisplayNameResource();
         sr.version = info.Version();
-        
-        /**
-         * v2.5.1 Jonathan Arce
-         * Sync root register are now filtered using the characters '->' and '#inxt#' to identify our register.
-         * Currently, we only use '#inxt#' in the register, but to support previous versions, we are still
-         * including '->' in the filter. In future versions, the filtering by '->' should be removed.
-         */
+
         auto contextBuffer = info.Context();
         if (contextBuffer) {
             sr.context = winrt::CryptographicBuffer::ConvertBinaryToString(winrt::BinaryStringEncoding::Utf8, contextBuffer).c_str();
