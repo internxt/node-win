@@ -6,15 +6,10 @@
 #include <iostream>
 #include <vector>
 
-
-void register_sync_root(const wchar_t *syncRootPath, const wchar_t *providerName, const wchar_t *providerVersion, const GUID &providerId, const wchar_t *logoPath)
+void register_sync_root(const wchar_t *syncRootPath, const wchar_t *providerName, const wchar_t *providerVersion, const wchar_t *providerId, const wchar_t *logoPath)
 {
-    // Convert GUID to string for syncRootID
-    wchar_t syncRootID[39];
-    StringFromGUID2(providerId, syncRootID, 39);
-
     winrt::StorageProviderSyncRootInfo info;
-    info.Id(syncRootID);
+    info.Id(providerId);
 
     auto folder = winrt::StorageFolder::GetFolderFromPathAsync(syncRootPath).get();
     info.Path(folder);

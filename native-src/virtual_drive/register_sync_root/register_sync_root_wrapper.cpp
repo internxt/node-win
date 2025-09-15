@@ -22,20 +22,17 @@ napi_value register_sync_root_wrapper(napi_env env, napi_callback_info args)
     std::wstring providerVersion(providerVersionLength, L'\0');
     napi_get_value_string_utf16(env, argv[2], reinterpret_cast<char16_t*>(&providerVersion[0]), providerVersionLength + 1, nullptr);
 
-    size_t providerIdStrLength;
-    napi_get_value_string_utf16(env, argv[3], nullptr, 0, &providerIdStrLength);
-    std::wstring providerIdStr(providerIdStrLength, L'\0');
-    napi_get_value_string_utf16(env, argv[3], reinterpret_cast<char16_t*>(&providerIdStr[0]), providerIdStrLength + 1, nullptr);
-
-    GUID providerId;
-    CLSIDFromString(providerIdStr.c_str(), &providerId);
+    size_t providerIdLength;
+    napi_get_value_string_utf16(env, argv[3], nullptr, 0, &providerIdLength);
+    std::wstring providerId(providerIdLength, L'\0');
+    napi_get_value_string_utf16(env, argv[3], reinterpret_cast<char16_t*>(&providerId[0]), providerIdLength + 1, nullptr);
 
     size_t logoPathLength;
     napi_get_value_string_utf16(env, argv[4], nullptr, 0, &logoPathLength);
     std::wstring logoPath(logoPathLength, L'\0');
     napi_get_value_string_utf16(env, argv[4], reinterpret_cast<char16_t*>(&logoPath[0]), logoPathLength + 1, nullptr);
 
-    register_sync_root(syncRootPath.c_str(), providerName.c_str(), providerVersion.c_str(), providerId, logoPath.c_str());
+    register_sync_root(syncRootPath.c_str(), providerName.c_str(), providerVersion.c_str(), providerId.c_str(), logoPath.c_str());
 
     return nullptr;
 }
