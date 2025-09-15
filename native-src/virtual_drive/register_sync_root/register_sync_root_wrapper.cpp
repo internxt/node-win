@@ -1,5 +1,5 @@
 #include <Windows.h>
-#include "SyncRoot.h"
+#include "register_sync_root.h"
 
 napi_value register_sync_root_wrapper(napi_env env, napi_callback_info args)
 {
@@ -35,7 +35,7 @@ napi_value register_sync_root_wrapper(napi_env env, napi_callback_info args)
     std::wstring logoPath(logoPathLength, L'\0');
     napi_get_value_string_utf16(env, argv[4], reinterpret_cast<char16_t*>(&logoPath[0]), logoPathLength + 1, nullptr);
 
-    HRESULT result = SyncRoot::RegisterSyncRoot(
+    HRESULT result = register_sync_root(
         syncRootPath.c_str(), 
         providerName.c_str(), 
         providerVersion.c_str(), 
