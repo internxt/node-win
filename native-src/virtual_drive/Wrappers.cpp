@@ -8,7 +8,7 @@
 #include <codecvt>
 #include <locale>
 #include <vector>
-#include "register_sync_root.h"
+#include "register_sync_root_wrapper.h"
 #include "create_folder_placeholder.h"
 #include "create_file_placeholder.h"
 #include "get_file_identity.h"
@@ -82,7 +82,7 @@ napi_value UnregisterSyncRootWrapper(napi_env env, napi_callback_info args)
 }
 
 napi_value RegisterSyncRootWrapper(napi_env env, napi_callback_info info) {
-    return NAPI_SAFE_WRAP(env, info, register_sync_root_impl);
+    return NAPI_SAFE_WRAP(env, info, register_sync_root_wrapper);
 }
 
 napi_value GetRegisteredSyncRootsWrapper(napi_env env, napi_callback_info args)

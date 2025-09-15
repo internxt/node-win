@@ -7,21 +7,18 @@ napi_value convert_to_placeholder_impl(napi_env env, napi_callback_info args)
     napi_value argv[2];
     napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
 
-    if (argc < 2)
-    {
-        napi_throw_type_error(env, nullptr, "Wrong number of arguments");
-        return nullptr;
-    }
-
-    char path[1024];
-    char serverIdentity[1024];
     size_t pathLen, serverIdentityLen;
+    napi_get_value_string_utf8(env, argv[0], nullptr, 0, &pathLen);
+    napi_get_value_string_utf8(env, argv[1], nullptr, 0, &serverIdentityLen);
 
-    napi_get_value_string_utf8(env, argv[0], path, sizeof(path), &pathLen);
-    napi_get_value_string_utf8(env, argv[1], serverIdentity, sizeof(serverIdentity), &serverIdentityLen);
+    std::string path(pathLen, '\0');
+    std::string serverIdentity(serverIdentityLen, '\0');
+    
+    napi_get_value_string_utf8(env, argv[0], &path[0], pathLen + 1, nullptr);
+    napi_get_value_string_utf8(env, argv[1], &serverIdentity[0], serverIdentityLen + 1, nullptr);
 
-    std::wstring wPath(path, path + pathLen);
-    std::wstring wServerIdentity(serverIdentity, serverIdentity + serverIdentityLen);
+    std::wstring wPath(path.begin(), path.end());
+    std::wstring wServerIdentity(serverIdentity.begin(), serverIdentity.end());
 
     PlaceholderResult result = Placeholders::ConvertToPlaceholder(wPath, wServerIdentity);
 
