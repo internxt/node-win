@@ -1,7 +1,8 @@
-#include <Windows.h>
 #include <locale>
 #include <codecvt>
-#include "SyncRoot.h"
+#include <windows.h>
+#include <node_api.h>
+#include "get_registered_sync_roots.h"
 
 std::string WStringToUTF8(const std::wstring &wstr) {
     std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
@@ -9,7 +10,7 @@ std::string WStringToUTF8(const std::wstring &wstr) {
 }
 
 napi_value get_registered_sync_roots_wrapper(napi_env env, napi_callback_info args) {
-    std::vector<SyncRoots> roots = SyncRoot::GetRegisteredSyncRoots();
+    std::vector<SyncRoots> roots = get_registered_sync_roots();
 
     napi_value jsArray;
     napi_status status = napi_create_array_with_length(env, roots.size(), &jsArray);
