@@ -15,12 +15,6 @@ std::vector<SyncRoots> get_registered_sync_roots() {
         sr.path = info.Path().Path();
         sr.displayName = info.DisplayNameResource();
         sr.version = info.Version();
-
-        auto contextBuffer = info.Context();
-        if (contextBuffer) {
-            sr.context = winrt::CryptographicBuffer::ConvertBinaryToString(winrt::BinaryStringEncoding::Utf8, contextBuffer).c_str();
-        }
-        
         syncRootList.push_back(sr);
     }
 

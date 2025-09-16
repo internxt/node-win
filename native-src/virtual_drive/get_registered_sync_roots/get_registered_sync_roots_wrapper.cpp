@@ -30,7 +30,6 @@ napi_value get_registered_sync_roots_wrapper(napi_env env, napi_callback_info ar
         add_string_property(env, jsObj, "path", roots[i].path);
         add_string_property(env, jsObj, "displayName", roots[i].displayName);
         add_string_property(env, jsObj, "version", roots[i].version);
-        add_string_property(env, jsObj, "context", roots[i].context);
 
         napi_set_element(env, jsArray, i, jsObj);
     }
