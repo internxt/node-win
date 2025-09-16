@@ -37,6 +37,7 @@
         "native-src/virtual_drive/hydrate_file.cpp",
         "native-src/virtual_drive/register_sync_root/register_sync_root.cpp",
         "native-src/virtual_drive/register_sync_root/register_sync_root_wrapper.cpp",
+        "native-src/virtual_drive/unregister_sync_root/unregister_sync_root.cpp",
         "native-src/virtual_drive/unregister_sync_root/unregister_sync_root_wrapper.cpp"
       ],
       "include_dirs": [

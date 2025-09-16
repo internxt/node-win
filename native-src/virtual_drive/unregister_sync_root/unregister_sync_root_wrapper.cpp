@@ -1,5 +1,5 @@
 #include <windows.h>
-#include "SyncRoot.h"
+#include "unregister_sync_root.h"
 
 /**
  * v2.5.7 Carlos Gonzalez
@@ -24,10 +24,10 @@ napi_value unregister_sync_root_wrapper(napi_env env, napi_callback_info args) {
     HRESULT guidResult = CLSIDFromString(providerIdStr, &providerId);
 
     if (SUCCEEDED(guidResult)) {
-        result = SyncRoot::UnregisterSyncRoot(providerId);
+        result = unregister_sync_root(providerId);
     }
     else if (wcscmp(providerIdStr, L"syncRootID") == 0) {
-        result = SyncRoot::UnregisterSyncRoot(providerIdStr);
+        result = unregister_sync_root(providerIdStr);
     }
     else {
         napi_throw_error(env, nullptr, "Invalid provider ID: must be a GUID or 'syncRootID'");
