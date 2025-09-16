@@ -24,7 +24,7 @@ napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args) {
 }
 
 napi_value UnregisterSyncRootWrapper(napi_env env, napi_callback_info args) {
-    return NAPI_SAFE_WRAP(env, args, create_file_placeholder_impl);
+    return NAPI_SAFE_WRAP(env, args, unregister_sync_root_wrapper);
 }
 
 napi_value RegisterSyncRootWrapper(napi_env env, napi_callback_info info) {
