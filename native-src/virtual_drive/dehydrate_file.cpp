@@ -9,7 +9,7 @@ napi_value dehydrate_file(napi_env env, napi_callback_info info) {
     DWORD attrib = GetFileAttributesW(path);
 
     if (attrib & FILE_ATTRIBUTE_DIRECTORY) {
-        throw std::runtime_error("Cannot dehydrate directory");
+        throw std::runtime_error("Cannot dehydrate folder");
     }
 
     winrt::handle placeholder(CreateFileW(path, 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
@@ -18,10 +18,6 @@ napi_value dehydrate_file(napi_env env, napi_callback_info info) {
     offset.QuadPart = 0;
     LARGE_INTEGER length;
     GetFileSizeEx(placeholder.get(), &length);
-
-    if (!(attrib & FILE_ATTRIBUTE_UNPINNED)) {
-        throw std::runtime_error("File is already dehydrated or pinned");
-    }
 
     HRESULT hr = CfDehydratePlaceholder(placeholder.get(), offset, length, CF_DEHYDRATE_FLAG_NONE, NULL);
 
