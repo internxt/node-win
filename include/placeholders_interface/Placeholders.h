@@ -50,6 +50,5 @@ public:
     static PlaceholderResult ConvertToPlaceholder(const std::wstring &fullPath, const std::wstring &serverIdentity);
     static std::string GetFileIdentity(const std::wstring &filePath);
     static void UpdateFileIdentity(const std::wstring &filePath, const std::wstring &fileIdentity, bool isDirectory);
-    static PlaceholderAttribute GetAttribute(const std::wstring &filePath);
     static FileState GetPlaceholderInfo(const std::wstring &directoryPath);
 };

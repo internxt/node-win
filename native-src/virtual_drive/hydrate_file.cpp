@@ -2,7 +2,6 @@
 #include <string>
 #include <Windows.h>
 #include "napi_extract_args.h"
-#include "Logger.h"
 #include "SyncRoot.h"
 
 struct AsyncWork {
@@ -18,7 +17,6 @@ void execute_work(napi_env env, void* data) {
 
     try {
         SyncRoot::HydrateFile(asyncWork->path.c_str());
-        Logger::getInstance().log("finish... " + Logger::fromWStringToString(asyncWork->path.c_str()), LogLevel::INFO);
         asyncWork->success = true;
     } catch (const std::exception& e) {
         asyncWork->error = e.what();

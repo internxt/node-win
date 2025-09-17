@@ -207,23 +207,6 @@ napi_value init(napi_env env, napi_value exports)
     return nullptr;
   }
 
-  napi_property_descriptor updateFileIdentityDesc = {
-      "updateFileIdentity",
-      nullptr,
-      UpdateFileIdentityWrapper,
-      nullptr,
-      nullptr,
-      nullptr,
-      napi_default,
-      nullptr};
-
-  napi_status updateFileIdentityStatus = napi_define_properties(env, exports, 1, &updateFileIdentityDesc);
-  if (updateFileIdentityStatus != napi_ok)
-  {
-    napi_throw_error(env, nullptr, "Failed to define closeMutex function");
-    return nullptr;
-  }
-
   napi_property_descriptor hydrateFileDesc = {
       "hydrateFile",
       nullptr,
@@ -255,23 +238,6 @@ napi_value init(napi_env env, napi_value exports)
   if (defineDehydrateFileStatus != napi_ok)
   {
     napi_throw_error(env, nullptr, "Failed to define dehydrateFile function");
-    return nullptr;
-  }
-
-  napi_property_descriptor getPlaceholderAttributeDesc = {
-      "getPlaceholderAttribute",
-      nullptr,
-      GetPlaceholderAttributeWrapper,
-      nullptr,
-      nullptr,
-      nullptr,
-      napi_default,
-      nullptr};
-
-  napi_status getPlaceholderAttributeStatus = napi_define_properties(env, exports, 1, &getPlaceholderAttributeDesc);
-  if (getPlaceholderAttributeStatus != napi_ok)
-  {
-    napi_throw_error(env, nullptr, "Failed to define getPlaceholderAttribute function");
     return nullptr;
   }
 

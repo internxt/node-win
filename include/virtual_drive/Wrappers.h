@@ -14,7 +14,5 @@ napi_value addLoggerPathWrapper(napi_env env, napi_callback_info args);
 napi_value UpdateSyncStatusWrapper(napi_env env, napi_callback_info args);
 napi_value GetPlaceholderStateWrapper(napi_env env, napi_callback_info args);
 napi_value ConvertToPlaceholderWrapper(napi_env env, napi_callback_info args);
-napi_value UpdateFileIdentityWrapper(napi_env env, napi_callback_info args);
 napi_value DehydrateFileWrapper(napi_env env, napi_callback_info args);
 napi_value HydrateFileWrapper(napi_env env, napi_callback_info args);
-napi_value GetPlaceholderAttributeWrapper(napi_env env, napi_callback_info args);
