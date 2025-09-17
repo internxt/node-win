@@ -40,7 +40,8 @@
         "native-src/virtual_drive/hydrate_file.cpp",
         "native-src/virtual_drive/register_sync_root/register_sync_root.cpp",
         "native-src/virtual_drive/register_sync_root/register_sync_root_wrapper.cpp",
-        "native-src/virtual_drive/unregister_sync_root_wrapper.cpp"
+        "native-src/virtual_drive/unregister_sync_root_wrapper.cpp",
+        "native-src/virtual_drive/update_sync_status/update_sync_status_wrapper.cpp"
       ],
       "include_dirs": [
         "include",
@@ -52,7 +53,8 @@
         "include/virtual_drive",
         "include/virtual_drive/get_placeholder_state",
         "include/virtual_drive/get_registered_sync_roots",
-        "include/virtual_drive/register_sync_root"
+        "include/virtual_drive/register_sync_root",
+        "include/virtual_drive/update_sync_status"
       ],
       "libraries": [
         "-lCldApi.lib",
