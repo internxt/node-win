@@ -56,54 +56,6 @@ void SyncRoot::HydrateFile(const wchar_t *filePath)
     }
 }
 
-void SyncRoot::DehydrateFile(const wchar_t *filePath)
-{
-    // Logger::getInstance().log("Dehydration file init", LogLevel::INFO);
-    wprintf(L"Dehydration file init %ls\n", filePath);
-    DWORD attrib = GetFileAttributesW(filePath);
-    if (!(attrib & FILE_ATTRIBUTE_DIRECTORY))
-    {
-        winrt::handle placeholder(CreateFileW(filePath, 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
-
-        LARGE_INTEGER offset;
-        offset.QuadPart = 0;
-        LARGE_INTEGER length;
-        GetFileSizeEx(placeholder.get(), &length);
-
-        if (attrib & FILE_ATTRIBUTE_UNPINNED)
-        {
-            // Logger::getInstance().log("Dehydrating file " + Logger::fromWStringToString(filePath), LogLevel::INFO);
-            wprintf(L"Dehydrating file starteeed %ls\n", filePath);
-            HRESULT hr = CfDehydratePlaceholder(placeholder.get(), offset, length, CF_DEHYDRATE_FLAG_NONE, NULL);
-
-            if (FAILED(hr))
-            {
-                DWORD err = HRESULT_CODE(hr);
-                if (err == ERROR_SHARING_VIOLATION || err == ERROR_CLOUD_FILE_IN_USE)
-                {
-                    wprintf(L"Cannot dehydrate because the file is currently in use: %ls\n", filePath);
-
-                    MessageBoxW(
-                        nullptr,
-                        L"Unable to free up space because the file is currently in use.\nPlease close the file and try again.",
-                        L"File in use",
-                        MB_OK | MB_ICONWARNING | MB_SYSTEMMODAL);
-                }
-                else
-                {
-                    wprintf(L"Error dehydrating file %ls\n", filePath);
-                }
-                // Logger::getInstance().log("Error dehydrating file " + Logger::fromWStringToString(filePath), LogLevel::ERROR);
-            }
-            else
-            {
-                wprintf(L"Dehydration finished %ls\n", filePath);
-                // Logger::getInstance().log("Dehydration finished " + Logger::fromWStringToString(filePath), LogLevel::INFO);
-            }
-        }
-    }
-}
-
 HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallbacks syncCallbacks, napi_env env, CF_CONNECTION_KEY *connectionKey)
 {
     Utilities::AddFolderToSearchIndexer(syncRootPath);

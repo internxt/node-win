@@ -234,7 +234,7 @@ napi_value HydrateFileWrapper(napi_env env, napi_callback_info args) {
 }
 
 napi_value DehydrateFileWrapper(napi_env env, napi_callback_info args) {
-    return NAPI_SAFE_WRAP(env, args, hydrate_file_impl);
+    return NAPI_SAFE_WRAP(env, args, dehydrate_file);
 }
 
 napi_value GetPlaceholderAttributeWrapper(napi_env env, napi_callback_info args)
