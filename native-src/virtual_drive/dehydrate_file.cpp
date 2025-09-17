@@ -1,17 +1,15 @@
 #include <windows.h>
 #include "napi_extract_args.h"
-#include "SyncRoot.h"
+#include "stdafx.h"
 
 napi_value dehydrate_file(napi_env env, napi_callback_info info) {
     auto [rawPath] = napi_extract_args<1>(env, info);
     const wchar_t* path = rawPath.c_str();
 
-    wprintf(L"Dehydration file init %ls\n", path);
     DWORD attrib = GetFileAttributesW(path);
 
     if (attrib & FILE_ATTRIBUTE_DIRECTORY) {
-        wprintf(L"Path is from a directory: %ls\n", path);
-        return nullptr;
+        throw std::runtime_error("Cannot dehydrate directory");
     }
 
     winrt::handle placeholder(CreateFileW(path, 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
@@ -22,15 +20,12 @@ napi_value dehydrate_file(napi_env env, napi_callback_info info) {
     GetFileSizeEx(placeholder.get(), &length);
 
     if (!(attrib & FILE_ATTRIBUTE_UNPINNED)) {
-        wprintf(L"File is already dehydrated or pinned: %ls\n", path);
-        return nullptr;
+        throw std::runtime_error("File is already dehydrated or pinned");
     }
 
-    wprintf(L"Dehydrating file started %ls\n", path);
     HRESULT hr = CfDehydratePlaceholder(placeholder.get(), offset, length, CF_DEHYDRATE_FLAG_NONE, NULL);
 
     if (SUCCEEDED(hr)) {
-        wprintf(L"Dehydration finished %ls\n", path);
         return nullptr;
     }
 
