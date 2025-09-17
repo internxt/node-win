@@ -1,0 +1,15 @@
+#pragma once
+
+#include <iostream>
+#include <vector>
+
+struct SyncRoots
+{
+    std::wstring id;
+    std::wstring path;
+    std::wstring displayName;
+    std::wstring version;
+    std::wstring context;
+};
+
+std::vector<SyncRoots> get_registered_sync_roots();
