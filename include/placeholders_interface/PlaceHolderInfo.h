@@ -27,7 +27,6 @@ enum class PinState
 
 struct FileState {
     PinState pinstate;
-    SyncState syncstate;
 };
 
 class PlaceHolderInfo

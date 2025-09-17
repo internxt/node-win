@@ -19,6 +19,7 @@
 #include "unregister_sync_root_wrapper.h"
 #include "dehydrate_file.h"
 #include "disconnect_sync_root.h"
+#include "get_placeholder_state_wrapper.h"
 #include "NAPI_SAFE_WRAP.h"
 
 napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args) {
@@ -124,40 +125,8 @@ napi_value UpdateSyncStatusWrapper(napi_env env, napi_callback_info args)
     return result;
 }
 
-napi_value GetPlaceholderStateWrapper(napi_env env, napi_callback_info args)
-{
-    size_t argc = 1;
-    napi_value argv[1];
-
-    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
-    if (argc < 1)
-    {
-        napi_throw_error(env, nullptr, "The path is required for GetPlaceholderState");
-        return nullptr;
-    }
-
-    size_t pathLength;
-    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
-
-    std::unique_ptr<wchar_t[]> widePath(new wchar_t[pathLength + 1]);
-
-    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(widePath.get()), pathLength + 1, nullptr);
-
-    // DWORD state = Placeholders::GetPlaceholderState(widePath.get());
-    FileState state = Placeholders::GetPlaceholderInfo(widePath.get());
-
-    napi_value result;
-    napi_create_object(env, &result);
-
-    napi_value jsPinState;
-    napi_create_int32(env, static_cast<int32_t>(state.pinstate), &jsPinState);
-    napi_set_named_property(env, result, "pinState", jsPinState);
-
-    napi_value jsSyncState;
-    napi_create_int32(env, static_cast<int32_t>(state.syncstate), &jsSyncState);
-    napi_set_named_property(env, result, "syncState", jsSyncState);
-
-    return result;
+napi_value GetPlaceholderStateWrapper(napi_env env, napi_callback_info args) {
+    return NAPI_SAFE_WRAP(env, args, get_placeholder_state_wrapper);
 }
 
 napi_value ConvertToPlaceholderWrapper(napi_env env, napi_callback_info args) {
