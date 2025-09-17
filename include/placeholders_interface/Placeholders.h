@@ -3,13 +3,6 @@
 #include <string>
 #include <PlaceholderInfo.h>
 
-enum class PlaceholderAttribute
-{
-    OTHER = 0,
-    NOT_PINNED = 1,
-    PINNED = 2,
-};
-
 struct PlaceholderResult {
     bool success;
     std::wstring errorMessage;
@@ -46,7 +39,6 @@ public:
     static void ForceShellRefresh(const std::wstring &path);
     static void UpdateSyncStatus(const std::wstring &filePath, bool syncState, bool isDirectory);
     static HRESULT UpdatePinState(const std::wstring &path, const PinState state);
-    static CF_PLACEHOLDER_STATE GetPlaceholderState(const std::wstring &filePath);
     static PlaceholderResult ConvertToPlaceholder(const std::wstring &fullPath, const std::wstring &serverIdentity);
     static std::string GetFileIdentity(const std::wstring &filePath);
     static void UpdateFileIdentity(const std::wstring &filePath, const std::wstring &fileIdentity, bool isDirectory);
