@@ -17,6 +17,7 @@
 #include "convert_to_placeholder.h"
 #include "get_registered_sync_roots_wrapper.h"
 #include "unregister_sync_root_wrapper.h"
+#include "dehydrate_file.h"
 #include "NAPI_SAFE_WRAP.h"
 
 napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args) {
@@ -228,38 +229,12 @@ napi_value UpdateFileIdentityWrapper(napi_env env, napi_callback_info args)
     return result;
 }
 
-napi_value HydrateFileWrapper(napi_env env, napi_callback_info args)
-{
+napi_value HydrateFileWrapper(napi_env env, napi_callback_info args) {
     return NAPI_SAFE_WRAP(env, args, hydrate_file_impl);
 }
 
-napi_value DehydrateFileWrapper(napi_env env, napi_callback_info args)
-{
-    size_t argc = 1;
-    napi_value argv[1];
-    napi_value thisArg;
-    napi_get_cb_info(env, args, &argc, argv, &thisArg, nullptr);
-
-    if (argc < 1)
-    {
-        napi_throw_type_error(env, nullptr, "The file path is required for DehydrateFile");
-        return nullptr;
-    }
-
-    // Obtener el argumento de JavaScript y convertirlo a una cadena de C++
-    LPCWSTR fullPath;
-    size_t pathLength;
-    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
-    fullPath = new WCHAR[pathLength + 1];
-    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(fullPath)), pathLength + 1, nullptr);
-
-    // Llamar a la función DehydrateFile
-    SyncRoot::DehydrateFile(fullPath);
-
-    napi_value result;
-    napi_get_boolean(env, true, &result);
-
-    return result;
+napi_value DehydrateFileWrapper(napi_env env, napi_callback_info args) {
+    return NAPI_SAFE_WRAP(env, args, hydrate_file_impl);
 }
 
 napi_value GetPlaceholderAttributeWrapper(napi_env env, napi_callback_info args)
