@@ -1,8 +1,7 @@
 #include <Windows.h>
 #include "register_sync_root.h"
 
-napi_value register_sync_root_wrapper(napi_env env, napi_callback_info args)
-{
+napi_value register_sync_root_wrapper(napi_env env, napi_callback_info args) {
     size_t argc = 5;
     napi_value argv[5];
     napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
