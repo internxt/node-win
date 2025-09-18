@@ -42,6 +42,7 @@
       "include_dirs": [
         "include",
         "include/logger",
+        "include/napi_helpers",
         "include/placeholders_interface",
         "include/sync_root_interface",
         "include/sync_root_interface/callbacks",
