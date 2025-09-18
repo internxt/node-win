@@ -9,11 +9,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 1
 
-    permissions:
-      contents: read
-      id-token: write
-      packages: write
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
