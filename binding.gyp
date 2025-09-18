@@ -31,6 +31,7 @@
         "native-src/virtual_drive/convert_to_placeholder.cpp",
         "native-src/virtual_drive/create_file_placeholder.cpp",
         "native-src/virtual_drive/create_folder_placeholder.cpp",
+        "native-src/virtual_drive/dehydrate_file.cpp",
         "native-src/virtual_drive/get_file_identity.cpp",
         "native-src/virtual_drive/get_registered_sync_roots/get_registered_sync_roots.cpp",
         "native-src/virtual_drive/get_registered_sync_roots/get_registered_sync_roots_wrapper.cpp",

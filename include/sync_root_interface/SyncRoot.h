@@ -20,7 +20,6 @@ public:
     static HRESULT DisconnectSyncRoot(const wchar_t *syncRootPath);
     static std::string GetFileIdentity(const wchar_t *path);
     static void HydrateFile(const wchar_t *filePath);
-    static void DehydrateFile(const wchar_t *filePath);
 
 private:
     CF_CONNECTION_KEY connectionKey;
