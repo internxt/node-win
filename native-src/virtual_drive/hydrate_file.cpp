@@ -2,7 +2,6 @@
 #include <string>
 #include <Windows.h>
 #include "napi_extract_args.h"
-#include "Logger.h"
 #include "SyncRoot.h"
 
 struct AsyncWork {
