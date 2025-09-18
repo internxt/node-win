@@ -19,6 +19,8 @@ void execute_work(napi_env env, void* data) {
     try {
         SyncRoot::HydrateFile(asyncWork->path.c_str());
         asyncWork->success = true;
+    } catch (const std::exception& e) {
+        asyncWork->error = e.what();
         asyncWork->success = false;
     } catch (...) {
         asyncWork->error = "Unknown error";
