@@ -44,25 +44,6 @@ CF_PIN_STATE pinStateToCfPinState(PinState state)
     }
 }
 
-std::string pinStateToString(PinState state)
-{
-    switch (state)
-    {
-    case PinState::Inherited:
-        return "Inherited";
-    case PinState::AlwaysLocal:
-        return "AlwaysLocal";
-    case PinState::OnlineOnly:
-        return "OnlineOnly";
-    case PinState::Unspecified:
-        return "Unspecified";
-    case PinState::Excluded:
-        return "Excluded";
-    default:
-        return "Unknown";
-    }
-}
-
 PlaceHolderInfo::PlaceHolderInfo()
     : _data(nullptr, [](CF_PLACEHOLDER_BASIC_INFO *) {})
 {

@@ -270,32 +270,6 @@ PlaceholderResult Placeholders::ConvertToPlaceholder(const std::wstring &fullPat
     return result;
 }
 
-std::wstring GetErrorMessageFromHRESULT(HRESULT hr)
-{
-    LPWSTR errorMessage = nullptr;
-    DWORD result = FormatMessageW(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-        nullptr,
-        hr,
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        reinterpret_cast<LPWSTR>(&errorMessage),
-        0,
-        nullptr);
-
-    std::wstring message;
-    if (result > 0 && errorMessage)
-    {
-        message = errorMessage;
-        LocalFree(errorMessage);
-    }
-    else
-    {
-        message = L"Error desconocido";
-    }
-
-    return message;
-}
-
 /**
  * @brief Mark a file or directory as synchronized
  * @param filePath path to the file or directory

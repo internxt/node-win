@@ -59,5 +59,4 @@ private:
 
 FileHandle handleForPath(const std::wstring &path);
 
-std::string pinStateToString(PinState state);
 CF_PIN_STATE pinStateToCfPinState(PinState state);
