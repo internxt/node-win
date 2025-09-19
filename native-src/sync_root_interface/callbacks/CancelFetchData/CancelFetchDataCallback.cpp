@@ -7,20 +7,25 @@
 #include <mutex>
 #include <filesystem>
 
-napi_threadsafe_function g_cancel_delete_fetch_data_threadsafe_callback = nullptr;
+napi_threadsafe_function g_cancel_fetch_data_threadsafe_callback = nullptr;
 
-inline std::mutex mtx;
-inline std::condition_variable cv;
-inline bool ready = false;
+struct CallbackContext {
+    std::mutex mtx;
+    std::condition_variable cv;
+    bool ready = false;
+};
 
-struct CancelFetchDataArgs
-{
+struct CancelFetchDataArgs {
     std::wstring fileIdentityArg;
+    CallbackContext* context;
+    
+    CancelFetchDataArgs(const std::wstring& fileId, CallbackContext* ctx) 
+        : fileIdentityArg(fileId), context(ctx) {}
 };
 
 void setup_global_tsfn_cancel_fetch_data(napi_threadsafe_function tsfn)
 {
-    g_cancel_delete_fetch_data_threadsafe_callback = tsfn;
+    g_cancel_fetch_data_threadsafe_callback = tsfn;
 }
 
 void notify_cancel_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
@@ -43,23 +48,27 @@ void notify_cancel_fetch_data_call(napi_env env, napi_value js_callback, void *c
     {
         fprintf(stderr, "Failed to call JS function.\n");
         Logger::getInstance().log("Failed to call JS function in cancelFetchCallback.", LogLevel::ERROR);
-        return;
     }
 
-    cv.notify_one();
+    {
+        std::lock_guard<std::mutex> lock(args->context->mtx);
+        args->context->ready = true;
+    }
+
+    args->context->cv.notify_one();
     delete args;
 }
 
 void register_threadsafe_cancel_fetch_data_callback(const std::string &resource_name, napi_env env, InputSyncCallbacks input)
 {
-    std::u16string converted_resource_name = std::u16string(resource_name.begin(), resource_name.end());
+    std::u16string converted_resource_name(resource_name.begin(), resource_name.end());
 
     napi_value resource_name_value;
     napi_create_string_utf16(env, converted_resource_name.c_str(), NAPI_AUTO_LENGTH, &resource_name_value);
 
     napi_threadsafe_function tsfn_cancel_fetch_data;
     napi_value cancel_fetch_data_value;
-    napi_status status_ref = napi_get_reference_value(env, input.cancel_fetch_data_callback_ref, &cancel_fetch_data_value);
+    napi_get_reference_value(env, input.cancel_fetch_data_callback_ref, &cancel_fetch_data_value);
 
     napi_status status = napi_create_threadsafe_function(
         env,
@@ -76,9 +85,10 @@ void register_threadsafe_cancel_fetch_data_callback(const std::string &resource_
 
     if (status != napi_ok)
     {
-        fprintf(stderr, "Failed to create threadsafe function.\n");
+        napi_throw_error(env, nullptr, "Failed to create cancel fetch data threadsafe function");
         return;
     }
+
     setup_global_tsfn_cancel_fetch_data(tsfn_cancel_fetch_data);
 }
 
@@ -86,7 +96,7 @@ void CALLBACK cancel_fetch_data_callback_wrapper(
     _In_ CONST CF_CALLBACK_INFO *callbackInfo,
     _In_ CONST CF_CALLBACK_PARAMETERS *callbackParameters)
 {
-    printf("fetch_data_callback_wrapper\n");
+    printf("cancel_fetch_data_callback_wrapper\n");
 
     LPCVOID fileIdentity = callbackInfo->FileIdentity;
     DWORD fileIdentityLength = callbackInfo->FileIdentityLength;
@@ -94,29 +104,25 @@ void CALLBACK cancel_fetch_data_callback_wrapper(
     const wchar_t *wchar_ptr = static_cast<const wchar_t *>(fileIdentity);
     std::wstring fileIdentityStr(wchar_ptr, fileIdentityLength / sizeof(wchar_t));
 
-    if (g_cancel_delete_fetch_data_threadsafe_callback == nullptr)
+    if (g_cancel_fetch_data_threadsafe_callback == nullptr)
     {
         wprintf(L"Callback fetch_data_callback_wrapper called but g_fetch_data_threadsafe_callback is null\n");
         return;
     }
+    
+    CallbackContext context;
+    CancelFetchDataArgs *args = new CancelFetchDataArgs(fileIdentityStr, &context);
 
-    CancelFetchDataArgs *args = new CancelFetchDataArgs();
-    args->fileIdentityArg = fileIdentityStr;
-
-    napi_status status = napi_call_threadsafe_function(g_cancel_delete_fetch_data_threadsafe_callback, args, napi_tsfn_blocking);
-
-    if (status != napi_ok)
-    {
-        wprintf(L"Callback called unsuccessfully.\n");
-    };
+    napi_call_threadsafe_function(g_cancel_fetch_data_threadsafe_callback, args, napi_tsfn_blocking);
 
     {
-        std::unique_lock<std::mutex> lock(mtx);
-        while (!ready)
-        {
-            cv.wait(lock);
+        std::unique_lock<std::mutex> lock(context.mtx);
+        auto timeout = std::chrono::seconds(30);
+
+        if (context.cv.wait_for(lock, timeout, [&context] { return context.ready; })) {
+            wprintf(L"Cancel fetch completed\n");
+        } else {
+            wprintf(L"Cancel fetch timed out\n");
         }
     }
-
-    ready = false;
 }
