@@ -96,7 +96,7 @@ void CALLBACK cancel_fetch_data_callback_wrapper(
     _In_ CONST CF_CALLBACK_INFO *callbackInfo,
     _In_ CONST CF_CALLBACK_PARAMETERS *callbackParameters)
 {
-    printf("cancel_fetch_data_callback_wrapper\n");
+    printf("cancel_fetch_data_callback_wrapper called\n");
 
     LPCVOID fileIdentity = callbackInfo->FileIdentity;
     DWORD fileIdentityLength = callbackInfo->FileIdentityLength;
