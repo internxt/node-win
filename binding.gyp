@@ -34,6 +34,7 @@
         "native-src/virtual_drive/dehydrate_file.cpp",
         "native-src/virtual_drive/disconnect_sync_root.cpp",
         "native-src/virtual_drive/get_file_identity.cpp",
+        "native-src/virtual_drive/get_placeholder_state/get_placeholder_state_wrapper.cpp",
         "native-src/virtual_drive/get_registered_sync_roots/get_registered_sync_roots.cpp",
         "native-src/virtual_drive/get_registered_sync_roots/get_registered_sync_roots_wrapper.cpp",
         "native-src/virtual_drive/hydrate_file.cpp",
@@ -49,6 +50,7 @@
         "include/sync_root_interface",
         "include/sync_root_interface/callbacks",
         "include/virtual_drive",
+        "include/virtual_drive/get_placeholder_state",
         "include/virtual_drive/get_registered_sync_roots",
         "include/virtual_drive/register_sync_root"
       ],

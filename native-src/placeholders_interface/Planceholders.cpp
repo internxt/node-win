@@ -458,7 +458,6 @@ FileState Placeholders::GetPlaceholderInfo(const std::wstring &directoryPath)
     {
         printf("Error: Invalid file handle.\n");
         fileState.pinstate = PinState::Unspecified;
-        fileState.syncstate = SyncState::Undefined;
         return fileState;
     }
 
@@ -468,18 +467,10 @@ FileState Placeholders::GetPlaceholderInfo(const std::wstring &directoryPath)
     {
         printf("CfGetPlaceholderInfo failed with HRESULT %lx\n", result);
         fileState.pinstate = PinState::Unspecified;
-        fileState.syncstate = SyncState::Undefined;
         return fileState;
     }
 
     auto pinStateOpt = info.pinState();
-    auto syncStateOpt = info.syncState();
-
-    if (syncStateOpt.has_value())
-    {
-
-        SyncState syncState = syncStateOpt.value();
-    }
 
     if (pinStateOpt.has_value())
     {
@@ -488,7 +479,6 @@ FileState Placeholders::GetPlaceholderInfo(const std::wstring &directoryPath)
     }
 
     fileState.pinstate = pinStateOpt.value_or(PinState::Unspecified);
-    fileState.syncstate = syncStateOpt.value_or(SyncState::Undefined);
 
     return fileState;
 }
