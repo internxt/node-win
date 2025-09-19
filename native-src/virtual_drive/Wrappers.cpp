@@ -18,6 +18,7 @@
 #include "get_registered_sync_roots_wrapper.h"
 #include "unregister_sync_root_wrapper.h"
 #include "dehydrate_file.h"
+#include "disconnect_sync_root.h"
 #include "NAPI_SAFE_WRAP.h"
 
 napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args) {
@@ -44,37 +45,11 @@ napi_value CreateEntryWrapper(napi_env env, napi_callback_info args) {
     return NAPI_SAFE_WRAP(env, args, create_folder_placeholder_impl);
 }
 
-// disconection wrapper
-napi_value DisconnectSyncRootWrapper(napi_env env, napi_callback_info args)
-{
-    size_t argc = 1;
-    napi_value argv[1];
-
-    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
-
-    if (argc < 1)
-    {
-        napi_throw_error(env, nullptr, "The sync root path is required for DisconnectSyncRoot");
-        return nullptr;
-    }
-
-    LPCWSTR syncRootPath;
-    size_t pathLength;
-    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
-    syncRootPath = new WCHAR[pathLength + 1];
-    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(const_cast<wchar_t *>(syncRootPath)), pathLength + 1, nullptr);
-
-    HRESULT result = SyncRoot::DisconnectSyncRoot(syncRootPath);
-
-    delete[] syncRootPath;
-
-    napi_value napiResult;
-    napi_create_int32(env, static_cast<int32_t>(result), &napiResult);
-    return napiResult;
+napi_value DisconnectSyncRootWrapper(napi_env env, napi_callback_info args) {
+    return NAPI_SAFE_WRAP(env, args, disconnect_sync_root);
 }
 
-napi_value GetFileIdentityWrapper(napi_env env, napi_callback_info args)
-{
+napi_value GetFileIdentityWrapper(napi_env env, napi_callback_info args) {
     return NAPI_SAFE_WRAP(env, args, get_file_identity_impl);
 }
 
@@ -189,83 +164,10 @@ napi_value ConvertToPlaceholderWrapper(napi_env env, napi_callback_info args) {
     return NAPI_SAFE_WRAP(env, args, convert_to_placeholder_impl);
 }
 
-napi_value UpdateFileIdentityWrapper(napi_env env, napi_callback_info args)
-{
-
-    size_t argc = 3;
-    napi_value argv[3];
-
-    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
-
-    if (argc < 3)
-    {
-        napi_throw_error(env, nullptr, "Both full path and placeholder ID are required for UpdateFileIdentityWrapper");
-        return nullptr;
-    }
-
-    size_t pathLength;
-    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
-
-    std::unique_ptr<char16_t[]> widePath(new char16_t[pathLength + 1]);
-
-    napi_get_value_string_utf16(env, argv[0], widePath.get(), pathLength + 1, nullptr);
-
-    size_t placeholderIdLength;
-    napi_get_value_string_utf16(env, argv[1], nullptr, 0, &placeholderIdLength);
-
-    std::unique_ptr<char16_t[]> widePlaceholderId(new char16_t[placeholderIdLength + 1]);
-
-    napi_get_value_string_utf16(env, argv[1], widePlaceholderId.get(), placeholderIdLength + 1, nullptr);
-
-    bool isDirectory;
-    napi_get_value_bool(env, argv[2], &isDirectory);
-
-    Placeholders::UpdateFileIdentity(
-        reinterpret_cast<wchar_t *>(widePath.get()),
-        reinterpret_cast<wchar_t *>(widePlaceholderId.get()),
-        isDirectory);
-
-    napi_value result;
-    return result;
-}
-
 napi_value HydrateFileWrapper(napi_env env, napi_callback_info args) {
     return NAPI_SAFE_WRAP(env, args, hydrate_file_impl);
 }
 
 napi_value DehydrateFileWrapper(napi_env env, napi_callback_info args) {
     return NAPI_SAFE_WRAP(env, args, dehydrate_file);
-}
-
-napi_value GetPlaceholderAttributeWrapper(napi_env env, napi_callback_info args)
-{
-    size_t argc = 1;
-    napi_value argv[1];
-    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
-
-    if (argc < 1)
-    {
-        napi_throw_type_error(env, nullptr, "Both source and destination paths are required");
-        return nullptr;
-    }
-
-    // Obtener los argumentos de JavaScript y convertirlos a cadenas de C++
-    std::wstring sourcePath, destinationPath;
-    size_t sourcePathLength, destinationPathLength;
-
-    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &sourcePathLength);
-    sourcePath.resize(sourcePathLength);
-    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(&sourcePath[0]), sourcePathLength + 1, nullptr);
-
-    // Llamar a la función TransferData
-    PlaceholderAttribute attribute = Placeholders::GetAttribute(sourcePath);
-
-    napi_value result;
-    napi_create_object(env, &result);
-
-    napi_value jsAtrtibute;
-    napi_create_int32(env, static_cast<int32_t>(attribute), &jsAtrtibute);
-    napi_set_named_property(env, result, "attribute", jsAtrtibute);
-
-    return result;
 }
