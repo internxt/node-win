@@ -59,7 +59,9 @@ void SyncRoot::HydrateFile(const wchar_t *filePath)
 HRESULT SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallbacks syncCallbacks, napi_env env, CF_CONNECTION_KEY *connectionKey)
 {
     Utilities::AddFolderToSearchIndexer(syncRootPath);
-    register_threadsafe_callbacks(env, syncCallbacks);
+
+    register_threadsafe_fetch_data_callback("FetchDataThreadSafe", env, syncCallbacks);
+    register_threadsafe_cancel_fetch_data_callback("CancelFetchDataThreadSafe", env, syncCallbacks);
 
     CF_CALLBACK_REGISTRATION callbackTable[] = {
         {CF_CALLBACK_TYPE_FETCH_DATA, fetch_data_callback_wrapper},
