@@ -21,13 +21,6 @@
 
 napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
-inline std::mutex mtx;
-inline std::mutex mtx_download;
-inline std::condition_variable cv;
-inline std::condition_variable cv_download;
-inline bool ready_download = false;
-inline bool callbackResult = false;
-
 #define FIELD_SIZE(type, field) (sizeof(((type *)0)->field))
 
 #define CF_SIZE_OF_OP_PARAM(field)                  \
@@ -37,18 +30,6 @@ inline bool callbackResult = false;
 #define CHUNK_SIZE (4096 * 1024)
 
 #define CHUNKDELAYMS 250
-
-std::wstring g_full_client_path;
-
-struct FetchDataArgs
-{
-    std::wstring fileIdentityArg;
-};
-
-void load_data()
-{
-    printf("load_data called");
-}
 
 napi_value create_response(napi_env env, bool finished, float progress)
 {
@@ -70,25 +51,6 @@ napi_value create_response(napi_env env, bool finished, float progress)
     napi_resolve_deferred(env, deferred, result_object);
 
     return promise;
-}
-
-std::string WStringToString(const std::wstring &wstr)
-{
-    try
-    {
-        if (wstr.empty())
-            return std::string();
-
-        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-        std::string utf8_str = converter.to_bytes(wstr);
-
-        return utf8_str;
-    }
-    catch (const std::exception &e)
-    {
-        Logger::getInstance().log("Error converting wstring to string: " + std::string(e.what()), LogLevel::ERROR);
-        return "";
-    }
 }
 
 static size_t file_incremental_reading(napi_env env, 
@@ -342,20 +304,14 @@ static void notify_fetch_data_call(napi_env env, napi_value js_callback, void *c
 
 void register_threadsafe_fetch_data_callback(const std::string &resource_name, napi_env env, InputSyncCallbacks input)
 {
-    Logger::getInstance().log("register_threadsafe_fetch_data_callback called", LogLevel::DEBUG);
-    std::u16string converted_resource_name = std::u16string(resource_name.begin(), resource_name.end());
+    std::u16string converted_resource_name(resource_name.begin(), resource_name.end());
 
     napi_value resource_name_value;
-    napi_create_string_utf16(env, 
-                             converted_resource_name.c_str(), 
-                             NAPI_AUTO_LENGTH, 
-                             &resource_name_value);
+    napi_create_string_utf16(env, converted_resource_name.c_str(), NAPI_AUTO_LENGTH, &resource_name_value);
 
     napi_threadsafe_function tsfn_fetch_data;
     napi_value fetch_data_value;
-    napi_status status_ref = napi_get_reference_value(env, input.fetch_data_callback_ref, &fetch_data_value);
-
-    Logger::getInstance().log("status_ref: " + std::to_string(status_ref), LogLevel::DEBUG);
+    napi_get_reference_value(env, input.fetch_data_callback_ref, &fetch_data_value);
 
     napi_status status = napi_create_threadsafe_function(
         env,
@@ -370,8 +326,9 @@ void register_threadsafe_fetch_data_callback(const std::string &resource_name, n
         notify_fetch_data_call,
         &tsfn_fetch_data);
 
-    if (status != napi_ok) {
-        Logger::getInstance().log("Failed to create threadsafe function (fetch_data).", LogLevel::ERROR);
+    if (status != napi_ok)
+    {
+        napi_throw_error(env, nullptr, "Failed to create fetch data threadsafe function");
         return;
     }
 
@@ -392,9 +349,10 @@ void CALLBACK fetch_data_callback_wrapper(
     ctx->requiredLength  = callbackParameters->FetchData.RequiredLength;
     ctx->requiredOffset  = callbackParameters->FetchData.RequiredFileOffset;
     ctx->callbackInfo    = *callbackInfo; 
-    std::wstring fullClientPath(callbackInfo->VolumeDosName);
-    fullClientPath.append(callbackInfo->NormalizedPath);
-    ctx->fullClientPath  = fullClientPath;
+
+    std::wstring fullClientPath(callbackInfo->VolumeDosName);   // e.g., "C:"
+    fullClientPath.append(callbackInfo->NormalizedPath);        // e.g., "\Users\file.txt"
+    ctx->fullClientPath  = fullClientPath;                      // Result: "C:\Users\file.txt"
 
     Logger::getInstance().log("Full download path: " 
                                 + Logger::fromWStringToString(fullClientPath),
@@ -406,13 +364,7 @@ void CALLBACK fetch_data_callback_wrapper(
         return;
     }
 
-    napi_status status = napi_call_threadsafe_function(
-                            g_fetch_data_threadsafe_callback, 
-                            ctx.get(),
-                            napi_tsfn_blocking);
-    if (status != napi_ok) {
-        Logger::getInstance().log("Callback called unsuccessfully in fetch_data_callback_wrapper.", LogLevel::ERROR);
-    }
+    napi_status status = napi_call_threadsafe_function(g_fetch_data_threadsafe_callback, ctx.get(), napi_tsfn_blocking);
 
     Logger::getInstance().log("fetch_data_callback_wrapper after napi_call_threadsafe_function", LogLevel::DEBUG);
 

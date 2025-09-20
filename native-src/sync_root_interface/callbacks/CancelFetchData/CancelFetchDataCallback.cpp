@@ -23,11 +23,6 @@ struct CancelFetchDataArgs {
         : fileIdentityArg(fileId), context(ctx) {}
 };
 
-void setup_global_tsfn_cancel_fetch_data(napi_threadsafe_function tsfn)
-{
-    g_cancel_fetch_data_threadsafe_callback = tsfn;
-}
-
 void notify_cancel_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
 {
     CancelFetchDataArgs *args = static_cast<CancelFetchDataArgs *>(data);
@@ -89,7 +84,7 @@ void register_threadsafe_cancel_fetch_data_callback(const std::string &resource_
         return;
     }
 
-    setup_global_tsfn_cancel_fetch_data(tsfn_cancel_fetch_data);
+    g_cancel_fetch_data_threadsafe_callback = tsfn_cancel_fetch_data;
 }
 
 void CALLBACK cancel_fetch_data_callback_wrapper(

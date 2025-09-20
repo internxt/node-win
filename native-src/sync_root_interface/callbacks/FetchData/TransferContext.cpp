@@ -1,21 +1,16 @@
 #include "TransferContext.h"
 
 struct CfTransferKeyLess {
-    bool operator()(const CF_TRANSFER_KEY &a, const CF_TRANSFER_KEY &b) const
-    {
+    bool operator()(const CF_TRANSFER_KEY &a, const CF_TRANSFER_KEY &b) const {
         return a.QuadPart < b.QuadPart;
     }
 };
 
 static std::map<CF_TRANSFER_KEY, std::shared_ptr<TransferContext>, CfTransferKeyLess> g_transferContextMap;
 
-
 static std::mutex g_contextMapMutex;
 
-std::shared_ptr<TransferContext> GetOrCreateTransferContext(
-    CF_CONNECTION_KEY connKey,
-    CF_TRANSFER_KEY transferKey)
-{
+std::shared_ptr<TransferContext> GetOrCreateTransferContext(CF_CONNECTION_KEY connKey, CF_TRANSFER_KEY transferKey) {
     std::lock_guard<std::mutex> lock(g_contextMapMutex);
 
     auto it = g_transferContextMap.find(transferKey);
@@ -30,8 +25,7 @@ std::shared_ptr<TransferContext> GetOrCreateTransferContext(
     return ctx;
 }
 
-void RemoveTransferContext(CF_TRANSFER_KEY transferKey) 
-{
+void RemoveTransferContext(CF_TRANSFER_KEY transferKey)  {
     std::lock_guard<std::mutex> lock(g_contextMapMutex);
     g_transferContextMap.erase(transferKey);
 }
