@@ -6,32 +6,6 @@
 #include <locale>
 #include "Logger.h"
 
-SyncState cfSyncStateToSyncState(CF_IN_SYNC_STATE state)
-{
-    switch (state)
-    {
-    case CF_IN_SYNC_STATE_NOT_IN_SYNC:
-        return SyncState::NotInSync;
-    case CF_IN_SYNC_STATE_IN_SYNC:
-        return SyncState::InSync;
-    default:
-        return SyncState::NotInSync;
-    }
-}
-
-std::string syncStateToString(SyncState state)
-{
-    switch (state)
-    {
-    case SyncState::NotInSync:
-        return "NotInSync";
-    case SyncState::InSync:
-        return "InSync";
-    default:
-        return "Unknown";
-    }
-}
-
 PinState cfPinStateToPinState(CF_PIN_STATE state)
 {
     switch (state)
@@ -70,25 +44,6 @@ CF_PIN_STATE pinStateToCfPinState(PinState state)
     }
 }
 
-std::string pinStateToString(PinState state)
-{
-    switch (state)
-    {
-    case PinState::Inherited:
-        return "Inherited";
-    case PinState::AlwaysLocal:
-        return "AlwaysLocal";
-    case PinState::OnlineOnly:
-        return "OnlineOnly";
-    case PinState::Unspecified:
-        return "Unspecified";
-    case PinState::Excluded:
-        return "Excluded";
-    default:
-        return "Unknown";
-    }
-}
-
 PlaceHolderInfo::PlaceHolderInfo()
     : _data(nullptr, [](CF_PLACEHOLDER_BASIC_INFO *) {})
 {
@@ -107,16 +62,6 @@ std::optional<PinState> PlaceHolderInfo::pinState() const
     }
 
     return cfPinStateToPinState(_data->PinState);
-}
-
-std::optional<SyncState> PlaceHolderInfo::syncState() const
-{
-    if (!_data)
-    {
-        return {};
-    }
-
-    return cfSyncStateToSyncState(_data->InSyncState);
 }
 
 std::optional<LARGE_INTEGER> PlaceHolderInfo::FileId() const

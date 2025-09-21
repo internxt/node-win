@@ -3,14 +3,6 @@
 #include "stdafx.h"
 #include <optional>
 
-enum class SyncState
-{
-    /* status that occurs when an error occurs while reading the status*/
-    Undefined = -1,
-    NotInSync = 0,
-    InSync = 1,
-};
-
 enum class PinState
 {
     /* The pin state is derived from the state of the parent folder. For example new remote files start out in this state, following the state of their parent folder. This state is used purely for resetting pin states to their derived value. The effective state for an item will never be "Inherited". */
@@ -27,7 +19,6 @@ enum class PinState
 
 struct FileState {
     PinState pinstate;
-    SyncState syncstate;
 };
 
 class PlaceHolderInfo
@@ -43,7 +34,6 @@ public:
     inline explicit operator bool() const noexcept { return static_cast<bool>(_data); }
 
     std::optional<PinState> pinState() const;
-    std::optional<SyncState> syncState() const;
     std::optional<LARGE_INTEGER> FileId() const;
     std::optional<BYTE> FileIdentity() const;
 
@@ -69,6 +59,4 @@ private:
 
 FileHandle handleForPath(const std::wstring &path);
 
-std::string pinStateToString(PinState state);
-std::string syncStateToString(SyncState state);
 CF_PIN_STATE pinStateToCfPinState(PinState state);

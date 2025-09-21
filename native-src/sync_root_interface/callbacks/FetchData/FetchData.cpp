@@ -50,11 +50,6 @@ void load_data()
     printf("load_data called");
 }
 
-void setup_global_tsfn_fetch_data(napi_threadsafe_function tsfn)
-{
-    g_fetch_data_threadsafe_callback = tsfn;
-}
-
 napi_value create_response(napi_env env, bool finished, float progress)
 {
     napi_value result_object;
@@ -275,34 +270,6 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
 
     return create_response(env, ctxPtr->loadFinished, progress);
 }
-
-static napi_value create_error_response(napi_env env)
-{
-    Logger::getInstance().log("An error occurred during callback execution", LogLevel::ERROR);
-    return create_response(env, true, 0);
-}
-
-static void handle_cancellation(TransferContext* ctxPtr)
-{
-    ctxPtr->loadFinished = true;
-    ctxPtr->lastReadOffset = 0;
-    {
-        std::lock_guard<std::mutex> lock(ctxPtr->mtx);
-        ctxPtr->ready = true;
-        ctxPtr->cv.notify_one();
-    }
-}
-
-static void notify_completion(TransferContext* ctxPtr, float progress)
-{
-    std::lock_guard<std::mutex> lock(ctxPtr->mtx);
-    if (ctxPtr->loadFinished) {
-        ctxPtr->ready = true;
-        ctxPtr->cv.notify_one();
-    }
-}
-
-
 
 static void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
 {

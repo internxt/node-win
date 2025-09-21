@@ -3,56 +3,10 @@
 #include <propkey.h>
 #include <propvarutil.h>
 #include "Utilities.h"
-#include <ProcessTypes.h>
 #include <Logger.h>
 
 #define MSSEARCH_INDEX L"SystemIndex"
 DEFINE_PROPERTYKEY(PKEY_StorageProviderTransferProgress, 0xE77E90DF, 0x6271, 0x4F5B, 0x83, 0x4F, 0x2D, 0xD1, 0xF2, 0x45, 0xDD, 0xA4, 4);
-
-void Utilities::ApplyCustomStateToPlaceholderFile(LPCWSTR path, LPCWSTR filename, winrt::StorageProviderItemProperty &prop)
-{
-    try
-    {
-        std::wstring fullPath(path);
-        fullPath.append(L"\\");
-        fullPath.append(filename);
-
-        // wprintf(L"Full path: %s\n", fullPath.c_str());
-        winrt::IStorageItem item = winrt::StorageFile::GetFileFromPathAsync(fullPath).get();
-        winrt::StorageProviderItemProperties::SetAsync(item, {prop}).get();
-    }
-    catch (const winrt::hresult_error &error)
-    {
-        wprintf(L"Failed to set custom state. Error: %s (Code: %08x)\n", error.message().c_str(), error.code());
-    }
-    catch (...)
-    {
-        wprintf(L"Failed to set custom state with unknown error %08x\n", static_cast<HRESULT>(winrt::to_hresult()));
-    }
-}
-
-void Utilities::ApplyCustomOverwriteStateToPlaceholderFile(LPCWSTR path, LPCWSTR filename, winrt::StorageProviderItemProperty &prop)
-{
-    try
-    {
-        std::wstring fullPath(path);
-        fullPath.append(L"\\");
-        fullPath.append(filename);
-
-        // wprintf(L"Full path: %s\n", fullPath.c_str());
-        winrt::IStorageItem item = winrt::StorageFile::GetFileFromPathAsync(fullPath).get();
-        winrt::StorageProviderItemProperties::SetAsync(item, {}).get();
-        winrt::StorageProviderItemProperties::SetAsync(item, {prop}).get();
-    }
-    catch (const winrt::hresult_error &error)
-    {
-        wprintf(L"Failed to set custom state. Error: %s (Code: %08x)\n", error.message().c_str(), error.code());
-    }
-    catch (...)
-    {
-        wprintf(L"Failed to set custom state with unknown error %08x\n", static_cast<HRESULT>(winrt::to_hresult()));
-    }
-}
 
 void Utilities::AddFolderToSearchIndexer(_In_ PCWSTR folder)
 {
@@ -88,30 +42,9 @@ void Utilities::AddFolderToSearchIndexer(_In_ PCWSTR folder)
     }
 }
 
-void Utilities::ClearTransferProperties(PCWSTR fullPath) 
-{
-    winrt::com_ptr<IShellItem2>   item;
-    winrt::com_ptr<IPropertyStore>store;
-
-    if (FAILED(SHCreateItemFromParsingName(fullPath, nullptr,
-                                           __uuidof(item), item.put_void())))
-        return;
-
-    if (FAILED(item->GetPropertyStore(GPS_READWRITE | GPS_VOLATILEPROPERTIESONLY,
-                                      __uuidof(store), store.put_void())))
-        return;
-
-    PROPVARIANT empty; PropVariantInit(&empty);
-    store->SetValue(PKEY_StorageProviderTransferProgress, empty);
-    store->SetValue(PKEY_SyncTransferStatus,             empty);
-    store->Commit();
-}
-
-
 void Utilities::ApplyTransferStateToFile(_In_ PCWSTR fullPath, _In_ CF_CALLBACK_INFO &callbackInfo, UINT64 total, UINT64 completed)
 {
     Logger::getInstance().log("ApplyTransferStateToFile", LogLevel::INFO);
-    printf("ApplyTransferStateToFile\n");
     // Tell the Cloud File API about progress so that toasts can be displayed
 
     HRESULT hr1 = CfReportProviderProgress(
@@ -210,81 +143,4 @@ std::wstring Utilities::GetErrorMessageCloudFiles(HRESULT hr) {
     }
     LocalFree(errorMsg);
     return message;
-}
-
-
-bool Utilities::IsTemporaryFile(const std::wstring &fullPath)
-{
-    size_t fileNameStart = fullPath.find_last_of(L'\\') + 1;
-    if (fullPath.size() >= fileNameStart + 2 && fullPath.compare(fileNameStart, 2, L"~$") == 0)
-    {
-        return true;
-    }
-
-    std::array<std::wstring, 7> tempExtensions = {
-        L".tmp",
-        L".laccdb",
-        L".ldb",
-        L".bak",
-        L".sv$",
-        L".psdtmp",
-        L".~tmp"
-    };
-
-    for (const auto &ext : tempExtensions)
-    {
-        if (fullPath.size() >= ext.size() &&
-            fullPath.compare(fullPath.size() - ext.size(), ext.size(), ext) == 0)
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-std::wstring Utilities::ProcessErrorNameToWString(ProcessErrorName error)
-{
-    switch (error)
-    {
-    case ProcessErrorName::NOT_EXISTS:
-        return L"NOT_EXISTS";
-    case ProcessErrorName::NO_PERMISSION:
-        return L"NO_PERMISSION";
-    case ProcessErrorName::NO_INTERNET:
-        return L"NO_INTERNET";
-    case ProcessErrorName::NO_REMOTE_CONNECTION:
-        return L"NO_REMOTE_CONNECTION";
-    case ProcessErrorName::BAD_RESPONSE:
-        return L"BAD_RESPONSE";
-    case ProcessErrorName::EMPTY_FILE:
-        return L"EMPTY_FILE";
-    case ProcessErrorName::FILE_TOO_BIG:
-        return L"FILE_TOO_BIG";
-    case ProcessErrorName::UNKNOWN:
-        return L"UNKNOWN";
-    case ProcessErrorName::FILE_NON_EXTENSION:
-        return L"FILE_NON_EXTENSION";
-    default:
-        return L"UNKNOWN";
-    }
-}
-
-std::wstring Utilities::FileOperationErrorToWString(FileOperationError error)
-{
-    switch (error)
-    {
-    case FileOperationError::UPLOAD_ERROR:
-        return L"UPLOAD_ERROR";
-    case FileOperationError::DOWNLOAD_ERROR:
-        return L"DOWNLOAD_ERROR";
-    case FileOperationError::RENAME_ERROR:
-        return L"RENAME_ERROR";
-    case FileOperationError::DELETE_ERROR:
-        return L"DELETE_ERROR";
-    case FileOperationError::METADATA_READ_ERROR:
-        return L"METADATA_READ_ERROR";
-    default:
-        return L"UNKNOWN";
-    }
 }
