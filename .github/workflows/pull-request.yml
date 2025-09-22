@@ -51,31 +51,28 @@ jobs:
             --norestart `
             --wait
 
-      - name: Verify Windows SDK
-        shell: pwsh
-        run: |
-          Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0"
-          Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\Lib\10.0.22621.0"
-
       - run: dir "C:\Program Files (x86)\Windows Kits\10\Lib"
-      - name: Install node-gyp
-        run: npm install -g node-gyp
 
-      - name: Install build wrapper
-        uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v5
+      # - run: dir "C:\Program Files (x86)\Windows Kits\10\Lib"
 
-      - name: Run build wrapper
-        run: node-gyp configure build
+      # - name: Install node-gyp
+      #   run: npm install -g node-gyp
 
-      - run: ls ${{ env.BUILD_WRAPPER_OUT_DIR }}
-      - run: cat ${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json
-      - run: cat ${{ env.BUILD_WRAPPER_OUT_DIR }}/build-wrapper.log
-      - run: cat ${{ env.BUILD_WRAPPER_OUT_DIR }}/build-wrapper-dump.json
+      # - name: Install build wrapper
+      #   uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v5
 
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            --define sonar.cfamily.compile-commands="${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json"
+      # - name: Run build wrapper
+      #   run: node-gyp configure build
+
+      # - run: ls ${{ env.BUILD_WRAPPER_OUT_DIR }}
+      # - run: cat ${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json
+      # - run: cat ${{ env.BUILD_WRAPPER_OUT_DIR }}/build-wrapper.log
+      # - run: cat ${{ env.BUILD_WRAPPER_OUT_DIR }}/build-wrapper-dump.json
+
+      # - name: SonarQube Scan
+      #   uses: SonarSource/sonarqube-scan-action@v5
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      #   with:
+      #     args: >
+      #       --define sonar.cfamily.compile-commands="${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json"
