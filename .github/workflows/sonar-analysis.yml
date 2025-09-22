@@ -27,7 +27,7 @@ jobs:
           node-version: 20
 
       - name: Install Windows SDK 10.0.22621.0
-        uses: ChristopheLav/windows-sdk-install@88d72875fb873886ea398ed04041446da6f26f86
+        uses: ChristopheLav/windows-sdk-install@88d72875fb873886ea398ed04041446da6f26f86 # v1.0.3
         with:
           version-sdk: 22621
           features: "OptionId.DesktopCPPx86,OptionId.DesktopCPPx64"
@@ -36,13 +36,13 @@ jobs:
         run: npm install -g node-gyp
 
       - name: Install build wrapper
-        uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v5
+        uses: SonarSource/sonarqube-scan-action/install-build-wrapper@1a6d90ebcb0e6a6b1d87e37ba693fe453195ae25 # v5.3.1
 
       - name: Run build wrapper
         run: build-wrapper-win-x86-64.exe --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmd /c "node-gyp configure build"
 
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v5
+        uses: SonarSource/sonarqube-scan-action@1a6d90ebcb0e6a6b1d87e37ba693fe453195ae25 # v5.3.1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
