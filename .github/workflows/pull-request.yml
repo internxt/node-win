@@ -23,13 +23,20 @@ jobs:
         with:
           node-version: 20
 
+      - run: dir "C:\Program Files (x86)\Windows Kits\10\Lib"
+
+      - name: Install Windows build tools
+        uses: microsoft/setup-msbuild@v2
+
+      - run: dir "C:\Program Files (x86)\Windows Kits\10\Lib"
+
       - name: Install node-gyp
         run: npm install -g node-gyp
 
-      - name: Install Build Wrapper
+      - name: Install build wrapper
         uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v5
 
-      - name: Run Build Wrapper
+      - name: Run build wrapper
         run: node-gyp configure build
 
       - run: ls ${{ env.BUILD_WRAPPER_OUT_DIR }}
