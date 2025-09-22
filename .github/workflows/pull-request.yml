@@ -42,8 +42,8 @@ jobs:
       # - name: Install build wrapper
       #   uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v5
 
-      # - name: Run build wrapper
-      #   run: node-gyp configure build
+      - name: Run build wrapper
+        run: node-gyp configure build
 
       # - run: ls ${{ env.BUILD_WRAPPER_OUT_DIR }}
       # - run: cat ${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json
