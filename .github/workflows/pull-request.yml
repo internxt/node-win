@@ -36,10 +36,8 @@ jobs:
 
       - run: dir "C:\Program Files (x86)\Windows Kits\10\Lib"
 
-      # - run: dir "C:\Program Files (x86)\Windows Kits\10\Lib"
-
-      # - name: Install node-gyp
-      #   run: npm install -g node-gyp
+      - name: Install node-gyp
+        run: npm install -g node-gyp
 
       # - name: Install build wrapper
       #   uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v5
