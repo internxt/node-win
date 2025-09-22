@@ -11,6 +11,8 @@ jobs:
 
     env:
       BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory
+      GYP_MSVS_VERSION: 2022
+      WINDOWS_SDK_VERSION: 10.0.26100.0
 
     steps:
       - name: Checkout code
@@ -28,8 +30,34 @@ jobs:
       - name: Install Windows build tools
         uses: microsoft/setup-msbuild@v2
 
-      - run: dir "C:\Program Files (x86)\Windows Kits\10\Lib"
+      - name: Install Windows SDK 10.0.22621.0
+        shell: pwsh
+        run: |
+          # Install the Windows SDK 10.0.22621.0 using Visual Studio Installer
+          $ErrorActionPreference = "Stop"
 
+          # Check if Visual Studio Installer exists
+          $vsInstaller = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
+          if (-Not (Test-Path $vsInstaller)) {
+              Write-Host "Downloading Visual Studio Installer..."
+              Invoke-WebRequest -Uri "https://aka.ms/vs/18/release/vs_installer.exe" -OutFile "$env:TEMP\vs_installer.exe"
+              $vsInstaller = "$env:TEMP\vs_installer.exe"
+          }
+
+          # Install the Windows SDK workload
+          & $vsInstaller modify `
+            --add Microsoft.VisualStudio.Component.Windows10SDK.22621 `
+            --quiet `
+            --norestart `
+            --wait
+
+      - name: Verify Windows SDK
+        shell: pwsh
+        run: |
+          Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0"
+          Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\Lib\10.0.22621.0"
+
+      - run: dir "C:\Program Files (x86)\Windows Kits\10\Lib"
       - name: Install node-gyp
         run: npm install -g node-gyp
 
