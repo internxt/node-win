@@ -1,7 +1,7 @@
 {
   "targets": [
     {
-      "msvs_windows_target_platform_version": "10.0.22621.0",
+      "msvs_windows_target_platform_version": "10.0.26100.0",
       "target_name": "addon",
       "msvs_settings": {
         "VCCLCompilerTool": {
