@@ -7,7 +7,7 @@ on:
 jobs:
   pull_request:
     runs-on: windows-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
 
     env:
       BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory
