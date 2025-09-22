@@ -30,6 +30,10 @@ jobs:
       - name: Install Windows build tools
         uses: microsoft/setup-msbuild@v2
 
+      - name: Install Windows 10 SDK 10.0.22621.0
+        run: |
+          choco install windows-sdk-10.0.22621.0 --yes
+
       - run: dir "C:\Program Files (x86)\Windows Kits\10\Lib"
 
       - name: Install node-gyp
