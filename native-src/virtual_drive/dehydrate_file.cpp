@@ -3,7 +3,7 @@
 #include "stdafx.h"
 
 napi_value dehydrate_file(napi_env env, napi_callback_info info) {
-    auto [rawPath] = napi_extract_args<1>(env, info);
+    auto [rawPath] = napi_extract_args<std::wstring>(env, info);
     const wchar_t* path = rawPath.c_str();
 
     DWORD attrib = GetFileAttributesW(path);
