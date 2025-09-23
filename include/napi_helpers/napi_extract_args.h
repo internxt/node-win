@@ -1,8 +1,14 @@
+#pragma once
+
 #include <node_api.h>
 #include <string>
 #include <tuple>
 
-inline std::wstring napi_extract_string(napi_env env, napi_value value) {
+template<typename T>
+T napi_extract_value(napi_env env, napi_value value);
+
+template<>
+inline std::wstring napi_extract_value<std::wstring>(napi_env env, napi_value value) {
     size_t length;
     napi_get_value_string_utf16(env, value, nullptr, 0, &length);
     
@@ -14,43 +20,27 @@ inline std::wstring napi_extract_string(napi_env env, napi_value value) {
     return result;
 }
 
-inline int64_t napi_extract_int64(napi_env env, napi_value value) {
+template<>
+inline int64_t napi_extract_value<int64_t>(napi_env env, napi_value value) {
     int64_t result;
     napi_get_value_int64(env, value, &result);
     return result;
 }
 
-inline bool napi_extract_bool(napi_env env, napi_value value) {
+template<>
+inline bool napi_extract_value<bool>(napi_env env, napi_value value) {
     bool result;
     napi_get_value_bool(env, value, &result);
     return result;
 }
 
-template<typename T>
-T napi_extract_value(napi_env env, napi_value value);
-
-template<>
-std::wstring napi_extract_value<std::wstring>(napi_env env, napi_value value) {
-    return napi_extract_string(env, value);
-}
-
-template<>
-int64_t napi_extract_value<int64_t>(napi_env env, napi_value value) {
-    return napi_extract_int64(env, value);
-}
-
-template<>
-bool napi_extract_value<bool>(napi_env env, napi_value value) {
-    return napi_extract_bool(env, value);
-}
-
 template<typename... Types, std::size_t... Is>
-std::tuple<Types...> napi_extract_args_impl(napi_env env, napi_value* argv, std::index_sequence<Is...>) {
+inline std::tuple<Types...> napi_extract_args_impl(napi_env env, napi_value* argv, std::index_sequence<Is...>) {
     return std::make_tuple(napi_extract_value<Types>(env, argv[Is])...);
 }
 
 template<typename... Types>
-std::tuple<Types...> napi_extract_args(napi_env env, napi_callback_info info) {
+inline std::tuple<Types...> napi_extract_args(napi_env env, napi_callback_info info) {
     constexpr size_t N = sizeof...(Types);
     size_t argc = N;
     napi_value argv[N];
