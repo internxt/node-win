@@ -3,7 +3,7 @@
 #include "Placeholders.h"
 
 napi_value get_placeholder_state_wrapper(napi_env env, napi_callback_info info) {
-    auto [path] = napi_extract_args<1>(env, info);
+    auto [path] = napi_extract_args<std::wstring>(env, info);
 
     FileState state = Placeholders::GetPlaceholderInfo(path);
 

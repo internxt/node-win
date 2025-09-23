@@ -3,7 +3,7 @@
 #include "SyncRoot.h"
 
 napi_value disconnect_sync_root(napi_env env, napi_callback_info info) {
-    auto [syncRootPath] = napi_extract_args<1>(env, info);
+    auto [syncRootPath] = napi_extract_args<std::wstring>(env, info);
 
     HRESULT result = SyncRoot::DisconnectSyncRoot(syncRootPath.c_str());
 
