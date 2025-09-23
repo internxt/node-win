@@ -156,7 +156,7 @@ PlaceholderResult Placeholders::CreateEntry(
     cloudEntry.FsMetadata.BasicInfo.FileAttributes = FILE_ATTRIBUTE_DIRECTORY;
     cloudEntry.FsMetadata.BasicInfo.CreationTime = creationTime;
     cloudEntry.FsMetadata.BasicInfo.LastWriteTime = lastWriteTime;
-    cloudEntry.FsMetadata.BasicInfo.LastWriteTime = lastAccessTime;
+    cloudEntry.FsMetadata.BasicInfo.LastAccessTime = lastAccessTime;
 
     try
     {
