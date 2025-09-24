@@ -19,17 +19,21 @@ jobs:
           node-version: 20
 
       - name: Create .npmrc file
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "@internxt:registry=https://npm.pkg.github.com/" > .npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=$GITHUB_TOKEN >> .npmrc
 
       - name: Publish package to github
         run: npm publish --scope=@internxt --access public
 
       - name: Create .npmrc file
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           echo "registry=https://registry.npmjs.org/" > .npmrc
-          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> .npmrc
+          echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
 
       - name: Publish package to npm
         run: npm publish --scope=@internxt --access public

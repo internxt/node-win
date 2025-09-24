@@ -3,7 +3,6 @@
 class Utilities
 {
 public:
-    static void AddFolderToSearchIndexer(_In_ LPCWSTR folder);
     static void ApplyTransferStateToFile(_In_ LPCWSTR fullPath, _In_ CF_CALLBACK_INFO &callbackInfo, UINT64 total, UINT64 completed);
     static std::wstring GetErrorMessageCloudFiles(HRESULT hr);
 
@@ -21,13 +20,16 @@ public:
         }
     };
 
-    inline static LARGE_INTEGER FileTimeToLargeInteger(_In_ const FILETIME fileTime)
-    {
+    inline static LARGE_INTEGER JsTimestampToLargeInteger(int64_t jsTimestamp) {
+        const int64_t EPOCH_DIFFERENCE = 11644473600000LL;
+        const int64_t MS_TO_100NS = 10000LL;
+        
+        int64_t windowsTime = (jsTimestamp + EPOCH_DIFFERENCE) * MS_TO_100NS;
+        
         LARGE_INTEGER largeInteger;
-
-        largeInteger.LowPart = fileTime.dwLowDateTime;
-        largeInteger.HighPart = fileTime.dwHighDateTime;
-
+        largeInteger.LowPart = static_cast<DWORD>(windowsTime & 0xFFFFFFFF);
+        largeInteger.HighPart = static_cast<DWORD>((windowsTime >> 32) & 0xFFFFFFFF);
+        
         return largeInteger;
     }
 
