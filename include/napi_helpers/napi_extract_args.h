@@ -11,12 +11,12 @@ template<>
 inline std::wstring napi_extract_value<std::wstring>(napi_env env, napi_value value) {
     size_t length;
     napi_get_value_string_utf16(env, value, nullptr, 0, &length);
-    
+
     std::wstring result(length + 1, L'\0');
     size_t actualLength;
     napi_get_value_string_utf16(env, value, reinterpret_cast<char16_t*>(result.data()), length + 1, &actualLength);
     result.resize(actualLength);
-    
+
     return result;
 }
 
