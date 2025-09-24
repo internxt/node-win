@@ -12,29 +12,23 @@ class Placeholders
 {
 public:
     static PlaceholderResult CreateOne(
-        _In_ PCWSTR fileName,
-        _In_ PCWSTR fileIdentity,
+        const wchar_t *fileName,
+        const wchar_t *fileIdentity,
         int64_t fileSize,
-        DWORD fileIdentityLength,
-        uint32_t fileAttributes,
-        FILETIME creationTime,
-        FILETIME lastWriteTime,
-        FILETIME lastAccessTime,
-        _In_ PCWSTR destPath);
+        LARGE_INTEGER creationTime,
+        LARGE_INTEGER lastWriteTime,
+        LARGE_INTEGER lastAccessTime,
+        const wchar_t *destPath);
 
     static void MaintainIdentity(std::wstring &fullPath, PCWSTR fileIdentity, bool isDirectory);
 
     static PlaceholderResult CreateEntry(
-        _In_ PCWSTR itemName,
-        _In_ PCWSTR itemIdentity,
-        bool isDirectory,
-        uint32_t itemSize,
-        DWORD itemIdentityLength,
-        uint32_t itemAttributes,
-        FILETIME creationTime,
-        FILETIME lastWriteTime,
-        FILETIME lastAccessTime,
-        _In_ PCWSTR destPath);
+        const wchar_t *itemName,
+        const wchar_t *itemIdentity,
+        LARGE_INTEGER creationTime,
+        LARGE_INTEGER lastWriteTime,
+        LARGE_INTEGER lastAccessTime,
+        const wchar_t *destPath);
 
     static void ForceShellRefresh(const std::wstring &path);
     static void UpdateSyncStatus(const std::wstring &filePath, bool syncState, bool isDirectory);

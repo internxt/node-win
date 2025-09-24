@@ -20,13 +20,16 @@ public:
         }
     };
 
-    inline static LARGE_INTEGER FileTimeToLargeInteger(_In_ const FILETIME fileTime)
-    {
+    inline static LARGE_INTEGER JsTimestampToLargeInteger(int64_t jsTimestamp) {
+        const int64_t EPOCH_DIFFERENCE = 11644473600000LL;
+        const int64_t MS_TO_100NS = 10000LL;
+        
+        int64_t windowsTime = (jsTimestamp + EPOCH_DIFFERENCE) * MS_TO_100NS;
+        
         LARGE_INTEGER largeInteger;
-
-        largeInteger.LowPart = fileTime.dwLowDateTime;
-        largeInteger.HighPart = fileTime.dwHighDateTime;
-
+        largeInteger.LowPart = static_cast<DWORD>(windowsTime & 0xFFFFFFFF);
+        largeInteger.HighPart = static_cast<DWORD>((windowsTime >> 32) & 0xFFFFFFFF);
+        
         return largeInteger;
     }
 

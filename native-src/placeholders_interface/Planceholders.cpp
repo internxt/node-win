@@ -29,15 +29,13 @@ bool DirectoryExists(const wchar_t *path)
 }
 
 PlaceholderResult Placeholders::CreateOne(
-    _In_ PCWSTR fileName,
-    _In_ PCWSTR fileIdentity,
+    const wchar_t *fileName,
+    const wchar_t *fileIdentity,
     int64_t fileSize,
-    DWORD fileIdentityLength,
-    uint32_t fileAttributes,
-    FILETIME creationTime,
-    FILETIME lastWriteTime,
-    FILETIME lastAccessTime,
-    _In_ PCWSTR destPath)
+    LARGE_INTEGER creationTime,
+    LARGE_INTEGER lastWriteTime,
+    LARGE_INTEGER lastAccessTime,
+    const wchar_t *destPath)
 {
     PlaceholderResult result = {false, L""};
 
@@ -67,10 +65,10 @@ PlaceholderResult Placeholders::CreateOne(
 
         cloudEntry.FsMetadata.FileSize.QuadPart = fileSize;
         cloudEntry.FsMetadata.BasicInfo.FileAttributes = FILE_ATTRIBUTE_NORMAL;
-        cloudEntry.FsMetadata.BasicInfo.CreationTime = Utilities::FileTimeToLargeInteger(creationTime);
-        cloudEntry.FsMetadata.BasicInfo.LastWriteTime = Utilities::FileTimeToLargeInteger(lastWriteTime);
-        cloudEntry.FsMetadata.BasicInfo.LastAccessTime = Utilities::FileTimeToLargeInteger(lastAccessTime);
-        cloudEntry.FsMetadata.BasicInfo.ChangeTime = Utilities::FileTimeToLargeInteger(lastWriteTime);
+        cloudEntry.FsMetadata.BasicInfo.CreationTime = creationTime;
+        cloudEntry.FsMetadata.BasicInfo.LastWriteTime = lastWriteTime;
+        cloudEntry.FsMetadata.BasicInfo.LastAccessTime = lastAccessTime;
+        cloudEntry.FsMetadata.BasicInfo.ChangeTime = lastWriteTime;
 
         try
         {
@@ -139,16 +137,12 @@ void Placeholders::MaintainIdentity(std::wstring &fullPath, PCWSTR itemIdentity,
 }
 
 PlaceholderResult Placeholders::CreateEntry(
-    _In_ PCWSTR itemName,
-    _In_ PCWSTR itemIdentity,
-    bool isDirectory,
-    uint32_t itemSize,
-    DWORD itemIdentityLength,
-    uint32_t itemAttributes,
-    FILETIME creationTime,
-    FILETIME lastWriteTime,
-    FILETIME lastAccessTime,
-    _In_ PCWSTR destPath)
+    const wchar_t *itemName,
+    const wchar_t *itemIdentity,
+    LARGE_INTEGER creationTime,
+    LARGE_INTEGER lastWriteTime,
+    LARGE_INTEGER lastAccessTime,
+    const wchar_t *destPath)
 {
     PlaceholderResult result = {false, L""};
 
@@ -160,8 +154,10 @@ PlaceholderResult Placeholders::CreateEntry(
     cloudEntry.RelativeFileName = itemName;
     cloudEntry.Flags = CF_PLACEHOLDER_CREATE_FLAG_DISABLE_ON_DEMAND_POPULATION; // -> desactive download on demand
     cloudEntry.FsMetadata.BasicInfo.FileAttributes = FILE_ATTRIBUTE_DIRECTORY;
-    cloudEntry.FsMetadata.BasicInfo.CreationTime = Utilities::FileTimeToLargeInteger(creationTime);
-    cloudEntry.FsMetadata.BasicInfo.LastWriteTime = Utilities::FileTimeToLargeInteger(lastWriteTime);
+    cloudEntry.FsMetadata.BasicInfo.CreationTime = creationTime;
+    cloudEntry.FsMetadata.BasicInfo.LastWriteTime = lastWriteTime;
+    cloudEntry.FsMetadata.BasicInfo.LastAccessTime = lastAccessTime;
+
     try
     {
         // TODO: si existe o es placeholder return
@@ -173,28 +169,25 @@ PlaceholderResult Placeholders::CreateEntry(
             return result;
         }
 
-        if (isDirectory) // TODO: the function createEntry is used to create only folders (directories), so this if is always true
+        // wprintf(L"Create directory, full destination path: %ls, fullDestPath.c_str()");
+        PathRemoveFileSpecW(&fullDestPath[0]);
+        HRESULT hr = CfCreatePlaceholders(fullDestPath.c_str(), &cloudEntry, 1, CF_CREATE_FLAG_NONE, NULL);
+        if (FAILED(hr))
         {
-            // wprintf(L"Create directory, full destination path: %ls, fullDestPath.c_str()");
-            PathRemoveFileSpecW(&fullDestPath[0]);
-            HRESULT hr = CfCreatePlaceholders(fullDestPath.c_str(), &cloudEntry, 1, CF_CREATE_FLAG_NONE, NULL);
-            if (FAILED(hr))
-            {
-                result.errorMessage = L"Failed to create placeholder directory";
-                wprintf(L"[CreatePlaceholder] Failed to create placeholder directory with HRESULT 0x%08x\n", hr);
-                throw winrt::hresult_error(hr);
-            }
-
-            std::wstring finalPath = std::wstring(destPath) + L"\\" + std::wstring(itemName);
-            Placeholders::UpdatePinState(finalPath, PinState::OnlineOnly);
-            UpdateSyncStatus(finalPath, true, true);
-            result.success = true;
+            result.errorMessage = L"Failed to create placeholder directory";
+            wprintf(L"[CreatePlaceholder] Failed to create placeholder directory with HRESULT 0x%08x\n", hr);
+            throw winrt::hresult_error(hr);
         }
+
+        std::wstring finalPath = std::wstring(destPath) + L"\\" + std::wstring(itemName);
+        Placeholders::UpdatePinState(finalPath, PinState::OnlineOnly);
+        UpdateSyncStatus(finalPath, true, true);
+        result.success = true;
     }
     catch (const winrt::hresult_error &error)
     {
         result.errorMessage = error.message().c_str();
-        wprintf(L"[CreatePlaceholder] Error while creating %s: %s\n", isDirectory ? L"directory" : L"file", error.message().c_str());
+        wprintf(L"[CreatePlaceholder] Error while creating %s: %s\n", L"directory", error.message().c_str());
     }
     catch (...)
     {

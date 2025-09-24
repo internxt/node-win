@@ -45,7 +45,7 @@ void complete_work(napi_env env, napi_status status, void* data) {
 }
 
 napi_value hydrate_file_impl(napi_env env, napi_callback_info info) {
-    auto [path] = napi_extract_args<1>(env, info);
+    auto [path] = napi_extract_args<std::wstring>(env, info);
 
     // Create promise
     napi_deferred deferred;

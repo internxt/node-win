@@ -3,7 +3,7 @@
 #include "stdafx.h"
 
 napi_value dehydrate_file(napi_env env, napi_callback_info info) {
-    auto [rawPath] = napi_extract_args<1>(env, info);
+    auto [rawPath] = napi_extract_args<std::wstring>(env, info);
     const wchar_t* path = rawPath.c_str();
 
     DWORD attrib = GetFileAttributesW(path);
@@ -28,11 +28,11 @@ napi_value dehydrate_file(napi_env env, napi_callback_info info) {
     DWORD err = HRESULT_CODE(hr);
 
     if (err == ERROR_SHARING_VIOLATION || err == ERROR_CLOUD_FILE_IN_USE) {
-        MessageBoxW(
-            nullptr,
-            L"Unable to free up space because the file is currently in use.\nPlease close the file and try again.",
-            L"File in use",
-            MB_OK | MB_ICONWARNING | MB_SYSTEMMODAL);
+        // MessageBoxW(
+        //     nullptr,
+        //     L"Unable to free up space because the file is currently in use.\nPlease close the file and try again.",
+        //     L"File in use",
+        //     MB_OK | MB_ICONWARNING | MB_SYSTEMMODAL);
     }
 
     winrt::throw_hresult(hr);
