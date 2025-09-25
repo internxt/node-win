@@ -19,6 +19,7 @@ jobs:
           node-version: 20
 
       - name: Create .npmrc file
+        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -29,6 +30,7 @@ jobs:
         run: npm publish --scope=@internxt --access public
 
       - name: Create .npmrc file
+        shell: bash
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
