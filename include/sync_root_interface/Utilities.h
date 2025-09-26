@@ -3,7 +3,6 @@
 class Utilities
 {
 public:
-    static void AddFolderToSearchIndexer(_In_ LPCWSTR folder);
     static void ApplyTransferStateToFile(_In_ LPCWSTR fullPath, _In_ CF_CALLBACK_INFO &callbackInfo, UINT64 total, UINT64 completed);
     static std::wstring GetErrorMessageCloudFiles(HRESULT hr);
 

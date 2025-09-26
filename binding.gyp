@@ -21,7 +21,6 @@
         "native-src/placeholders_interface/Planceholders.cpp",
         "native-src/sync_root_interface/SyncRoot.cpp",
         "native-src/sync_root_interface/Utilities.cpp",
-        "native-src/sync_root_interface/callbacks/Callbacks.cpp",
         "native-src/sync_root_interface/callbacks/CancelFetchData/CancelFetchDataCallback.cpp",
         "native-src/sync_root_interface/callbacks/FetchData/FetchData.cpp",
         "native-src/sync_root_interface/callbacks/FetchData/FileCopierWithProgress.cpp",
