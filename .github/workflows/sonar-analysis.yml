@@ -1,4 +1,4 @@
-name: Pull request checks
+name: Sonar analysis
 
 on:
   pull_request:
