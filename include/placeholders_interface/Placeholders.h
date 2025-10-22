@@ -6,25 +6,7 @@
 class Placeholders
 {
 public:
-    static void CreateOne(
-        const std::wstring& fileName,
-        const std::wstring& placeholderId,
-        int64_t fileSize,
-        LARGE_INTEGER creationTime,
-        LARGE_INTEGER lastWriteTime,
-        LARGE_INTEGER lastAccessTime,
-        const std::wstring& parentPath);
-
     static void MaintainIdentity(std::wstring &fullPath, PCWSTR fileIdentity, bool isDirectory);
-
-    static void CreateEntry(
-        const std::wstring& folderName,
-        const std::wstring& placeholderId,
-        LARGE_INTEGER creationTime,
-        LARGE_INTEGER lastWriteTime,
-        LARGE_INTEGER lastAccessTime,
-        const std::wstring& parentPath);
-
     static void ForceShellRefresh(const std::wstring &path);
     static void UpdateSyncStatus(const std::wstring &filePath, bool syncState, bool isDirectory);
     static HRESULT UpdatePinState(const std::wstring &path, const PinState state);
