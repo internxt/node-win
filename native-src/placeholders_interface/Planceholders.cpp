@@ -198,32 +198,21 @@ PlaceholderResult Placeholders::CreateEntry(
     return result;
 }
 
-PlaceholderResult Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std::wstring &serverIdentity)
+void Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std::wstring &serverIdentity)
 {
-    PlaceholderResult result = {false, L""};
-
-    if (!std::filesystem::exists(fullPath))
-    {
-        result.errorMessage = L"File does not exist";
-        return result;
-    }
-
-    wprintf(L"[ConvertToPlaceholder] Full path: %ls\n", fullPath.c_str());
     bool isDirectory = fs::is_directory(fullPath);
 
-    HANDLE fileHandle = CreateFileW(
+    winrt::file_handle fileHandle{CreateFileW(
         fullPath.c_str(),
         FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES,
         FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
         nullptr,
         OPEN_EXISTING,
         isDirectory ? FILE_FLAG_BACKUP_SEMANTICS : 0,
-        nullptr);
+        nullptr)};
 
-    if (fileHandle == INVALID_HANDLE_VALUE)
-    {
-        result.errorMessage = L"Failed to open file: " + std::to_wstring(GetLastError());
-        return result;
+    if (!fileHandle) {
+        throw std::runtime_error("Failed to open file: " + std::to_string(GetLastError()));
     }
 
     CF_CONVERT_FLAGS convertFlags = CF_CONVERT_FLAG_MARK_IN_SYNC;
@@ -233,34 +222,16 @@ PlaceholderResult Placeholders::ConvertToPlaceholder(const std::wstring &fullPat
     LPCVOID idStrLPCVOID = static_cast<LPCVOID>(serverIdentity.c_str());
     DWORD idStrByteLength = static_cast<DWORD>(serverIdentity.size() * sizeof(wchar_t));
 
-    HRESULT hr = CfConvertToPlaceholder(fileHandle, idStrLPCVOID, idStrByteLength, convertFlags, &convertUsn, &overlapped);
+    HRESULT hr = CfConvertToPlaceholder(fileHandle.get(), idStrLPCVOID, idStrByteLength, convertFlags, &convertUsn, &overlapped);
 
-    if (FAILED(hr))
-    {
-        CloseHandle(fileHandle);
-        if (hr != 0x8007017C) // Ignorar error específico de "ya es un placeholder"
-        {
-            result.errorMessage = L"Failed to convert to placeholder. HRESULT: 0x" + std::to_wstring(static_cast<unsigned int>(hr));
-            return result;
-        }
-        return result;
+    // Only throw if it's not "already a placeholder" error
+    if (hr != 0x8007017C) {
+        winrt::check_hresult(hr);
     }
 
-    if (!isDirectory)
-    {
-        HRESULT hrPinState = CfSetPinState(fileHandle, CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
-        if (FAILED(hrPinState))
-        {
-            CloseHandle(fileHandle);
-            result.errorMessage = L"Failed to set pin state. HRESULT: 0x" + std::to_wstring(static_cast<unsigned int>(hrPinState));
-            return result;
-        }
+    if (!isDirectory) {
+        winrt::check_hresult(CfSetPinState(fileHandle.get(), CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr));
     }
-
-    CloseHandle(fileHandle);
-    wprintf(L"[ConvertToPlaceholder] Successfully converted to placeholder: %ls\n", fullPath.c_str());
-    result.success = true;
-    return result;
 }
 
 /**
