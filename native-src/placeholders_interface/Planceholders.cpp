@@ -91,10 +91,6 @@ void Placeholders::ConvertToPlaceholder(const std::wstring &path, const std::wst
     if (hr != 0x8007017C) {
         winrt::check_hresult(hr);
     }
-
-    // if (!isDirectory) {
-    //     winrt::check_hresult(CfSetPinState(fileHandle.get(), CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr));
-    // }
 }
 
 /**
