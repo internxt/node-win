@@ -5,7 +5,7 @@
 
 napi_value create_file_placeholder_impl(napi_env env, napi_callback_info info)
 {
-    auto [fileName, fileIdentity, fileSize, creationTimeMs, lastWriteTimeMs, lastAccessTimeMs, destPath] =
+    auto [fileName, placeholderId, fileSize, creationTimeMs, lastWriteTimeMs, lastAccessTimeMs, parentPath] =
         napi_extract_args<std::wstring, std::wstring, int64_t, int64_t, int64_t, int64_t, std::wstring>(env, info);
 
     LARGE_INTEGER creationTime = Utilities::JsTimestampToLargeInteger(creationTimeMs);
@@ -13,13 +13,13 @@ napi_value create_file_placeholder_impl(napi_env env, napi_callback_info info)
     LARGE_INTEGER lastAccessTime = Utilities::JsTimestampToLargeInteger(lastAccessTimeMs);
 
     Placeholders::CreateOne(
-        fileName.c_str(),
-        fileIdentity.c_str(),
+        fileName,
+        placeholderId,
         fileSize,
         creationTime,
         lastWriteTime,
         lastAccessTime,
-        destPath.c_str());
+        parentPath);
 
     return nullptr;
 }
