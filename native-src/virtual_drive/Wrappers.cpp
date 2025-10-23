@@ -104,7 +104,7 @@ napi_value GetPlaceholderStateWrapper(napi_env env, napi_callback_info args) {
 }
 
 napi_value ConvertToPlaceholderWrapper(napi_env env, napi_callback_info args) {
-    return NAPI_SAFE_WRAP(env, args, convert_to_placeholder_impl);
+    return NAPI_SAFE_WRAP(env, args, convert_to_placeholder_wrapper);
 }
 
 napi_value HydrateFileWrapper(napi_env env, napi_callback_info args) {

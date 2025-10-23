@@ -1,6 +1,7 @@
 #include <filesystem>
 #include <windows.h>
 #include "Placeholders.h"
+#include "convert_to_placeholder.h"
 #include "Utilities.h"
 #include "napi_extract_args.h"
 
@@ -17,7 +18,7 @@ napi_value create_file_placeholder_impl(napi_env env, napi_callback_info info)
 
     if (std::filesystem::exists(path))
     {
-        Placeholders::ConvertToPlaceholder(path, placeholderId);
+        convert_to_placeholder(path, placeholderId);
         Placeholders::MaintainIdentity(path, placeholderId.c_str(), false);
         return nullptr;
     }

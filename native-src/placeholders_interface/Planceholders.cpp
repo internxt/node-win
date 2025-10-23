@@ -15,6 +15,7 @@
 #include <cctype>
 #include <windows.h>
 #include <shlobj.h>
+#include "convert_to_placeholder.h"
 
 using namespace std;
 
@@ -58,40 +59,6 @@ void Placeholders::MaintainIdentity(std::wstring &fullPath, PCWSTR itemIdentity,
         {
             // Handle error as needed
         }
-    }
-}
-
-void Placeholders::ConvertToPlaceholder(const std::wstring &path, const std::wstring &placeholderId)
-{
-    bool isDirectory = fs::is_directory(path);
-
-    winrt::file_handle fileHandle{CreateFileW(
-        path.c_str(),
-        FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES,
-        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-        nullptr,
-        OPEN_EXISTING,
-        isDirectory ? FILE_FLAG_BACKUP_SEMANTICS : 0,
-        nullptr)};
-
-    if (!fileHandle)
-    {
-        throw std::runtime_error("Failed to open file: " + std::to_string(GetLastError()));
-    }
-
-    CF_CONVERT_FLAGS convertFlags = CF_CONVERT_FLAG_MARK_IN_SYNC;
-    USN convertUsn;
-    OVERLAPPED overlapped = {};
-
-    LPCVOID idStrLPCVOID = static_cast<LPCVOID>(placeholderId.c_str());
-    DWORD idStrByteLength = static_cast<DWORD>(placeholderId.size() * sizeof(wchar_t));
-
-    HRESULT hr = CfConvertToPlaceholder(fileHandle.get(), idStrLPCVOID, idStrByteLength, convertFlags, &convertUsn, &overlapped);
-
-    // Only throw if it's not "already a placeholder" error
-    if (hr != 0x8007017C)
-    {
-        winrt::check_hresult(hr);
     }
 }
 
@@ -147,7 +114,7 @@ void Placeholders::UpdateSyncStatus(const std::wstring &filePath,
             break;
 
         case ERROR_CLOUD_FILE_NOT_IN_SYNC:
-            ConvertToPlaceholder(filePath, L"temp_identity");
+            convert_to_placeholder(filePath, L"temp_identity");
             hr = CfSetInSyncState(h, sync, CF_SET_IN_SYNC_FLAG_NONE, nullptr);
             wprintf(L"[UpdateSyncStatus] Retry CfSetInSyncState\n");
             break;
