@@ -14,8 +14,9 @@ napi_value create_folder_placeholder_impl(napi_env env, napi_callback_info info)
     LARGE_INTEGER lastAccessTime = Utilities::JsTimestampToLargeInteger(lastAccessTimeMs);
 
     std::wstring path = parentPath + L'\\' + name;
-    
-    if (std::filesystem::exists(path)) {
+
+    if (std::filesystem::exists(path))
+    {
         Placeholders::ConvertToPlaceholder(path, placeholderId);
         Placeholders::MaintainIdentity(path, placeholderId.c_str(), true);
         return nullptr;
@@ -32,6 +33,8 @@ napi_value create_folder_placeholder_impl(napi_env env, napi_callback_info info)
     cloudEntry.FsMetadata.BasicInfo.LastAccessTime = lastAccessTime;
 
     winrt::check_hresult(CfCreatePlaceholders(parentPath.c_str(), &cloudEntry, 1, CF_CREATE_FLAG_NONE, NULL));
+    // Placeholders::UpdatePinState(path, PinState::OnlineOnly);
+    // UpdateSyncStatus(path, true, true);
 
     return nullptr;
 }

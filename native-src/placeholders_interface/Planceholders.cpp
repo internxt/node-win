@@ -74,7 +74,8 @@ void Placeholders::ConvertToPlaceholder(const std::wstring &path, const std::wst
         isDirectory ? FILE_FLAG_BACKUP_SEMANTICS : 0,
         nullptr)};
 
-    if (!fileHandle) {
+    if (!fileHandle)
+    {
         throw std::runtime_error("Failed to open file: " + std::to_string(GetLastError()));
     }
 
@@ -88,7 +89,8 @@ void Placeholders::ConvertToPlaceholder(const std::wstring &path, const std::wst
     HRESULT hr = CfConvertToPlaceholder(fileHandle.get(), idStrLPCVOID, idStrByteLength, convertFlags, &convertUsn, &overlapped);
 
     // Only throw if it's not "already a placeholder" error
-    if (hr != 0x8007017C) {
+    if (hr != 0x8007017C)
+    {
         winrt::check_hresult(hr);
     }
 }
