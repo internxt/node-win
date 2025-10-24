@@ -5,7 +5,7 @@ on:
     types: [published]
 
 jobs:
-  publish_npm:
+  publish:
     runs-on: ubuntu-latest
     timeout-minutes: 1
 
@@ -24,7 +24,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "@internxt:registry=https://npm.pkg.github.com/" > .npmrc
-          echo "//npm.pkg.github.com/:_authToken=$GITHUB_TOKEN >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=$GITHUB_TOKEN" >> .npmrc
 
       - name: Publish package to github
         run: npm publish --scope=@internxt --access public

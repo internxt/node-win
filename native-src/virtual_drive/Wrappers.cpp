@@ -23,7 +23,7 @@
 #include "update_sync_status_wrapper.h"
 #include "NAPI_SAFE_WRAP.h"
 
-napi_value CreatePlaceholderFile(napi_env env, napi_callback_info args) {
+napi_value CreateFilePlaceholderWrapper(napi_env env, napi_callback_info args) {
     return NAPI_SAFE_WRAP(env, args, create_file_placeholder_impl);
 }
 
@@ -43,7 +43,7 @@ napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args) {
     return NAPI_SAFE_WRAP(env, args, connect_sync_root_impl);
 }
 
-napi_value CreateEntryWrapper(napi_env env, napi_callback_info args) {
+napi_value CreateFolderPlaceholderWrapper(napi_env env, napi_callback_info args) {
     return NAPI_SAFE_WRAP(env, args, create_folder_placeholder_impl);
 }
 
@@ -104,7 +104,7 @@ napi_value GetPlaceholderStateWrapper(napi_env env, napi_callback_info args) {
 }
 
 napi_value ConvertToPlaceholderWrapper(napi_env env, napi_callback_info args) {
-    return NAPI_SAFE_WRAP(env, args, convert_to_placeholder_impl);
+    return NAPI_SAFE_WRAP(env, args, convert_to_placeholder_wrapper);
 }
 
 napi_value HydrateFileWrapper(napi_env env, napi_callback_info args) {

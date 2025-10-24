@@ -15,87 +15,13 @@
 #include <cctype>
 #include <windows.h>
 #include <shlobj.h>
+#include "convert_to_placeholder.h"
 
 using namespace std;
 
 namespace fs = std::filesystem;
 
 #pragma comment(lib, "shlwapi.lib")
-
-bool DirectoryExists(const wchar_t *path)
-{
-    DWORD attributes = GetFileAttributesW(path);
-    return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY);
-}
-
-PlaceholderResult Placeholders::CreateOne(
-    const wchar_t *fileName,
-    const wchar_t *fileIdentity,
-    int64_t fileSize,
-    LARGE_INTEGER creationTime,
-    LARGE_INTEGER lastWriteTime,
-    LARGE_INTEGER lastAccessTime,
-    const wchar_t *destPath)
-{
-    PlaceholderResult result = {false, L""};
-
-    try
-    {
-        CF_PLACEHOLDER_CREATE_INFO cloudEntry = {};
-
-        std::wstring fullDestPath = std::wstring(destPath) + L'\\';
-
-        wstring fullPath = std::wstring(destPath) + L'\\' + fileName;
-
-        if (std::filesystem::exists(fullPath))
-        {
-            Placeholders::ConvertToPlaceholder(fullPath, fileIdentity);
-            Placeholders::MaintainIdentity(fullPath, fileIdentity, false);
-            result.success = true;
-            return result;
-        }
-
-        std::wstring relativeName(fileIdentity);
-
-        cloudEntry.FileIdentity = relativeName.c_str();
-        cloudEntry.FileIdentityLength = static_cast<DWORD>((relativeName.size() + 1) * sizeof(WCHAR));
-
-        cloudEntry.RelativeFileName = fileName;
-        cloudEntry.Flags = CF_PLACEHOLDER_CREATE_FLAG_MARK_IN_SYNC;
-
-        cloudEntry.FsMetadata.FileSize.QuadPart = fileSize;
-        cloudEntry.FsMetadata.BasicInfo.FileAttributes = FILE_ATTRIBUTE_NORMAL;
-        cloudEntry.FsMetadata.BasicInfo.CreationTime = creationTime;
-        cloudEntry.FsMetadata.BasicInfo.LastWriteTime = lastWriteTime;
-        cloudEntry.FsMetadata.BasicInfo.LastAccessTime = lastAccessTime;
-        cloudEntry.FsMetadata.BasicInfo.ChangeTime = lastWriteTime;
-
-        try
-        {
-            winrt::check_hresult(CfCreatePlaceholders(fullDestPath.c_str(), &cloudEntry, 1, CF_CREATE_FLAG_NONE, NULL));
-            Placeholders::UpdatePinState(fullPath, PinState::OnlineOnly);
-            result.success = true;
-        }
-        catch (const winrt::hresult_error &error)
-        {
-            result.errorMessage = error.message().c_str();
-            wprintf(L"[CreatePlaceholder] error: %s", error.message().c_str());
-        }
-        winrt::StorageProviderItemProperty prop;
-        prop.Id(1);
-        prop.Value(L"Value1");
-        prop.IconResource(L"shell32.dll,-44");
-
-        // UpdateSyncStatus(fullDestPath, true, false);
-    }
-    catch (...)
-    {
-        result.errorMessage = L"Failed to create or customize placeholder";
-        wprintf(L"[CreatePlaceholder] Failed to create or customize placeholder with %08x\n", static_cast<HRESULT>(winrt::to_hresult()));
-    }
-
-    return result;
-}
 
 std::string cleanString(const std::string &str)
 {
@@ -134,133 +60,6 @@ void Placeholders::MaintainIdentity(std::wstring &fullPath, PCWSTR itemIdentity,
             // Handle error as needed
         }
     }
-}
-
-PlaceholderResult Placeholders::CreateEntry(
-    const wchar_t *itemName,
-    const wchar_t *itemIdentity,
-    LARGE_INTEGER creationTime,
-    LARGE_INTEGER lastWriteTime,
-    LARGE_INTEGER lastAccessTime,
-    const wchar_t *destPath)
-{
-    PlaceholderResult result = {false, L""};
-
-    std::wstring fullDestPath = std::wstring(destPath) + L"\\" + std::wstring(itemName);
-    CF_PLACEHOLDER_CREATE_INFO cloudEntry = {};
-    std::wstring relativeName(itemIdentity);
-    cloudEntry.FileIdentity = relativeName.c_str();
-    cloudEntry.FileIdentityLength = static_cast<DWORD>((relativeName.size() + 1) * sizeof(WCHAR));
-    cloudEntry.RelativeFileName = itemName;
-    cloudEntry.Flags = CF_PLACEHOLDER_CREATE_FLAG_DISABLE_ON_DEMAND_POPULATION; // -> desactive download on demand
-    cloudEntry.FsMetadata.BasicInfo.FileAttributes = FILE_ATTRIBUTE_DIRECTORY;
-    cloudEntry.FsMetadata.BasicInfo.CreationTime = creationTime;
-    cloudEntry.FsMetadata.BasicInfo.LastWriteTime = lastWriteTime;
-    cloudEntry.FsMetadata.BasicInfo.LastAccessTime = lastAccessTime;
-
-    try
-    {
-        // TODO: si existe o es placeholder return
-        if (DirectoryExists(fullDestPath.c_str()))
-        {
-            Placeholders::ConvertToPlaceholder(fullDestPath, itemIdentity);
-            Placeholders::MaintainIdentity(fullDestPath, itemIdentity, true);
-            result.success = true;
-            return result;
-        }
-
-        // wprintf(L"Create directory, full destination path: %ls, fullDestPath.c_str()");
-        PathRemoveFileSpecW(&fullDestPath[0]);
-        HRESULT hr = CfCreatePlaceholders(fullDestPath.c_str(), &cloudEntry, 1, CF_CREATE_FLAG_NONE, NULL);
-        if (FAILED(hr))
-        {
-            result.errorMessage = L"Failed to create placeholder directory";
-            wprintf(L"[CreatePlaceholder] Failed to create placeholder directory with HRESULT 0x%08x\n", hr);
-            throw winrt::hresult_error(hr);
-        }
-
-        std::wstring finalPath = std::wstring(destPath) + L"\\" + std::wstring(itemName);
-        Placeholders::UpdatePinState(finalPath, PinState::OnlineOnly);
-        UpdateSyncStatus(finalPath, true, true);
-        result.success = true;
-    }
-    catch (const winrt::hresult_error &error)
-    {
-        result.errorMessage = error.message().c_str();
-        wprintf(L"[CreatePlaceholder] Error while creating %s: %s\n", L"directory", error.message().c_str());
-    }
-    catch (...)
-    {
-        result.errorMessage = L"Unknown error occurred";
-        wprintf(L"[CreatePlaceholder] Unknown error occurred\n");
-    }
-
-    return result;
-}
-
-PlaceholderResult Placeholders::ConvertToPlaceholder(const std::wstring &fullPath, const std::wstring &serverIdentity)
-{
-    PlaceholderResult result = {false, L""};
-
-    if (!std::filesystem::exists(fullPath))
-    {
-        result.errorMessage = L"File does not exist";
-        return result;
-    }
-
-    wprintf(L"[ConvertToPlaceholder] Full path: %ls\n", fullPath.c_str());
-    bool isDirectory = fs::is_directory(fullPath);
-
-    HANDLE fileHandle = CreateFileW(
-        fullPath.c_str(),
-        FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES,
-        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-        nullptr,
-        OPEN_EXISTING,
-        isDirectory ? FILE_FLAG_BACKUP_SEMANTICS : 0,
-        nullptr);
-
-    if (fileHandle == INVALID_HANDLE_VALUE)
-    {
-        result.errorMessage = L"Failed to open file: " + std::to_wstring(GetLastError());
-        return result;
-    }
-
-    CF_CONVERT_FLAGS convertFlags = CF_CONVERT_FLAG_MARK_IN_SYNC;
-    USN convertUsn;
-    OVERLAPPED overlapped = {};
-
-    LPCVOID idStrLPCVOID = static_cast<LPCVOID>(serverIdentity.c_str());
-    DWORD idStrByteLength = static_cast<DWORD>(serverIdentity.size() * sizeof(wchar_t));
-
-    HRESULT hr = CfConvertToPlaceholder(fileHandle, idStrLPCVOID, idStrByteLength, convertFlags, &convertUsn, &overlapped);
-
-    if (FAILED(hr))
-    {
-        CloseHandle(fileHandle);
-        if (hr != 0x8007017C) // Ignorar error específico de "ya es un placeholder"
-        {
-            result.errorMessage = L"Failed to convert to placeholder. HRESULT: 0x" + std::to_wstring(static_cast<unsigned int>(hr));
-            return result;
-        }
-        return result;
-    }
-
-    if (!isDirectory)
-    {
-        HRESULT hrPinState = CfSetPinState(fileHandle, CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
-        if (FAILED(hrPinState))
-        {
-            CloseHandle(fileHandle);
-            result.errorMessage = L"Failed to set pin state. HRESULT: 0x" + std::to_wstring(static_cast<unsigned int>(hrPinState));
-            return result;
-        }
-    }
-
-    CloseHandle(fileHandle);
-    wprintf(L"[ConvertToPlaceholder] Successfully converted to placeholder: %ls\n", fullPath.c_str());
-    result.success = true;
-    return result;
 }
 
 /**
@@ -315,7 +114,7 @@ void Placeholders::UpdateSyncStatus(const std::wstring &filePath,
             break;
 
         case ERROR_CLOUD_FILE_NOT_IN_SYNC:
-            ConvertToPlaceholder(filePath, L"temp_identity");
+            convert_to_placeholder(filePath, L"temp_identity");
             hr = CfSetInSyncState(h, sync, CF_SET_IN_SYNC_FLAG_NONE, nullptr);
             wprintf(L"[UpdateSyncStatus] Retry CfSetInSyncState\n");
             break;
