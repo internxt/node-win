@@ -3,244 +3,29 @@
 
 napi_value init(napi_env env, napi_value exports)
 {
-  napi_property_descriptor desc = {
-      "createFilePlaceholder",
-      nullptr,
-      CreateFilePlaceholderWrapper,
-      nullptr,
-      nullptr,
-      nullptr,
-      napi_default,
-      nullptr};
+  napi_property_descriptor properties[] = {
+      {"createFilePlaceholder", nullptr, CreateFilePlaceholderWrapper, nullptr, nullptr, nullptr, napi_default, nullptr},
+      {"unregisterSyncRoot", nullptr, UnregisterSyncRootWrapper, nullptr, nullptr, nullptr, napi_default, nullptr},
+      {"registerSyncRoot", nullptr, RegisterSyncRootWrapper, nullptr, nullptr, nullptr, napi_default, nullptr},
+      {"getRegisteredSyncRoots", nullptr, GetRegisteredSyncRootsWrapper, nullptr, nullptr, nullptr, napi_default, nullptr},
+      {"connectSyncRoot", nullptr, ConnectSyncRootWrapper, nullptr, nullptr, nullptr, napi_default, nullptr},
+      {"createFolderPlaceholder", nullptr, CreateFolderPlaceholderWrapper, nullptr, nullptr, nullptr, napi_default, nullptr},
+      {"disconnectSyncRoot", nullptr, DisconnectSyncRootWrapper, nullptr, nullptr, nullptr, napi_default, nullptr},
+      {"getFileIdentity", nullptr, GetFileIdentityWrapper, nullptr, nullptr, nullptr, napi_default, nullptr},
+      {"addLoggerPath", nullptr, addLoggerPathWrapper, nullptr, nullptr, nullptr, napi_default, nullptr},
+      {"updateSyncStatus", nullptr, UpdateSyncStatusWrapper, nullptr, nullptr, nullptr, napi_default, nullptr},
+      {"getPlaceholderState", nullptr, GetPlaceholderStateWrapper, nullptr, nullptr, nullptr, napi_default, nullptr},
+      {"convertToPlaceholder", nullptr, ConvertToPlaceholderWrapper, nullptr, nullptr, nullptr, napi_default, nullptr},
+      {"hydrateFile", nullptr, HydrateFileWrapper, nullptr, nullptr, nullptr, napi_default, nullptr},
+      {"dehydrateFile", nullptr, DehydrateFileWrapper, nullptr, nullptr, nullptr, napi_default, nullptr}};
 
-  napi_status defineStatus = napi_define_properties(env, exports, 1, &desc);
-  if (defineStatus != napi_ok)
+  if (napi_define_properties(env, exports, 14, properties) != napi_ok)
   {
-    napi_throw_error(env, nullptr, "Failed to define function");
-    return nullptr;
-  }
-
-  napi_property_descriptor unregisterDesc = {
-      "unregisterSyncRoot",
-      nullptr,
-      UnregisterSyncRootWrapper,
-      nullptr,
-      nullptr,
-      nullptr,
-      napi_default,
-      nullptr};
-
-  napi_status defineUnregisterStatus = napi_define_properties(env, exports, 1, &unregisterDesc);
-  if (defineUnregisterStatus != napi_ok)
-  {
-    napi_throw_error(env, nullptr, "Failed to define UnregisterSyncRoot function");
-    return nullptr;
-  }
-
-  napi_property_descriptor registerSyncRootDesc = {
-      "registerSyncRoot",
-      nullptr,
-      RegisterSyncRootWrapper,
-      nullptr,
-      nullptr,
-      nullptr,
-      napi_default,
-      nullptr};
-
-  napi_status defineRegisterSyncRootStatus = napi_define_properties(env, exports, 1, &registerSyncRootDesc);
-  if (defineRegisterSyncRootStatus != napi_ok)
-  {
-    napi_throw_error(env, nullptr, "Failed to define RegisterSyncRoot function");
-    return nullptr;
-  }
-
-  napi_property_descriptor getRegisteredSyncRootsRootDesc = {
-      "getRegisteredSyncRoots",
-      nullptr,
-      GetRegisteredSyncRootsWrapper,
-      nullptr,
-      nullptr,
-      nullptr,
-      napi_default,
-      nullptr};
-
-  napi_status defineGetRegisteredSyncRootsRootDescStatus = napi_define_properties(env, exports, 1, &getRegisteredSyncRootsRootDesc);
-  if (defineGetRegisteredSyncRootsRootDescStatus != napi_ok)
-  {
-    napi_throw_error(env, nullptr, "Failed to define getRegisteredSyncRoots function");
-    return nullptr;
-  }
-
-  napi_property_descriptor connectSyncRootDesc = {
-      "connectSyncRoot",
-      nullptr,
-      ConnectSyncRootWrapper,
-      nullptr,
-      nullptr,
-      nullptr,
-      napi_default,
-      nullptr};
-
-  napi_status defineConnectSyncRootStatus = napi_define_properties(env, exports, 1, &connectSyncRootDesc);
-  if (defineConnectSyncRootStatus != napi_ok)
-  {
-    napi_throw_error(env, nullptr, "Failed to define ConnectSyncRoot function");
-    return nullptr;
-  }
-
-  napi_property_descriptor createFolderPlaceholderDesc = {
-      "createFolderPlaceholder",
-      nullptr,
-      CreateFolderPlaceholderWrapper,
-      nullptr,
-      nullptr,
-      nullptr,
-      napi_default,
-      nullptr};
-
-  napi_status defineCreateFolderPlaceholderStatus = napi_define_properties(env, exports, 1, &createFolderPlaceholderDesc);
-  if (defineCreateFolderPlaceholderStatus != napi_ok)
-  {
-    napi_throw_error(env, nullptr, "Failed to define createFolderPlaceholder function");
-    return nullptr;
-  }
-
-  napi_property_descriptor disconnectDesc = {
-      "disconnectSyncRoot",
-      nullptr,
-      DisconnectSyncRootWrapper,
-      nullptr,
-      nullptr,
-      nullptr,
-      napi_default,
-      nullptr};
-
-  napi_status defineDisconnectStatus = napi_define_properties(env, exports, 1, &disconnectDesc);
-  if (defineDisconnectStatus != napi_ok)
-  {
-    napi_throw_error(env, nullptr, "Failed to define DisconnectSyncRoot function");
-    return nullptr;
-  }
-
-  napi_property_descriptor getFileIdentityDesc = {
-      "getFileIdentity",
-      nullptr,
-      GetFileIdentityWrapper,
-      nullptr,
-      nullptr,
-      nullptr,
-      napi_default,
-      nullptr};
-
-  napi_status defineGetFileIdentityStatus = napi_define_properties(env, exports, 1, &getFileIdentityDesc);
-  if (defineGetFileIdentityStatus != napi_ok)
-  {
-    napi_throw_error(env, nullptr, "Failed to define getFileIdentity function");
-    return nullptr;
-  }
-
-  napi_property_descriptor addLoggerPathDesc = {
-      "addLoggerPath",
-      nullptr,
-      addLoggerPathWrapper,
-      nullptr,
-      nullptr,
-      nullptr,
-      napi_default,
-      nullptr};
-
-  napi_status defineAddLoggerPathStatus = napi_define_properties(env, exports, 1, &addLoggerPathDesc);
-  if (defineAddLoggerPathStatus != napi_ok)
-  {
-    napi_throw_error(env, nullptr, "Failed to define addLoggerPath function");
-    return nullptr;
-  }
-
-  napi_property_descriptor updateSyncStatusDesc = {
-      "updateSyncStatus",
-      nullptr,
-      UpdateSyncStatusWrapper,
-      nullptr,
-      nullptr,
-      nullptr,
-      napi_default,
-      nullptr};
-
-  napi_status updateSyncStatusStatus = napi_define_properties(env, exports, 1, &updateSyncStatusDesc);
-  if (updateSyncStatusStatus != napi_ok)
-  {
-    napi_throw_error(env, nullptr, "Failed to define updateSyncStatus function");
-    return nullptr;
-  }
-
-  napi_property_descriptor getPlaceholderStateDesc = {
-      "getPlaceholderState",
-      nullptr,
-      GetPlaceholderStateWrapper,
-      nullptr,
-      nullptr,
-      nullptr,
-      napi_default,
-      nullptr};
-
-  napi_status defineGetPlaceholderStateStatus = napi_define_properties(env, exports, 1, &getPlaceholderStateDesc);
-  if (defineGetPlaceholderStateStatus != napi_ok)
-  {
-    napi_throw_error(env, nullptr, "Failed to define getPlaceholderState function");
-    return nullptr;
-  }
-
-  napi_property_descriptor convertToPlaceholderDesc = {
-      "convertToPlaceholder",
-      nullptr,
-      ConvertToPlaceholderWrapper,
-      nullptr,
-      nullptr,
-      nullptr,
-      napi_default,
-      nullptr};
-
-  napi_status convertToPlaceholderStatus = napi_define_properties(env, exports, 1, &convertToPlaceholderDesc);
-  if (convertToPlaceholderStatus != napi_ok)
-  {
-    napi_throw_error(env, nullptr, "Failed to define convertToPlaceholder function");
-    return nullptr;
-  }
-
-  napi_property_descriptor hydrateFileDesc = {
-      "hydrateFile",
-      nullptr,
-      HydrateFileWrapper,
-      nullptr,
-      nullptr,
-      nullptr,
-      napi_default,
-      nullptr};
-
-  napi_status defineHydrateFileStatus = napi_define_properties(env, exports, 1, &hydrateFileDesc);
-  if (defineHydrateFileStatus != napi_ok)
-  {
-    napi_throw_error(env, nullptr, "Failed to define hydrateFile function");
-    return nullptr;
-  }
-
-  napi_property_descriptor dehydrateFileDesc = {
-      "dehydrateFile",
-      nullptr,
-      DehydrateFileWrapper,
-      nullptr,
-      nullptr,
-      nullptr,
-      napi_default,
-      nullptr};
-
-  napi_status defineDehydrateFileStatus = napi_define_properties(env, exports, 1, &dehydrateFileDesc);
-  if (defineDehydrateFileStatus != napi_ok)
-  {
-    napi_throw_error(env, nullptr, "Failed to define dehydrateFile function");
+    napi_throw_error(env, nullptr, "Failed to define properties");
     return nullptr;
   }
 
   return exports;
 }
+
 NAPI_MODULE(NODE_GYP_MODULE_NAME, init)
