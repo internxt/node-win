@@ -2,7 +2,6 @@
 #include <windows.h>
 #include "Placeholders.h"
 #include "convert_to_placeholder.h"
-#include "Utilities.h"
 #include "napi_extract_args.h"
 
 napi_value create_file_placeholder_impl(napi_env env, napi_callback_info info)
@@ -36,7 +35,6 @@ napi_value create_file_placeholder_impl(napi_env env, napi_callback_info info)
     cloudEntry.FsMetadata.BasicInfo.ChangeTime = lastWriteTime;
 
     winrt::check_hresult(CfCreatePlaceholders(parentPath.c_str(), &cloudEntry, 1, CF_CREATE_FLAG_NONE, NULL));
-    // Placeholders::UpdatePinState(path, PinState::OnlineOnly);
 
     return nullptr;
 }

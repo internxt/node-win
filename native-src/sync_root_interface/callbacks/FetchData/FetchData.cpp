@@ -15,7 +15,6 @@
 #include <locale>
 #include <codecvt>
 #include <filesystem>
-#include <Placeholders.h>
 #include <Logger.h>
 #include <TransferContext.h>
 
@@ -213,7 +212,8 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
         );
 
         ::Sleep(CHUNKDELAYMS);
-        Placeholders::UpdatePinState(ctxPtr->fullClientPath.c_str(), PinState::AlwaysLocal);
+
+        CfSetPinState(handleForPath(ctxPtr->fullClientPath.c_str()).get(), CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
     }
 
     {
