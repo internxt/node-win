@@ -35,7 +35,7 @@ napi_value create_folder_placeholder_impl(napi_env env, napi_callback_info info)
 
     winrt::check_hresult(CfCreatePlaceholders(parentPath.c_str(), &cloudEntry, 1, CF_CREATE_FLAG_NONE, NULL));
     // Placeholders::UpdatePinState(path, PinState::OnlineOnly);
-    // UpdateSyncStatus(path, true, true);
+    Placeholders::UpdateSyncStatus(path, true);
 
     return nullptr;
 }
