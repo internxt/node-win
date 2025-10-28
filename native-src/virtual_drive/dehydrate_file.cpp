@@ -27,4 +27,6 @@ napi_value dehydrate_file(napi_env env, napi_callback_info info)
         length,
         CF_DEHYDRATE_FLAG_NONE,
         nullptr));
+
+    return nullptr;
 }
