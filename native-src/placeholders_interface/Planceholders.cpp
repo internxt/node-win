@@ -38,7 +38,7 @@ std::string cleanString(const std::string &str)
 
 void Placeholders::MaintainIdentity(std::wstring &fullPath, PCWSTR itemIdentity, bool isDirectory)
 {
-    std::string identity = Placeholders::GetFileIdentity(fullPath);
+    std::string identity = Placeholders::GetPlaceholderInfo(fullPath).placeholderId;
     if (!identity.empty())
     {
         int len = WideCharToMultiByte(CP_UTF8, 0, itemIdentity, -1, NULL, 0, NULL, NULL);
@@ -143,28 +143,6 @@ void Placeholders::UpdateFileIdentity(const std::wstring &filePath, const std::w
     }
 
     CloseHandle(fileHandle);
-}
-
-std::string Placeholders::GetFileIdentity(const std::wstring &filePath)
-{
-    constexpr auto fileIdMaxLength = 128;
-    const auto infoSize = sizeof(CF_PLACEHOLDER_BASIC_INFO) + fileIdMaxLength;
-    auto info = PlaceHolderInfo(reinterpret_cast<CF_PLACEHOLDER_BASIC_INFO *>(new char[infoSize]), FileHandle::deletePlaceholderInfo);
-
-    HRESULT result = CfGetPlaceholderInfo(handleForPath(filePath).get(), CF_PLACEHOLDER_INFO_BASIC, info.get(), Utilities::sizeToDWORD(infoSize), nullptr);
-
-    if (result == S_OK)
-    {
-        BYTE *FileIdentity = info->FileIdentity;
-        size_t length = info->FileIdentityLength;
-
-        std::string fileIdentityString(reinterpret_cast<const char *>(FileIdentity), length);
-        return fileIdentityString;
-    }
-    else
-    {
-        return "";
-    }
 }
 
 FileState Placeholders::GetPlaceholderInfo(const std::wstring &path)

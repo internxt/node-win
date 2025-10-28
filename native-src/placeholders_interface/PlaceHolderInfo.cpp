@@ -6,42 +6,6 @@
 #include <locale>
 #include "Logger.h"
 
-PlaceHolderInfo::PlaceHolderInfo()
-    : _data(nullptr, [](CF_PLACEHOLDER_BASIC_INFO *) {})
-{
-}
-
-PlaceHolderInfo::PlaceHolderInfo(CF_PLACEHOLDER_BASIC_INFO *data, Deleter deleter)
-    : _data(data, deleter)
-{
-}
-
-std::optional<LARGE_INTEGER> PlaceHolderInfo::FileId() const
-{
-    if (!_data)
-    {
-        return {};
-    }
-    return _data->FileId;
-}
-
-std::optional<BYTE> PlaceHolderInfo::FileIdentity() const
-{
-    if (!_data)
-    {
-        return {};
-    }
-
-    printf("FILE OPTIONAL: %d\n", _data->FileIdentity[0]);
-    return _data->FileIdentity[0]; // Devuelve el primer byte del array
-}
-
-void FileHandle::deletePlaceholderInfo(CF_PLACEHOLDER_BASIC_INFO *info)
-{
-    auto byte = reinterpret_cast<char *>(info);
-    delete[] byte;
-}
-
 FileHandle::FileHandle()
     : _data(
           nullptr, [](void *) {})
