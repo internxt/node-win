@@ -35,7 +35,6 @@ public:
     inline CF_PLACEHOLDER_BASIC_INFO *operator->() const noexcept { return _data.get(); }
     inline explicit operator bool() const noexcept { return static_cast<bool>(_data); }
 
-    std::optional<PinState> pinState() const;
     std::optional<LARGE_INTEGER> FileId() const;
     std::optional<BYTE> FileIdentity() const;
 
@@ -60,5 +59,3 @@ private:
 };
 
 FileHandle handleForPath(const std::wstring &path);
-
-CF_PIN_STATE pinStateToCfPinState(PinState state);

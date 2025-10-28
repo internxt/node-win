@@ -6,44 +6,6 @@
 #include <locale>
 #include "Logger.h"
 
-PinState cfPinStateToPinState(CF_PIN_STATE state)
-{
-    switch (state)
-    {
-    case CF_PIN_STATE_UNSPECIFIED:
-        return PinState::Unspecified;
-    case CF_PIN_STATE_PINNED:
-        return PinState::AlwaysLocal;
-    case CF_PIN_STATE_UNPINNED:
-        return PinState::OnlineOnly;
-    case CF_PIN_STATE_INHERIT:
-        return PinState::Inherited;
-    case CF_PIN_STATE_EXCLUDED:
-        return PinState::Excluded;
-    default:
-        return PinState::Inherited;
-    }
-}
-
-CF_PIN_STATE pinStateToCfPinState(PinState state)
-{
-    switch (state)
-    {
-    case PinState::Unspecified:
-        return CF_PIN_STATE_UNSPECIFIED;
-    case PinState::AlwaysLocal:
-        return CF_PIN_STATE_PINNED;
-    case PinState::OnlineOnly:
-        return CF_PIN_STATE_UNPINNED;
-    case PinState::Inherited:
-        return CF_PIN_STATE_INHERIT;
-    case PinState::Excluded:
-        return CF_PIN_STATE_EXCLUDED;
-    default:
-        return CF_PIN_STATE_INHERIT;
-    }
-}
-
 PlaceHolderInfo::PlaceHolderInfo()
     : _data(nullptr, [](CF_PLACEHOLDER_BASIC_INFO *) {})
 {
@@ -52,16 +14,6 @@ PlaceHolderInfo::PlaceHolderInfo()
 PlaceHolderInfo::PlaceHolderInfo(CF_PLACEHOLDER_BASIC_INFO *data, Deleter deleter)
     : _data(data, deleter)
 {
-}
-
-std::optional<PinState> PlaceHolderInfo::pinState() const
-{
-    if (!_data)
-    {
-        return {};
-    }
-
-    return cfPinStateToPinState(_data->PinState);
 }
 
 std::optional<LARGE_INTEGER> PlaceHolderInfo::FileId() const
