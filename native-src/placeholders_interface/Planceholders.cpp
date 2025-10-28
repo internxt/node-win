@@ -167,41 +167,28 @@ std::string Placeholders::GetFileIdentity(const std::wstring &filePath)
     }
 }
 
-FileState Placeholders::GetPlaceholderInfo(const std::wstring &directoryPath)
+FileState Placeholders::GetPlaceholderInfo(const std::wstring &path)
 {
+    constexpr DWORD fileIdMaxLength = 400;
+    constexpr DWORD infoSize = sizeof(CF_PLACEHOLDER_BASIC_INFO) + fileIdMaxLength;
 
-    constexpr auto fileIdMaxLength = 400;
-    const auto infoSize = sizeof(CF_PLACEHOLDER_BASIC_INFO) + fileIdMaxLength;
-    auto info = PlaceHolderInfo(reinterpret_cast<CF_PLACEHOLDER_BASIC_INFO *>(new char[infoSize]), FileHandle::deletePlaceholderInfo);
+    std::vector<char> buffer(infoSize);
+    auto *info = reinterpret_cast<CF_PLACEHOLDER_BASIC_INFO *>(buffer.data());
 
-    FileState fileState;
-    auto fileHandle = handleForPath(directoryPath);
-
+    auto fileHandle = handleForPath(path);
     if (!fileHandle)
     {
-        printf("Error: Invalid file handle.\n");
-        fileState.pinstate = PinState::Unspecified;
-        return fileState;
+        throw std::runtime_error("Failed to get file handle: " + std::to_string(GetLastError()));
     }
 
-    HRESULT result = CfGetPlaceholderInfo(fileHandle.get(), CF_PLACEHOLDER_INFO_BASIC, info.get(), Utilities::sizeToDWORD(infoSize), nullptr);
+    winrt::check_hresult(CfGetPlaceholderInfo(
+        fileHandle.get(),
+        CF_PLACEHOLDER_INFO_BASIC,
+        info,
+        infoSize,
+        nullptr));
 
-    if (result != S_OK)
-    {
-        printf("CfGetPlaceholderInfo failed with HRESULT %lx\n", result);
-        fileState.pinstate = PinState::Unspecified;
-        return fileState;
-    }
-
-    auto pinStateOpt = info.pinState();
-
-    if (pinStateOpt.has_value())
-    {
-
-        PinState pinState = pinStateOpt.value();
-    }
-
-    fileState.pinstate = pinStateOpt.value_or(PinState::Unspecified);
-
-    return fileState;
+    return FileState{
+        std::string(reinterpret_cast<const char *>(info->FileIdentity), info->FileIdentityLength),
+        info->PinState};
 }

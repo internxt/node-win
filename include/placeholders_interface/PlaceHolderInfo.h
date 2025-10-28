@@ -17,8 +17,10 @@ enum class PinState
     Excluded = 4,
 };
 
-struct FileState {
-    PinState pinstate;
+struct FileState
+{
+    std::string placeholderId;
+    CF_PIN_STATE pinState;
 };
 
 class PlaceHolderInfo
