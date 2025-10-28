@@ -36,7 +36,7 @@ std::string cleanString(const std::string &str)
     return cleanedStr;
 }
 
-void Placeholders::MaintainIdentity(std::wstring &fullPath, PCWSTR itemIdentity, bool isDirectory)
+void Placeholders::MaintainIdentity(const std::wstring &fullPath, PCWSTR itemIdentity, bool isDirectory)
 {
     std::string identity = Placeholders::GetPlaceholderInfo(fullPath).placeholderId;
     if (!identity.empty())
