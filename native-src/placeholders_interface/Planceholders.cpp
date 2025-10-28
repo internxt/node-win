@@ -17,70 +17,40 @@
 #include <shlobj.h>
 #include "convert_to_placeholder.h"
 
-using namespace std;
-
-namespace fs = std::filesystem;
-
 #pragma comment(lib, "shlwapi.lib")
 
-std::string cleanString(const std::string &str)
+winrt::file_handle Placeholders::OpenFileHandle(const std::wstring &path, DWORD dwDesiredAccess, bool openAsPlaceholder)
 {
-    std::string cleanedStr;
-    for (char ch : str)
-    {
-        if (std::isprint(static_cast<unsigned char>(ch)))
-        {
-            cleanedStr.push_back(ch);
-        }
-    }
-    return cleanedStr;
-}
+    bool isDirectory = std::filesystem::is_directory(path);
 
-void Placeholders::MaintainIdentity(const std::wstring &fullPath, PCWSTR itemIdentity, bool isDirectory)
-{
-    std::string identity = Placeholders::GetPlaceholderInfo(fullPath).placeholderId;
-    if (!identity.empty())
-    {
-        int len = WideCharToMultiByte(CP_UTF8, 0, itemIdentity, -1, NULL, 0, NULL, NULL);
-        if (len > 0)
-        {
-            std::string itemIdentityStr(len, 0);
-            WideCharToMultiByte(CP_UTF8, 0, itemIdentity, -1, &itemIdentityStr[0], len, NULL, NULL);
-            std::string cleanIdentity = cleanString(identity);
-            std::string cleanItemIdentity = cleanString(itemIdentityStr);
-            if (cleanIdentity != cleanItemIdentity)
-            {
-                wprintf(L"[MaintainIdentity] Identity is incorrect, updating...\n");
-                std::wstring itemIdentityStrW(itemIdentity);
-                Placeholders::UpdateFileIdentity(fullPath, itemIdentityStrW, isDirectory);
-            }
-        }
-        else
-        {
-            // Handle error as needed
-        }
-    }
-}
-
-void Placeholders::UpdateSyncStatus(const std::wstring &path, bool isDirectory)
-{
-    DWORD flags = FILE_FLAG_OPEN_REPARSE_POINT;
+    DWORD dwFlagsAndAttributes = 0;
+    if (openAsPlaceholder)
+        dwFlagsAndAttributes |= FILE_FLAG_OPEN_REPARSE_POINT;
     if (isDirectory)
-        flags |= FILE_FLAG_BACKUP_SEMANTICS;
+        dwFlagsAndAttributes |= FILE_FLAG_BACKUP_SEMANTICS;
+
+    DWORD dwShareMode = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
 
     winrt::file_handle fileHandle{CreateFileW(
         path.c_str(),
-        FILE_WRITE_ATTRIBUTES,
-        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        dwDesiredAccess,
+        dwShareMode,
         nullptr,
         OPEN_EXISTING,
-        flags,
+        dwFlagsAndAttributes,
         nullptr)};
 
     if (!fileHandle)
     {
-        throw std::runtime_error("Failed to open item: " + std::to_string(GetLastError()));
+        throw std::runtime_error("Failed to open file handle: " + std::to_string(GetLastError()));
     }
+
+    return fileHandle;
+}
+
+void Placeholders::UpdateSyncStatus(const std::wstring &path)
+{
+    auto fileHandle = Placeholders::OpenFileHandle(path, FILE_WRITE_ATTRIBUTES, true);
 
     winrt::check_hresult(CfSetInSyncState(
         fileHandle.get(),
@@ -91,73 +61,31 @@ void Placeholders::UpdateSyncStatus(const std::wstring &path, bool isDirectory)
     SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATH, path.c_str(), nullptr);
 }
 
-void Placeholders::UpdateFileIdentity(const std::wstring &filePath, const std::wstring &fileIdentity, bool isDirectory)
+void Placeholders::UpdateFileIdentity(const std::wstring &path, const std::wstring &placeholderId)
 {
-    HANDLE fileHandle = CreateFileW(
-        filePath.c_str(),
-        FILE_WRITE_ATTRIBUTES, // permisson needed to change the state
-        FILE_SHARE_READ | FILE_SHARE_WRITE,
+    auto fileHandle = OpenFileHandle(path, FILE_WRITE_ATTRIBUTES, true);
+
+    winrt::check_hresult(CfUpdatePlaceholder(
+        fileHandle.get(),
         nullptr,
-        OPEN_EXISTING,
-        isDirectory ? FILE_FLAG_BACKUP_SEMANTICS : FILE_ATTRIBUTE_NORMAL,
-        nullptr);
-
-    if (fileHandle == INVALID_HANDLE_VALUE)
-    {
-        DWORD errorCode = GetLastError();
-        wprintf(L"[UpdateFileIdentity] Error opening file: %d\n", errorCode);
-        LPWSTR errorMessage = nullptr;
-        FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                       nullptr,
-                       errorCode,
-                       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                       reinterpret_cast<LPWSTR>(&errorMessage),
-                       0,
-                       nullptr);
-        if (errorMessage)
-        {
-            wprintf(L"[UpdateFileIdentity] Error: %ls\n", errorMessage);
-            LocalFree(errorMessage);
-        }
-        return;
-    }
-
-    HRESULT hr = CfUpdatePlaceholder(
-        fileHandle,                                                // Handle del archivo.
-        nullptr,                                                   // CF_FS_METADATA opcional.
-        fileIdentity.c_str(),                                      // Identidad del archivo.
-        static_cast<DWORD>(fileIdentity.size() * sizeof(wchar_t)), // Longitud de la identidad del archivo.
-        nullptr,                                                   // Rango a deshidratar, opcional.
-        0,                                                         // Conteo de rangos a deshidratar, debe ser 0 si no se usa.
-        CF_UPDATE_FLAG_NONE,                                       // Flags de actualización.
-        nullptr,                                                   // USN opcional.
-        nullptr                                                    // OVERLAPPED opcional.
-    );
-
-    if (FAILED(hr))
-    {
-        std::wstring errorMessage = Utilities::GetErrorMessageCloudFiles(hr);
-        wprintf(L"[UpdateFileIdentity] Error updating fileIdentity: %ls\n", errorMessage.c_str());
-        CloseHandle(fileHandle);
-        return;
-    }
-
-    CloseHandle(fileHandle);
+        placeholderId.c_str(),
+        static_cast<DWORD>(placeholderId.size() * sizeof(wchar_t)),
+        nullptr,
+        0,
+        CF_UPDATE_FLAG_NONE,
+        nullptr,
+        nullptr));
 }
 
 FileState Placeholders::GetPlaceholderInfo(const std::wstring &path)
 {
+    auto fileHandle = OpenFileHandle(path, FILE_READ_ATTRIBUTES, true);
+
     constexpr DWORD fileIdMaxLength = 400;
     constexpr DWORD infoSize = sizeof(CF_PLACEHOLDER_BASIC_INFO) + fileIdMaxLength;
 
     std::vector<char> buffer(infoSize);
     auto *info = reinterpret_cast<CF_PLACEHOLDER_BASIC_INFO *>(buffer.data());
-
-    auto fileHandle = handleForPath(path);
-    if (!fileHandle)
-    {
-        throw std::runtime_error("Failed to get file handle: " + std::to_string(GetLastError()));
-    }
 
     winrt::check_hresult(CfGetPlaceholderInfo(
         fileHandle.get(),
@@ -166,7 +94,9 @@ FileState Placeholders::GetPlaceholderInfo(const std::wstring &path)
         infoSize,
         nullptr));
 
-    return FileState{
-        std::string(reinterpret_cast<const char *>(info->FileIdentity), info->FileIdentityLength),
-        info->PinState};
+    std::string placeholderId(reinterpret_cast<const char *>(info->FileIdentity), info->FileIdentityLength);
+
+    placeholderId.erase(std::remove(placeholderId.begin(), placeholderId.end(), '\0'), placeholderId.end());
+
+    return FileState{placeholderId, info->PinState};
 }

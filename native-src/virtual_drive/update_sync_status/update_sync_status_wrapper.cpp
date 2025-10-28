@@ -4,9 +4,9 @@
 
 napi_value update_sync_status_wrapper(napi_env env, napi_callback_info info)
 {
-    auto [path, isDirectory] = napi_extract_args<std::wstring, bool>(env, info);
+    auto [path] = napi_extract_args<std::wstring>(env, info);
 
-    Placeholders::UpdateSyncStatus(path, isDirectory);
+    Placeholders::UpdateSyncStatus(path);
 
     return nullptr;
 }

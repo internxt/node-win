@@ -34,7 +34,7 @@ void Utilities::ApplyTransferStateToFile(_In_ PCWSTR fullPath, _In_ CF_CALLBACK_
     {
         // First, get the Volatile property store for the file. That's where the properties are maintained.
         winrt::com_ptr<IShellItem2> shellItem;
-        winrt::com_ptr<IPropertyStore>propStoreVolatile;
+        winrt::com_ptr<IPropertyStore> propStoreVolatile;
 
         winrt::check_hresult(SHCreateItemFromParsingName(fullPath, nullptr, __uuidof(shellItem), shellItem.put_void()));
 
@@ -51,7 +51,7 @@ void Utilities::ApplyTransferStateToFile(_In_ PCWSTR fullPath, _In_ CF_CALLBACK_
         if (completed < total)
         {
             PROPVARIANT pvProgress, pvStatus;
-            UINT64 values[] { completed, total };
+            UINT64 values[]{completed, total};
             InitPropVariantFromUInt64Vector(values, ARRAYSIZE(values), &pvProgress);
             InitPropVariantFromUInt32(SYNC_TRANSFER_STATUS::STS_TRANSFERRING, &pvStatus);
 
@@ -63,21 +63,23 @@ void Utilities::ApplyTransferStateToFile(_In_ PCWSTR fullPath, _In_ CF_CALLBACK_
         }
         else
         {
-            PROPVARIANT empty; PropVariantInit(&empty);
+            PROPVARIANT empty;
+            PropVariantInit(&empty);
             propStoreVolatile->SetValue(PKEY_StorageProviderTransferProgress, empty);
             propStoreVolatile->SetValue(PKEY_SyncTransferStatus, empty);
             propStoreVolatile->Commit();
 
             HANDLE h = CreateFileW(fullPath,
-                                FILE_WRITE_ATTRIBUTES,
-                                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                                nullptr,
-                                OPEN_EXISTING,
-                                FILE_FLAG_OPEN_REPARSE_POINT,
-                                nullptr);
-            if (h != INVALID_HANDLE_VALUE) {
+                                   FILE_WRITE_ATTRIBUTES,
+                                   FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                   nullptr,
+                                   OPEN_EXISTING,
+                                   FILE_FLAG_OPEN_REPARSE_POINT,
+                                   nullptr);
+            if (h != INVALID_HANDLE_VALUE)
+            {
                 CfSetInSyncState(h, CF_IN_SYNC_STATE_IN_SYNC,
-                                CF_SET_IN_SYNC_FLAG_NONE, nullptr);
+                                 CF_SET_IN_SYNC_FLAG_NONE, nullptr);
                 CloseHandle(h);
             }
         }
@@ -88,24 +90,4 @@ void Utilities::ApplyTransferStateToFile(_In_ PCWSTR fullPath, _In_ CF_CALLBACK_
         // otherwise the exception will get rethrown and this method will crash out as it should
         wprintf(L"Failed to Set Transfer Progress on \"%s\" with %08x\n", fullPath, static_cast<HRESULT>(winrt::to_hresult()));
     }
-}
-
-std::wstring Utilities::GetErrorMessageCloudFiles(HRESULT hr) {
-    LPWSTR errorMsg = nullptr;
-    DWORD size = FormatMessageW(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-        nullptr,
-        hr,
-        0,
-        (LPWSTR)&errorMsg,
-        0,
-        nullptr
-    );
-
-    std::wstring message;
-    if (size > 0 && errorMsg != nullptr) {
-        message.assign(errorMsg, size);
-    }
-    LocalFree(errorMsg);
-    return message;
 }

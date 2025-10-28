@@ -8,9 +8,6 @@ napi_value get_placeholder_state_wrapper(napi_env env, napi_callback_info info)
 
     FileState state = Placeholders::GetPlaceholderInfo(path);
 
-    state.placeholderId.erase(std::remove(state.placeholderId.begin(), state.placeholderId.end(), '\0'), state.placeholderId.end());
-    state.placeholderId.erase(std::remove(state.placeholderId.begin(), state.placeholderId.end(), ' '), state.placeholderId.end());
-
     napi_value result;
     napi_create_object(env, &result);
 

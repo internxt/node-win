@@ -6,21 +6,7 @@
 
 void convert_to_placeholder(const std::wstring &path, const std::wstring &placeholderId)
 {
-    bool isDirectory = std::filesystem::is_directory(path);
-
-    winrt::file_handle fileHandle{CreateFileW(
-        path.c_str(),
-        FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES,
-        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-        nullptr,
-        OPEN_EXISTING,
-        isDirectory ? FILE_FLAG_BACKUP_SEMANTICS : 0,
-        nullptr)};
-
-    if (!fileHandle)
-    {
-        throw std::runtime_error("Failed to open item: " + std::to_string(GetLastError()));
-    }
+    auto fileHandle = Placeholders::OpenFileHandle(path, FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES, false);
 
     CF_CONVERT_FLAGS convertFlags = CF_CONVERT_FLAG_MARK_IN_SYNC;
     USN convertUsn;
@@ -31,11 +17,7 @@ void convert_to_placeholder(const std::wstring &path, const std::wstring &placeh
 
     HRESULT hr = CfConvertToPlaceholder(fileHandle.get(), idStrLPCVOID, idStrByteLength, convertFlags, &convertUsn, &overlapped);
 
-    if (hr == 0x8007017C) // Already a placeholder
-    {
-        Placeholders::MaintainIdentity(path, placeholderId.c_str(), isDirectory);
-    }
-    else
+    if (hr != 0x8007017C) // Already a placeholder
     {
         winrt::check_hresult(hr);
     }

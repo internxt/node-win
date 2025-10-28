@@ -6,8 +6,8 @@
 class Placeholders
 {
 public:
-    static void MaintainIdentity(const std::wstring &fullPath, PCWSTR fileIdentity, bool isDirectory);
-    static void UpdateSyncStatus(const std::wstring &filePath, bool isDirectory);
-    static void UpdateFileIdentity(const std::wstring &filePath, const std::wstring &fileIdentity, bool isDirectory);
-    static FileState GetPlaceholderInfo(const std::wstring &directoryPath);
+    static winrt::file_handle OpenFileHandle(const std::wstring &path, DWORD accessRights, bool openAsPlaceholder = true);
+    static void UpdateSyncStatus(const std::wstring &path);
+    static void UpdateFileIdentity(const std::wstring &path, const std::wstring &placeholderId);
+    static FileState GetPlaceholderInfo(const std::wstring &path);
 };
