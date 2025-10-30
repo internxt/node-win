@@ -40,7 +40,6 @@ winrt::file_handle Placeholders::OpenFileHandle(const std::wstring &path, DWORD 
         dwFlagsAndAttributes,
         nullptr)};
 
-    auto fileHandle = handleForPath(path);
     if (!fileHandle)
     {
         throw std::runtime_error("Failed to open file handle: " + std::to_string(GetLastError()));
