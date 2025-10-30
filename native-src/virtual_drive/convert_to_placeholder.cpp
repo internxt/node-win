@@ -2,6 +2,7 @@
 #include <windows.h>
 #include "stdafx.h"
 #include "napi_extract_args.h"
+#include "Placeholders.h"
 
 void convert_to_placeholder(const std::wstring &path, const std::wstring &placeholderId)
 {
@@ -30,8 +31,11 @@ void convert_to_placeholder(const std::wstring &path, const std::wstring &placeh
 
     HRESULT hr = CfConvertToPlaceholder(fileHandle.get(), idStrLPCVOID, idStrByteLength, convertFlags, &convertUsn, &overlapped);
 
-    // Only throw if it's not "already a placeholder" error
-    if (hr != 0x8007017C)
+    if (hr == 0x8007017C) // Already a placeholder
+    {
+        Placeholders::MaintainIdentity(path, placeholderId.c_str(), isDirectory);
+    }
+    else
     {
         winrt::check_hresult(hr);
     }

@@ -36,9 +36,9 @@ std::string cleanString(const std::string &str)
     return cleanedStr;
 }
 
-void Placeholders::MaintainIdentity(std::wstring &fullPath, PCWSTR itemIdentity, bool isDirectory)
+void Placeholders::MaintainIdentity(const std::wstring &fullPath, PCWSTR itemIdentity, bool isDirectory)
 {
-    std::string identity = Placeholders::GetFileIdentity(fullPath);
+    std::string identity = Placeholders::GetPlaceholderInfo(fullPath).placeholderId;
     if (!identity.empty())
     {
         int len = WideCharToMultiByte(CP_UTF8, 0, itemIdentity, -1, NULL, 0, NULL, NULL);
@@ -145,63 +145,28 @@ void Placeholders::UpdateFileIdentity(const std::wstring &filePath, const std::w
     CloseHandle(fileHandle);
 }
 
-std::string Placeholders::GetFileIdentity(const std::wstring &filePath)
+FileState Placeholders::GetPlaceholderInfo(const std::wstring &path)
 {
-    constexpr auto fileIdMaxLength = 128;
-    const auto infoSize = sizeof(CF_PLACEHOLDER_BASIC_INFO) + fileIdMaxLength;
-    auto info = PlaceHolderInfo(reinterpret_cast<CF_PLACEHOLDER_BASIC_INFO *>(new char[infoSize]), FileHandle::deletePlaceholderInfo);
+    constexpr DWORD fileIdMaxLength = 400;
+    constexpr DWORD infoSize = sizeof(CF_PLACEHOLDER_BASIC_INFO) + fileIdMaxLength;
 
-    HRESULT result = CfGetPlaceholderInfo(handleForPath(filePath).get(), CF_PLACEHOLDER_INFO_BASIC, info.get(), Utilities::sizeToDWORD(infoSize), nullptr);
+    std::vector<char> buffer(infoSize);
+    auto *info = reinterpret_cast<CF_PLACEHOLDER_BASIC_INFO *>(buffer.data());
 
-    if (result == S_OK)
-    {
-        BYTE *FileIdentity = info->FileIdentity;
-        size_t length = info->FileIdentityLength;
-
-        std::string fileIdentityString(reinterpret_cast<const char *>(FileIdentity), length);
-        return fileIdentityString;
-    }
-    else
-    {
-        return "";
-    }
-}
-
-FileState Placeholders::GetPlaceholderInfo(const std::wstring &directoryPath)
-{
-
-    constexpr auto fileIdMaxLength = 400;
-    const auto infoSize = sizeof(CF_PLACEHOLDER_BASIC_INFO) + fileIdMaxLength;
-    auto info = PlaceHolderInfo(reinterpret_cast<CF_PLACEHOLDER_BASIC_INFO *>(new char[infoSize]), FileHandle::deletePlaceholderInfo);
-
-    FileState fileState;
-    auto fileHandle = handleForPath(directoryPath);
-
+    auto fileHandle = handleForPath(path);
     if (!fileHandle)
     {
-        printf("Error: Invalid file handle.\n");
-        fileState.pinstate = PinState::Unspecified;
-        return fileState;
+        throw std::runtime_error("Failed to get file handle: " + std::to_string(GetLastError()));
     }
 
-    HRESULT result = CfGetPlaceholderInfo(fileHandle.get(), CF_PLACEHOLDER_INFO_BASIC, info.get(), Utilities::sizeToDWORD(infoSize), nullptr);
+    winrt::check_hresult(CfGetPlaceholderInfo(
+        fileHandle.get(),
+        CF_PLACEHOLDER_INFO_BASIC,
+        info,
+        infoSize,
+        nullptr));
 
-    if (result != S_OK)
-    {
-        printf("CfGetPlaceholderInfo failed with HRESULT %lx\n", result);
-        fileState.pinstate = PinState::Unspecified;
-        return fileState;
-    }
-
-    auto pinStateOpt = info.pinState();
-
-    if (pinStateOpt.has_value())
-    {
-
-        PinState pinState = pinStateOpt.value();
-    }
-
-    fileState.pinstate = pinStateOpt.value_or(PinState::Unspecified);
-
-    return fileState;
+    return FileState{
+        std::string(reinterpret_cast<const char *>(info->FileIdentity), info->FileIdentityLength),
+        info->PinState};
 }

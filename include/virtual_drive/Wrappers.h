@@ -9,7 +9,6 @@ napi_value RegisterSyncRootWrapper(napi_env env, napi_callback_info args);
 napi_value GetRegisteredSyncRootsWrapper(napi_env env, napi_callback_info args);
 napi_value ConnectSyncRootWrapper(napi_env env, napi_callback_info args);
 napi_value DisconnectSyncRootWrapper(napi_env env, napi_callback_info args);
-napi_value GetFileIdentityWrapper(napi_env env, napi_callback_info args);
 napi_value addLoggerPathWrapper(napi_env env, napi_callback_info args);
 napi_value UpdateSyncStatusWrapper(napi_env env, napi_callback_info args);
 napi_value GetPlaceholderStateWrapper(napi_env env, napi_callback_info args);
