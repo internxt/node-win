@@ -2,38 +2,30 @@
 #include "napi_extract_args.h"
 #include "stdafx.h"
 
-napi_value dehydrate_file(napi_env env, napi_callback_info info) {
-    auto [rawPath] = napi_extract_args<std::wstring>(env, info);
-    const wchar_t* path = rawPath.c_str();
+napi_value dehydrate_file(napi_env env, napi_callback_info info)
+{
+    auto [path] = napi_extract_args<std::wstring>(env, info);
 
-    DWORD attrib = GetFileAttributesW(path);
+    DWORD attrib = GetFileAttributesW(path.c_str());
 
-    if (attrib & FILE_ATTRIBUTE_DIRECTORY) {
+    if (attrib & FILE_ATTRIBUTE_DIRECTORY)
+    {
         throw std::runtime_error("Cannot dehydrate folder");
     }
 
-    winrt::handle placeholder(CreateFileW(path, 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
+    winrt::handle fileHandle(CreateFileW(path.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
 
     LARGE_INTEGER offset;
     offset.QuadPart = 0;
     LARGE_INTEGER length;
-    GetFileSizeEx(placeholder.get(), &length);
+    GetFileSizeEx(fileHandle.get(), &length);
 
-    HRESULT hr = CfDehydratePlaceholder(placeholder.get(), offset, length, CF_DEHYDRATE_FLAG_NONE, NULL);
+    winrt::check_hresult(CfDehydratePlaceholder(
+        fileHandle.get(),
+        offset,
+        length,
+        CF_DEHYDRATE_FLAG_NONE,
+        nullptr));
 
-    if (SUCCEEDED(hr)) {
-        return nullptr;
-    }
-
-    DWORD err = HRESULT_CODE(hr);
-
-    if (err == ERROR_SHARING_VIOLATION || err == ERROR_CLOUD_FILE_IN_USE) {
-        // MessageBoxW(
-        //     nullptr,
-        //     L"Unable to free up space because the file is currently in use.\nPlease close the file and try again.",
-        //     L"File in use",
-        //     MB_OK | MB_ICONWARNING | MB_SYSTEMMODAL);
-    }
-
-    winrt::throw_hresult(hr);
+    return nullptr;
 }
