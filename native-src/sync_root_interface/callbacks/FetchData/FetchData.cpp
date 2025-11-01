@@ -17,6 +17,7 @@
 #include <filesystem>
 #include <Logger.h>
 #include <TransferContext.h>
+#include "napi_extract_args.h"
 
 napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
@@ -43,13 +44,7 @@ napi_value create_response(napi_env env, bool finished, float progress)
     napi_create_double(env, progress, &progress_value);
     napi_set_named_property(env, result_object, "progress", progress_value);
 
-    napi_value promise;
-    napi_deferred deferred;
-    napi_create_promise(env, &deferred, &promise);
-
-    napi_resolve_deferred(env, deferred, result_object);
-
-    return promise;
+    return result_object;
 }
 
 static size_t file_incremental_reading(napi_env env,
@@ -143,45 +138,14 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
 
     size_t argc = 3;
     napi_value argv[3];
-    napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    if (status != napi_ok)
-    {
-        Logger::getInstance().log("Failed to get callback info", LogLevel::ERROR);
-        return create_response(env, true, 0);
-    }
-
-    if (argc < 2)
-    {
-        Logger::getInstance().log("This function must receive at least two arguments", LogLevel::ERROR);
-        return create_response(env, true, 0);
-    }
-
-    napi_valuetype valueType;
-    status = napi_typeof(env, argv[0], &valueType);
-    if (status != napi_ok || valueType != napi_boolean)
-    {
-        Logger::getInstance().log("First argument should be boolean", LogLevel::ERROR);
-        return create_response(env, true, 0);
-    }
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
 
     bool response = false;
     napi_get_value_bool(env, argv[0], &response);
 
-    status = napi_typeof(env, argv[1], &valueType);
-    if (status != napi_ok || valueType != napi_string)
-    {
-        Logger::getInstance().log("Second argument should be string", LogLevel::ERROR);
-        return create_response(env, true, 0);
-    }
-
     TransferContext *ctxPtr = nullptr;
     napi_value thisArg = nullptr;
-    status = napi_get_cb_info(env, info, nullptr, nullptr, &thisArg, reinterpret_cast<void **>(&ctxPtr));
-    if (status != napi_ok || !ctxPtr)
-    {
-        Logger::getInstance().log("Could not retrieve TransferContext from callback data", LogLevel::ERROR);
-        return create_response(env, true, 0);
-    }
+    napi_get_cb_info(env, info, nullptr, nullptr, &thisArg, reinterpret_cast<void **>(&ctxPtr));
 
     if (!response)
     {
@@ -189,11 +153,10 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
 
         ctxPtr->loadFinished = true;
         ctxPtr->lastReadOffset = 0;
-        {
-            std::lock_guard<std::mutex> lock(ctxPtr->mtx);
-            ctxPtr->ready = true;
-            ctxPtr->cv.notify_one();
-        }
+
+        std::lock_guard<std::mutex> lock(ctxPtr->mtx);
+        ctxPtr->ready = true;
+        ctxPtr->cv.notify_one();
 
         return create_response(env, true, 0);
     }
@@ -210,7 +173,7 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
     ctxPtr->fullServerFilePath = response_wstr;
 
     float progress = 0.0f;
-    ctxPtr->lastReadOffset = file_incremental_reading(env, *ctxPtr, /*final_step=*/false, progress);
+    ctxPtr->lastReadOffset = file_incremental_reading(env, *ctxPtr, false, progress);
 
     if (ctxPtr->lastReadOffset == (size_t)ctxPtr->fileSize.QuadPart)
     {
