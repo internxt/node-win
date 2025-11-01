@@ -39,7 +39,7 @@ napi_value create_response(napi_env env, bool finished, float progress)
     return result_object;
 }
 
-static size_t file_incremental_reading(napi_env env, TransferContext &ctx, bool final_step, float &progress)
+size_t file_incremental_reading(napi_env env, TransferContext &ctx, bool final_step, float &progress)
 {
     std::ifstream file(ctx.tmpPath, std::ios::in | std::ios::binary);
 
@@ -65,7 +65,6 @@ static size_t file_incremental_reading(napi_env env, TransferContext &ctx, bool 
 
             LARGE_INTEGER startingOffset, chunkBufferSize;
             startingOffset.QuadPart = ctx.lastReadOffset;
-
             chunkBufferSize.QuadPart = min(datasizeAvailableUnread, CHUNK_SIZE);
 
             FileCopierWithProgress::TransferData(
@@ -80,10 +79,7 @@ static size_t file_incremental_reading(napi_env env, TransferContext &ctx, bool 
 
             UINT64 totalSize = static_cast<UINT64>(ctx.fileSize.QuadPart);
             progress = static_cast<float>(ctx.lastReadOffset) / static_cast<float>(totalSize);
-            Utilities::ApplyTransferStateToFile(ctx.fullClientPath,
-                                                ctx.callbackInfo,
-                                                totalSize,
-                                                ctx.lastReadOffset);
+            Utilities::ApplyTransferStateToFile(ctx.path, ctx.callbackInfo, totalSize, ctx.lastReadOffset);
         }
     }
     catch (...)
@@ -104,7 +100,7 @@ static size_t file_incremental_reading(napi_env env, TransferContext &ctx, bool 
     return ctx.lastReadOffset;
 }
 
-static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info)
+napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info)
 {
     Logger::getInstance().log("response_callback_fn_fetch_data called", LogLevel::DEBUG);
 
@@ -143,12 +139,12 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
         ctx->loadFinished = true;
 
         Utilities::ApplyTransferStateToFile(
-            ctx->fullClientPath.c_str(),
+            ctx->path.c_str(),
             ctx->callbackInfo,
             ctx->fileSize.QuadPart,
             ctx->fileSize.QuadPart);
 
-        CfSetPinState(handleForPath(ctx->fullClientPath.c_str()).get(), CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
+        CfSetPinState(handleForPath(ctx->path.c_str()).get(), CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
     }
 
     {
@@ -167,7 +163,7 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
     return create_response(env, ctx->loadFinished, progress);
 }
 
-static void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
+void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
 {
     TransferContext *ctx = static_cast<TransferContext *>(data);
 
@@ -178,7 +174,7 @@ static void notify_fetch_data_call(napi_env env, napi_value js_callback, void *c
     napi_create_string_utf16(env, (char16_t *)wchar_ptr, fileIdentityLength, &js_fileIdentityArg);
 
     napi_value js_response_callback_fn;
-    napi_create_function(env, "responseCallback", NAPI_AUTO_LENGTH, response_callback_fn_fetch_data, ctx, &js_response_callback_fn);
+    napi_create_function(env, "callback", NAPI_AUTO_LENGTH, response_callback_fn_fetch_data, ctx, &js_response_callback_fn);
 
     napi_value args_to_js_callback[2] = {js_fileIdentityArg, js_response_callback_fn};
 
@@ -200,9 +196,9 @@ void CALLBACK fetch_data_callback_wrapper(_In_ CONST CF_CALLBACK_INFO *callbackI
     ctx->requiredLength = callbackParameters->FetchData.RequiredLength;
     ctx->requiredOffset = callbackParameters->FetchData.RequiredFileOffset;
     ctx->callbackInfo = *callbackInfo;
-    ctx->fullClientPath = std::wstring(callbackInfo->VolumeDosName) + callbackInfo->NormalizedPath;
+    ctx->path = std::wstring(callbackInfo->VolumeDosName) + callbackInfo->NormalizedPath;
 
-    wprintf(L"Download path: %s\n", ctx->fullClientPath.c_str());
+    wprintf(L"Download path: %s\n", ctx->path.c_str());
 
     napi_call_threadsafe_function(g_fetch_data_threadsafe_callback, ctx.get(), napi_tsfn_blocking);
 
