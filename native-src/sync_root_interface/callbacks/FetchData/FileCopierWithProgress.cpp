@@ -9,9 +9,10 @@
 #include "Logger.h"
 
 #define FIELD_SIZE(type, field) (sizeof(((type *)0)->field))
-#define CF_SIZE_OF_OP_PARAM(field)                      \
-        (FIELD_OFFSET(CF_OPERATION_PARAMETERS, field) + \
-         FIELD_SIZE(CF_OPERATION_PARAMETERS, field))
+
+#define CF_SIZE_OF_OP_PARAM(field)                  \
+    (FIELD_OFFSET(CF_OPERATION_PARAMETERS, field) + \
+     FIELD_SIZE(CF_OPERATION_PARAMETERS, field))
 
 HRESULT FileCopierWithProgress::TransferData(
     _In_ CF_CONNECTION_KEY connectionKey,
@@ -21,26 +22,18 @@ HRESULT FileCopierWithProgress::TransferData(
     _In_ LARGE_INTEGER length,
     _In_ NTSTATUS completionStatus)
 {
-        Logger::getInstance().log("TransferData", LogLevel::INFO);
-        CF_OPERATION_INFO opInfo = {0};
-        CF_OPERATION_PARAMETERS opParams = {0};
-        // wprintf(L"[%04x:%04x] - TransferData\n", GetCurrentProcessId(), GetCurrentThreadId());
-        opInfo.StructSize = sizeof(opInfo);
-        opInfo.Type = CF_OPERATION_TYPE_TRANSFER_DATA;
-        opInfo.ConnectionKey = connectionKey;
-        opInfo.TransferKey = transferKey;
-        opParams.ParamSize = CF_SIZE_OF_OP_PARAM(TransferData);
-        opParams.TransferData.CompletionStatus = completionStatus;
-        opParams.TransferData.Buffer = transferData;
-        opParams.TransferData.Offset = startingOffset;
-        opParams.TransferData.Length = length;
+    CF_OPERATION_INFO opInfo = {0};
+    opInfo.StructSize = sizeof(opInfo);
+    opInfo.Type = CF_OPERATION_TYPE_TRANSFER_DATA;
+    opInfo.ConnectionKey = connectionKey;
+    opInfo.TransferKey = transferKey;
 
-        HRESULT hr = CfExecute(&opInfo, &opParams);
-        if (FAILED(hr))
-        {
-                wprintf(L"Error in CfExecute(), HRESULT: %lx\n", hr);
-        }
-        printf("TransferData: %s\n", SUCCEEDED(hr) ? "Succeeded" : "Failed");
+    CF_OPERATION_PARAMETERS opParams = {0};
+    opParams.ParamSize = CF_SIZE_OF_OP_PARAM(TransferData);
+    opParams.TransferData.CompletionStatus = completionStatus;
+    opParams.TransferData.Buffer = transferData;
+    opParams.TransferData.Offset = startingOffset;
+    opParams.TransferData.Length = length;
 
-        return hr;
+    return CfExecute(&opInfo, &opParams);
 }
