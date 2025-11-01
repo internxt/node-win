@@ -18,22 +18,20 @@ struct CallbackContext
 
 struct CancelFetchDataArgs
 {
-    std::wstring fileIdentityArg;
+    std::wstring pathArg;
     CallbackContext *context;
 
-    CancelFetchDataArgs(const std::wstring &fileId, CallbackContext *ctx)
-        : fileIdentityArg(fileId), context(ctx) {}
+    CancelFetchDataArgs(const std::wstring &path, CallbackContext *ctx) : pathArg(path), context(ctx) {}
 };
 
 void notify_cancel_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
 {
     CancelFetchDataArgs *args = static_cast<CancelFetchDataArgs *>(data);
-    std::u16string u16_fileIdentity(args->fileIdentityArg.begin(), args->fileIdentityArg.end());
 
-    napi_value js_string;
-    napi_create_string_utf16(env, u16_fileIdentity.c_str(), u16_fileIdentity.size(), &js_string);
+    napi_value js_path;
+    napi_create_string_utf16(env, (char16_t *)args->pathArg.c_str(), args->pathArg.length(), &js_path);
 
-    napi_value args_to_js_callback[1] = {js_string};
+    napi_value args_to_js_callback[1] = {js_path};
 
     napi_value undefined;
     napi_get_undefined(env, &undefined);
@@ -50,14 +48,12 @@ void notify_cancel_fetch_data_call(napi_env env, napi_value js_callback, void *c
 
 void CALLBACK cancel_fetch_data_callback_wrapper(_In_ CONST CF_CALLBACK_INFO *callbackInfo, _In_ CONST CF_CALLBACK_PARAMETERS *callbackParameters)
 {
-    LPCVOID fileIdentity = callbackInfo->FileIdentity;
-    DWORD fileIdentityLength = callbackInfo->FileIdentityLength;
+    std::wstring path = std::wstring(callbackInfo->VolumeDosName) + callbackInfo->NormalizedPath;
 
-    const wchar_t *wchar_ptr = static_cast<const wchar_t *>(fileIdentity);
-    std::wstring fileIdentityStr(wchar_ptr, fileIdentityLength / sizeof(wchar_t));
+    wprintf(L"Cancel fetch data path: %s\n", path.c_str());
 
     CallbackContext context;
-    CancelFetchDataArgs *args = new CancelFetchDataArgs(fileIdentityStr, &context);
+    CancelFetchDataArgs *args = new CancelFetchDataArgs(path, &context);
 
     napi_call_threadsafe_function(g_cancel_fetch_data_threadsafe_callback, args, napi_tsfn_blocking);
 

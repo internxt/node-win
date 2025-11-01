@@ -60,7 +60,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 
     if (finished)
     {
-        wprintf(L"Hydration finished\n");
+        wprintf(L"Fetch data finished\n");
 
         CfSetPinState(handleForPath(ctx->path.c_str()).get(), CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
 
@@ -136,7 +136,7 @@ void CALLBACK fetch_data_callback_wrapper(_In_ CONST CF_CALLBACK_INFO *callbackI
     ctx->callbackInfo = *callbackInfo;
     ctx->path = std::wstring(callbackInfo->VolumeDosName) + callbackInfo->NormalizedPath;
 
-    wprintf(L"Download path: %s\n", ctx->path.c_str());
+    wprintf(L"Fetch data path: %s\n", ctx->path.c_str());
 
     napi_call_threadsafe_function(g_fetch_data_threadsafe_callback, ctx.get(), napi_tsfn_blocking);
 
