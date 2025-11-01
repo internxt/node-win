@@ -111,10 +111,10 @@ void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context,
     napi_value js_path;
     napi_create_string_utf16(env, (char16_t *)ctx->path.c_str(), ctx->path.length(), &js_path);
 
-    napi_value js_callback;
-    napi_create_function(env, "callback", NAPI_AUTO_LENGTH, response_callback_fn_fetch_data_wrapper, ctx, &js_callback);
+    napi_value js_callback_fn;
+    napi_create_function(env, "callback", NAPI_AUTO_LENGTH, response_callback_fn_fetch_data_wrapper, ctx, &js_callback_fn);
 
-    napi_value args_to_js_callback[2] = {js_path, js_callback};
+    napi_value args_to_js_callback[2] = {js_path, js_callback_fn};
 
     {
         std::unique_lock<std::mutex> lock(ctx->mtx);
