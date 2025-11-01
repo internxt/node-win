@@ -30,7 +30,7 @@ napi_value create_response(napi_env env, bool finished)
     return result;
 }
 
-size_t file_incremental_reading(napi_env env, TransferContext &ctx, bool final_step, float &progress)
+size_t file_incremental_reading(napi_env env, TransferContext &ctx, bool final_step)
 {
     std::ifstream file(ctx.tmpPath, std::ios::in | std::ios::binary);
 
@@ -42,9 +42,7 @@ size_t file_incremental_reading(napi_env env, TransferContext &ctx, bool final_s
     file.clear();
     file.seekg(0, std::ios::end);
     size_t newSize = static_cast<size_t>(file.tellg());
-
     size_t datasizeAvailableUnread = newSize - ctx.lastReadOffset;
-    size_t growth = newSize - ctx.lastSize;
 
     try
     {
@@ -69,7 +67,6 @@ size_t file_incremental_reading(napi_env env, TransferContext &ctx, bool final_s
             ctx.lastReadOffset += chunkBufferSize.QuadPart;
 
             UINT64 totalSize = static_cast<UINT64>(ctx.fileSize.QuadPart);
-            progress = static_cast<float>(ctx.lastReadOffset) / static_cast<float>(totalSize);
             Utilities::ApplyTransferStateToFile(ctx.path, ctx.callbackInfo, totalSize, ctx.lastReadOffset);
         }
     }
@@ -118,8 +115,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 
     ctx->tmpPath = tmpPath;
 
-    float progress = 0.0f;
-    ctx->lastReadOffset = file_incremental_reading(env, *ctx, false, progress);
+    ctx->lastReadOffset = file_incremental_reading(env, *ctx, false);
 
     if (ctx->lastReadOffset == (size_t)ctx->fileSize.QuadPart)
     {
@@ -140,7 +136,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
         }
     }
 
-    wprintf(L"Fetch data finished: %d, progress: %.2f\n", ctx->loadFinished, progress);
+    wprintf(L"Fetch data finished: %d\n", ctx->loadFinished);
 
     return create_response(env, ctx->loadFinished);
 }
