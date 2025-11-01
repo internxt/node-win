@@ -20,19 +20,13 @@ struct TransferContext
     LARGE_INTEGER requiredLength;
     LARGE_INTEGER requiredOffset;
     std::wstring path;
-    std::wstring tmpPath;
 
-    size_t lastReadOffset = 0;
-    size_t lastSize = 0;
-    bool loadFinished = false;
     bool ready = false;
 
     std::mutex mtx;
     std::condition_variable cv;
 };
 
-std::shared_ptr<TransferContext> GetOrCreateTransferContext(
-    CF_CONNECTION_KEY connKey,
-    CF_TRANSFER_KEY transferKey);
+std::shared_ptr<TransferContext> GetOrCreateTransferContext(CF_CONNECTION_KEY connKey, CF_TRANSFER_KEY transferKey);
 
 void RemoveTransferContext(CF_TRANSFER_KEY transferKey);
