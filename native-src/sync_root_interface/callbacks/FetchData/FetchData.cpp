@@ -35,7 +35,7 @@ napi_value create_response(napi_env env, bool finished)
     return result;
 }
 
-void transfer_data(
+HRESULT transfer_data(
     _In_ CF_CONNECTION_KEY connectionKey,
     _In_ LARGE_INTEGER transferKey,
     _In_reads_bytes_opt_(length.QuadPart) LPCVOID transferData,
@@ -56,10 +56,10 @@ void transfer_data(
     opParams.TransferData.Offset = startingOffset;
     opParams.TransferData.Length = length;
 
-    winrt::check_hresult(CfExecute(&opInfo, &opParams));
+    return CfExecute(&opInfo, &opParams);
 }
 
-size_t file_incremental_reading(napi_env env, TransferContext &ctx, bool final_step)
+size_t file_incremental_reading(napi_env env, TransferContext &ctx)
 {
     std::ifstream file(ctx.tmpPath, std::ios::in | std::ios::binary);
 
@@ -68,51 +68,47 @@ size_t file_incremental_reading(napi_env env, TransferContext &ctx, bool final_s
         throw std::runtime_error("Failed to open tmp file");
     }
 
-    file.clear();
     file.seekg(0, std::ios::end);
     size_t newSize = static_cast<size_t>(file.tellg());
     size_t datasizeAvailableUnread = newSize - ctx.lastReadOffset;
 
-    try
+    if (datasizeAvailableUnread > 0)
     {
-        if (datasizeAvailableUnread > 0)
+        std::vector<char> buffer(CHUNK_SIZE);
+        file.seekg(ctx.lastReadOffset);
+        file.read(buffer.data(), CHUNK_SIZE);
+
+        LARGE_INTEGER startingOffset, chunkBufferSize;
+        startingOffset.QuadPart = ctx.lastReadOffset;
+        chunkBufferSize.QuadPart = min(datasizeAvailableUnread, CHUNK_SIZE);
+
+        HRESULT hr = transfer_data(
+            ctx.connectionKey,
+            ctx.transferKey,
+            buffer.data(),
+            startingOffset,
+            chunkBufferSize,
+            STATUS_SUCCESS);
+
+        if (FAILED(hr))
         {
-            std::vector<char> buffer(CHUNK_SIZE);
-            file.seekg(ctx.lastReadOffset);
-            file.read(buffer.data(), CHUNK_SIZE);
-
-            LARGE_INTEGER startingOffset, chunkBufferSize;
-            startingOffset.QuadPart = ctx.lastReadOffset;
-            chunkBufferSize.QuadPart = min(datasizeAvailableUnread, CHUNK_SIZE);
-
             transfer_data(
                 ctx.connectionKey,
                 ctx.transferKey,
-                buffer.data(),
-                startingOffset,
-                chunkBufferSize,
-                STATUS_SUCCESS);
+                nullptr,
+                ctx.requiredOffset,
+                ctx.requiredLength,
+                STATUS_UNSUCCESSFUL);
 
-            ctx.lastReadOffset += chunkBufferSize.QuadPart;
-
-            UINT64 totalSize = static_cast<UINT64>(ctx.fileSize.QuadPart);
-            Utilities::ApplyTransferStateToFile(ctx.path, ctx.callbackInfo, totalSize, ctx.lastReadOffset);
+            winrt::throw_hresult(hr);
         }
-    }
-    catch (...)
-    {
-        Logger::getInstance().log("Excepción en file_incremental_reading.", LogLevel::ERROR);
-        ctx.loadFinished = true;
-        transfer_data(
-            ctx.connectionKey,
-            ctx.transferKey,
-            nullptr,
-            ctx.requiredOffset,
-            ctx.requiredLength,
-            STATUS_UNSUCCESSFUL);
+
+        ctx.lastReadOffset += chunkBufferSize.QuadPart;
+
+        UINT64 totalSize = static_cast<UINT64>(ctx.fileSize.QuadPart);
+        Utilities::ApplyTransferStateToFile(ctx.path, ctx.callbackInfo, totalSize, ctx.lastReadOffset);
     }
 
-    file.close();
     ctx.lastSize = newSize;
     return ctx.lastReadOffset;
 }
@@ -144,7 +140,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 
     ctx->tmpPath = tmpPath;
 
-    ctx->lastReadOffset = file_incremental_reading(env, *ctx, false);
+    ctx->lastReadOffset = file_incremental_reading(env, *ctx);
 
     if (ctx->lastReadOffset == (size_t)ctx->fileSize.QuadPart)
     {
