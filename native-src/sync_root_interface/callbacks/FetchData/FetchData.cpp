@@ -23,20 +23,11 @@ napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
 #define CHUNK_SIZE (32 * 1024 * 1024)
 
-napi_value create_response(napi_env env, bool finished, float progress)
+napi_value create_response(napi_env env, bool finished)
 {
-    napi_value result_object;
-    napi_create_object(env, &result_object);
-
-    napi_value finished_value;
-    napi_get_boolean(env, finished, &finished_value);
-    napi_set_named_property(env, result_object, "finished", finished_value);
-
-    napi_value progress_value;
-    napi_create_double(env, progress, &progress_value);
-    napi_set_named_property(env, result_object, "progress", progress_value);
-
-    return result_object;
+    napi_value result;
+    napi_get_boolean(env, finished, &result);
+    return result;
 }
 
 size_t file_incremental_reading(napi_env env, TransferContext &ctx, bool final_step, float &progress)
@@ -120,7 +111,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
         ctx->ready = true;
         ctx->cv.notify_one();
 
-        return create_response(env, true, 0);
+        return create_response(env, true);
     }
 
     wprintf(L"Download tmp path: %s\n", tmpPath.c_str());
@@ -151,7 +142,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 
     wprintf(L"Fetch data finished: %d, progress: %.2f\n", ctx->loadFinished, progress);
 
-    return create_response(env, ctx->loadFinished, progress);
+    return create_response(env, ctx->loadFinished);
 }
 
 void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
