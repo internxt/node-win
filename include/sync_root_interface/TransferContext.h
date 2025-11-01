@@ -11,7 +11,8 @@
 #include "Placeholders.h"
 #include "FileCopierWithProgress.h"
 
-struct TransferContext {
+struct TransferContext
+{
     CF_CONNECTION_KEY connectionKey;
     CF_TRANSFER_KEY transferKey;
     LARGE_INTEGER fileSize;
@@ -28,7 +29,7 @@ struct TransferContext {
     std::condition_variable cv;
     bool ready = false;
 
-    std::wstring fullServerFilePath;
+    std::wstring tmpPath;
 };
 
 std::shared_ptr<TransferContext> GetOrCreateTransferContext(

@@ -47,18 +47,13 @@ napi_value create_response(napi_env env, bool finished, float progress)
     return result_object;
 }
 
-static size_t file_incremental_reading(napi_env env,
-                                       TransferContext &ctx,
-                                       bool final_step,
-                                       float &progress)
+static size_t file_incremental_reading(napi_env env, TransferContext &ctx, bool final_step, float &progress)
 {
-    std::ifstream file;
-    file.open(ctx.fullServerFilePath, std::ios::in | std::ios::binary);
+    std::ifstream file(ctx.tmpPath, std::ios::in | std::ios::binary);
 
     if (!file.is_open())
     {
-        Logger::getInstance().log("Error al abrir el archivo en file_incremental_reading.", LogLevel::ERROR);
-        return ctx.lastReadOffset;
+        throw std::runtime_error("Failed to open tmp file");
     }
 
     file.clear();
@@ -136,7 +131,7 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
 {
     Logger::getInstance().log("response_callback_fn_fetch_data called", LogLevel::DEBUG);
 
-    auto [response, response_wstr] = napi_extract_args<bool, std::wstring>(env, info);
+    auto [response, tmpPath] = napi_extract_args<bool, std::wstring>(env, info);
 
     TransferContext *ctx = nullptr;
     napi_get_cb_info(env, info, nullptr, nullptr, nullptr, reinterpret_cast<void **>(&ctx));
@@ -156,10 +151,10 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
     }
 
     Logger::getInstance().log(
-        "JS responded with server file path = " + Logger::fromWStringToString(response_wstr),
+        "JS responded with server file path = " + Logger::fromWStringToString(tmpPath),
         LogLevel::DEBUG);
 
-    ctx->fullServerFilePath = response_wstr;
+    ctx->tmpPath = tmpPath;
 
     float progress = 0.0f;
     ctx->lastReadOffset = file_incremental_reading(env, *ctx, false, progress);
@@ -222,9 +217,7 @@ static void notify_fetch_data_call(napi_env env, napi_value js_callback, void *c
     napi_call_function(env, undefined, js_callback, 2, args_to_js_callback, nullptr);
 }
 
-void CALLBACK fetch_data_callback_wrapper(
-    _In_ CONST CF_CALLBACK_INFO *callbackInfo,
-    _In_ CONST CF_CALLBACK_PARAMETERS *callbackParameters)
+void CALLBACK fetch_data_callback_wrapper(_In_ CONST CF_CALLBACK_INFO *callbackInfo, _In_ CONST CF_CALLBACK_PARAMETERS *callbackParameters)
 {
     auto ctx = GetOrCreateTransferContext(callbackInfo->ConnectionKey, callbackInfo->TransferKey);
 
@@ -234,7 +227,7 @@ void CALLBACK fetch_data_callback_wrapper(
     ctx->callbackInfo = *callbackInfo;
     ctx->fullClientPath = std::wstring(callbackInfo->VolumeDosName) + callbackInfo->NormalizedPath;
 
-    wprintf(L"Full download path: %s\n", ctx->fullClientPath.c_str());
+    wprintf(L"Download path: %s\n", ctx->fullClientPath.c_str());
 
     napi_call_threadsafe_function(g_fetch_data_threadsafe_callback, ctx.get(), napi_tsfn_blocking);
 
