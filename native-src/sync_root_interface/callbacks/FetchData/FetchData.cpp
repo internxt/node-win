@@ -21,8 +21,6 @@
 
 napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
-#define CHUNK_SIZE (32 * 1024 * 1024)
-
 #define FIELD_SIZE(type, field) (sizeof(((type *)0)->field))
 
 #define CF_SIZE_OF_OP_PARAM(field)                  \
@@ -60,70 +58,19 @@ HRESULT transfer_data(
     return CfExecute(&opInfo, &opParams);
 }
 
-size_t file_incremental_reading(napi_env env, TransferContext &ctx)
-{
-    std::ifstream file(ctx.tmpPath, std::ios::in | std::ios::binary);
-
-    if (!file.is_open())
-    {
-        throw std::runtime_error("Failed to open tmp file");
-    }
-
-    file.seekg(0, std::ios::end);
-    size_t newSize = static_cast<size_t>(file.tellg());
-    size_t datasizeAvailableUnread = newSize - ctx.lastReadOffset;
-
-    if (datasizeAvailableUnread > 0)
-    {
-        std::vector<char> buffer(CHUNK_SIZE);
-        file.seekg(ctx.lastReadOffset);
-        file.read(buffer.data(), CHUNK_SIZE);
-
-        LARGE_INTEGER startingOffset, chunkBufferSize;
-        startingOffset.QuadPart = ctx.lastReadOffset;
-        chunkBufferSize.QuadPart = min(datasizeAvailableUnread, CHUNK_SIZE);
-
-        HRESULT hr = transfer_data(
-            ctx.connectionKey,
-            ctx.transferKey,
-            buffer.data(),
-            startingOffset,
-            chunkBufferSize,
-            STATUS_SUCCESS);
-
-        if (FAILED(hr))
-        {
-            transfer_data(
-                ctx.connectionKey,
-                ctx.transferKey,
-                nullptr,
-                ctx.requiredOffset,
-                ctx.requiredLength,
-                STATUS_UNSUCCESSFUL);
-
-            winrt::throw_hresult(hr);
-        }
-
-        ctx.lastReadOffset += chunkBufferSize.QuadPart;
-
-        UINT64 totalSize = static_cast<UINT64>(ctx.fileSize.QuadPart);
-        Utilities::ApplyTransferStateToFile(ctx.path, ctx.callbackInfo, totalSize, ctx.lastReadOffset);
-    }
-
-    ctx.lastSize = newSize;
-    return ctx.lastReadOffset;
-}
-
 napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info)
 {
     wprintf(L"Function response_callback_fn_fetch_data called\n");
 
-    auto [response, tmpPath] = napi_extract_args<bool, std::wstring>(env, info);
-
+    size_t argc = 3;
+    napi_value args[3];
     TransferContext *ctx = nullptr;
-    napi_get_cb_info(env, info, nullptr, nullptr, nullptr, reinterpret_cast<void **>(&ctx));
+    napi_get_cb_info(env, info, &argc, args, nullptr, reinterpret_cast<void **>(&ctx));
 
-    if (!response)
+    bool finished;
+    napi_get_value_bool(env, args[0], &finished);
+
+    if (finished)
     {
         wprintf(L"Canceling hydration\n");
 
@@ -137,34 +84,57 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
         return create_response(env, true);
     }
 
-    wprintf(L"Download tmp path: %s\n", tmpPath.c_str());
+    void *data;
+    size_t length;
+    napi_get_buffer_info(env, args[1], &data, &length);
 
-    ctx->tmpPath = tmpPath;
+    int64_t offset;
+    napi_get_value_int64(env, args[2], &offset);
 
-    ctx->lastReadOffset = file_incremental_reading(env, *ctx);
+    LARGE_INTEGER startingOffset, chunkSize;
+    startingOffset.QuadPart = offset;
+    chunkSize.QuadPart = length;
 
-    if (ctx->lastReadOffset == (size_t)ctx->fileSize.QuadPart)
+    HRESULT hr = transfer_data(
+        ctx->connectionKey,
+        ctx->transferKey,
+        data,
+        startingOffset,
+        chunkSize,
+        STATUS_SUCCESS);
+
+    if (FAILED(hr))
     {
-        ctx->lastReadOffset = 0;
+        transfer_data(
+            ctx->connectionKey,
+            ctx->transferKey,
+            nullptr,
+            ctx->requiredOffset,
+            ctx->requiredLength,
+            STATUS_UNSUCCESSFUL);
+
+        winrt::throw_hresult(hr);
+    }
+
+    ctx->lastReadOffset = offset + length;
+
+    UINT64 totalSize = static_cast<UINT64>(ctx->fileSize.QuadPart);
+    Utilities::ApplyTransferStateToFile(ctx->path, ctx->callbackInfo, totalSize, ctx->lastReadOffset);
+
+    if (finished)
+    {
         ctx->loadFinished = true;
-
         Utilities::ApplyTransferStateToFile(ctx->path, ctx->callbackInfo, ctx->fileSize.QuadPart, ctx->fileSize.QuadPart);
-
         CfSetPinState(handleForPath(ctx->path.c_str()).get(), CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
-    }
 
-    {
         std::lock_guard<std::mutex> lock(ctx->mtx);
-        if (ctx->loadFinished)
-        {
-            ctx->ready = true;
-            ctx->cv.notify_one();
-        }
+        ctx->ready = true;
+        ctx->cv.notify_one();
     }
 
-    wprintf(L"Fetch data finished: %d\n", ctx->loadFinished);
+    wprintf(L"Chunk transferred, finished: %d\n", finished);
 
-    return create_response(env, ctx->loadFinished);
+    return create_response(env, finished);
 }
 
 napi_value response_callback_fn_fetch_data_wrapper(napi_env env, napi_callback_info info)
@@ -206,8 +176,6 @@ void CALLBACK fetch_data_callback_wrapper(_In_ CONST CF_CALLBACK_INFO *callbackI
     ctx->requiredOffset = callbackParameters->FetchData.RequiredFileOffset;
     ctx->callbackInfo = *callbackInfo;
     ctx->path = std::wstring(callbackInfo->VolumeDosName) + callbackInfo->NormalizedPath;
-
-    wprintf(L"Download path: %s\n", ctx->path.c_str());
 
     napi_call_threadsafe_function(g_fetch_data_threadsafe_callback, ctx.get(), napi_tsfn_blocking);
 
