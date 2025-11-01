@@ -266,32 +266,17 @@ void CALLBACK fetch_data_callback_wrapper(
     _In_ CONST CF_CALLBACK_INFO *callbackInfo,
     _In_ CONST CF_CALLBACK_PARAMETERS *callbackParameters)
 {
-    Logger::getInstance().log("fetch_data_callback_wrapper called", LogLevel::DEBUG);
-
     auto ctx = GetOrCreateTransferContext(callbackInfo->ConnectionKey, callbackInfo->TransferKey);
 
     ctx->fileSize = callbackInfo->FileSize;
     ctx->requiredLength = callbackParameters->FetchData.RequiredLength;
     ctx->requiredOffset = callbackParameters->FetchData.RequiredFileOffset;
     ctx->callbackInfo = *callbackInfo;
+    ctx->fullClientPath = std::wstring(callbackInfo->VolumeDosName) + callbackInfo->NormalizedPath;
 
-    std::wstring fullClientPath(callbackInfo->VolumeDosName); // e.g., "C:"
-    fullClientPath.append(callbackInfo->NormalizedPath);      // e.g., "\Users\file.txt"
-    ctx->fullClientPath = fullClientPath;                     // Result: "C:\Users\file.txt"
-
-    Logger::getInstance().log("Full download path: " + Logger::fromWStringToString(fullClientPath),
-                              LogLevel::INFO);
-
-    if (g_fetch_data_threadsafe_callback == nullptr)
-    {
-        Logger::getInstance().log("fetch_data_callback_wrapper: g_fetch_data_threadsafe_callback is null",
-                                  LogLevel::ERROR);
-        return;
-    }
+    wprintf(L"Full download path: %s\n", ctx->fullClientPath.c_str());
 
     napi_call_threadsafe_function(g_fetch_data_threadsafe_callback, ctx.get(), napi_tsfn_blocking);
-
-    Logger::getInstance().log("fetch_data_callback_wrapper after napi_call_threadsafe_function", LogLevel::DEBUG);
 
     {
         std::unique_lock<std::mutex> lock(ctx->mtx);
@@ -300,8 +285,6 @@ void CALLBACK fetch_data_callback_wrapper(
             ctx->cv.wait(lock);
         }
     }
-
-    Logger::getInstance().log("Hydration finish in fetch_data_callback_wrapper", LogLevel::INFO);
 
     RemoveTransferContext(ctx->transferKey);
 }
