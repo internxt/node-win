@@ -102,7 +102,7 @@ size_t file_incremental_reading(napi_env env, TransferContext &ctx, bool final_s
 
 napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info)
 {
-    Logger::getInstance().log("response_callback_fn_fetch_data called", LogLevel::DEBUG);
+    wprintf(L"Function response_callback_fn_fetch_data called\n");
 
     auto [response, tmpPath] = napi_extract_args<bool, std::wstring>(env, info);
 
@@ -111,7 +111,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 
     if (!response)
     {
-        Logger::getInstance().log("JS responded with false; we cancel hydration.", LogLevel::DEBUG);
+        wprintf(L"Canceling hydration\n");
 
         ctx->loadFinished = true;
         ctx->lastReadOffset = 0;
@@ -123,9 +123,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
         return create_response(env, true, 0);
     }
 
-    Logger::getInstance().log(
-        "JS responded with server file path = " + Logger::fromWStringToString(tmpPath),
-        LogLevel::DEBUG);
+    wprintf(L"Download tmp path: %s\n", tmpPath.c_str());
 
     ctx->tmpPath = tmpPath;
 
@@ -134,15 +132,10 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 
     if (ctx->lastReadOffset == (size_t)ctx->fileSize.QuadPart)
     {
-        Logger::getInstance().log("File fully read.", LogLevel::DEBUG);
         ctx->lastReadOffset = 0;
         ctx->loadFinished = true;
 
-        Utilities::ApplyTransferStateToFile(
-            ctx->path.c_str(),
-            ctx->callbackInfo,
-            ctx->fileSize.QuadPart,
-            ctx->fileSize.QuadPart);
+        Utilities::ApplyTransferStateToFile(ctx->path, ctx->callbackInfo, ctx->fileSize.QuadPart, ctx->fileSize.QuadPart);
 
         CfSetPinState(handleForPath(ctx->path.c_str()).get(), CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
     }
@@ -156,9 +149,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
         }
     }
 
-    Logger::getInstance().log(
-        "fetch data => finished: " + std::to_string(ctx->loadFinished) + ", progress: " + std::to_string(progress),
-        LogLevel::DEBUG);
+    wprintf(L"Fetch data finished: %d, progress: %.2f\n", ctx->loadFinished, progress);
 
     return create_response(env, ctx->loadFinished, progress);
 }
