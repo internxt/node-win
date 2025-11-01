@@ -9,45 +9,25 @@ DEFINE_PROPERTYKEY(PKEY_StorageProviderTransferProgress, 0xE77E90DF, 0x6271, 0x4
 
 void Utilities::ApplyTransferStateToFile(_In_ PCWSTR fullPath, _In_ CF_CALLBACK_INFO &callbackInfo, UINT64 total, UINT64 completed)
 {
-    Logger::getInstance().log("ApplyTransferStateToFile", LogLevel::INFO);
-    // Tell the Cloud File API about progress so that toasts can be displayed
-
-    HRESULT hr1 = CfReportProviderProgress(
-        callbackInfo.ConnectionKey,
-        callbackInfo.TransferKey,
-        LongLongToLargeInteger(total),
-        LongLongToLargeInteger(completed));
-
-    if (FAILED(hr1))
-    {
-        wprintf(L"Failed to call CfReportProviderProgress with %08x\n", hr1);
-        return;
-    }
-    else
-    {
-        wprintf(L"Succesfully called CfReportProviderProgress \"%s\" with %llu/%llu\n", fullPath, completed, total);
-    }
-    // wprintf(L"Succesfully called CfReportProviderProgress \"%s\" with %llu/%llu\n", fullPath, completed, total);
-
-    // Tell the Shell so File Explorer can display the progress bar in its view
     try
     {
-        // First, get the Volatile property store for the file. That's where the properties are maintained.
+        winrt::check_hresult(CfReportProviderProgress(
+            callbackInfo.ConnectionKey,
+            callbackInfo.TransferKey,
+            LongLongToLargeInteger(total),
+            LongLongToLargeInteger(completed)));
+
         winrt::com_ptr<IShellItem2> shellItem;
         winrt::com_ptr<IPropertyStore> propStoreVolatile;
 
         winrt::check_hresult(SHCreateItemFromParsingName(fullPath, nullptr, __uuidof(shellItem), shellItem.put_void()));
 
-        // wprintf(L"transfer-> propStoreVolatile \"%s\"\n", propStoreVolatile);
         winrt::check_hresult(
             shellItem->GetPropertyStore(
                 GETPROPERTYSTOREFLAGS::GPS_READWRITE | GETPROPERTYSTOREFLAGS::GPS_VOLATILEPROPERTIESONLY,
                 __uuidof(propStoreVolatile),
                 propStoreVolatile.put_void()));
-        // wprintf(L"transfer-> shellItem \"%s\"\n", shellItem);
-        // The PKEY_StorageProviderTransferProgress property works with a UINT64 array that is two elements, with
-        // element 0 being the amount of data transferred, and element 1 being the total amount
-        // that will be transferred.
+
         if (completed < total)
         {
             PROPVARIANT pvProgress, pvStatus;
@@ -76,6 +56,7 @@ void Utilities::ApplyTransferStateToFile(_In_ PCWSTR fullPath, _In_ CF_CALLBACK_
                                    OPEN_EXISTING,
                                    FILE_FLAG_OPEN_REPARSE_POINT,
                                    nullptr);
+
             if (h != INVALID_HANDLE_VALUE)
             {
                 CfSetInSyncState(h, CF_IN_SYNC_STATE_IN_SYNC,
