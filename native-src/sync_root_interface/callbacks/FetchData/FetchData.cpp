@@ -14,7 +14,6 @@
 #include <locale>
 #include <codecvt>
 #include <filesystem>
-#include <Logger.h>
 #include <TransferContext.h>
 #include "napi_extract_args.h"
 #include "napi_safe_wrap.h"
@@ -22,6 +21,7 @@
 napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
 #define FIELD_SIZE(type, field) (sizeof(((type *)0)->field))
+
 #define CF_SIZE_OF_OP_PARAM(field) (FIELD_OFFSET(CF_OPERATION_PARAMETERS, field) + FIELD_SIZE(CF_OPERATION_PARAMETERS, field))
 
 HRESULT transfer_data(

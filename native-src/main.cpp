@@ -11,7 +11,6 @@ napi_value init(napi_env env, napi_value exports)
       {"connectSyncRoot", nullptr, ConnectSyncRootWrapper, nullptr, nullptr, nullptr, napi_default, nullptr},
       {"createFolderPlaceholder", nullptr, CreateFolderPlaceholderWrapper, nullptr, nullptr, nullptr, napi_default, nullptr},
       {"disconnectSyncRoot", nullptr, DisconnectSyncRootWrapper, nullptr, nullptr, nullptr, napi_default, nullptr},
-      {"addLoggerPath", nullptr, addLoggerPathWrapper, nullptr, nullptr, nullptr, napi_default, nullptr},
       {"updateSyncStatus", nullptr, UpdateSyncStatusWrapper, nullptr, nullptr, nullptr, napi_default, nullptr},
       {"getPlaceholderState", nullptr, GetPlaceholderStateWrapper, nullptr, nullptr, nullptr, napi_default, nullptr},
       {"convertToPlaceholder", nullptr, ConvertToPlaceholderWrapper, nullptr, nullptr, nullptr, napi_default, nullptr},

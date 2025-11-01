@@ -4,7 +4,6 @@
 #include <filesystem>
 #include <codecvt>
 #include <locale>
-#include "Logger.h"
 
 FileHandle::FileHandle()
     : _data(

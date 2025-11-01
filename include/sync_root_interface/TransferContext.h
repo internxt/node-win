@@ -6,7 +6,6 @@
 #include <string>
 #include "stdafx.h"
 #include <cfapi.h>
-#include "Logger.h"
 #include "Utilities.h"
 #include "Placeholders.h"
 

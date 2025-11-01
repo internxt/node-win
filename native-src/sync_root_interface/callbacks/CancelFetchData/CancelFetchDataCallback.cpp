@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include <Callbacks.h>
-#include <Logger.h>
 #include <cfapi.h>
 #include <condition_variable>
 #include <iostream>

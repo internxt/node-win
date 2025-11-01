@@ -14,8 +14,6 @@
         }
       },
       "sources": [
-        "native-src/logger/Logger.cpp",
-        "native-src/logger/LoggerPath.cpp",
         "native-src/main.cpp",
         "native-src/placeholders_interface/PlaceHolderInfo.cpp",
         "native-src/placeholders_interface/Planceholders.cpp",
@@ -42,7 +40,6 @@
       ],
       "include_dirs": [
         "include",
-        "include/logger",
         "include/napi_helpers",
         "include/placeholders_interface",
         "include/sync_root_interface",

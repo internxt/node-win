@@ -2,8 +2,6 @@
 #include <sstream>
 #include "Placeholders.h"
 #include "Callbacks.h"
-#include "LoggerPath.h"
-#include <Logger.h>
 #include <SyncRoot.h>
 #include <codecvt>
 #include <locale>
@@ -55,46 +53,6 @@ napi_value CreateFolderPlaceholderWrapper(napi_env env, napi_callback_info args)
 napi_value DisconnectSyncRootWrapper(napi_env env, napi_callback_info args)
 {
     return NAPI_SAFE_WRAP(env, args, disconnect_sync_root);
-}
-
-napi_value addLoggerPathWrapper(napi_env env, napi_callback_info args)
-{
-    size_t argc = 1;
-    napi_value argv[1];
-
-    napi_get_cb_info(env, args, &argc, argv, nullptr, nullptr);
-    if (argc < 1)
-    {
-        napi_throw_error(env, nullptr, "The path is required for addLoggerPath");
-        return nullptr;
-    }
-
-    // Obtener la longitud de la cadena UTF-16.
-    size_t pathLength;
-    napi_get_value_string_utf16(env, argv[0], nullptr, 0, &pathLength);
-
-    // Crear un buffer para la cadena UTF-16.
-    std::unique_ptr<wchar_t[]> widePath(new wchar_t[pathLength + 1]);
-
-    // Obtener la cadena UTF-16.
-    napi_get_value_string_utf16(env, argv[0], reinterpret_cast<char16_t *>(widePath.get()), pathLength + 1, nullptr);
-
-    // Obtener la longitud necesaria para la cadena UTF-8.
-    int utf8Length = WideCharToMultiByte(CP_UTF8, 0, widePath.get(), -1, nullptr, 0, nullptr, nullptr);
-
-    // Crear un buffer para la cadena UTF-8.
-    std::unique_ptr<char[]> utf8Path(new char[utf8Length]);
-
-    // Realizar la conversión de UTF-16 a UTF-8.
-    WideCharToMultiByte(CP_UTF8, 0, widePath.get(), -1, utf8Path.get(), utf8Length, nullptr, nullptr);
-
-    // Inicializar el logger con la ruta UTF-8.
-    LoggerPath::set(std::string(utf8Path.get()));
-
-    // Devolver un valor booleano verdadero.
-    napi_value result;
-    napi_get_boolean(env, true, &result);
-    return result;
 }
 
 napi_value UpdateSyncStatusWrapper(napi_env env, napi_callback_info args)
