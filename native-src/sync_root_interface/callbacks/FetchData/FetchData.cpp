@@ -22,10 +22,7 @@
 napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
 #define FIELD_SIZE(type, field) (sizeof(((type *)0)->field))
-
-#define CF_SIZE_OF_OP_PARAM(field)                  \
-    (FIELD_OFFSET(CF_OPERATION_PARAMETERS, field) + \
-     FIELD_SIZE(CF_OPERATION_PARAMETERS, field))
+#define CF_SIZE_OF_OP_PARAM(field) (FIELD_OFFSET(CF_OPERATION_PARAMETERS, field) + FIELD_SIZE(CF_OPERATION_PARAMETERS, field))
 
 HRESULT transfer_data(
     _In_ CF_CONNECTION_KEY connectionKey,
@@ -65,14 +62,10 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     {
         wprintf(L"Hydration finished\n");
 
-        wprintf(L"1\n");
         CfSetPinState(handleForPath(ctx->path.c_str()).get(), CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
-        wprintf(L"2\n");
 
         std::lock_guard<std::mutex> lock(ctx->mtx);
-        wprintf(L"3\n");
         ctx->ready = true;
-        wprintf(L"4\n");
         ctx->cv.notify_one();
 
         return nullptr;
@@ -89,24 +82,11 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     startingOffset.QuadPart = offset;
     chunkSize.QuadPart = length;
 
-    HRESULT hr = transfer_data(
-        ctx->connectionKey,
-        ctx->transferKey,
-        data,
-        startingOffset,
-        chunkSize,
-        STATUS_SUCCESS);
+    HRESULT hr = transfer_data(ctx->connectionKey, ctx->transferKey, data, startingOffset, chunkSize, STATUS_SUCCESS);
 
     if (FAILED(hr))
     {
-        transfer_data(
-            ctx->connectionKey,
-            ctx->transferKey,
-            nullptr,
-            ctx->requiredOffset,
-            ctx->requiredLength,
-            STATUS_UNSUCCESSFUL);
-
+        transfer_data(ctx->connectionKey, ctx->transferKey, nullptr, ctx->requiredOffset, ctx->requiredLength, STATUS_UNSUCCESSFUL);
         winrt::throw_hresult(hr);
     }
 
@@ -128,16 +108,13 @@ void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context,
 {
     TransferContext *ctx = static_cast<TransferContext *>(data);
 
-    const wchar_t *wchar_ptr = static_cast<const wchar_t *>(ctx->callbackInfo.FileIdentity);
-    DWORD fileIdentityLength = ctx->callbackInfo.FileIdentityLength / sizeof(wchar_t);
+    napi_value js_path;
+    napi_create_string_utf16(env, (char16_t *)ctx->path.c_str(), ctx->path.length(), &js_path);
 
-    napi_value js_fileIdentityArg;
-    napi_create_string_utf16(env, (char16_t *)wchar_ptr, fileIdentityLength, &js_fileIdentityArg);
+    napi_value js_callback;
+    napi_create_function(env, "callback", NAPI_AUTO_LENGTH, response_callback_fn_fetch_data_wrapper, ctx, &js_callback);
 
-    napi_value js_response_callback_fn;
-    napi_create_function(env, "callback", NAPI_AUTO_LENGTH, response_callback_fn_fetch_data_wrapper, ctx, &js_response_callback_fn);
-
-    napi_value args_to_js_callback[2] = {js_fileIdentityArg, js_response_callback_fn};
+    napi_value args_to_js_callback[2] = {js_path, js_callback};
 
     {
         std::unique_lock<std::mutex> lock(ctx->mtx);
@@ -160,8 +137,6 @@ void CALLBACK fetch_data_callback_wrapper(_In_ CONST CF_CALLBACK_INFO *callbackI
     ctx->path = std::wstring(callbackInfo->VolumeDosName) + callbackInfo->NormalizedPath;
 
     wprintf(L"Download path: %s\n", ctx->path.c_str());
-    wprintf(L"Required length: %d\n", ctx->requiredLength.QuadPart);
-    wprintf(L"Required offset: %d\n", ctx->requiredOffset.QuadPart);
 
     napi_call_threadsafe_function(g_fetch_data_threadsafe_callback, ctx.get(), napi_tsfn_blocking);
 
