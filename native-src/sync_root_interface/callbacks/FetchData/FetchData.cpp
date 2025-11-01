@@ -3,7 +3,6 @@
 #include <string>
 #include <condition_variable>
 #include <mutex>
-#include <FileCopierWithProgress.h>
 #include <fstream>
 #include <vector>
 #include <utility>
@@ -23,11 +22,41 @@ napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
 #define CHUNK_SIZE (32 * 1024 * 1024)
 
+#define FIELD_SIZE(type, field) (sizeof(((type *)0)->field))
+
+#define CF_SIZE_OF_OP_PARAM(field)                  \
+    (FIELD_OFFSET(CF_OPERATION_PARAMETERS, field) + \
+     FIELD_SIZE(CF_OPERATION_PARAMETERS, field))
+
 napi_value create_response(napi_env env, bool finished)
 {
     napi_value result;
     napi_get_boolean(env, finished, &result);
     return result;
+}
+
+void transfer_data(
+    _In_ CF_CONNECTION_KEY connectionKey,
+    _In_ LARGE_INTEGER transferKey,
+    _In_reads_bytes_opt_(length.QuadPart) LPCVOID transferData,
+    _In_ LARGE_INTEGER startingOffset,
+    _In_ LARGE_INTEGER length,
+    _In_ NTSTATUS completionStatus)
+{
+    CF_OPERATION_INFO opInfo = {0};
+    opInfo.StructSize = sizeof(opInfo);
+    opInfo.Type = CF_OPERATION_TYPE_TRANSFER_DATA;
+    opInfo.ConnectionKey = connectionKey;
+    opInfo.TransferKey = transferKey;
+
+    CF_OPERATION_PARAMETERS opParams = {0};
+    opParams.ParamSize = CF_SIZE_OF_OP_PARAM(TransferData);
+    opParams.TransferData.CompletionStatus = completionStatus;
+    opParams.TransferData.Buffer = transferData;
+    opParams.TransferData.Offset = startingOffset;
+    opParams.TransferData.Length = length;
+
+    winrt::check_hresult(CfExecute(&opInfo, &opParams));
 }
 
 size_t file_incremental_reading(napi_env env, TransferContext &ctx, bool final_step)
@@ -56,7 +85,7 @@ size_t file_incremental_reading(napi_env env, TransferContext &ctx, bool final_s
             startingOffset.QuadPart = ctx.lastReadOffset;
             chunkBufferSize.QuadPart = min(datasizeAvailableUnread, CHUNK_SIZE);
 
-            FileCopierWithProgress::TransferData(
+            transfer_data(
                 ctx.connectionKey,
                 ctx.transferKey,
                 buffer.data(),
@@ -74,7 +103,7 @@ size_t file_incremental_reading(napi_env env, TransferContext &ctx, bool final_s
     {
         Logger::getInstance().log("Excepción en file_incremental_reading.", LogLevel::ERROR);
         ctx.loadFinished = true;
-        FileCopierWithProgress::TransferData(
+        transfer_data(
             ctx.connectionKey,
             ctx.transferKey,
             nullptr,

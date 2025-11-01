@@ -9,7 +9,6 @@
 #include "Logger.h"
 #include "Utilities.h"
 #include "Placeholders.h"
-#include "FileCopierWithProgress.h"
 
 struct TransferContext
 {
