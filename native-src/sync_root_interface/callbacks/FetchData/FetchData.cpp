@@ -17,6 +17,7 @@
 #include <Logger.h>
 #include <TransferContext.h>
 #include "napi_extract_args.h"
+#include "napi_safe_wrap.h"
 
 napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
@@ -166,6 +167,11 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     return create_response(env, ctx->loadFinished);
 }
 
+napi_value response_callback_fn_fetch_data_wrapper(napi_env env, napi_callback_info info)
+{
+    return NAPI_SAFE_WRAP(env, info, response_callback_fn_fetch_data);
+}
+
 void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
 {
     TransferContext *ctx = static_cast<TransferContext *>(data);
@@ -177,7 +183,7 @@ void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context,
     napi_create_string_utf16(env, (char16_t *)wchar_ptr, fileIdentityLength, &js_fileIdentityArg);
 
     napi_value js_response_callback_fn;
-    napi_create_function(env, "callback", NAPI_AUTO_LENGTH, response_callback_fn_fetch_data, ctx, &js_response_callback_fn);
+    napi_create_function(env, "callback", NAPI_AUTO_LENGTH, response_callback_fn_fetch_data_wrapper, ctx, &js_response_callback_fn);
 
     napi_value args_to_js_callback[2] = {js_fileIdentityArg, js_response_callback_fn};
 

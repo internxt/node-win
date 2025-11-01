@@ -14,21 +14,21 @@ struct TransferContext
 {
     CF_CONNECTION_KEY connectionKey;
     CF_TRANSFER_KEY transferKey;
+    CF_CALLBACK_INFO callbackInfo;
+
     LARGE_INTEGER fileSize;
     LARGE_INTEGER requiredLength;
     LARGE_INTEGER requiredOffset;
-    CF_CALLBACK_INFO callbackInfo;
     std::wstring path;
+    std::wstring tmpPath;
 
     size_t lastReadOffset = 0;
     size_t lastSize = 0;
     bool loadFinished = false;
+    bool ready = false;
 
     std::mutex mtx;
     std::condition_variable cv;
-    bool ready = false;
-
-    std::wstring tmpPath;
 };
 
 std::shared_ptr<TransferContext> GetOrCreateTransferContext(
