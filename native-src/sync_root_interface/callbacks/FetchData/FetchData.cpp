@@ -139,8 +139,7 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
     auto [response, response_wstr] = napi_extract_args<bool, std::wstring>(env, info);
 
     TransferContext *ctxPtr = nullptr;
-    napi_value thisArg = nullptr;
-    napi_get_cb_info(env, info, nullptr, nullptr, &thisArg, reinterpret_cast<void **>(&ctxPtr));
+    napi_get_cb_info(env, info, nullptr, nullptr, nullptr, reinterpret_cast<void **>(&ctxPtr));
 
     if (!response)
     {
@@ -200,25 +199,13 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
 
 static void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
 {
-    Logger::getInstance().log("notify_fetch_data_call called context isolated", LogLevel::DEBUG);
-    napi_status status;
     TransferContext *ctx = static_cast<TransferContext *>(data);
-    Logger::getInstance().log("notify_fetch_data_call: ctx->fullClientPath = " + Logger::fromWStringToString(ctx->fullClientPath), LogLevel::DEBUG);
 
-    std::wstring fileIdentityWstr;
-    {
-        const wchar_t *wchar_ptr = static_cast<const wchar_t *>(ctx->callbackInfo.FileIdentity);
-        DWORD fileIdentityLength = ctx->callbackInfo.FileIdentityLength / sizeof(wchar_t);
-        fileIdentityWstr.assign(wchar_ptr, fileIdentityLength);
-    }
+    const wchar_t *wchar_ptr = static_cast<const wchar_t *>(ctx->callbackInfo.FileIdentity);
+    DWORD fileIdentityLength = ctx->callbackInfo.FileIdentityLength / sizeof(wchar_t);
+
     napi_value js_fileIdentityArg;
-    {
-        std::u16string u16_fileIdentity(fileIdentityWstr.begin(), fileIdentityWstr.end());
-        napi_create_string_utf16(env,
-                                 u16_fileIdentity.c_str(),
-                                 u16_fileIdentity.size(),
-                                 &js_fileIdentityArg);
-    }
+    napi_create_string_utf16(env, (char16_t *)wchar_ptr, fileIdentityLength, &js_fileIdentityArg);
 
     napi_value js_response_callback_fn;
     napi_create_function(env,
@@ -230,41 +217,16 @@ static void notify_fetch_data_call(napi_env env, napi_value js_callback, void *c
 
     napi_value args_to_js_callback[2] = {js_fileIdentityArg, js_response_callback_fn};
 
-    Logger::getInstance().log("notify_fetch_data_call: calling JS function", LogLevel::DEBUG);
-    napi_value undefined, result;
-    status = napi_get_undefined(env, &undefined);
-    if (status != napi_ok)
     {
-        Logger::getInstance().log("Failed to get undefined in notify_fetch_data_call.", LogLevel::ERROR);
-        return;
-    }
-
-    Logger::getInstance().log("notify_fetch_data_call: setting ctx->ready to false", LogLevel::DEBUG);
-    {
-        Logger::getInstance().log("notify_fetch_data_call: locking ctx->mtx", LogLevel::DEBUG);
         std::unique_lock<std::mutex> lock(ctx->mtx);
         ctx->ready = false;
     }
 
-    status = napi_call_function(env,
-                                undefined,
-                                js_callback,
-                                2,
-                                args_to_js_callback,
-                                &result);
-    if (status != napi_ok)
-    {
-        Logger::getInstance().log("Failed to call JS function in notify_fetch_data_call.", LogLevel::ERROR);
-        return;
-    }
+    napi_value undefined;
+    napi_get_undefined(env, &undefined);
+    napi_call_function(env, undefined, js_callback, 2, args_to_js_callback, nullptr);
 
-    Logger::getInstance().log("Hydration concluded or user signaled to finish in notify_fetch_data_call.", LogLevel::INFO);
-
-    ctx->lastReadOffset = 0;
-    ctx->loadFinished = false;
-    ctx->ready = false;
-
-    // RemoveTransferContext(ctx->transferKey);
+    RemoveTransferContext(ctx->transferKey);
 }
 
 void register_threadsafe_fetch_data_callback(const std::string &resource_name, napi_env env, InputSyncCallbacks input)
@@ -296,8 +258,6 @@ void register_threadsafe_fetch_data_callback(const std::string &resource_name, n
         napi_throw_error(env, nullptr, "Failed to create fetch data threadsafe function");
         return;
     }
-
-    Logger::getInstance().log("Threadsafe function (fetch_data) created successfully.", LogLevel::DEBUG);
 
     g_fetch_data_threadsafe_callback = tsfn_fetch_data;
 }
