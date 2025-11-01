@@ -136,12 +136,7 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
 {
     Logger::getInstance().log("response_callback_fn_fetch_data called", LogLevel::DEBUG);
 
-    size_t argc = 3;
-    napi_value argv[3];
-    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-
-    bool response = false;
-    napi_get_value_bool(env, argv[0], &response);
+    auto [response, response_wstr] = napi_extract_args<bool, std::wstring>(env, info);
 
     TransferContext *ctxPtr = nullptr;
     napi_value thisArg = nullptr;
@@ -161,11 +156,6 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
         return create_response(env, true, 0);
     }
 
-    size_t response_len = 0;
-    napi_get_value_string_utf16(env, argv[1], nullptr, 0, &response_len);
-
-    std::wstring response_wstr(response_len, L'\0');
-    napi_get_value_string_utf16(env, argv[1], (char16_t *)response_wstr.data(), response_len + 1, &response_len);
     Logger::getInstance().log(
         "JS responded with server file path = " + Logger::fromWStringToString(response_wstr),
         LogLevel::DEBUG);
