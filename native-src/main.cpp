@@ -20,11 +20,7 @@ napi_value init(napi_env env, napi_value exports)
 
   size_t property_count = sizeof(properties) / sizeof(properties[0]);
 
-  if (napi_define_properties(env, exports, property_count, properties) != napi_ok)
-  {
-    napi_throw_error(env, nullptr, "Failed to define properties");
-    return nullptr;
-  }
+  napi_define_properties(env, exports, property_count, properties);
 
   return exports;
 }

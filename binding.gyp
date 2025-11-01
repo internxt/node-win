@@ -23,7 +23,6 @@
         "native-src/sync_root_interface/Utilities.cpp",
         "native-src/sync_root_interface/callbacks/CancelFetchData/CancelFetchDataCallback.cpp",
         "native-src/sync_root_interface/callbacks/FetchData/FetchData.cpp",
-        "native-src/sync_root_interface/callbacks/FetchData/FileCopierWithProgress.cpp",
         "native-src/sync_root_interface/callbacks/FetchData/TransferContext.cpp",
         "native-src/virtual_drive/Wrappers.cpp",
         "native-src/virtual_drive/connect_sync_root.cpp",
