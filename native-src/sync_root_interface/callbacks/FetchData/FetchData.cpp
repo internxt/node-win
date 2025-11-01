@@ -68,7 +68,7 @@ static size_t file_incremental_reading(napi_env env, TransferContext &ctx, bool 
 
             chunkBufferSize.QuadPart = min(datasizeAvailableUnread, CHUNK_SIZE);
 
-            HRESULT hr = FileCopierWithProgress::TransferData(
+            FileCopierWithProgress::TransferData(
                 ctx.connectionKey,
                 ctx.transferKey,
                 buffer.data(),
@@ -78,36 +78,22 @@ static size_t file_incremental_reading(napi_env env, TransferContext &ctx, bool 
 
             ctx.lastReadOffset += chunkBufferSize.QuadPart;
 
-            if (FAILED(hr))
-            {
-                wprintf(L"Error en TransferData(). HRESULT: %lx\n", hr);
-                ctx.loadFinished = true;
-                FileCopierWithProgress::TransferData(
-                    ctx.connectionKey,
-                    ctx.transferKey,
-                    NULL,
-                    ctx.requiredOffset,
-                    ctx.requiredLength,
-                    STATUS_UNSUCCESSFUL);
-            }
-            else
-            {
-                UINT64 totalSize = static_cast<UINT64>(ctx.fileSize.QuadPart);
-                progress = static_cast<float>(ctx.lastReadOffset) / static_cast<float>(totalSize);
-                Utilities::ApplyTransferStateToFile(ctx.fullClientPath,
-                                                    ctx.callbackInfo,
-                                                    totalSize,
-                                                    ctx.lastReadOffset);
-            }
+            UINT64 totalSize = static_cast<UINT64>(ctx.fileSize.QuadPart);
+            progress = static_cast<float>(ctx.lastReadOffset) / static_cast<float>(totalSize);
+            Utilities::ApplyTransferStateToFile(ctx.fullClientPath,
+                                                ctx.callbackInfo,
+                                                totalSize,
+                                                ctx.lastReadOffset);
         }
     }
     catch (...)
     {
         Logger::getInstance().log("Excepción en file_incremental_reading.", LogLevel::ERROR);
+        ctx.loadFinished = true;
         FileCopierWithProgress::TransferData(
             ctx.connectionKey,
             ctx.transferKey,
-            NULL,
+            nullptr,
             ctx.requiredOffset,
             ctx.requiredLength,
             STATUS_UNSUCCESSFUL);

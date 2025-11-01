@@ -6,7 +6,7 @@
 class FileCopierWithProgress
 {
 public:
-    static HRESULT TransferData(
+    static void TransferData(
         _In_ CF_CONNECTION_KEY connectionKey,
         _In_ LARGE_INTEGER transferKey,
         _In_reads_bytes_opt_(length.QuadPart) LPCVOID transferData,

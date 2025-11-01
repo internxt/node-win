@@ -14,7 +14,7 @@
     (FIELD_OFFSET(CF_OPERATION_PARAMETERS, field) + \
      FIELD_SIZE(CF_OPERATION_PARAMETERS, field))
 
-HRESULT FileCopierWithProgress::TransferData(
+void FileCopierWithProgress::TransferData(
     _In_ CF_CONNECTION_KEY connectionKey,
     _In_ LARGE_INTEGER transferKey,
     _In_reads_bytes_opt_(length.QuadPart) LPCVOID transferData,
@@ -35,5 +35,5 @@ HRESULT FileCopierWithProgress::TransferData(
     opParams.TransferData.Offset = startingOffset;
     opParams.TransferData.Length = length;
 
-    return CfExecute(&opInfo, &opParams);
+    winrt::check_hresult(CfExecute(&opInfo, &opParams));
 }
