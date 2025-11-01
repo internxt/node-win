@@ -94,7 +94,7 @@ static size_t file_incremental_reading(napi_env env, TransferContext &ctx, bool 
             {
                 UINT64 totalSize = static_cast<UINT64>(ctx.fileSize.QuadPart);
                 progress = static_cast<float>(ctx.lastReadOffset) / static_cast<float>(totalSize);
-                Utilities::ApplyTransferStateToFile(ctx.fullClientPath.c_str(),
+                Utilities::ApplyTransferStateToFile(ctx.fullClientPath,
                                                     ctx.callbackInfo,
                                                     totalSize,
                                                     ctx.lastReadOffset);
