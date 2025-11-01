@@ -55,8 +55,6 @@ void Utilities::ApplyTransferStateToFile(const std::wstring &path, _In_ CF_CALLB
     }
     catch (...)
     {
-        // winrt::to_hresult() will eat the exception if it is a result of winrt::check_hresult,
-        // otherwise the exception will get rethrown and this method will crash out as it should
         wprintf(L"Failed to Set Transfer Progress on \"%s\" with %08x\n", path, static_cast<HRESULT>(winrt::to_hresult()));
     }
 }
