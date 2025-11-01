@@ -21,15 +21,7 @@
 
 napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
-#define FIELD_SIZE(type, field) (sizeof(((type *)0)->field))
-
-#define CF_SIZE_OF_OP_PARAM(field)                  \
-    (FIELD_OFFSET(CF_OPERATION_PARAMETERS, field) + \
-     FIELD_SIZE(CF_OPERATION_PARAMETERS, field))
-
-#define CHUNK_SIZE (4096 * 1024)
-
-#define CHUNKDELAYMS 250
+#define CHUNK_SIZE (32 * 1024 * 1024)
 
 napi_value create_response(napi_env env, bool finished, float progress)
 {
@@ -106,7 +98,6 @@ static size_t file_incremental_reading(napi_env env, TransferContext &ctx, bool 
                                                     ctx.callbackInfo,
                                                     totalSize,
                                                     ctx.lastReadOffset);
-                ::Sleep(CHUNKDELAYMS);
             }
         }
     }
@@ -170,8 +161,6 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
             ctx->callbackInfo,
             ctx->fileSize.QuadPart,
             ctx->fileSize.QuadPart);
-
-        ::Sleep(CHUNKDELAYMS);
 
         CfSetPinState(handleForPath(ctx->fullClientPath.c_str()).get(), CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
     }

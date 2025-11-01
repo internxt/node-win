@@ -8,14 +8,6 @@
 #include <filesystem>
 #include "Logger.h"
 
-namespace fs = std::filesystem;
-
-// 100MB chunks
-#define CHUNKSIZE (4096 * 25600)
-// Arbitrary delay per chunk, again, so you can actually see the progress bar
-// move
-#define CHUNKDELAYMS 250
-
 #define FIELD_SIZE(type, field) (sizeof(((type *)0)->field))
 #define CF_SIZE_OF_OP_PARAM(field)                      \
         (FIELD_OFFSET(CF_OPERATION_PARAMETERS, field) + \
