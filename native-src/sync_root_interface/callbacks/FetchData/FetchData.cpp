@@ -138,19 +138,19 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
 
     auto [response, response_wstr] = napi_extract_args<bool, std::wstring>(env, info);
 
-    TransferContext *ctxPtr = nullptr;
-    napi_get_cb_info(env, info, nullptr, nullptr, nullptr, reinterpret_cast<void **>(&ctxPtr));
+    TransferContext *ctx = nullptr;
+    napi_get_cb_info(env, info, nullptr, nullptr, nullptr, reinterpret_cast<void **>(&ctx));
 
     if (!response)
     {
         Logger::getInstance().log("JS responded with false; we cancel hydration.", LogLevel::DEBUG);
 
-        ctxPtr->loadFinished = true;
-        ctxPtr->lastReadOffset = 0;
+        ctx->loadFinished = true;
+        ctx->lastReadOffset = 0;
 
-        std::lock_guard<std::mutex> lock(ctxPtr->mtx);
-        ctxPtr->ready = true;
-        ctxPtr->cv.notify_one();
+        std::lock_guard<std::mutex> lock(ctx->mtx);
+        ctx->ready = true;
+        ctx->cv.notify_one();
 
         return create_response(env, true, 0);
     }
@@ -159,42 +159,42 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
         "JS responded with server file path = " + Logger::fromWStringToString(response_wstr),
         LogLevel::DEBUG);
 
-    ctxPtr->fullServerFilePath = response_wstr;
+    ctx->fullServerFilePath = response_wstr;
 
     float progress = 0.0f;
-    ctxPtr->lastReadOffset = file_incremental_reading(env, *ctxPtr, false, progress);
+    ctx->lastReadOffset = file_incremental_reading(env, *ctx, false, progress);
 
-    if (ctxPtr->lastReadOffset == (size_t)ctxPtr->fileSize.QuadPart)
+    if (ctx->lastReadOffset == (size_t)ctx->fileSize.QuadPart)
     {
         Logger::getInstance().log("File fully read.", LogLevel::DEBUG);
-        ctxPtr->lastReadOffset = 0;
-        ctxPtr->loadFinished = true;
+        ctx->lastReadOffset = 0;
+        ctx->loadFinished = true;
 
         Utilities::ApplyTransferStateToFile(
-            ctxPtr->fullClientPath.c_str(),
-            ctxPtr->callbackInfo,
-            ctxPtr->fileSize.QuadPart,
-            ctxPtr->fileSize.QuadPart);
+            ctx->fullClientPath.c_str(),
+            ctx->callbackInfo,
+            ctx->fileSize.QuadPart,
+            ctx->fileSize.QuadPart);
 
         ::Sleep(CHUNKDELAYMS);
 
-        CfSetPinState(handleForPath(ctxPtr->fullClientPath.c_str()).get(), CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
+        CfSetPinState(handleForPath(ctx->fullClientPath.c_str()).get(), CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
     }
 
     {
-        std::lock_guard<std::mutex> lock(ctxPtr->mtx);
-        if (ctxPtr->loadFinished)
+        std::lock_guard<std::mutex> lock(ctx->mtx);
+        if (ctx->loadFinished)
         {
-            ctxPtr->ready = true;
-            ctxPtr->cv.notify_one();
+            ctx->ready = true;
+            ctx->cv.notify_one();
         }
     }
 
     Logger::getInstance().log(
-        "fetch data => finished: " + std::to_string(ctxPtr->loadFinished) + ", progress: " + std::to_string(progress),
+        "fetch data => finished: " + std::to_string(ctx->loadFinished) + ", progress: " + std::to_string(progress),
         LogLevel::DEBUG);
 
-    return create_response(env, ctxPtr->loadFinished, progress);
+    return create_response(env, ctx->loadFinished, progress);
 }
 
 static void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
@@ -208,12 +208,7 @@ static void notify_fetch_data_call(napi_env env, napi_value js_callback, void *c
     napi_create_string_utf16(env, (char16_t *)wchar_ptr, fileIdentityLength, &js_fileIdentityArg);
 
     napi_value js_response_callback_fn;
-    napi_create_function(env,
-                         "responseCallback",
-                         NAPI_AUTO_LENGTH,
-                         response_callback_fn_fetch_data,
-                         ctx,
-                         &js_response_callback_fn);
+    napi_create_function(env, "responseCallback", NAPI_AUTO_LENGTH, response_callback_fn_fetch_data, ctx, &js_response_callback_fn);
 
     napi_value args_to_js_callback[2] = {js_fileIdentityArg, js_response_callback_fn};
 
@@ -225,41 +220,6 @@ static void notify_fetch_data_call(napi_env env, napi_value js_callback, void *c
     napi_value undefined;
     napi_get_undefined(env, &undefined);
     napi_call_function(env, undefined, js_callback, 2, args_to_js_callback, nullptr);
-
-    RemoveTransferContext(ctx->transferKey);
-}
-
-void register_threadsafe_fetch_data_callback(const std::string &resource_name, napi_env env, InputSyncCallbacks input)
-{
-    std::u16string converted_resource_name(resource_name.begin(), resource_name.end());
-
-    napi_value resource_name_value;
-    napi_create_string_utf16(env, converted_resource_name.c_str(), NAPI_AUTO_LENGTH, &resource_name_value);
-
-    napi_threadsafe_function tsfn_fetch_data;
-    napi_value fetch_data_value;
-    napi_get_reference_value(env, input.fetch_data_callback_ref, &fetch_data_value);
-
-    napi_status status = napi_create_threadsafe_function(
-        env,
-        fetch_data_value,
-        NULL,
-        resource_name_value,
-        0,
-        1,
-        NULL,
-        NULL,
-        NULL,
-        notify_fetch_data_call,
-        &tsfn_fetch_data);
-
-    if (status != napi_ok)
-    {
-        napi_throw_error(env, nullptr, "Failed to create fetch data threadsafe function");
-        return;
-    }
-
-    g_fetch_data_threadsafe_callback = tsfn_fetch_data;
 }
 
 void CALLBACK fetch_data_callback_wrapper(
@@ -287,4 +247,31 @@ void CALLBACK fetch_data_callback_wrapper(
     }
 
     RemoveTransferContext(ctx->transferKey);
+}
+
+void register_threadsafe_fetch_data_callback(const std::string &resource_name, napi_env env, InputSyncCallbacks input)
+{
+    std::u16string converted_resource_name(resource_name.begin(), resource_name.end());
+
+    napi_value resource_name_value;
+    napi_create_string_utf16(env, converted_resource_name.c_str(), NAPI_AUTO_LENGTH, &resource_name_value);
+
+    napi_value fetch_data_value;
+    napi_get_reference_value(env, input.fetch_data_callback_ref, &fetch_data_value);
+
+    napi_threadsafe_function tsfn_fetch_data;
+    napi_create_threadsafe_function(
+        env,
+        fetch_data_value,
+        nullptr,
+        resource_name_value,
+        0,
+        1,
+        nullptr,
+        nullptr,
+        nullptr,
+        notify_fetch_data_call,
+        &tsfn_fetch_data);
+
+    g_fetch_data_threadsafe_callback = tsfn_fetch_data;
 }
