@@ -62,7 +62,8 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     {
         wprintf(L"Fetch data finished\n");
 
-        CfSetPinState(handleForPath(ctx->path.c_str()).get(), CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
+        auto fileHandle = Placeholders::OpenFileHandle(ctx->path, FILE_WRITE_ATTRIBUTES, true);
+        CfSetPinState(fileHandle.get(), CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
 
         std::lock_guard<std::mutex> lock(ctx->mtx);
         ctx->ready = true;
