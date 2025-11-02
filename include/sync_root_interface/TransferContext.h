@@ -13,7 +13,6 @@ struct TransferContext
 {
     CF_CONNECTION_KEY connectionKey;
     CF_TRANSFER_KEY transferKey;
-    CF_CALLBACK_INFO callbackInfo;
 
     LARGE_INTEGER fileSize;
     LARGE_INTEGER requiredLength;

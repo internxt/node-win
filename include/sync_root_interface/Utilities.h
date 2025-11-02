@@ -1,10 +1,8 @@
 #pragma once
-#include <Windows.h>
+
 class Utilities
 {
 public:
-    static void ApplyTransferStateToFile(const std::wstring &path, _In_ CF_CALLBACK_INFO &callbackInfo, UINT64 total, UINT64 completed);
-
     inline static LARGE_INTEGER JsTimestampToLargeInteger(int64_t jsTimestamp)
     {
         const int64_t EPOCH_DIFFERENCE = 11644473600000LL;

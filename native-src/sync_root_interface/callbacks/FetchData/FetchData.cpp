@@ -1,28 +1,33 @@
-#include "stdafx.h"
-#include <Callbacks.h>
-#include <string>
-#include <condition_variable>
-#include <mutex>
-#include <fstream>
-#include <vector>
-#include <utility>
-#include <cfapi.h>
-#include <windows.h>
-#include <iostream>
-#include <chrono>
-#include "Utilities.h"
-#include <locale>
-#include <codecvt>
-#include <filesystem>
-#include <TransferContext.h>
+#include "Callbacks.h"
+#include "cfapi.h"
+#include "chrono"
+#include "codecvt"
+#include "condition_variable"
+#include "filesystem"
+#include "fstream"
+#include "iostream"
+#include "locale"
+#include "mutex"
 #include "napi_extract_args.h"
 #include "napi_safe_wrap.h"
+#include "propkey.h"
+#include "propvarutil.h"
+#include "SearchAPI.h"
+#include "stdafx.h"
+#include "string"
+#include "TransferContext.h"
+#include "Utilities.h"
+#include "utility"
+#include "vector"
+#include "windows.h"
 
 napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
 #define FIELD_SIZE(type, field) (sizeof(((type *)0)->field))
 
 #define CF_SIZE_OF_OP_PARAM(field) (FIELD_OFFSET(CF_OPERATION_PARAMETERS, field) + FIELD_SIZE(CF_OPERATION_PARAMETERS, field))
+
+DEFINE_PROPERTYKEY(PKEY_StorageProviderTransferProgress, 0xE77E90DF, 0x6271, 0x4F5B, 0x83, 0x4F, 0x2D, 0xD1, 0xF2, 0x45, 0xDD, 0xA4, 4);
 
 HRESULT transfer_data(
     _In_ CF_CONNECTION_KEY connectionKey,
@@ -50,34 +55,17 @@ HRESULT transfer_data(
 
 napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info)
 {
-    size_t argc = 3;
-    napi_value args[3];
+    size_t argc = 2;
+    napi_value args[2];
     TransferContext *ctx = nullptr;
     napi_get_cb_info(env, info, &argc, args, nullptr, reinterpret_cast<void **>(&ctx));
 
-    bool finished;
-    napi_get_value_bool(env, args[0], &finished);
-
-    if (finished)
-    {
-        wprintf(L"Fetch data finished\n");
-
-        auto fileHandle = Placeholders::OpenFileHandle(ctx->path, FILE_WRITE_ATTRIBUTES, true);
-        CfSetPinState(fileHandle.get(), CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
-
-        std::lock_guard<std::mutex> lock(ctx->mtx);
-        ctx->ready = true;
-        ctx->cv.notify_one();
-
-        return nullptr;
-    }
-
     void *data;
     size_t length;
-    napi_get_buffer_info(env, args[1], &data, &length);
+    napi_get_buffer_info(env, args[0], &data, &length);
 
     int64_t offset;
-    napi_get_value_int64(env, args[2], &offset);
+    napi_get_value_int64(env, args[1], &offset);
 
     LARGE_INTEGER startingOffset, chunkSize;
     startingOffset.QuadPart = offset;
@@ -93,9 +81,53 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 
     size_t completed = offset + length;
 
-    Utilities::ApplyTransferStateToFile(ctx->path, ctx->callbackInfo, ctx->fileSize.QuadPart, completed);
+    wprintf(L"Bytes completed: %d. Total bytes: %d. Required offset: %d. Required length: %d.\n",
+            completed,
+            ctx->fileSize.QuadPart,
+            ctx->requiredOffset.QuadPart,
+            ctx->requiredLength.QuadPart);
 
-    wprintf(L"Bytes completed: %d bytes\n", completed);
+    winrt::com_ptr<IShellItem2> shellItem;
+    winrt::com_ptr<IPropertyStore> propStoreVolatile;
+
+    winrt::check_hresult(SHCreateItemFromParsingName(ctx->path.c_str(), nullptr, __uuidof(shellItem), shellItem.put_void()));
+
+    winrt::check_hresult(
+        shellItem->GetPropertyStore(
+            GETPROPERTYSTOREFLAGS::GPS_READWRITE | GETPROPERTYSTOREFLAGS::GPS_VOLATILEPROPERTIESONLY,
+            __uuidof(propStoreVolatile),
+            propStoreVolatile.put_void()));
+
+    if (completed < ctx->fileSize.QuadPart)
+    {
+        PROPVARIANT pvProgress, pvStatus;
+        UINT64 values[]{completed, ctx->fileSize.QuadPart};
+        InitPropVariantFromUInt64Vector(values, ARRAYSIZE(values), &pvProgress);
+        InitPropVariantFromUInt32(SYNC_TRANSFER_STATUS::STS_TRANSFERRING, &pvStatus);
+
+        propStoreVolatile->SetValue(PKEY_StorageProviderTransferProgress, pvProgress);
+        propStoreVolatile->SetValue(PKEY_SyncTransferStatus, pvStatus);
+        propStoreVolatile->Commit();
+
+        PropVariantClear(&pvProgress);
+    }
+    else
+    {
+        wprintf(L"Fetch data finished\n");
+
+        PROPVARIANT empty;
+        PropVariantInit(&empty);
+        propStoreVolatile->SetValue(PKEY_StorageProviderTransferProgress, empty);
+        propStoreVolatile->SetValue(PKEY_SyncTransferStatus, empty);
+        propStoreVolatile->Commit();
+
+        auto fileHandle = Placeholders::OpenFileHandle(ctx->path, FILE_WRITE_ATTRIBUTES, true);
+        CfSetPinState(fileHandle.get(), CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
+
+        std::lock_guard<std::mutex> lock(ctx->mtx);
+        ctx->ready = true;
+        ctx->cv.notify_one();
+    }
 
     return nullptr;
 }
@@ -134,7 +166,6 @@ void CALLBACK fetch_data_callback_wrapper(_In_ CONST CF_CALLBACK_INFO *callbackI
     ctx->fileSize = callbackInfo->FileSize;
     ctx->requiredLength = callbackParameters->FetchData.RequiredLength;
     ctx->requiredOffset = callbackParameters->FetchData.RequiredFileOffset;
-    ctx->callbackInfo = *callbackInfo;
     ctx->path = std::wstring(callbackInfo->VolumeDosName) + callbackInfo->NormalizedPath;
 
     wprintf(L"Fetch data path: %s\n", ctx->path.c_str());
