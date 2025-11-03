@@ -100,6 +100,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     {
         PROPVARIANT pvProgress, pvStatus;
         UINT64 values[]{completed, ctx->fileSize.QuadPart};
+
         InitPropVariantFromUInt64Vector(values, ARRAYSIZE(values), &pvProgress);
         InitPropVariantFromUInt32(SYNC_TRANSFER_STATUS::STS_TRANSFERRING, &pvStatus);
 
@@ -112,12 +113,6 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     else
     {
         wprintf(L"Fetch data finished\n");
-
-        PROPVARIANT empty;
-        PropVariantInit(&empty);
-        propStoreVolatile->SetValue(PKEY_StorageProviderTransferProgress, empty);
-        propStoreVolatile->SetValue(PKEY_SyncTransferStatus, empty);
-        propStoreVolatile->Commit();
 
         auto fileHandle = Placeholders::OpenFileHandle(ctx->path, FILE_WRITE_ATTRIBUTES, true);
         CfSetPinState(fileHandle.get(), CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
