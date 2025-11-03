@@ -149,11 +149,6 @@ void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context,
 
     napi_value args_to_js_callback[2] = {js_path, js_callback_fn};
 
-    {
-        std::unique_lock<std::mutex> lock(ctx->mtx);
-        ctx->ready = false;
-    }
-
     napi_value undefined;
     napi_get_undefined(env, &undefined);
     napi_call_function(env, undefined, js_callback, 2, args_to_js_callback, nullptr);
@@ -161,8 +156,11 @@ void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context,
 
 void CALLBACK fetch_data_callback_wrapper(_In_ CONST CF_CALLBACK_INFO *callbackInfo, _In_ CONST CF_CALLBACK_PARAMETERS *callbackParameters)
 {
-    auto ctx = GetOrCreateTransferContext(callbackInfo->ConnectionKey, callbackInfo->TransferKey);
+    wprintf(L"ConnectionKey: %lld, TransferKey: %lld\n", callbackInfo->ConnectionKey, callbackInfo->TransferKey.QuadPart);
 
+    auto ctx = CreateTransferContext(callbackInfo->TransferKey);
+
+    ctx->connectionKey = callbackInfo->ConnectionKey;
     ctx->fileSize = callbackInfo->FileSize;
     ctx->requiredLength = callbackParameters->FetchData.RequiredLength;
     ctx->requiredOffset = callbackParameters->FetchData.RequiredFileOffset;
@@ -179,6 +177,8 @@ void CALLBACK fetch_data_callback_wrapper(_In_ CONST CF_CALLBACK_INFO *callbackI
             ctx->cv.wait(lock);
         }
     }
+
+    wprintf(L"Remove transfer context\n");
 
     RemoveTransferContext(ctx->transferKey);
 }

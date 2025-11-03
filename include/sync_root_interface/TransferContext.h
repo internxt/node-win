@@ -25,6 +25,6 @@ struct TransferContext
     std::condition_variable cv;
 };
 
-std::shared_ptr<TransferContext> GetOrCreateTransferContext(CF_CONNECTION_KEY connKey, CF_TRANSFER_KEY transferKey);
-
+std::shared_ptr<TransferContext> CreateTransferContext(CF_TRANSFER_KEY transferKey);
+std::shared_ptr<TransferContext> GetTransferContext(CF_TRANSFER_KEY transferKey);
 void RemoveTransferContext(CF_TRANSFER_KEY transferKey);

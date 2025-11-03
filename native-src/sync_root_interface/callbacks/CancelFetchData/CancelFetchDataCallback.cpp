@@ -5,22 +5,13 @@
 #include <iostream>
 #include <mutex>
 #include <filesystem>
+#include <TransferContext.h>
 
 napi_threadsafe_function g_cancel_fetch_data_threadsafe_callback = nullptr;
 
-struct CallbackContext
-{
-    std::wstring path;
-
-    bool ready = false;
-
-    std::mutex mtx;
-    std::condition_variable cv;
-};
-
 void notify_cancel_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
 {
-    CallbackContext *ctx = static_cast<CallbackContext *>(data);
+    TransferContext *ctx = static_cast<TransferContext *>(data);
 
     napi_value js_path;
     napi_create_string_utf16(env, (char16_t *)ctx->path.c_str(), ctx->path.length(), &js_path);
@@ -30,41 +21,26 @@ void notify_cancel_fetch_data_call(napi_env env, napi_value js_callback, void *c
     napi_value undefined;
     napi_get_undefined(env, &undefined);
     napi_call_function(env, undefined, js_callback, 1, args_to_js_callback, nullptr);
-
-    {
-        std::lock_guard<std::mutex> lock(ctx->mtx);
-        ctx->ready = true;
-    }
-
-    ctx->cv.notify_one();
-
-    delete ctx;
 }
 
 void CALLBACK cancel_fetch_data_callback_wrapper(_In_ CONST CF_CALLBACK_INFO *callbackInfo, _In_ CONST CF_CALLBACK_PARAMETERS *callbackParameters)
 {
-    CallbackContext *ctx = new CallbackContext();
+    wprintf(L"ConnectionKey: %lld, TransferKey: %lld\n", callbackInfo->ConnectionKey, callbackInfo->TransferKey.QuadPart);
 
-    ctx->path = std::wstring(callbackInfo->VolumeDosName) + callbackInfo->NormalizedPath;
+    auto ctx = GetTransferContext(callbackInfo->TransferKey);
+
+    if (!ctx)
+        return;
 
     wprintf(L"Cancel fetch data path: %s\n", ctx->path.c_str());
 
-    napi_call_threadsafe_function(g_cancel_fetch_data_threadsafe_callback, ctx, napi_tsfn_blocking);
-
     {
-        std::unique_lock<std::mutex> lock(ctx->mtx);
-        auto timeout = std::chrono::seconds(30);
-
-        if (ctx->cv.wait_for(lock, timeout, [&ctx]
-                             { return ctx->ready; }))
-        {
-            wprintf(L"Cancel fetch completed\n");
-        }
-        else
-        {
-            wprintf(L"Cancel fetch timed out\n");
-        }
+        std::lock_guard<std::mutex> lock(ctx->mtx);
+        ctx->ready = true;
+        ctx->cv.notify_one();
     }
+
+    napi_call_threadsafe_function(g_cancel_fetch_data_threadsafe_callback, ctx.get(), napi_tsfn_blocking);
 }
 
 void register_threadsafe_cancel_fetch_data_callback(const std::string &resource_name, napi_env env, InputSyncCallbacks input)
