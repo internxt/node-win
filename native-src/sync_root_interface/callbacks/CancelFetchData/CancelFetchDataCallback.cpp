@@ -40,8 +40,9 @@ void CALLBACK cancel_fetch_data_callback_wrapper(_In_ CONST CF_CALLBACK_INFO *ca
     {
         std::lock_guard<std::mutex> lock(ctx->mtx);
         ctx->ready = true;
-        ctx->cv.notify_one();
     }
+
+    ctx->cv.notify_one();
 
     napi_call_threadsafe_function(g_cancel_fetch_data_threadsafe_callback, path, napi_tsfn_blocking);
 }
