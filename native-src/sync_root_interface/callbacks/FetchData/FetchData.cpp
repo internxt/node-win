@@ -27,8 +27,6 @@ napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
 #define CF_SIZE_OF_OP_PARAM(field) (FIELD_OFFSET(CF_OPERATION_PARAMETERS, field) + FIELD_SIZE(CF_OPERATION_PARAMETERS, field))
 
-DEFINE_PROPERTYKEY(PKEY_StorageProviderTransferProgress, 0xE77E90DF, 0x6271, 0x4F5B, 0x83, 0x4F, 0x2D, 0xD1, 0xF2, 0x45, 0xDD, 0xA4, 4);
-
 HRESULT transfer_data(
     _In_ CF_CONNECTION_KEY connectionKey,
     _In_ LARGE_INTEGER transferKey,
@@ -124,8 +122,11 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
         auto fileHandle = Placeholders::OpenFileHandle(ctx->path, FILE_WRITE_ATTRIBUTES, true);
         CfSetPinState(fileHandle.get(), CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
 
-        std::lock_guard<std::mutex> lock(ctx->mtx);
-        ctx->ready = true;
+        {
+            std::lock_guard<std::mutex> lock(ctx->mtx);
+            ctx->ready = true;
+        }
+
         ctx->cv.notify_one();
     }
 
