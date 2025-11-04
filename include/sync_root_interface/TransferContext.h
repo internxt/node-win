@@ -17,7 +17,7 @@ struct TransferContext
     LARGE_INTEGER requiredLength;
     LARGE_INTEGER requiredOffset;
     CF_CALLBACK_INFO callbackInfo;
-    std::wstring fullClientPath;
+    std::wstring path;
 
     size_t lastReadOffset = 0;
     size_t lastSize = 0;
