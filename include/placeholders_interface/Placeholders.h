@@ -1,7 +1,14 @@
 #pragma once
+
 #include <vector>
 #include <string>
-#include <PlaceholderInfo.h>
+#include <stdafx.h>
+
+struct FileState
+{
+    std::string placeholderId;
+    CF_PIN_STATE pinState;
+};
 
 class Placeholders
 {

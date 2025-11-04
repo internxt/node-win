@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include <stdafx.h>
 #include <Callbacks.h>
 #include <string>
 #include <condition_variable>
@@ -17,6 +17,7 @@
 #include <filesystem>
 #include <Logger.h>
 #include <TransferContext.h>
+#include <Placeholders.h>
 
 napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
@@ -213,7 +214,8 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
 
         ::Sleep(CHUNKDELAYMS);
 
-        CfSetPinState(handleForPath(ctxPtr->fullClientPath.c_str()).get(), CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
+        auto fileHandle = Placeholders::OpenFileHandle(ctxPtr->fullClientPath.c_str(), FILE_WRITE_ATTRIBUTES, true);
+        CfSetPinState(fileHandle.get(), CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
     }
 
     {
