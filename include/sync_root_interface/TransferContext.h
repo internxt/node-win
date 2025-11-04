@@ -6,12 +6,11 @@
 #include <string>
 #include "stdafx.h"
 #include <cfapi.h>
-#include "Logger.h"
 #include "Utilities.h"
 #include "Placeholders.h"
-#include "FileCopierWithProgress.h"
 
-struct TransferContext {
+struct TransferContext
+{
     CF_CONNECTION_KEY connectionKey;
     CF_TRANSFER_KEY transferKey;
     LARGE_INTEGER fileSize;
@@ -31,8 +30,6 @@ struct TransferContext {
     std::wstring fullServerFilePath;
 };
 
-std::shared_ptr<TransferContext> GetOrCreateTransferContext(
-    CF_CONNECTION_KEY connKey,
-    CF_TRANSFER_KEY transferKey);
-
+std::shared_ptr<TransferContext> CreateTransferContext(CF_TRANSFER_KEY transferKey);
+std::shared_ptr<TransferContext> GetTransferContext(CF_TRANSFER_KEY transferKey);
 void RemoveTransferContext(CF_TRANSFER_KEY transferKey);

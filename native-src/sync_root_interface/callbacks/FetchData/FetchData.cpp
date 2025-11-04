@@ -345,8 +345,9 @@ void CALLBACK fetch_data_callback_wrapper(
 {
     Logger::getInstance().log("fetch_data_callback_wrapper called", LogLevel::DEBUG);
     
-    auto ctx = GetOrCreateTransferContext(callbackInfo->ConnectionKey, callbackInfo->TransferKey);
+    auto ctx = GetTransferContext(callbackInfo->TransferKey);
     
+    ctx->connectionKey = callbackInfo->ConnectionKey;
     ctx->fileSize        = callbackInfo->FileSize;
     ctx->requiredLength  = callbackParameters->FetchData.RequiredLength;
     ctx->requiredOffset  = callbackParameters->FetchData.RequiredFileOffset;
