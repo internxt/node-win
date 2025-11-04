@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "Placeholders.h"
 #include "Logger.h"
-#include "PlaceholderInfo.h"
 #include <winrt/base.h>
 #include <shlwapi.h>
 #include <vector>
