@@ -1,7 +1,7 @@
-#include "stdafx.h"
-#include "Placeholders.h"
-#include "Logger.h"
-#include "PlaceholderInfo.h"
+#include <stdafx.h>
+#include <Placeholders.h>
+#include <Logger.h>
+#include <PlaceholderInfo.h>
 #include <winrt/base.h>
 #include <shlwapi.h>
 #include <vector>
@@ -15,7 +15,7 @@
 #include <cctype>
 #include <windows.h>
 #include <shlobj.h>
-#include "convert_to_placeholder.h"
+#include <convert_to_placeholder.h>
 
 #pragma comment(lib, "shlwapi.lib")
 

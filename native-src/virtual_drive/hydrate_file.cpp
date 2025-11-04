@@ -1,6 +1,6 @@
 #include <thread>
 #include <string>
-#include <Windows.>
+#include <Windows.h>
 #include <Placeholders.h>
 #include <napi_extract_args.h>
 

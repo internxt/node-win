@@ -3,6 +3,7 @@
 #include <Placeholders.h>
 #include <convert_to_placeholder.h>
 #include <napi_extract_args.h>
+#include <Utilities.h>
 
 napi_value create_folder_placeholder_impl(napi_env env, napi_callback_info info)
 {
