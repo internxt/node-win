@@ -19,10 +19,10 @@
 #include <cfapi.h>
 #include <sddl.h>
 #include <windows.h>
-#include <winrt/Windows.Foundation.h>
+#include <winrt/windows.foundation.h>
 #include <winrt/windows.foundation.collections.h>
 #include <winrt/windows.storage.provider.h>
-#include <winrt/Windows.Security.Cryptography.h>
+#include <winrt/windows.security.cryptography.h>
 #include <functional>
 #include <mutex>
 #include <condition_variable>

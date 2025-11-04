@@ -1,8 +1,8 @@
 #include <thread>
 #include <string>
-#include <windows.h>
-#include "Placeholders.h"
-#include "napi_extract_args.h"
+#include <Windows.h>
+#include <Placeholders.h>
+#include <napi_extract_args.h>
 
 struct AsyncWork
 {
