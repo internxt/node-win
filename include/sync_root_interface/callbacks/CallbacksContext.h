@@ -7,9 +7,10 @@
 #include <node_api.h>
 #include <iostream>
 #include <CallbacksContext.h>
-#include "stdafx.h"
+#include <stdafx.h>
 
-struct InputSyncCallbacks {
+struct InputSyncCallbacks
+{
     napi_ref fetch_data_callback_ref;
     napi_ref cancel_fetch_data_callback_ref;
 };

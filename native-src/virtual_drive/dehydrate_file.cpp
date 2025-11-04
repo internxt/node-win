@@ -1,7 +1,7 @@
 #include <windows.h>
-#include "napi_extract_args.h"
-#include "stdafx.h"
-#include "Placeholders.h"
+#include <napi_extract_args.h>
+#include <stdafx.h>
+#include <Placeholders.h>
 
 napi_value dehydrate_file(napi_env env, napi_callback_info info)
 {

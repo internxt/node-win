@@ -1,26 +1,26 @@
-#include "stdafx.h"
+#include <stdafx.h>
 #include <sstream>
-#include "Placeholders.h"
-#include "Callbacks.h"
-#include "LoggerPath.h"
+#include <Placeholders.h>
+#include <Callbacks.h>
+#include <LoggerPath.h>
 #include <Logger.h>
 #include <SyncRoot.h>
 #include <codecvt>
 #include <locale>
 #include <vector>
-#include "register_sync_root_wrapper.h"
-#include "create_folder_placeholder.h"
-#include "create_file_placeholder.h"
-#include "connect_sync_root.h"
-#include "hydrate_file.h"
-#include "convert_to_placeholder.h"
-#include "get_registered_sync_roots_wrapper.h"
-#include "unregister_sync_root_wrapper.h"
-#include "dehydrate_file.h"
-#include "disconnect_sync_root.h"
-#include "get_placeholder_state_wrapper.h"
-#include "update_sync_status_wrapper.h"
-#include "NAPI_SAFE_WRAP.h"
+#include <register_sync_root_wrapper.h>
+#include <create_folder_placeholder.h>
+#include <create_file_placeholder.h>
+#include <connect_sync_root.h>
+#include <hydrate_file.h>
+#include <convert_to_placeholder.h>
+#include <get_registered_sync_roots_wrapper.h>
+#include <unregister_sync_root_wrapper.h>
+#include <dehydrate_file.h>
+#include <disconnect_sync_root.h>
+#include <get_placeholder_state_wrapper.h>
+#include <update_sync_status_wrapper.h>
+#include <NAPI_SAFE_WRAP.h>
 
 napi_value CreateFilePlaceholderWrapper(napi_env env, napi_callback_info args)
 {

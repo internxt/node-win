@@ -1,6 +1,6 @@
 #include <windows.h>
-#include "Placeholders.h"
-#include "napi_extract_args.h"
+#include <Placeholders.h>
+#include <napi_extract_args.h>
 
 napi_value update_sync_status_wrapper(napi_env env, napi_callback_info info)
 {
