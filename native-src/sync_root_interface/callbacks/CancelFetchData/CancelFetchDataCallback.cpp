@@ -1,4 +1,4 @@
-#include <stdafx.h>
+#include "stdafx.h"
 #include <Callbacks.h>
 #include <Logger.h>
 #include <cfapi.h>
@@ -9,19 +9,17 @@
 
 napi_threadsafe_function g_cancel_fetch_data_threadsafe_callback = nullptr;
 
-struct CallbackContext
-{
+struct CallbackContext {
     std::mutex mtx;
     std::condition_variable cv;
     bool ready = false;
 };
 
-struct CancelFetchDataArgs
-{
+struct CancelFetchDataArgs {
     std::wstring fileIdentityArg;
-    CallbackContext *context;
-
-    CancelFetchDataArgs(const std::wstring &fileId, CallbackContext *ctx)
+    CallbackContext* context;
+    
+    CancelFetchDataArgs(const std::wstring& fileId, CallbackContext* ctx) 
         : fileIdentityArg(fileId), context(ctx) {}
 };
 
@@ -106,7 +104,7 @@ void CALLBACK cancel_fetch_data_callback_wrapper(
         wprintf(L"Callback fetch_data_callback_wrapper called but g_fetch_data_threadsafe_callback is null\n");
         return;
     }
-
+    
     CallbackContext context;
     CancelFetchDataArgs *args = new CancelFetchDataArgs(fileIdentityStr, &context);
 
@@ -116,13 +114,9 @@ void CALLBACK cancel_fetch_data_callback_wrapper(
         std::unique_lock<std::mutex> lock(context.mtx);
         auto timeout = std::chrono::seconds(30);
 
-        if (context.cv.wait_for(lock, timeout, [&context]
-                                { return context.ready; }))
-        {
+        if (context.cv.wait_for(lock, timeout, [&context] { return context.ready; })) {
             wprintf(L"Cancel fetch completed\n");
-        }
-        else
-        {
+        } else {
             wprintf(L"Cancel fetch timed out\n");
         }
     }

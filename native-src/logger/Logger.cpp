@@ -1,34 +1,27 @@
-#include <Logger.h>
-#include <LoggerPath.h>
+#include "Logger.h"
+#include "LoggerPath.h"
 
-Logger::Logger() : log_file(LoggerPath::get(), std::ios::app)
-{
+Logger::Logger() : log_file(LoggerPath::get(), std::ios::app) {
     std::wstring widePath = fromUtf8ToWide(LoggerPath::get());
     wprintf(L"Logger path: %ls\n", widePath.c_str());
 
     std::string path = LoggerPath::get();
-    if (!log_file.is_open() && !path.empty())
-    {
+    if (!log_file.is_open() && !path.empty()) {
         throw std::runtime_error("No se pudo abrir el archivo de log.");
     }
 }
 
-Logger::~Logger()
-{
-    if (log_file.is_open())
-    {
+Logger::~Logger() {
+    if (log_file.is_open()) {
         log_file.close();
     }
 }
 
-std::wstring Logger::fromUtf8ToWide(const std::string &utf8Str)
-{
-    if (utf8Str.empty())
-        return std::wstring();
+std::wstring Logger::fromUtf8ToWide(const std::string& utf8Str) {
+    if (utf8Str.empty()) return std::wstring();
 
     int wideSize = MultiByteToWideChar(CP_UTF8, 0, utf8Str.c_str(), -1, nullptr, 0);
-    if (wideSize <= 0)
-        return std::wstring();
+    if (wideSize <= 0) return std::wstring();
 
     std::unique_ptr<wchar_t[]> wideStr(new wchar_t[wideSize]);
     MultiByteToWideChar(CP_UTF8, 0, utf8Str.c_str(), -1, wideStr.get(), wideSize);
@@ -36,8 +29,7 @@ std::wstring Logger::fromUtf8ToWide(const std::string &utf8Str)
     return std::wstring(wideStr.get());
 }
 
-void Logger::log(const std::string &message, LogLevel level, WORD color)
-{
+void Logger::log(const std::string &message, LogLevel level, WORD color) {
     std::lock_guard<std::mutex> guard(log_mutex);
 
     auto now = std::chrono::system_clock::now();
@@ -59,44 +51,31 @@ void Logger::log(const std::string &message, LogLevel level, WORD color)
     GetConsoleScreenBufferInfo(hConsole, &consoleInfo);
     WORD saved_attributes = consoleInfo.wAttributes;
 
-    if (color != 0)
-    {
+    if (color != 0) {
         SetConsoleTextAttribute(hConsole, color);
     }
 
     printf("[%s] [%s] %s\n", time_stream.str().c_str(), level_str.c_str(), message.c_str());
 
-    if (color != 0)
-    {
+    if (color != 0) {
         SetConsoleTextAttribute(hConsole, saved_attributes);
     }
 }
 
-std::string Logger::toString(LogLevel level)
-{
-    switch (level)
-    {
-    case LogLevel::DEBUG:
-        return "DEBUG";
-    case LogLevel::INFO:
-        return "INFO";
-    case LogLevel::WARN:
-        return "WARN";
-    case LogLevel::TRACE:
-        return "TRACE";
-    case LogLevel::ERROR:
-        return "ERROR";
-    case LogLevel::FATAL:
-        return "FATAL";
-    default:
-        return "UNKNOWN";
+std::string Logger::toString(LogLevel level) {
+    switch (level) {
+        case LogLevel::DEBUG: return "DEBUG";
+        case LogLevel::INFO:  return "INFO";
+        case LogLevel::WARN:  return "WARN";
+        case LogLevel::TRACE: return "TRACE";
+        case LogLevel::ERROR: return "ERROR";
+        case LogLevel::FATAL: return "FATAL";
+        default: return "UNKNOWN";
     }
 }
 
-std::string Logger::fromWStringToString(const std::wstring wstr)
-{
-    if (wstr.empty())
-        return std::string();
+std::string Logger::fromWStringToString(const std::wstring wstr) {
+    if (wstr.empty()) return std::string();
 
     int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
     std::string strTo(size_needed, 0);

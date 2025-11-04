@@ -1,4 +1,4 @@
-#include <stdafx.h>
+#include "stdafx.h"
 #include <Callbacks.h>
 #include <string>
 #include <condition_variable>
@@ -11,7 +11,7 @@
 #include <windows.h>
 #include <iostream>
 #include <chrono>
-#include <Utilities.h>
+#include "Utilities.h"
 #include <locale>
 #include <codecvt>
 #include <filesystem>
@@ -52,18 +52,17 @@ napi_value create_response(napi_env env, bool finished, float progress)
     return promise;
 }
 
-static size_t file_incremental_reading(napi_env env,
-                                       TransferContext &ctx,
-                                       bool final_step,
+static size_t file_incremental_reading(napi_env env, 
+                                       TransferContext &ctx, 
+                                       bool final_step, 
                                        float &progress)
 {
     std::ifstream file;
     file.open(ctx.fullServerFilePath, std::ios::in | std::ios::binary);
 
-    if (!file.is_open())
-    {
+    if (!file.is_open()) {
         Logger::getInstance().log("Error al abrir el archivo en file_incremental_reading.", LogLevel::ERROR);
-        return ctx.lastReadOffset;
+        return ctx.lastReadOffset; 
     }
 
     file.clear();
@@ -71,12 +70,10 @@ static size_t file_incremental_reading(napi_env env,
     size_t newSize = static_cast<size_t>(file.tellg());
 
     size_t datasizeAvailableUnread = newSize - ctx.lastReadOffset;
-    size_t growth = newSize - ctx.lastSize;
+    size_t growth                  = newSize - ctx.lastSize;
 
-    try
-    {
-        if (datasizeAvailableUnread > 0)
-        {
+    try {
+        if (datasizeAvailableUnread > 0) {
             std::vector<char> buffer(CHUNK_SIZE);
             file.seekg(ctx.lastReadOffset);
             file.read(buffer.data(), CHUNK_SIZE);
@@ -96,8 +93,7 @@ static size_t file_incremental_reading(napi_env env,
 
             ctx.lastReadOffset += chunkBufferSize.QuadPart;
 
-            if (FAILED(hr))
-            {
+            if (FAILED(hr)) {
                 wprintf(L"Error en TransferData(). HRESULT: %lx\n", hr);
                 ctx.loadFinished = true;
                 FileCopierWithProgress::TransferData(
@@ -107,21 +103,17 @@ static size_t file_incremental_reading(napi_env env,
                     ctx.requiredOffset,
                     ctx.requiredLength,
                     STATUS_UNSUCCESSFUL);
-            }
-            else
-            {
+            } else {
                 UINT64 totalSize = static_cast<UINT64>(ctx.fileSize.QuadPart);
                 progress = static_cast<float>(ctx.lastReadOffset) / static_cast<float>(totalSize);
-                Utilities::ApplyTransferStateToFile(ctx.fullClientPath.c_str(),
-                                                    ctx.callbackInfo,
-                                                    totalSize,
+                Utilities::ApplyTransferStateToFile(ctx.fullClientPath.c_str(), 
+                                                    ctx.callbackInfo, 
+                                                    totalSize, 
                                                     ctx.lastReadOffset);
-                ::Sleep(CHUNKDELAYMS);
+                ::Sleep(CHUNKDELAYMS); 
             }
         }
-    }
-    catch (...)
-    {
+    } catch (...) {
         Logger::getInstance().log("Excepción en file_incremental_reading.", LogLevel::ERROR);
         FileCopierWithProgress::TransferData(
             ctx.connectionKey,
@@ -144,22 +136,19 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
     size_t argc = 3;
     napi_value argv[3];
     napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    if (status != napi_ok)
-    {
+    if (status != napi_ok) {
         Logger::getInstance().log("Failed to get callback info", LogLevel::ERROR);
-        return create_response(env, true, 0);
+        return create_response(env, true, 0); 
     }
 
-    if (argc < 2)
-    {
+    if (argc < 2) {
         Logger::getInstance().log("This function must receive at least two arguments", LogLevel::ERROR);
         return create_response(env, true, 0);
     }
 
     napi_valuetype valueType;
     status = napi_typeof(env, argv[0], &valueType);
-    if (status != napi_ok || valueType != napi_boolean)
-    {
+    if (status != napi_ok || valueType != napi_boolean) {
         Logger::getInstance().log("First argument should be boolean", LogLevel::ERROR);
         return create_response(env, true, 0);
     }
@@ -168,26 +157,23 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
     napi_get_value_bool(env, argv[0], &response);
 
     status = napi_typeof(env, argv[1], &valueType);
-    if (status != napi_ok || valueType != napi_string)
-    {
+    if (status != napi_ok || valueType != napi_string) {
         Logger::getInstance().log("Second argument should be string", LogLevel::ERROR);
         return create_response(env, true, 0);
     }
 
-    TransferContext *ctxPtr = nullptr;
+    TransferContext* ctxPtr = nullptr;
     napi_value thisArg = nullptr;
-    status = napi_get_cb_info(env, info, nullptr, nullptr, &thisArg, reinterpret_cast<void **>(&ctxPtr));
-    if (status != napi_ok || !ctxPtr)
-    {
+    status = napi_get_cb_info(env, info, nullptr, nullptr, &thisArg, reinterpret_cast<void**>(&ctxPtr));
+    if (status != napi_ok || !ctxPtr) {
         Logger::getInstance().log("Could not retrieve TransferContext from callback data", LogLevel::ERROR);
         return create_response(env, true, 0);
     }
 
-    if (!response)
-    {
+    if (!response) {
         Logger::getInstance().log("JS responded with false; we cancel hydration.", LogLevel::DEBUG);
 
-        ctxPtr->loadFinished = true;
+        ctxPtr->loadFinished   = true;
         ctxPtr->lastReadOffset = 0;
         {
             std::lock_guard<std::mutex> lock(ctxPtr->mtx);
@@ -202,27 +188,28 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
     napi_get_value_string_utf16(env, argv[1], nullptr, 0, &response_len);
 
     std::wstring response_wstr(response_len, L'\0');
-    napi_get_value_string_utf16(env, argv[1], (char16_t *)response_wstr.data(), response_len + 1, &response_len);
+    napi_get_value_string_utf16(env, argv[1], (char16_t*)response_wstr.data(), response_len + 1, &response_len);
     Logger::getInstance().log(
         "JS responded with server file path = " + Logger::fromWStringToString(response_wstr),
-        LogLevel::DEBUG);
+        LogLevel::DEBUG
+    );
 
     ctxPtr->fullServerFilePath = response_wstr;
 
     float progress = 0.0f;
     ctxPtr->lastReadOffset = file_incremental_reading(env, *ctxPtr, /*final_step=*/false, progress);
 
-    if (ctxPtr->lastReadOffset == (size_t)ctxPtr->fileSize.QuadPart)
-    {
+    if (ctxPtr->lastReadOffset == (size_t)ctxPtr->fileSize.QuadPart) {
         Logger::getInstance().log("File fully read.", LogLevel::DEBUG);
         ctxPtr->lastReadOffset = 0;
-        ctxPtr->loadFinished = true;
+        ctxPtr->loadFinished   = true;
 
         Utilities::ApplyTransferStateToFile(
             ctxPtr->fullClientPath.c_str(),
             ctxPtr->callbackInfo,
             ctxPtr->fileSize.QuadPart,
-            ctxPtr->fileSize.QuadPart);
+            ctxPtr->fileSize.QuadPart
+        );
 
         ::Sleep(CHUNKDELAYMS);
 
@@ -231,16 +218,17 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
 
     {
         std::lock_guard<std::mutex> lock(ctxPtr->mtx);
-        if (ctxPtr->loadFinished)
-        {
+        if (ctxPtr->loadFinished) {
             ctxPtr->ready = true;
             ctxPtr->cv.notify_one();
         }
     }
 
     Logger::getInstance().log(
-        "fetch data => finished: " + std::to_string(ctxPtr->loadFinished) + ", progress: " + std::to_string(progress),
-        LogLevel::DEBUG);
+        "fetch data => finished: " + std::to_string(ctxPtr->loadFinished)
+        + ", progress: " + std::to_string(progress),
+        LogLevel::DEBUG
+    );
 
     return create_response(env, ctxPtr->loadFinished, progress);
 }
@@ -261,27 +249,27 @@ static void notify_fetch_data_call(napi_env env, napi_value js_callback, void *c
     napi_value js_fileIdentityArg;
     {
         std::u16string u16_fileIdentity(fileIdentityWstr.begin(), fileIdentityWstr.end());
-        napi_create_string_utf16(env,
-                                 u16_fileIdentity.c_str(),
-                                 u16_fileIdentity.size(),
+        napi_create_string_utf16(env, 
+                                 u16_fileIdentity.c_str(), 
+                                 u16_fileIdentity.size(), 
                                  &js_fileIdentityArg);
     }
 
+
     napi_value js_response_callback_fn;
-    napi_create_function(env,
-                         "responseCallback",
-                         NAPI_AUTO_LENGTH,
-                         response_callback_fn_fetch_data,
-                         ctx,
+    napi_create_function(env, 
+                         "responseCallback", 
+                         NAPI_AUTO_LENGTH, 
+                         response_callback_fn_fetch_data, 
+                         ctx, 
                          &js_response_callback_fn);
 
-    napi_value args_to_js_callback[2] = {js_fileIdentityArg, js_response_callback_fn};
+    napi_value args_to_js_callback[2] = { js_fileIdentityArg, js_response_callback_fn };
 
     Logger::getInstance().log("notify_fetch_data_call: calling JS function", LogLevel::DEBUG);
     napi_value undefined, result;
     status = napi_get_undefined(env, &undefined);
-    if (status != napi_ok)
-    {
+    if (status != napi_ok) {
         Logger::getInstance().log("Failed to get undefined in notify_fetch_data_call.", LogLevel::ERROR);
         return;
     }
@@ -290,17 +278,16 @@ static void notify_fetch_data_call(napi_env env, napi_value js_callback, void *c
     {
         Logger::getInstance().log("notify_fetch_data_call: locking ctx->mtx", LogLevel::DEBUG);
         std::unique_lock<std::mutex> lock(ctx->mtx);
-        ctx->ready = false;
+        ctx->ready = false; 
     }
 
-    status = napi_call_function(env,
-                                undefined,
-                                js_callback,
-                                2,
-                                args_to_js_callback,
+    status = napi_call_function(env, 
+                                undefined, 
+                                js_callback, 
+                                2, 
+                                args_to_js_callback, 
                                 &result);
-    if (status != napi_ok)
-    {
+    if (status != napi_ok) {
         Logger::getInstance().log("Failed to call JS function in notify_fetch_data_call.", LogLevel::ERROR);
         return;
     }
@@ -308,11 +295,12 @@ static void notify_fetch_data_call(napi_env env, napi_value js_callback, void *c
     Logger::getInstance().log("Hydration concluded or user signaled to finish in notify_fetch_data_call.", LogLevel::INFO);
 
     ctx->lastReadOffset = 0;
-    ctx->loadFinished = false;
-    ctx->ready = false;
-
+    ctx->loadFinished   = false;
+    ctx->ready          = false;
+    
     // RemoveTransferContext(ctx->transferKey);
 }
+
 
 void register_threadsafe_fetch_data_callback(const std::string &resource_name, napi_env env, InputSyncCallbacks input)
 {
@@ -354,24 +342,24 @@ void CALLBACK fetch_data_callback_wrapper(
     _In_ CONST CF_CALLBACK_PARAMETERS *callbackParameters)
 {
     Logger::getInstance().log("fetch_data_callback_wrapper called", LogLevel::DEBUG);
-
+    
     auto ctx = GetOrCreateTransferContext(callbackInfo->ConnectionKey, callbackInfo->TransferKey);
+    
+    ctx->fileSize        = callbackInfo->FileSize;
+    ctx->requiredLength  = callbackParameters->FetchData.RequiredLength;
+    ctx->requiredOffset  = callbackParameters->FetchData.RequiredFileOffset;
+    ctx->callbackInfo    = *callbackInfo; 
 
-    ctx->fileSize = callbackInfo->FileSize;
-    ctx->requiredLength = callbackParameters->FetchData.RequiredLength;
-    ctx->requiredOffset = callbackParameters->FetchData.RequiredFileOffset;
-    ctx->callbackInfo = *callbackInfo;
+    std::wstring fullClientPath(callbackInfo->VolumeDosName);   // e.g., "C:"
+    fullClientPath.append(callbackInfo->NormalizedPath);        // e.g., "\Users\file.txt"
+    ctx->fullClientPath  = fullClientPath;                      // Result: "C:\Users\file.txt"
 
-    std::wstring fullClientPath(callbackInfo->VolumeDosName); // e.g., "C:"
-    fullClientPath.append(callbackInfo->NormalizedPath);      // e.g., "\Users\file.txt"
-    ctx->fullClientPath = fullClientPath;                     // Result: "C:\Users\file.txt"
+    Logger::getInstance().log("Full download path: " 
+                                + Logger::fromWStringToString(fullClientPath),
+                                LogLevel::INFO);
 
-    Logger::getInstance().log("Full download path: " + Logger::fromWStringToString(fullClientPath),
-                              LogLevel::INFO);
-
-    if (g_fetch_data_threadsafe_callback == nullptr)
-    {
-        Logger::getInstance().log("fetch_data_callback_wrapper: g_fetch_data_threadsafe_callback is null",
+    if (g_fetch_data_threadsafe_callback == nullptr) {
+        Logger::getInstance().log("fetch_data_callback_wrapper: g_fetch_data_threadsafe_callback is null", 
                                   LogLevel::ERROR);
         return;
     }
@@ -382,12 +370,11 @@ void CALLBACK fetch_data_callback_wrapper(
 
     {
         std::unique_lock<std::mutex> lock(ctx->mtx);
-        while (!ctx->ready)
-        {
+        while (!ctx->ready) {
             ctx->cv.wait(lock);
         }
     }
-
+    
     Logger::getInstance().log("Hydration finish in fetch_data_callback_wrapper", LogLevel::INFO);
 
     RemoveTransferContext(ctx->transferKey);

@@ -1,8 +1,8 @@
-#include <stdafx.h>
+#include "stdafx.h"
 #include <SearchAPI.h>
 #include <propkey.h>
 #include <propvarutil.h>
-#include <Utilities.h>
+#include "Utilities.h"
 #include <Logger.h>
 
 DEFINE_PROPERTYKEY(PKEY_StorageProviderTransferProgress, 0xE77E90DF, 0x6271, 0x4F5B, 0x83, 0x4F, 0x2D, 0xD1, 0xF2, 0x45, 0xDD, 0xA4, 4);
