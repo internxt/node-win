@@ -9,9 +9,6 @@
 class SyncRoot
 {
 public:
-    static HRESULT ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallbacks syncCallbacks, napi_env env, CF_CONNECTION_KEY *connectionKey);
-    static HRESULT DisconnectSyncRoot(const wchar_t *syncRootPath);
-
-private:
-    CF_CONNECTION_KEY connectionKey;
+    static void ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallbacks syncCallbacks, napi_env env);
+    static void DisconnectSyncRoot(const wchar_t *syncRootPath);
 };

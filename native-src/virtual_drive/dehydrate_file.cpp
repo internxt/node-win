@@ -1,6 +1,7 @@
 #include <windows.h>
 #include "napi_extract_args.h"
 #include "stdafx.h"
+#include "Placeholders.h"
 
 napi_value dehydrate_file(napi_env env, napi_callback_info info)
 {
@@ -13,7 +14,7 @@ napi_value dehydrate_file(napi_env env, napi_callback_info info)
         throw std::runtime_error("Cannot dehydrate folder");
     }
 
-    winrt::handle fileHandle(CreateFileW(path.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
+    auto fileHandle = Placeholders::OpenFileHandle(path, FILE_WRITE_ATTRIBUTES, true);
 
     LARGE_INTEGER offset;
     offset.QuadPart = 0;
