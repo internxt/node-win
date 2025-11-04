@@ -1,6 +1,6 @@
 #include <windows.h>
-#include <napi_extract_args.h>
-#include <SyncRoot.h>
+#include "napi_extract_args.h"
+#include "SyncRoot.h"
 
 napi_value disconnect_sync_root(napi_env env, napi_callback_info info)
 {

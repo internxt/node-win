@@ -1,8 +1,8 @@
 #include <filesystem>
 #include <windows.h>
-#include <stdafx.h>
-#include <napi_extract_args.h>
-#include <Placeholders.h>
+#include "stdafx.h"
+#include "napi_extract_args.h"
+#include "Placeholders.h"
 
 void convert_to_placeholder(const std::wstring &path, const std::wstring &placeholderId)
 {

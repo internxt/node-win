@@ -1,6 +1,6 @@
 #include <windows.h>
-#include <napi_extract_args.h>
-#include <Placeholders.h>
+#include "napi_extract_args.h"
+#include "Placeholders.h"
 
 napi_value get_placeholder_state_wrapper(napi_env env, napi_callback_info info)
 {

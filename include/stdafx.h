@@ -38,3 +38,5 @@ namespace winrt
   using namespace Windows::Foundation::Collections;
   using namespace Windows::Security::Cryptography;
 }
+
+#include "Utilities.h"

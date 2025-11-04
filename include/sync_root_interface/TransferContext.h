@@ -4,15 +4,14 @@
 #include <mutex>
 #include <condition_variable>
 #include <string>
-#include <stdafx.h>
+#include "stdafx.h"
 #include <cfapi.h>
-#include <Logger.h>
-#include <Utilities.h>
-#include <Placeholders.h>
-#include <FileCopierWithProgress.h>
+#include "Logger.h"
+#include "Utilities.h"
+#include "Placeholders.h"
+#include "FileCopierWithProgress.h"
 
-struct TransferContext
-{
+struct TransferContext {
     CF_CONNECTION_KEY connectionKey;
     CF_TRANSFER_KEY transferKey;
     LARGE_INTEGER fileSize;
