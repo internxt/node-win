@@ -1,8 +1,8 @@
 #include <thread>
 #include <string>
-#include <Windows.h>
+#include <windows.h>
+#include "Placeholders.h"
 #include "napi_extract_args.h"
-#include "SyncRoot.h"
 
 struct AsyncWork
 {
@@ -22,7 +22,7 @@ void hydrate_file(const std::wstring &path)
         throw std::runtime_error("Cannot hydrate folder");
     }
 
-    winrt::handle fileHandle(CreateFileW(path.c_str(), 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr));
+    auto fileHandle = Placeholders::OpenFileHandle(path, FILE_WRITE_ATTRIBUTES, true);
 
     LARGE_INTEGER offset;
     offset.QuadPart = 0;

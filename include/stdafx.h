@@ -19,17 +19,18 @@
 #include <cfapi.h>
 #include <sddl.h>
 #include <windows.h>
-#include <winrt\Windows.Foundation.h>
-#include <winrt\windows.foundation.collections.h>
-#include <winrt\windows.storage.provider.h>
-#include <winrt\Windows.Security.Cryptography.h>
+#include <winrt/Windows.Foundation.h>
+#include <winrt/windows.foundation.collections.h>
+#include <winrt/windows.storage.provider.h>
+#include <winrt/Windows.Security.Cryptography.h>
 #include <functional>
 #include <mutex>
 #include <condition_variable>
 #include <node_api.h>
 #include <strsafe.h>
 
-namespace winrt {
+namespace winrt
+{
   using namespace Windows::Foundation;
   using namespace Windows::Storage;
   using namespace Windows::Storage::Streams;

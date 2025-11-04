@@ -2,7 +2,6 @@
 #include "SyncRoot.h"
 #include "stdafx.h"
 #include <filesystem>
-#include "Logger.h"
 #include <iostream>
 #include <vector>
 
