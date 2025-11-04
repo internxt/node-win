@@ -22,7 +22,7 @@ napi_value connect_sync_root_impl(napi_env env, napi_callback_info args)
     napi_get_named_property(env, argv[1], "cancelFetchDataCallback", &cancelFetchDataCallback);
     napi_create_reference(env, cancelFetchDataCallback, 1, &callbacks.cancel_fetch_data_callback_ref);
 
-    SyncRoot::ConnectSyncRoot(syncRootPath.c_str(), callbacks);
+    SyncRoot::ConnectSyncRoot(syncRootPath.c_str(), callbacks, env);
 
     return nullptr;
 }
