@@ -1,8 +1,8 @@
 #pragma once
 
-#include "stdafx.h"
 #include <vector>
 #include <string>
+#include <stdafx.h>
 
 struct FileState
 {
