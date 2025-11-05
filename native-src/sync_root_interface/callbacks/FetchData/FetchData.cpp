@@ -23,7 +23,7 @@
 
 napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
 
-#define FIELD_SIZE(type, field) (sizeof(((type *)0)->field))
+#define FIELD_SIZE(type, field) (sizeof(((type *)nullptr)->field))
 
 #define CF_SIZE_OF_OP_PARAM(field) (FIELD_OFFSET(CF_OPERATION_PARAMETERS, field) + FIELD_SIZE(CF_OPERATION_PARAMETERS, field))
 
@@ -54,9 +54,10 @@ HRESULT transfer_data(
 napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info)
 {
     size_t argc = 2;
-    napi_value args[2];
+    std::array<napi_value, 2> args;
+
     TransferContext *ctx = nullptr;
-    napi_get_cb_info(env, info, &argc, args, nullptr, reinterpret_cast<void **>(&ctx));
+    napi_get_cb_info(env, info, &argc, args.data(), nullptr, reinterpret_cast<void **>(&ctx));
 
     void *data;
     size_t length;
@@ -65,7 +66,8 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     int64_t offset;
     napi_get_value_int64(env, args[1], &offset);
 
-    LARGE_INTEGER startingOffset, chunkSize;
+    LARGE_INTEGER startingOffset;
+    LARGE_INTEGER chunkSize;
     startingOffset.QuadPart = offset;
     chunkSize.QuadPart = length;
 
@@ -98,10 +100,11 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
 
     if (completed < ctx->fileSize.QuadPart)
     {
-        PROPVARIANT pvProgress, pvStatus;
-        UINT64 values[]{completed, ctx->fileSize.QuadPart};
+        PROPVARIANT pvProgress;
+        PROPVARIANT pvStatus;
+        std::array<UINT64, 2> values = {completed, ctx->fileSize.QuadPart};
 
-        InitPropVariantFromUInt64Vector(values, ARRAYSIZE(values), &pvProgress);
+        InitPropVariantFromUInt64Vector(values.data(), values.size(), &pvProgress);
         InitPropVariantFromUInt32(SYNC_TRANSFER_STATUS::STS_TRANSFERRING, &pvStatus);
 
         propStoreVolatile->SetValue(PKEY_StorageProviderTransferProgress, pvProgress);
@@ -118,7 +121,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
         CfSetPinState(fileHandle.get(), CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
 
         {
-            std::lock_guard<std::mutex> lock(ctx->mtx);
+            std::scoped_lock lock(ctx->mtx);
             ctx->ready = true;
         }
 
@@ -133,7 +136,7 @@ napi_value response_callback_fn_fetch_data_wrapper(napi_env env, napi_callback_i
     return NAPI_SAFE_WRAP(env, info, response_callback_fn_fetch_data);
 }
 
-void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
+void notify_fetch_data_call(napi_env env, napi_value js_callback, void *, void *data)
 {
     TransferContext *ctx = static_cast<TransferContext *>(data);
 
@@ -143,16 +146,18 @@ void notify_fetch_data_call(napi_env env, napi_value js_callback, void *context,
     napi_value js_callback_fn;
     napi_create_function(env, "callback", NAPI_AUTO_LENGTH, response_callback_fn_fetch_data_wrapper, ctx, &js_callback_fn);
 
-    napi_value args_to_js_callback[2] = {js_path, js_callback_fn};
+    std::array<napi_value, 2> js_args = {js_path, js_callback_fn};
 
     napi_value undefined;
     napi_get_undefined(env, &undefined);
-    napi_call_function(env, undefined, js_callback, 2, args_to_js_callback, nullptr);
+    napi_call_function(env, undefined, js_callback, js_args.size(), js_args.data(), nullptr);
 }
 
 void CALLBACK fetch_data_callback_wrapper(_In_ CONST CF_CALLBACK_INFO *callbackInfo, _In_ CONST CF_CALLBACK_PARAMETERS *callbackParameters)
 {
-    wprintf(L"ConnectionKey: %lld, TransferKey: %lld\n", callbackInfo->ConnectionKey, callbackInfo->TransferKey.QuadPart);
+    wprintf(L"ConnectionKey: %lld, TransferKey: %lld\n",
+            std::bit_cast<long long>(callbackInfo->ConnectionKey),
+            callbackInfo->TransferKey.QuadPart);
 
     auto ctx = CreateTransferContext(callbackInfo->TransferKey);
 
