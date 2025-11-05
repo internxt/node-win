@@ -107,7 +107,7 @@ static size_t file_incremental_reading(napi_env env,
             } else {
                 UINT64 totalSize = static_cast<UINT64>(ctx.fileSize.QuadPart);
                 progress = static_cast<float>(ctx.lastReadOffset) / static_cast<float>(totalSize);
-                Utilities::ApplyTransferStateToFile(ctx.fullClientPath.c_str(), 
+                Utilities::ApplyTransferStateToFile(ctx.path.c_str(), 
                                                     ctx.callbackInfo, 
                                                     totalSize, 
                                                     ctx.lastReadOffset);
@@ -206,7 +206,7 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
         ctxPtr->loadFinished   = true;
 
         Utilities::ApplyTransferStateToFile(
-            ctxPtr->fullClientPath.c_str(),
+            ctxPtr->path.c_str(),
             ctxPtr->callbackInfo,
             ctxPtr->fileSize.QuadPart,
             ctxPtr->fileSize.QuadPart
@@ -214,7 +214,7 @@ static napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_in
 
         ::Sleep(CHUNKDELAYMS);
 
-        auto fileHandle = Placeholders::OpenFileHandle(ctxPtr->fullClientPath.c_str(), FILE_WRITE_ATTRIBUTES, true);
+        auto fileHandle = Placeholders::OpenFileHandle(ctxPtr->path.c_str(), FILE_WRITE_ATTRIBUTES, true);
         CfSetPinState(fileHandle.get(), CF_PIN_STATE_PINNED, CF_SET_PIN_FLAG_NONE, nullptr);
     }
 
@@ -240,7 +240,7 @@ static void notify_fetch_data_call(napi_env env, napi_value js_callback, void *c
     Logger::getInstance().log("notify_fetch_data_call called context isolated", LogLevel::DEBUG);
     napi_status status;
     TransferContext *ctx = static_cast<TransferContext *>(data);
-    Logger::getInstance().log("notify_fetch_data_call: ctx->fullClientPath = " + Logger::fromWStringToString(ctx->fullClientPath), LogLevel::DEBUG);
+    Logger::getInstance().log("notify_fetch_data_call: ctx->path = " + Logger::fromWStringToString(ctx->path), LogLevel::DEBUG);
 
     std::wstring fileIdentityWstr;
     {
@@ -345,19 +345,20 @@ void CALLBACK fetch_data_callback_wrapper(
 {
     Logger::getInstance().log("fetch_data_callback_wrapper called", LogLevel::DEBUG);
     
-    auto ctx = GetOrCreateTransferContext(callbackInfo->ConnectionKey, callbackInfo->TransferKey);
+    auto ctx = GetTransferContext(callbackInfo->TransferKey);
     
+    ctx->connectionKey = callbackInfo->ConnectionKey;
     ctx->fileSize        = callbackInfo->FileSize;
     ctx->requiredLength  = callbackParameters->FetchData.RequiredLength;
     ctx->requiredOffset  = callbackParameters->FetchData.RequiredFileOffset;
     ctx->callbackInfo    = *callbackInfo; 
 
-    std::wstring fullClientPath(callbackInfo->VolumeDosName);   // e.g., "C:"
-    fullClientPath.append(callbackInfo->NormalizedPath);        // e.g., "\Users\file.txt"
-    ctx->fullClientPath  = fullClientPath;                      // Result: "C:\Users\file.txt"
+    std::wstring path(callbackInfo->VolumeDosName);   // e.g., "C:"
+    path.append(callbackInfo->NormalizedPath);        // e.g., "\Users\file.txt"
+    ctx->path  = path;                      // Result: "C:\Users\file.txt"
 
     Logger::getInstance().log("Full download path: " 
-                                + Logger::fromWStringToString(fullClientPath),
+                                + Logger::fromWStringToString(path),
                                 LogLevel::INFO);
 
     if (g_fetch_data_threadsafe_callback == nullptr) {
