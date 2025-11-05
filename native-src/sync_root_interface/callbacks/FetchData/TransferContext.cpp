@@ -14,11 +14,10 @@ static std::mutex g_contextMapMutex;
 
 std::shared_ptr<TransferContext> CreateTransferContext(CF_TRANSFER_KEY transferKey)
 {
-    std::scoped_lock lock(g_contextMapMutex);
-
     auto ctx = std::make_shared<TransferContext>();
     ctx->transferKey = transferKey;
 
+    std::scoped_lock lock(g_contextMapMutex);
     g_transferContextMap[transferKey] = ctx;
     return ctx;
 }

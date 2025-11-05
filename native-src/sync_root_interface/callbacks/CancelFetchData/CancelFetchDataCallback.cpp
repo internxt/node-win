@@ -23,9 +23,11 @@ void notify_cancel_fetch_data_call(napi_env env, napi_value js_callback, void *c
     napi_call_function(env, undefined, js_callback, 1, args_to_js_callback.data(), nullptr);
 }
 
-void CALLBACK cancel_fetch_data_callback_wrapper(_In_ CONST CF_CALLBACK_INFO *callbackInfo, _In_ CONST CF_CALLBACK_PARAMETERS *callbackParameters)
+void CALLBACK cancel_fetch_data_callback_wrapper(_In_ CONST CF_CALLBACK_INFO *callbackInfo, _In_ CONST CF_CALLBACK_PARAMETERS *)
 {
-    wprintf(L"ConnectionKey: %lld, TransferKey: %lld\n", callbackInfo->ConnectionKey, callbackInfo->TransferKey.QuadPart);
+    wprintf(L"ConnectionKey: %lld, TransferKey: %lld\n",
+            std::bit_cast<long long>(callbackInfo->ConnectionKey),
+            callbackInfo->TransferKey.QuadPart);
 
     auto ctx = GetTransferContext(callbackInfo->TransferKey);
 
