@@ -14,21 +14,19 @@ static std::mutex g_contextMapMutex;
 
 std::shared_ptr<TransferContext> CreateTransferContext(CF_TRANSFER_KEY transferKey)
 {
-    std::lock_guard<std::mutex> lock(g_contextMapMutex);
-
     auto ctx = std::make_shared<TransferContext>();
     ctx->transferKey = transferKey;
 
+    std::scoped_lock lock(g_contextMapMutex);
     g_transferContextMap[transferKey] = ctx;
     return ctx;
 }
 
 std::shared_ptr<TransferContext> GetTransferContext(CF_TRANSFER_KEY transferKey)
 {
-    std::lock_guard<std::mutex> lock(g_contextMapMutex);
+    std::scoped_lock lock(g_contextMapMutex);
 
-    auto it = g_transferContextMap.find(transferKey);
-    if (it != g_transferContextMap.end())
+    if (auto it = g_transferContextMap.find(transferKey); it != g_transferContextMap.end())
     {
         return it->second;
     }
@@ -38,6 +36,6 @@ std::shared_ptr<TransferContext> GetTransferContext(CF_TRANSFER_KEY transferKey)
 
 void RemoveTransferContext(CF_TRANSFER_KEY transferKey)
 {
-    std::lock_guard<std::mutex> lock(g_contextMapMutex);
+    std::scoped_lock lock(g_contextMapMutex);
     g_transferContextMap.erase(transferKey);
 }
