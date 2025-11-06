@@ -3,6 +3,7 @@
 #include <Windows.h>
 #include <Placeholders.h>
 #include <napi_extract_args.h>
+#include <check_hresult.h>
 
 struct AsyncWork
 {
@@ -29,12 +30,14 @@ void hydrate_file(const std::wstring &path)
     LARGE_INTEGER length;
     GetFileSizeEx(fileHandle.get(), &length);
 
-    winrt::check_hresult(CfHydratePlaceholder(
-        fileHandle.get(),
-        offset,
-        length,
-        CF_HYDRATE_FLAG_NONE,
-        nullptr));
+    check_hresult(
+        "CfHydratePlaceholder",
+        CfHydratePlaceholder(
+            fileHandle.get(),
+            offset,
+            length,
+            CF_HYDRATE_FLAG_NONE,
+            nullptr));
 }
 
 void execute_work(napi_env env, void *data)
