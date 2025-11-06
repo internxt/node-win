@@ -14,6 +14,7 @@
 #include <windows.h>
 #include <shlobj.h>
 #include "convert_to_placeholder.h"
+#include <check_hresult.h>
 
 #pragma comment(lib, "shlwapi.lib")
 
@@ -50,11 +51,13 @@ void Placeholders::UpdateSyncStatus(const std::wstring &path)
 {
     auto fileHandle = Placeholders::OpenFileHandle(path, FILE_WRITE_ATTRIBUTES, true);
 
-    winrt::check_hresult(CfSetInSyncState(
-        fileHandle.get(),
-        CF_IN_SYNC_STATE_IN_SYNC,
-        CF_SET_IN_SYNC_FLAG_NONE,
-        nullptr));
+    check_hresult(
+        "CfSetInSyncState",
+        CfSetInSyncState(
+            fileHandle.get(),
+            CF_IN_SYNC_STATE_IN_SYNC,
+            CF_SET_IN_SYNC_FLAG_NONE,
+            nullptr));
 
     SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATH, path.c_str(), nullptr);
 }
@@ -63,16 +66,18 @@ void Placeholders::UpdateFileIdentity(const std::wstring &path, const std::wstri
 {
     auto fileHandle = OpenFileHandle(path, FILE_WRITE_ATTRIBUTES, true);
 
-    winrt::check_hresult(CfUpdatePlaceholder(
-        fileHandle.get(),
-        nullptr,
-        placeholderId.c_str(),
-        static_cast<DWORD>(placeholderId.size() * sizeof(wchar_t)),
-        nullptr,
-        0,
-        CF_UPDATE_FLAG_NONE,
-        nullptr,
-        nullptr));
+    check_hresult(
+        "CfUpdatePlaceholder",
+        CfUpdatePlaceholder(
+            fileHandle.get(),
+            nullptr,
+            placeholderId.c_str(),
+            static_cast<DWORD>(placeholderId.size() * sizeof(wchar_t)),
+            nullptr,
+            0,
+            CF_UPDATE_FLAG_NONE,
+            nullptr,
+            nullptr));
 }
 
 FileState Placeholders::GetPlaceholderInfo(const std::wstring &path)
@@ -85,12 +90,14 @@ FileState Placeholders::GetPlaceholderInfo(const std::wstring &path)
     std::vector<char> buffer(infoSize);
     auto *info = reinterpret_cast<CF_PLACEHOLDER_BASIC_INFO *>(buffer.data());
 
-    winrt::check_hresult(CfGetPlaceholderInfo(
-        fileHandle.get(),
-        CF_PLACEHOLDER_INFO_BASIC,
-        info,
-        infoSize,
-        nullptr));
+    check_hresult(
+        "CfGetPlaceholderInfo",
+        CfGetPlaceholderInfo(
+            fileHandle.get(),
+            CF_PLACEHOLDER_INFO_BASIC,
+            info,
+            infoSize,
+            nullptr));
 
     std::string placeholderId(reinterpret_cast<const char *>(info->FileIdentity), info->FileIdentityLength);
 

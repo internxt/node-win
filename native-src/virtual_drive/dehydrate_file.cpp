@@ -2,6 +2,7 @@
 #include "napi_extract_args.h"
 #include "stdafx.h"
 #include "Placeholders.h"
+#include <check_hresult.h>
 
 napi_value dehydrate_file(napi_env env, napi_callback_info info)
 {
@@ -21,12 +22,14 @@ napi_value dehydrate_file(napi_env env, napi_callback_info info)
     LARGE_INTEGER length;
     GetFileSizeEx(fileHandle.get(), &length);
 
-    winrt::check_hresult(CfDehydratePlaceholder(
-        fileHandle.get(),
-        offset,
-        length,
-        CF_DEHYDRATE_FLAG_NONE,
-        nullptr));
+    check_hresult(
+        "CfDehydratePlaceholder",
+        CfDehydratePlaceholder(
+            fileHandle.get(),
+            offset,
+            length,
+            CF_DEHYDRATE_FLAG_NONE,
+            nullptr));
 
     return nullptr;
 }

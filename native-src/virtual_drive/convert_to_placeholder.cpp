@@ -3,6 +3,7 @@
 #include "stdafx.h"
 #include "napi_extract_args.h"
 #include "Placeholders.h"
+#include <check_hresult.h>
 
 void convert_to_placeholder(const std::wstring &path, const std::wstring &placeholderId)
 {
@@ -19,7 +20,7 @@ void convert_to_placeholder(const std::wstring &path, const std::wstring &placeh
 
     if (hr != 0x8007017C) // Already a placeholder
     {
-        winrt::check_hresult(hr);
+        check_hresult("CfConvertToPlaceholder", hr);
     }
 }
 

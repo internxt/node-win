@@ -1,5 +1,6 @@
 #include <Callbacks.h>
 #include <cfapi.h>
+#include <check_hresult.h>
 #include <chrono>
 #include <codecvt>
 #include <condition_variable>
@@ -76,7 +77,7 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     if (FAILED(hr))
     {
         transfer_data(ctx->connectionKey, ctx->transferKey, nullptr, ctx->requiredOffset, ctx->requiredLength, STATUS_UNSUCCESSFUL);
-        winrt::throw_hresult(hr);
+        check_hresult("transfer_data", hr);
     }
 
     size_t completed = offset + length;
@@ -90,9 +91,12 @@ napi_value response_callback_fn_fetch_data(napi_env env, napi_callback_info info
     winrt::com_ptr<IShellItem2> shellItem;
     winrt::com_ptr<IPropertyStore> propStoreVolatile;
 
-    winrt::check_hresult(SHCreateItemFromParsingName(ctx->path.c_str(), nullptr, __uuidof(shellItem), shellItem.put_void()));
+    check_hresult(
+        "SHCreateItemFromParsingName",
+        SHCreateItemFromParsingName(ctx->path.c_str(), nullptr, __uuidof(shellItem), shellItem.put_void()));
 
-    winrt::check_hresult(
+    check_hresult(
+        "shellItem->GetPropertyStore",
         shellItem->GetPropertyStore(
             GETPROPERTYSTOREFLAGS::GPS_READWRITE | GETPROPERTYSTOREFLAGS::GPS_VOLATILEPROPERTIESONLY,
             __uuidof(propStoreVolatile),

@@ -3,6 +3,7 @@
 #include "Placeholders.h"
 #include "convert_to_placeholder.h"
 #include "napi_extract_args.h"
+#include <check_hresult.h>
 
 napi_value create_folder_placeholder_impl(napi_env env, napi_callback_info info)
 {
@@ -31,7 +32,10 @@ napi_value create_folder_placeholder_impl(napi_env env, napi_callback_info info)
     cloudEntry.FsMetadata.BasicInfo.LastWriteTime = lastWriteTime;
     cloudEntry.FsMetadata.BasicInfo.LastAccessTime = lastAccessTime;
 
-    winrt::check_hresult(CfCreatePlaceholders(parentPath.c_str(), &cloudEntry, 1, CF_CREATE_FLAG_NONE, NULL));
+    check_hresult(
+        "CfCreatePlaceholders",
+        CfCreatePlaceholders(parentPath.c_str(), &cloudEntry, 1, CF_CREATE_FLAG_NONE, NULL));
+
     Placeholders::UpdateSyncStatus(path);
 
     return nullptr;

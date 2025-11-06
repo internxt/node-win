@@ -38,7 +38,7 @@
       ],
       "include_dirs": [
         "include",
-        "include/napi_helpers",
+        "include/helpers",
         "include/placeholders_interface",
         "include/sync_root_interface",
         "include/sync_root_interface/callbacks",

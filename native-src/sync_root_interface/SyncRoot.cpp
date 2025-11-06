@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <iostream>
 #include <vector>
+#include <check_hresult.h>
 
 std::map<std::wstring, CF_CONNECTION_KEY> connectionMap;
 
@@ -19,14 +20,14 @@ void SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallbacks s
 
     CF_CONNECTION_KEY connectionKey;
 
-    HRESULT hr = CfConnectSyncRoot(
-        syncRootPath,
-        callbackTable,
-        nullptr,
-        CF_CONNECT_FLAG_REQUIRE_PROCESS_INFO | CF_CONNECT_FLAG_REQUIRE_FULL_FILE_PATH,
-        &connectionKey);
-
-    winrt::check_hresult(hr);
+    check_hresult(
+        "CfConnectSyncRoot",
+        CfConnectSyncRoot(
+            syncRootPath,
+            callbackTable,
+            nullptr,
+            CF_CONNECT_FLAG_REQUIRE_PROCESS_INFO | CF_CONNECT_FLAG_REQUIRE_FULL_FILE_PATH,
+            &connectionKey));
 
     connectionMap[syncRootPath] = connectionKey;
 }
@@ -36,9 +37,7 @@ void SyncRoot::DisconnectSyncRoot(const wchar_t *syncRootPath)
     auto it = connectionMap.find(syncRootPath);
     if (it != connectionMap.end())
     {
-        HRESULT hr = CfDisconnectSyncRoot(it->second);
-
-        winrt::check_hresult(hr);
+        check_hresult("CfDisconnectSyncRoot", CfDisconnectSyncRoot(it->second));
 
         connectionMap.erase(it);
     }
