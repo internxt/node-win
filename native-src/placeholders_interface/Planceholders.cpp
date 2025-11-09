@@ -1,5 +1,5 @@
-#include "stdafx.h"
-#include "Placeholders.h"
+#include <stdafx.h>
+#include <Placeholders.h>
 #include <winrt/base.h>
 #include <shlwapi.h>
 #include <vector>
@@ -13,10 +13,8 @@
 #include <cctype>
 #include <windows.h>
 #include <shlobj.h>
-#include "convert_to_placeholder.h"
+#include <convert_to_placeholder.h>
 #include <check_hresult.h>
-
-#pragma comment(lib, "shlwapi.lib")
 
 winrt::file_handle Placeholders::OpenFileHandle(const std::wstring &path, DWORD dwDesiredAccess, bool openAsPlaceholder)
 {
