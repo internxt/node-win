@@ -6,10 +6,7 @@
 #include <vector>
 #include <check_hresult.h>
 
-namespace
-{
-    std::map<std::wstring, CF_CONNECTION_KEY> connectionMap;
-}
+std::map<std::wstring, CF_CONNECTION_KEY> connectionMap;
 
 void SyncRoot::ConnectSyncRoot(const wchar_t *syncRootPath, InputSyncCallbacks syncCallbacks, napi_env env)
 {
