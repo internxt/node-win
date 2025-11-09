@@ -61,13 +61,13 @@ void register_threadsafe_cancel_fetch_data_callback(const std::string &resource_
     napi_create_threadsafe_function(
         env,
         cancel_fetch_data_value,
-        NULL,
+        nullptr,
         resource_name_value,
         0,
         1,
-        NULL,
-        NULL,
-        NULL,
+        nullptr,
+        nullptr,
+        nullptr,
         notify_cancel_fetch_data_call,
         &tsfn_cancel_fetch_data);
 

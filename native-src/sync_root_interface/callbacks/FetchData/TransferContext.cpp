@@ -8,9 +8,11 @@ struct CfTransferKeyLess
     }
 };
 
-static std::map<CF_TRANSFER_KEY, std::shared_ptr<TransferContext>, CfTransferKeyLess> g_transferContextMap;
-
-static std::mutex g_contextMapMutex;
+namespace
+{
+    std::map<CF_TRANSFER_KEY, std::shared_ptr<TransferContext>, CfTransferKeyLess> g_transferContextMap;
+    std::mutex g_contextMapMutex;
+}
 
 std::shared_ptr<TransferContext> CreateTransferContext(CF_TRANSFER_KEY transferKey)
 {

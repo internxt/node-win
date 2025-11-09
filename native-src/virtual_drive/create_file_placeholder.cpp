@@ -36,7 +36,7 @@ napi_value create_file_placeholder_impl(napi_env env, napi_callback_info info)
 
     check_hresult(
         "CfCreatePlaceholders",
-        CfCreatePlaceholders(parentPath.c_str(), &cloudEntry, 1, CF_CREATE_FLAG_NONE, NULL));
+        CfCreatePlaceholders(parentPath.c_str(), &cloudEntry, 1, CF_CREATE_FLAG_NONE, nullptr));
 
     return nullptr;
 }

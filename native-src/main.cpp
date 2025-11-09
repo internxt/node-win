@@ -1,3 +1,4 @@
+#include <iterator>
 #include <node_api.h>
 #include "Wrappers.h"
 
@@ -17,9 +18,7 @@ napi_value init(napi_env env, napi_value exports)
       {"hydrateFile", nullptr, HydrateFileWrapper, nullptr, nullptr, nullptr, napi_default, nullptr},
       {"dehydrateFile", nullptr, DehydrateFileWrapper, nullptr, nullptr, nullptr, napi_default, nullptr}};
 
-  size_t property_count = sizeof(properties) / sizeof(properties[0]);
-
-  napi_define_properties(env, exports, property_count, properties);
+  napi_define_properties(env, exports, std::size(properties), properties);
 
   return exports;
 }

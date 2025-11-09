@@ -63,7 +63,7 @@ void execute_work(napi_env env, void *data)
 
 void complete_work(napi_env env, napi_status status, void *data)
 {
-    AsyncWork *asyncWork = static_cast<AsyncWork *>(data);
+    std::unique_ptr<AsyncWork> asyncWork(static_cast<AsyncWork *>(data));
 
     if (asyncWork->success)
     {
@@ -79,7 +79,6 @@ void complete_work(napi_env env, napi_status status, void *data)
     }
 
     napi_delete_async_work(env, asyncWork->work);
-    delete asyncWork;
 }
 
 napi_value hydrate_file_impl(napi_env env, napi_callback_info info)
@@ -90,15 +89,17 @@ napi_value hydrate_file_impl(napi_env env, napi_callback_info info)
     napi_value promise;
     napi_create_promise(env, &deferred, &promise);
 
-    AsyncWork *asyncWork = new AsyncWork{};
+    auto asyncWork = std::make_unique<AsyncWork>();
     asyncWork->deferred = deferred;
     asyncWork->path = std::move(path);
 
     napi_value resourceName;
     napi_create_string_utf8(env, "HydrateFileAsync", NAPI_AUTO_LENGTH, &resourceName);
 
-    napi_create_async_work(env, nullptr, resourceName, execute_work, complete_work, asyncWork, &asyncWork->work);
+    napi_create_async_work(env, nullptr, resourceName, execute_work, complete_work, asyncWork.get(), &asyncWork->work);
     napi_queue_async_work(env, asyncWork->work);
+
+    asyncWork.release();
 
     return promise;
 }
