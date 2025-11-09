@@ -177,10 +177,8 @@ void CALLBACK fetch_data_callback_wrapper(_In_ CONST CF_CALLBACK_INFO *callbackI
 
     {
         std::unique_lock<std::mutex> lock(ctx->mtx);
-        while (!ctx->ready)
-        {
-            ctx->cv.wait(lock);
-        }
+        ctx->cv.wait(lock, [&ctx]()
+                     { return ctx->ready; });
     }
 
     wprintf(L"Remove transfer context\n");
