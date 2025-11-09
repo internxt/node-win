@@ -7,7 +7,10 @@
 #include <filesystem>
 #include <TransferContext.h>
 
-napi_threadsafe_function g_cancel_fetch_data_threadsafe_callback = nullptr;
+namespace
+{
+    napi_threadsafe_function g_cancel_fetch_data_threadsafe_callback = nullptr;
+}
 
 void notify_cancel_fetch_data_call(napi_env env, napi_value js_callback, void *context, void *data)
 {

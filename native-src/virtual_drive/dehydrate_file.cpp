@@ -1,16 +1,15 @@
 #include <windows.h>
-#include "napi_extract_args.h"
-#include "stdafx.h"
-#include "Placeholders.h"
+#include <napi_extract_args.h>
+#include <stdafx.h>
+#include <Placeholders.h>
 #include <check_hresult.h>
+#include <filesystem>
 
 napi_value dehydrate_file(napi_env env, napi_callback_info info)
 {
     auto [path] = napi_extract_args<std::wstring>(env, info);
 
-    DWORD attrib = GetFileAttributesW(path.c_str());
-
-    if (attrib & FILE_ATTRIBUTE_DIRECTORY)
+    if (std::filesystem::is_directory(path))
     {
         throw std::runtime_error("Cannot dehydrate folder");
     }

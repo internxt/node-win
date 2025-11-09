@@ -22,11 +22,14 @@
 #include <vector>
 #include <windows.h>
 
-napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
-
 #define FIELD_SIZE(type, field) (sizeof(((type *)nullptr)->field))
 
 #define CF_SIZE_OF_OP_PARAM(field) (FIELD_OFFSET(CF_OPERATION_PARAMETERS, field) + FIELD_SIZE(CF_OPERATION_PARAMETERS, field))
+
+namespace
+{
+    napi_threadsafe_function g_fetch_data_threadsafe_callback = nullptr;
+}
 
 HRESULT transfer_data(
     _In_ CF_CONNECTION_KEY connectionKey,

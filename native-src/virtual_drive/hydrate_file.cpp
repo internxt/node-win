@@ -4,6 +4,7 @@
 #include <Placeholders.h>
 #include <napi_extract_args.h>
 #include <check_hresult.h>
+#include <filesystem>
 
 struct AsyncWork
 {
@@ -16,9 +17,7 @@ struct AsyncWork
 
 void hydrate_file(const std::wstring &path)
 {
-    DWORD attrib = GetFileAttributesW(path.c_str());
-
-    if (attrib & FILE_ATTRIBUTE_DIRECTORY)
+    if (std::filesystem::is_directory(path))
     {
         throw std::runtime_error("Cannot hydrate folder");
     }
